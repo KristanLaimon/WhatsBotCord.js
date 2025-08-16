@@ -1,0 +1,18 @@
+{
+  "name": "whatscord",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "baileys": "^6.7.18"
+  },
+  "trustedDependencies": [
+    "baileys",
+    "protobufjs"
+  ]
+}
