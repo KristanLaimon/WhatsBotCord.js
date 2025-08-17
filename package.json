@@ -1,5 +1,5 @@
 {
-  "name": "whatscord",
+  "name": "whatsbotcord",
   "module": "main.ts",
   "type": "module",
   "devDependencies": {

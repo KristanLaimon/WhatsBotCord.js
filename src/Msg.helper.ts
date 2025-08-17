@@ -1,13 +1,31 @@
 import { proto, type WAMessage } from "baileys";
 import { MsgType } from './Msg.types';
 
-export function MsgHelper_GetTextFromRawMsg(rawMsg: WAMessage): string {
+export function RawMsg_GetTextFrom(rawMsg: WAMessage): string | null {
   if (!rawMsg.message) return "There's no text in that message";
-  return rawMsg.message.conversation || rawMsg.message.extendedTextMessage?.text || "========== NO TEXT MSG =============";
+  return rawMsg.message.conversation || rawMsg.message.extendedTextMessage?.text || null;
 }
 
-export function MsgHelper_GetTextFromQuotedMsg(quotedMsg: proto.IMessage) {
-  return quotedMsg.conversation || quotedMsg.extendedTextMessage?.text || quotedMsg.imageMessage?.caption || "There's no text in that message";
+/**
+ * Gets the text content from a quoted message in a WAMessage.
+ * @param quotedMsg The quoted message object from a WAMessage.
+ * @returns The text content of the quoted message, or a default message if no
+ */
+export function RawMsg_GetTextFromQuotedMsg(quotedMsg: proto.IMessage): string | null {
+  return quotedMsg.conversation || quotedMsg.extendedTextMessage?.text || quotedMsg.imageMessage?.caption || null;
+}
+
+/**
+ * Extracts the text from a quoted message if includes one inside a WAMesage
+ * @param rawMsg 
+ * @returns 
+ */
+export function RawMsg_GetQuotedMsgTextFrom(rawMsg: WAMessage): string | null {
+  if (!rawMsg.message || !rawMsg.message.extendedTextMessage || !rawMsg.message.extendedTextMessage.contextInfo || !rawMsg.message.extendedTextMessage.contextInfo.quotedMessage)
+    return null;
+  const quotedMsg = rawMsg.message.extendedTextMessage.contextInfo.quotedMessage;
+  const text = quotedMsg.conversation || quotedMsg.extendedTextMessage?.text || quotedMsg.imageMessage?.caption || null;
+  return text;
 }
 
 export function MsgHelper_GetMsgTypeFromRawMsg(rawMsg: WAMessage): MsgType {

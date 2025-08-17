@@ -1,4 +1,5 @@
-import { MsgHelper_GetTextFromRawMsg } from './src/Msg.helper';
+import { RawMsg_GetTextFrom } from './src/Msg.helper';
+// import { MsgType } from './src/Msg.types';
 import WhatsSocket from './src/WhatsSocket'
 
 const socket = new WhatsSocket({
@@ -9,11 +10,13 @@ const socket = new WhatsSocket({
 });
 
 socket.onIncomingMessage.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
-  const msg = MsgHelper_GetTextFromRawMsg(rawMsg);
+  // if (msgType === MsgType.Text) {
+  // }
+  const msg = RawMsg_GetTextFrom(rawMsg);
   console.log(`Msg: ${msg} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
 });
 
-socket.Init().then(() => {
+socket.Start().then(() => {
   console.log("WhatsSocket initialized successfully!");
 }).catch((error) => {
   console.error("Error initializing WhatsSocket:", error);

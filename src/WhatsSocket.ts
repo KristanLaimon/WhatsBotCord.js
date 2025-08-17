@@ -18,16 +18,42 @@ import { MsgType, SenderType } from './Msg.types';
 import type { BaileysWASocket, WhatsSocketLoggerMode } from './WhatsSocket.types';
 import { GetPath } from "./BunPath";
 import { MsgHelper_GetMsgTypeFromRawMsg } from './Msg.helper';
+import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from './Whatsapp.types';
+import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 
 export type WhatsSocketOptions = {
-  /** * Logger mode for the WhatsSocket instance. e.g: 'debug' for max details, 'silent' to the minimum (nothing)  */
+  /** 
+   * Logger mode for the WhatsSocket instance. e.g: 'debug' for max details, 
+   * 'silent' to the minimum (nothing)
+   * */
   loggerMode?: WhatsSocketLoggerMode;
-  /** Folder path relative to root proyect path (or current working directory if you compile this whole proyect (Likely with bun)) */
+
+  /** 
+   * Folder path relative to root proyect path (or current working directory if 
+   * you compile this whole proyect (Likely with bun)) 
+   * */
   credentialsFolder?: string;
-  /** Max number of retries if something goes wrong the socket will try before shut down completely */
+
+  /** 
+   * Max number of retries if something goes wrong the socket will try before 
+   * shut down completely 
+   */
   maxReconnectionRetries?: number;
-  /** * If true, the socket will ignore messages sent by itself, so they won't be shown on 'onIncomingMessage' event */
+
+  /** 
+   * If true, the socket will ignore messages sent by itself, so they won't 
+   * be shown on 'onIncomingMessage' event 
+   * */
   ignoreSelfMessage?: boolean;
+  /** 
+   * Sets the max of messages can be queued to send to all users (global config). 
+   * Used to store a buffer of pending messages to send if for some reason this 
+   * bot gets a lot of messages incoming in a short period of time 
+   */
+  senderQueueMaxLimit?: number;
+
+  /** Delay in miliseconds the socket should send all pending msgs (to send ofc) */
+  milisecondsDelayBetweenSentMsgs?: number;
 }
 
 export default class WhatsSocket {
@@ -37,26 +63,34 @@ export default class WhatsSocket {
   public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
 
-  private _loggerMode: WhatsSocketLoggerMode;
   private _socket!: BaileysWASocket; //It's initialized in "initializeSelf"
+  private _senderQueue!: WhatsSocketSenderQueue;
+
+  // === Configuration Private Properties ===
+  private _loggerMode: WhatsSocketLoggerMode;
   private _credentialsFolder: string;
   private _ignoreSelfMessages: boolean;
-  private _maxReconnectionRetries = 5;
-  private _actualRetries = 0;
+  private _maxReconnectionRetries: number = 5;
+  private _actualRetries: number = 0;
+  private _senderQueueMaxLimit: number;
+  private _milisecondsDelayBetweenSentMsgs: number;
+
 
   constructor(options?: WhatsSocketOptions) {
     this._loggerMode = options?.loggerMode ?? "silent";
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
+    this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 10;
+    this._milisecondsDelayBetweenSentMsgs = options?.milisecondsDelayBetweenSentMsgs ?? 250;
   }
 
   /**
    * Initializes the WhatsSocket instance and start connecting to Whatsapp.
    * After this method is called, the socket will be listening for incoming messages and events all the time.
    * Can be canceled and shutdown by calling the `Shutdown` method.
-   * @returns {Promise<void>} A promise that will be running in the background all the time until the socket is closed.
+   * @returns A promise that will be running in the background all the time until the socket is closed.
    */
-  public async Init() {
+  public async Start() {
     await this.InitializeSelf();
     this.ConfigureReconnection();
     this.ConfigureMessageIncoming();
@@ -78,8 +112,9 @@ export default class WhatsSocket {
     this._socket = makeWASocket({
       auth: state,
       logger: logger,
-      browser: Browsers.windows("Desktop") //Simulates a Windows Desktop client
+      browser: Browsers.windows("Desktop") //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
     });
+    this._senderQueue = new WhatsSocketSenderQueue(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
     this._socket.ev.on("creds.update", saveCreds);
   }
 
@@ -96,15 +131,15 @@ export default class WhatsSocket {
       switch (connection) {
         case "close": {
           const shouldReconnect =
-            (disconect.error as Boom)?.output?.statusCode !==
-            DisconnectReason.loggedOut;
+            (disconect.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+
           if (shouldReconnect) {
-            this.onReconnect.CallAll();
             this._actualRetries++;
             if (this._actualRetries > this._maxReconnectionRetries) {
               console.log(`ERROR: Reconnection failed after ${this._maxReconnectionRetries} attempts. Please check your connection or credentials.`);
               return;
             }
+            this.onReconnect.CallAll();
           }
           break;
         }
@@ -158,19 +193,26 @@ export default class WhatsSocket {
         const chatId = msg.key.remoteJid!;
         const senderId = msg.key.participant ?? null;
         let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith("@g.us")) senderType = SenderType.Group;
-        if (chatId && chatId.endsWith("@s.whatsapp.net")) senderType = SenderType.Individual;
+        if (chatId && chatId.endsWith(WhatsAppGroupIdentifier)) senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
         this.onIncomingMessage.CallAll(senderId, chatId, msg, MsgHelper_GetMsgTypeFromRawMsg(msg), senderType);
       }
     });
   }
 
   public async Send(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
-    await this._socket.sendMessage(chatId_JID, content, options);
+    await this._senderQueue.Enqueue(chatId_JID, content, options)
   }
 
-  public async GetGroupMetadata(chatId: string): Promise<GroupMetadata | null> {
-    if (!chatId.endsWith("@g.us")) return null;
+  /**
+   * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
+   * @param chatId The chat ID of the group you want to get metadata from.
+   * @throws Will throw an error if the provided chatId is not a group chat ID
+   * @returns A promise that resolves to the group metadata.
+   */
+  public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
+    if (!chatId.endsWith(WhatsAppGroupIdentifier))
+      throw new Error("Provided chatId is not a group chat ID. => " + chatId);
     return await this._socket.groupMetadata(chatId);
   }
 }

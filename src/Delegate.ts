@@ -1,5 +1,5 @@
 /**
- * Simple delegate C#-like for Observer pattern and events of this bot.
+ * Simple delegate C#-like for Observer pattern and events.
  */
 export default class Delegate<functType extends (...args: any[]) => any> {
   private functions: functType[] = [];
