@@ -1,15 +1,9 @@
-# whatscord
+<div style="text-align: center;">
+  <img src="./.github/media/whatscord_logo.png" width="50%"></img>
+</div>
 
-To install dependencies:
+# WACord.js
+<!-- *W*h*A*tsapp dis*CORD* bot -->
 
-```bash
-bun install
-```
+A discord-whatsapp bot client ready to use and configure to your taste.
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.20. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
