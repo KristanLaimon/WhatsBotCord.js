@@ -1,3 +1,5 @@
+.development.env
+
 # dependencies (bun install)
 node_modules
 
