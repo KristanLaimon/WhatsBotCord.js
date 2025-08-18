@@ -27,32 +27,40 @@ export default class WhatsSocketSenderQueue {
     this.maxQueueLimit = maxQueueLimit;
   }
 
+  /**
+   * Enqueues a message to be sent.
+   * @param chatId ChatJID of the user.
+   * @param content The content of the message.
+   * @param misc Miscellaneous options.
+   */
   public async Enqueue(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions): Promise<void> {
-    if (this.queue.length >= this.maxQueueLimit) return;
+    if (this.queue.length >= this.maxQueueLimit) {
+      throw new Error(`Queue limit of ${this.maxQueueLimit} reached. Please wait.`);
+    }
 
     return new Promise((resolve, reject) => {
       this.queue.push({ chatId, content, misc, resolve, reject });
-      this.ProcessQueue(); //Doesn't need to be waited, isn't it?
-
+      // Only start the processing loop if it's not already running.
       if (!this.isProcessing) {
-        this.isProcessing = true;
+        this.ProcessQueue();
       }
-    })
+    });
   }
 
-  private async ProcessQueue(): Promise<void> {
-    if (this.isProcessing || this.queue.length === 0) return;
 
-    const { chatId, content, misc, resolve, reject } = this.queue.shift()!;
-    try {
-      await this.whatsSocket.Send(chatId, content, misc);
-      resolve(true);
+  private async ProcessQueue(): Promise<void> {
+    this.isProcessing = true;
+    while (this.queue.length > 0) {
+      const item = this.queue.shift()!;
+      try {
+        await this.whatsSocket.Send(item.chatId, item.content, item.misc);
+        item.resolve(true);
+      } catch (error) {
+        item.reject(error);
+      }
+      // Wait for the delay before processing the next message.
+      await new Promise(resolve => setTimeout(resolve, this.minMillisecondsDelay));
     }
-    catch (error) {
-      reject(error);
-    }
-    await new Promise(resolve => setTimeout(resolve, this.minMillisecondsDelay));
     this.isProcessing = false;
-    this.ProcessQueue();
   }
 }
