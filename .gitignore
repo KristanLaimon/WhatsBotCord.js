@@ -1,4 +1,6 @@
+
 .development.env
+./auth
 
 # dependencies (bun install)
 node_modules
