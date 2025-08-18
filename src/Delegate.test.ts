@@ -97,6 +97,6 @@ describe("Delegate.CallAll()", () => {
   it('WhenNoSubscribers_ShouldntHappenAnything;NoErrorThrown', () => {
     const delegate = new Delegate<() => void>();
     delegate.CallAll();
-    // no expectations, just verify no error is thrown
+    // no expectations, just verifying no error is thrown
   });
 });

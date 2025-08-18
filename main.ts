@@ -17,22 +17,22 @@ socket.onIncomingMessage.Subscribe((senderId, chatId, rawMsg, msgType, senderTyp
     console.log(`Msg: ${msg} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
   }
 
-  let msgsStored: any[] = [];
-  if (fs.existsSync("msgExample.json")) {
-    const before = fs.readFileSync("msgExample.json", "utf-8");
-    if (before.trim() === "") {
-      msgsStored = [];
-    } else {
-      msgsStored = JSON.parse(before);
-    }
-  } else {
-    //Creates the file if it doesn't exist
-    fs.writeFileSync("msgExample.json", "", "utf-8");
-    msgsStored = [];
-  }
-  msgsStored.push(rawMsg);
-  const json = JSON.stringify(msgsStored, null, 2);
-  fs.writeFileSync("msgExample.json", json, "utf-8");
+  // let msgsStored: any[] = [];
+  // if (fs.existsSync("msgExample.json")) {
+  //   const before = fs.readFileSync("msgExample.json", "utf-8");
+  //   if (before.trim() === "") {
+  //     msgsStored = [];
+  //   } else {
+  //     msgsStored = JSON.parse(before);
+  //   }
+  // } else {
+  //   //Creates the file if it doesn't exist
+  //   fs.writeFileSync("msgExample.json", "", "utf-8");
+  //   msgsStored = [];
+  // }
+  // msgsStored.push(rawMsg);
+  // const json = JSON.stringify(msgsStored, null, 2);
+  // fs.writeFileSync("msgExample.json", json, "utf-8");
 });
 
 socket.Start().then(() => {
