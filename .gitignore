@@ -1,6 +1,11 @@
 
+
 .development.env
-./auth
+# Ignores default folder name containing credentials for whats api when development (sensitive)
+auth/
+
+
+# =============== DEFAULT GITIGNORE CONFIG NODE.JS ===================
 
 # dependencies (bun install)
 node_modules
