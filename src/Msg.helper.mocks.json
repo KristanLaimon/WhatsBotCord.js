@@ -39,7 +39,7 @@
           "stanzaId": "97C6FAED61DBC4810E0A227C5D5A9F2A",
           "participant": "5216121407908@s.whatsapp.net",
           "quotedMessage": {
-            "conversation": "@alguien"
+            "conversation": "Mensaje de la cita, soy otro mensaje!"
           }
         },
         "inviteLinkGroupTypeV2": "DEFAULT",

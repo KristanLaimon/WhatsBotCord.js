@@ -1,18 +1,9 @@
-import { proto, type WAMessage } from "baileys";
+import { type WAMessage } from "baileys";
 import { MsgType } from './Msg.types';
 
 export function MsgHelper_GetTextFrom(rawMsg: WAMessage): string | null {
   if (!rawMsg.message) return "There's no text in that message";
-  return rawMsg.message.conversation || rawMsg.message.extendedTextMessage?.text || null;
-}
-
-/**
- * Gets the text content from a quoted message in a WAMessage.
- * @param quotedMsg The quoted message object from a WAMessage.
- * @returns The text content of the quoted message, or a default message if no
- */
-export function MsgHelper_GetTextFromQuotedMsg(quotedMsg: proto.IMessage): string | null {
-  return quotedMsg.conversation || quotedMsg.extendedTextMessage?.text || quotedMsg.imageMessage?.caption || null;
+  return rawMsg.message.conversation || rawMsg.message.extendedTextMessage?.text || rawMsg.message.imageMessage?.caption || rawMsg.message.videoMessage?.caption || null;
 }
 
 /**
@@ -44,6 +35,9 @@ function _getTypeOfMsg(generic: any): MsgType {
   if (generic.videoMessage) return MsgType.Video;
   if (generic.audioMessage) return MsgType.Audio;
   if (generic.stickerMessage) return MsgType.Sticker;
+  if (generic.pollCreationMessageV3) return MsgType.Poll;
+  if (generic.locationMessage) return MsgType.Location;
+  if (generic.contactMessage) return MsgType.Contact;
   if (generic.conversation || generic.extendedTextMessage) return MsgType.Text;
   return MsgType.Unknown
 }

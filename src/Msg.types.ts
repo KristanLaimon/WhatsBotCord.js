@@ -5,6 +5,8 @@ export enum MsgType {
   Video,
   Audio,
   Contact,
+  Poll,
+  Location,
   Unknown
 }
 
