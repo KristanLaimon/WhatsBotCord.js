@@ -13,13 +13,14 @@ import { Boom } from "@hapi/boom";
 import pino from "pino";
 import moment from "moment";
 import encodeQr from "qr";
-import Delegate from './Delegate';
-import { MsgType, SenderType } from './Msg.types';
+import Delegate from '../libs/Delegate';
+import { MsgType, SenderType } from '../Msg.types';
 import type { BaileysWASocket, WhatsSocketLoggerMode } from './WhatsSocket.types';
-import { GetPath } from "./BunPath";
-import { MsgHelper_GetMsgTypeFromRawMsg } from './Msg.helper';
+import { GetPath } from "../libs/BunPath";
+import { MsgHelper_GetMsgTypeFromRawMsg } from '../Msg.helper';
 import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from './Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
+import type { IWhatsSocket } from './IWhatsSocket';
 
 export type WhatsSocketOptions = {
   /** 
@@ -56,7 +57,7 @@ export type WhatsSocketOptions = {
   milisecondsDelayBetweenSentMsgs?: number;
 }
 
-export default class WhatsSocket {
+export default class WhatsSocket implements IWhatsSocket {
   public onReconnect: Delegate<() => Promise<void>> = new Delegate();
   public onIncomingMessage: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
   public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
@@ -202,6 +203,10 @@ export default class WhatsSocket {
 
   public async Send(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
     await this._senderQueue.Enqueue(chatId_JID, content, options)
+  }
+
+  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
+    await this._socket.sendMessage(chatId_JID, content, options);
   }
 
   /**

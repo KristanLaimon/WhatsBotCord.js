@@ -1,5 +1,6 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions } from 'baileys';
 import WhatsSocket from './WhatsSocket';
+import type { IWhatsSocket } from './IWhatsSocket';
 
 type SocketMsgQueueItem = {
   chatId: string,
@@ -17,11 +18,11 @@ type SocketMsgQueueItem = {
 export default class WhatsSocketSenderQueue {
   private queue: SocketMsgQueueItem[] = [];
   private isProcessing: boolean = false;
-  private whatsSocket: WhatsSocket;
+  private whatsSocket: IWhatsSocket;
   private readonly minMillisecondsDelay: number;
   private readonly maxQueueLimit: number;
 
-  constructor(socket: WhatsSocket, maxQueueLimit: number = 3, minMilisecondsDelay: number = 1000) {
+  constructor(socket: IWhatsSocket, maxQueueLimit: number = 3, minMilisecondsDelay: number = 1000) {
     this.whatsSocket = socket;
     this.minMillisecondsDelay = minMilisecondsDelay;
     this.maxQueueLimit = maxQueueLimit;
@@ -47,13 +48,12 @@ export default class WhatsSocketSenderQueue {
     });
   }
 
-
   private async ProcessQueue(): Promise<void> {
     this.isProcessing = true;
     while (this.queue.length > 0) {
       const item = this.queue.shift()!;
       try {
-        await this.whatsSocket.Send(item.chatId, item.content, item.misc);
+        await this.whatsSocket.SendRaw(item.chatId, item.content, item.misc);
         item.resolve(true);
       } catch (error) {
         item.reject(error);

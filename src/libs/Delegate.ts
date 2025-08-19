@@ -22,4 +22,8 @@ export default class Delegate<functType extends (...args: any[]) => any> {
   public CallAll(...args: Parameters<functType>) {
     this.functions.forEach(f => f(...args));
   }
+
+  public Clear(): void {
+    this.functions = [];
+  }
 }

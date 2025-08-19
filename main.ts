@@ -2,7 +2,7 @@ import { MsgHelper_GetTextFrom } from './src/Msg.helper';
 import { MsgType } from './src/Msg.types';
 import fs from "fs";
 // import { MsgType } from './src/Msg.types';
-import WhatsSocket from './src/WhatsSocket'
+import WhatsSocket from './src/core/WhatsSocket'
 
 const socket = new WhatsSocket({
   credentialsFolder: "./auth",

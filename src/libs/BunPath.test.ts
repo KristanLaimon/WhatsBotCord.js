@@ -1,13 +1,17 @@
 import { GetPath } from './BunPath';
 // import { isCompiled } from './Envs';
 import path from 'node:path';
-import { describe, it, expect, beforeEach, mockModule } from "./TestSuite";
+import { describe, test, it, expect, beforeEach, mockModule } from "@/TestSuite";
 
-
+test("Envs path can be mocked (Good path to file)", () => {
+  expect(() => {
+    mockModule("../Envs", () => ({}));
+  }).not.toThrow();
+})
 
 describe("No Compilation Mode", () => {
   beforeEach(() => {
-    mockModule("./Envs", () => {
+    mockModule("../Envs", () => {
       return { isCompiled: true, isDev: true };
     })
   })
@@ -15,7 +19,8 @@ describe("No Compilation Mode", () => {
   it('GetPath_WhenUsingSingleStringPath_ShouldReturnRelativeToCWD', () => {
     const filePath = 'path/to/file';
     const expectedPath = path.join(process.cwd(), filePath);
-    expect(GetPath(filePath)).toBe(expectedPath);
+    const res = GetPath(filePath);
+    expect(res).toBe(expectedPath);
   });
 
   it('GetPath_WhenUsingMultiplePathsArray_ShouldReturnRelativeToCWD', () => {

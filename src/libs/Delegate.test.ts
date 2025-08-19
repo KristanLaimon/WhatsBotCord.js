@@ -1,5 +1,5 @@
 import Delegate from './Delegate';
-import { expect, test, beforeEach, fn, describe, it } from "./TestSuite";
+import { expect, test, beforeEach, fn, describe, it } from "../TestSuite";
 
 /** In C# delegate with no params and no return types are called 'Actions' */
 let ACTION: Delegate<() => void>;

@@ -1,7 +1,7 @@
 import { it, test, expect, describe } from "./TestSuite";
 import fs from "fs";
 import { type WAMessage } from "baileys";
-import { GetPath } from './BunPath';
+import { GetPath } from './libs/BunPath';
 import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from './Msg.helper';
 import { MsgType } from './Msg.types';
 
