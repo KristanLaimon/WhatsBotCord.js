@@ -29,7 +29,13 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this._senderQueue = new WhatsSocketSenderQueue(this, options?.maxQueueLimit ?? 10, options?.minimumSecondsDelayBetweenMsgs ?? 500);
   }
 
-  public MessagesSentHistory: WhatsSocketMessageSent[] = [];
+  private _messagesSentHistory: WhatsSocketMessageSent[] = [];
+
+  //Only get access, not set
+  public get SentMessagesHistoryReadOnly(): WhatsSocketMessageSent[] {
+    return this._messagesSentHistory;
+  }
+
   public GroupsIDTriedToFetch: string[] = [];
 
   public IsOn: boolean = false;
@@ -43,12 +49,11 @@ export default class WhatsSocketMock implements IWhatsSocket {
     return Promise.resolve();
   }
   public async Send(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
-    this.MessagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: false });
     await this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
-    this.MessagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: true });
+    this._messagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: true });
     return;
   }
 
@@ -64,7 +69,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
 
   public ClearMock(): void {
     this.IsOn = false;
-    this.MessagesSentHistory = [];
+    this._messagesSentHistory = [];
     this.GroupsIDTriedToFetch = [];
 
     this.onReconnect.Clear();
