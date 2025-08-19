@@ -1,18 +1,18 @@
-import { it, test, expect, describe } from "./TestSuite";
+import { it, test, expect, describe } from "../TestSuite";
 import fs from "fs";
 import { type WAMessage } from "baileys";
-import { GetPath } from './libs/BunPath';
+import { GetPath } from '../libs/BunPath';
 import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from './Msg.helper';
-import { MsgType } from './Msg.types';
+import { MsgType } from '../Msg.types';
 
 test("Mockdata from .json can be imported", () => {
-  const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "./Msg.helper.mocks.json"), "utf-8"));
+  const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
   expect(mockMsgs).toBeDefined();
   expect(mockMsgs.length).toBeGreaterThan(0);
   expect(mockMsgs).toBeArray();
 })
 
-const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "./Msg.helper.mocks.json"), "utf-8"));
+const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
 
 //NOTE: The order of messages is fixed and explained in file "Msg.helper.mockinfo.md" in this same folder. Check it out for more details.
 const txtMessage: WAMessage = mockMsgs[0]!;

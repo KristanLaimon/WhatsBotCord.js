@@ -1,5 +1,5 @@
 import { type WAMessage } from "baileys";
-import { MsgType } from './Msg.types';
+import { MsgType } from '../Msg.types';
 
 export function MsgHelper_GetTextFrom(rawMsg: WAMessage): string | null {
   if (!rawMsg.message) return "There's no text in that message";

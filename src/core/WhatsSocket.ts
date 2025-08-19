@@ -17,7 +17,7 @@ import Delegate from '../libs/Delegate';
 import { MsgType, SenderType } from '../Msg.types';
 import type { BaileysWASocket, WhatsSocketLoggerMode } from './WhatsSocket.types';
 import { GetPath } from "../libs/BunPath";
-import { MsgHelper_GetMsgTypeFromRawMsg } from '../Msg.helper';
+import { MsgHelper_GetMsgTypeFromRawMsg } from '../helpers/Msg.helper';
 import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from './Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 import type { IWhatsSocket } from './IWhatsSocket';

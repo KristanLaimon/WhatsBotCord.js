@@ -1,4 +1,4 @@
-import { MsgHelper_GetTextFrom } from './src/Msg.helper';
+import { MsgHelper_GetTextFrom } from './src/helpers/Msg.helper';
 import { MsgType } from './src/Msg.types';
 import fs from "fs";
 // import { MsgType } from './src/Msg.types';

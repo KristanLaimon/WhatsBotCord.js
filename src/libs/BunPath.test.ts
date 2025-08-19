@@ -1,17 +1,18 @@
 import { GetPath } from './BunPath';
-// import { isCompiled } from './Envs';
 import path from 'node:path';
 import { describe, test, it, expect, beforeEach, mockModule } from "@/TestSuite";
 
+const EnvsModulePath = "../Envs";
+
 test("Envs path can be mocked (Good path to file)", () => {
   expect(() => {
-    mockModule("../Envs", () => ({}));
+    mockModule(EnvsModulePath, () => ({}));
   }).not.toThrow();
 })
 
 describe("No Compilation Mode", () => {
   beforeEach(() => {
-    mockModule("../Envs", () => {
+    mockModule(EnvsModulePath, () => {
       return { isCompiled: true, isDev: true };
     })
   })
@@ -36,7 +37,7 @@ describe("No Compilation Mode", () => {
 
 describe("Compilation Mode", () => {
   beforeEach(() => {
-    mockModule("./Envs", () => {
+    mockModule(EnvsModulePath, () => {
       return { isCompiled: false, isDev: true };
     })
   })
