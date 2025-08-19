@@ -1,5 +1,4 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions } from 'baileys';
-import WhatsSocket from './WhatsSocket';
 import type { IWhatsSocket } from './IWhatsSocket';
 
 type SocketMsgQueueItem = {

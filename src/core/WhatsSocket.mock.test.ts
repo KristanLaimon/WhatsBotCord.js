@@ -1,4 +1,5 @@
 import { describe, it, expect } from "../TestSuite";
+import { WhatsAppGroupIdentifier } from './Whatsapp.types';
 import WhatsSocketMock from './WhatsSocket.mock';
 
 describe("WhatsSocketMock Generally", () => {
@@ -26,11 +27,11 @@ describe("WhatsSocketMock Generally", () => {
 
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
 
-    await socketMock.Send("chatId@g.us", { text: "First messsage" });
+    await socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "First messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(1);
-    await socketMock.Send("chatId@g.us", { text: "Second messsage" });
+    await socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Second messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(2);
-    await socketMock.Send("chatId@g.us", { text: "Third messsage" });
+    await socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Third messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(3);
   });
 
@@ -49,7 +50,7 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.onStartupAllGroupsIn.Length).toBe(1);
 
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
-    socketMock.Send("chatIDTest@g.us", { text: "Hello world" });
+    socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Hello world" });
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(1);
 
 
