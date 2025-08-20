@@ -13,12 +13,12 @@ import { Boom } from "@hapi/boom";
 import pino from "pino";
 import moment from "moment";
 import encodeQr from "qr";
-import Delegate from '../libs/Delegate';
-import { MsgType, SenderType } from '../Msg.types';
-import type { BaileysWASocket, WhatsSocketLoggerMode } from './WhatsSocket.types';
-import { GetPath } from "../libs/BunPath";
-import { MsgHelper_GetMsgTypeFromRawMsg } from '../helpers/Msg.helper';
-import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from './Whatsapp.types';
+import Delegate from '../../libs/Delegate';
+import { MsgType, SenderType } from '../../Msg.types';
+import type { BaileysWASocket, WhatsSocketLoggerMode } from './types';
+import { GetPath } from "../../libs/BunPath";
+import { MsgHelper_GetMsgTypeFromRawMsg } from '../../helpers/Msg.helper';
+import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from '../../Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 import type { IWhatsSocket } from './IWhatsSocket';
 
@@ -98,7 +98,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this.ConfigureGroupsEnter();
     this.ConfigureGroupsUpdates();
 
-    this.Send = this.Send.bind(this);
+    this.SendEnqueued = this.SendEnqueued.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
   }
 
@@ -201,7 +201,7 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  public async Send(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
+  public async SendEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
     await this._senderQueue.Enqueue(chatId_JID, content, options)
   }
 

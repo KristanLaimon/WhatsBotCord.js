@@ -1,6 +1,6 @@
-import { describe, it, expect } from "../TestSuite";
-import { WhatsAppGroupIdentifier } from './Whatsapp.types';
-import WhatsSocketMock from './WhatsSocket.mock';
+import { describe, it, expect } from "@/TestSuite";
+import { WhatsAppGroupIdentifier } from "@/Whatsapp.types";
+import WhatsSocketMock from './mocks/WhatsSocket.mock';
 
 describe("WhatsSocketMock Generally", () => {
 
@@ -22,16 +22,16 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.GroupsIDTriedToFetch.length).toBe(0);
   })
 
-  it("WhenSendingMsgsThroughSocket_ShouldBeStoredCorrectly", async () => {
+  it("WhenSendingMsgsThroughSocket_MustBeSent", async () => {
     const socketMock = new WhatsSocketMock();
 
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
 
-    await socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "First messsage" });
+    await socketMock.SendEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "First messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(1);
-    await socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Second messsage" });
+    await socketMock.SendEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Second messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(2);
-    await socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Third messsage" });
+    await socketMock.SendEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Third messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(3);
   });
 
@@ -50,7 +50,7 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.onStartupAllGroupsIn.Length).toBe(1);
 
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
-    socketMock.Send(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Hello world" });
+    socketMock.SendEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Hello world" });
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(1);
 
 

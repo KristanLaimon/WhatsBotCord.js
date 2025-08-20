@@ -1,22 +1,8 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from 'baileys';
-import type Delegate from '../libs/Delegate';
-import { MsgType, SenderType } from '../Msg.types';
+import type Delegate from '../../libs/Delegate';
+import { MsgType, SenderType } from '../../Msg.types';
 
-/**
- * Public interface for the WhatsSocket class.
- * It defines the contract for interacting with the WhatsApp socket client.
- */
-export interface IWhatsSocket {
-  // Public Delegates for handling events
-  onReconnect: Delegate<() => Promise<void>>;
-  onIncomingMessage: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void>;
-  onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
-  onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
-  onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
-
-  // Public Methods
-  Start(): Promise<void>;
-  Shutdown(): Promise<void>;
+interface ICanSendMsgs {
 
   /**
    * Send a message to a specific chat ID with content and optionally with other options.
@@ -34,7 +20,7 @@ export interface IWhatsSocket {
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
-  Send(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void>;
+  SendEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void>;
 
   /**
    * Sends a message to a specific chat ID with content and optionally with other options.
@@ -52,6 +38,28 @@ export interface IWhatsSocket {
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
   SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void>
+}
+
+export interface IWhatsSocketMinimum extends ICanSendMsgs {
+  //Only Send*() related functions
+}
+
+
+/**
+ * Public interface for the WhatsSocket class.
+ * It defines the contract for interacting with the WhatsApp socket client.
+ */
+export interface IWhatsSocket extends ICanSendMsgs {
+  // Public Delegates for handling events
+  onReconnect: Delegate<() => Promise<void>>;
+  onIncomingMessage: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void>;
+  onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
+  onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
+  onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
+
+  // Public Methods
+  Start(): Promise<void>;
+  Shutdown(): Promise<void>;
 
   /**
    * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")

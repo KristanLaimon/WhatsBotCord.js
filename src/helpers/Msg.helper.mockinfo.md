@@ -1,5 +1,5 @@
-# Common Msgs Mock
-This file contains several real objects msgs an user can send to this bot/socket
+# Helpers: Msg
+This folder and all Msg.*.* files related contains several real objects msgs an user can send to this bot/socket
 but changed all sensitive data, so they're completely fake, don't try to get
 something from id's and secrets strings, it's useless.
 

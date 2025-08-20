@@ -1,19 +1,13 @@
-import Delegate from '../libs/Delegate';
-import type { IWhatsSocket } from './IWhatsSocket';
-import type { MsgType, SenderType } from '../Msg.types';
+import Delegate from '../../../../libs/Delegate';
+import type { IWhatsSocket } from '../../IWhatsSocket';
+import type { MsgType, SenderType } from '../../../../Msg.types';
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
+import WhatsSocketSenderQueue from '../../WhatsSocket.senderqueue';
+import type { WhatsSocketMessageSentMock } from './types';
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
   minimumSecondsDelayBetweenMsgs: number;
-}
-
-export type WhatsSocketMessageSent = {
-  chatId: string;
-  content: AnyMessageContent;
-  miscOptions?: MiscMessageGenerationOptions;
-  isRawMsg: boolean;
 }
 
 export default class WhatsSocketMock implements IWhatsSocket {
@@ -29,10 +23,10 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this._senderQueue = new WhatsSocketSenderQueue(this, options?.maxQueueLimit ?? 10, options?.minimumSecondsDelayBetweenMsgs ?? 500);
   }
 
-  private _messagesSentHistory: WhatsSocketMessageSent[] = [];
+  private _messagesSentHistory: WhatsSocketMessageSentMock[] = [];
 
   //Only get access, not set
-  public get SentMessagesHistoryReadOnly(): WhatsSocketMessageSent[] {
+  public get SentMessagesHistoryReadOnly(): WhatsSocketMessageSentMock[] {
     return this._messagesSentHistory;
   }
 
@@ -48,7 +42,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.IsOn = false;
     return Promise.resolve();
   }
-  public async Send(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
+  public async SendEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
     await this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 

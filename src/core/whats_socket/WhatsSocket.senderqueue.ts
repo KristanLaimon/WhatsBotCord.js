@@ -1,5 +1,5 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions } from 'baileys';
-import type { IWhatsSocket } from './IWhatsSocket';
+import type { IWhatsSocketMinimum } from './IWhatsSocket';
 
 type SocketMsgQueueItem = {
   chatId: string,
@@ -17,11 +17,11 @@ type SocketMsgQueueItem = {
 export default class WhatsSocketSenderQueue {
   private queue: SocketMsgQueueItem[] = [];
   private isProcessing: boolean = false;
-  private whatsSocket: IWhatsSocket;
+  private whatsSocket: IWhatsSocketMinimum;
   private readonly minMillisecondsDelay: number;
   private readonly maxQueueLimit: number;
 
-  constructor(socket: IWhatsSocket, maxQueueLimit: number = 3, minMilisecondsDelay: number = 1000) {
+  constructor(socket: IWhatsSocketMinimum, maxQueueLimit: number = 3, minMilisecondsDelay: number = 1000) {
     this.whatsSocket = socket;
     this.minMillisecondsDelay = minMilisecondsDelay;
     this.maxQueueLimit = maxQueueLimit;
