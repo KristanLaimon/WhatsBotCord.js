@@ -2,6 +2,7 @@ import { MsgHelper_GetTextFrom } from './src/helpers/Msg.helper';
 import { MsgType } from './src/Msg.types';
 // import { MsgType } from './src/Msg.types';
 import WhatsSocket from './src/core/whats_socket/WhatsSocket'
+import { GetPath } from 'src/libs/BunPath';
 
 const socket = new WhatsSocket({
   credentialsFolder: "./auth",
@@ -16,7 +17,10 @@ socket.onIncomingMessage.Subscribe(async (senderId, chatId, rawMsg, msgType, sen
     console.log(`Msg: ${msg} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
   }
 
-  await socket.SendRawEnqueued(chatId, { "text"})
+  socket.Send.Text(chatId, "Hola mundo");
+  socket.Send.Img(chatId, { imagePath: GetPath("TEST", "image.png"), caption: "With a caption!" }, { normalizeMessageText: true });
+  socket.Send.Img(chatId, { imagePath: GetPath("TEST", "image.png") }, { normalizeMessageText: true });
+  socket.Send.ReactEmojiToMsg(chatId, rawMsg, "🦊");
 
   // let msgsStored: any[] = [];
   // if (fs.existsSync("msgExample.json")) {

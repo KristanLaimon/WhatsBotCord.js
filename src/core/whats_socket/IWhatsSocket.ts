@@ -20,7 +20,7 @@ interface ICanSendMsgs {
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
-  SendRawEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void>;
+  SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void>;
 
   /**
    * Sends a message to a specific chat ID with content and optionally with other options.

@@ -21,45 +21,53 @@ import { MsgHelper_GetMsgTypeFromRawMsg } from '../../helpers/Msg.helper';
 import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from '../../Whatsapp.types';
 import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
 import type { IWhatsSocket } from './IWhatsSocket';
+import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
 
 export type WhatsSocketOptions = {
   /** 
    * Logger mode for the WhatsSocket instance. e.g: 'debug' for max details, 
    * 'silent' to the minimum (nothing)
+   * 
+   * Default: "silent"
    * */
   loggerMode?: WhatsSocketLoggerMode;
 
   /** 
    * Folder path relative to root proyect path (or current working directory if 
    * you compile this whole proyect (Likely with bun)) 
+   * 
+   * Default: "./auth" relative folder
    * */
   credentialsFolder?: string;
 
   /** 
    * Max number of retries if something goes wrong the socket will try before 
    * shut down completely 
+   * Default: 5 retries
    */
   maxReconnectionRetries?: number;
 
   /** 
    * If true, the socket will ignore messages sent by itself, so they won't 
    * be shown on 'onIncomingMessage' event 
+   * Default: true
    * */
   ignoreSelfMessage?: boolean;
   /** 
    * Sets the max of messages can be queued to send to all users (global config). 
    * Used to store a buffer of pending messages to send if for some reason this 
    * bot gets a lot of messages incoming in a short period of time 
+   * Default: 20 messages
    */
   senderQueueMaxLimit?: number;
 
-  /** Delay in miliseconds the socket should send all pending msgs (to send ofc) */
+  /** Delay in miliseconds the socket should send all pending msgs (to send ofc) 
+   *  Default: 100 miliseconda (fast)
+  */
   milisecondsDelayBetweenSentMsgs?: number;
 }
 
-export type WhatsSocketSendingOptions = {
-  withoutEnqueueing?: boolean;
-}
+
 
 /**
  * Class used to interact with the WhatsApp Web socket client (baileys).
@@ -95,6 +103,7 @@ export default class WhatsSocket implements IWhatsSocket {
   //They're initialized/instantiated in "Start()"
   private _socket!: BaileysWASocket;
   private _senderQueue!: WhatsSocketSenderQueue;
+  public Send!: WhatsSocketSugarSender;
 
   // === Configuration Private Properties ===
   private _loggerMode: WhatsSocketLoggerMode;
@@ -108,9 +117,12 @@ export default class WhatsSocket implements IWhatsSocket {
     this._loggerMode = options?.loggerMode ?? "silent";
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
-    this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 10;
-    this._milisecondsDelayBetweenSentMsgs = options?.milisecondsDelayBetweenSentMsgs ?? 250;
+    this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
+    this._milisecondsDelayBetweenSentMsgs = options?.milisecondsDelayBetweenSentMsgs ?? 100;
   }
+
+
+  private _isRestarting: boolean = false;
 
   /**
    * Initializes the WhatsSocket instance and start connecting to Whatsapp.
@@ -125,12 +137,8 @@ export default class WhatsSocket implements IWhatsSocket {
     this.ConfigureGroupsEnter();
     this.ConfigureGroupsUpdates();
 
-    this.SendRawEnqueued = this.SendRawEnqueued.bind(this);
+    this.SendSafe = this.SendSafe.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
-  }
-
-  public async Shutdown() {
-    await this._socket.ws.close();
   }
 
   private async InitializeSelf() {
@@ -143,49 +151,65 @@ export default class WhatsSocket implements IWhatsSocket {
       browser: Browsers.windows("Desktop") //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
     });
     this._senderQueue = new WhatsSocketSenderQueue(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
+    this.Send = new WhatsSocketSugarSender(this);
     this._socket.ev.on("creds.update", saveCreds);
   }
 
-  private ConfigureReconnection(): void {
-    this._socket.ev.on("connection.update", async (connectionUpdate) => {
-      const { connection, lastDisconnect } = connectionUpdate;
-      const disconect = lastDisconnect!;
+  public async Shutdown() {
+    await this._socket.ws.close();
+  }
 
-      if (connectionUpdate.qr) {
-        const qrCodeAscii = encodeQr(connectionUpdate.qr, "ascii");
-        console.log(qrCodeAscii)
+  private ConfigureReconnection(): void {
+    this._socket.ev.on("connection.update", async (update) => {
+      const { connection, lastDisconnect } = update;
+
+      if (update.qr) {
+        console.log(encodeQr(update.qr, "ascii"));
       }
 
-      switch (connection) {
-        case "close": {
-          const shouldReconnect =
-            (disconect.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-
-          if (shouldReconnect) {
-            this._actualRetries++;
-            if (this._actualRetries > this._maxReconnectionRetries) {
-              console.log(`ERROR: Reconnection failed after ${this._maxReconnectionRetries} attempts. Please check your connection or credentials.`);
-              return;
-            }
-            this.onReconnect.CallAll();
-          }
-          break;
+      if (connection === "open") {
+        this._actualRetries = 0; // reset retries on successful connection
+        try {
+          const groups = Object.values(await this._socket.groupFetchAllParticipating());
+          this.onStartupAllGroupsIn.CallAll(groups);
+          console.log("INFO: All groups data fetched successfully");
+        } catch (err) {
+          console.error("ERROR: Couldn't fetch groups", err);
         }
-        case "open": {
-          // Connection is ready so, try to fetch all groups
-          try {
-            const groups = Object.values(await this._socket.groupFetchAllParticipating());
-            this.onStartupAllGroupsIn.CallAll(groups);
-            console.log('INFO: All groups data fetched successfully')
-          } catch (error) {
-            console.error("ERROR: Couldn't fetch whatsapp groups data...", "Error: " + error)
-          }
-          break;
-        } //Case end
-      }//Switch end
-    });//Callback end
-  }//Function end
+      }
 
+      if (connection === "close") {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+
+        console.warn("Socket closed:", lastDisconnect?.error);
+
+        if (shouldReconnect) {
+          this._actualRetries++;
+          if (this._actualRetries > this._maxReconnectionRetries) {
+            console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
+            return;
+          }
+
+          if (!this._isRestarting) {
+            this._isRestarting = true;
+            console.log(`INFO: Restarting socket (attempt ${this._actualRetries}/${this._maxReconnectionRetries})...`);
+
+            try {
+              await new Promise((r) => setTimeout(r, 1000));
+              await this._socket.ws.close();
+              await this.Start();
+              console.log("INFO: Socket restarted successfully!");
+            } catch (err) {
+              console.error("ERROR: Socket restart failed", err);
+            } finally {
+              this._isRestarting = false;
+            }
+          }
+        }
+      }
+    });
+  }
 
   private ConfigureGroupsEnter(): void {
     this._socket.ev.on('groups.upsert', async (groupsUpserted: GroupMetadata[]) => {
@@ -240,19 +264,13 @@ export default class WhatsSocket implements IWhatsSocket {
     return await this._socket.groupMetadata(chatId);
   }
 
-  //============== SENDING =================
-  // RAW METHODS
-  public async SendRawEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
+  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
     await this._senderQueue.Enqueue(chatId_JID, content, options)
   }
 
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
     await this._socket.sendMessage(chatId_JID, content, options);
   }
-
-  public async SendTxt(chatId_JID: string, txtMessage: string, options?: MiscMessageGenerationOptions) {
-
-  }
-
 }
 
+//TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)

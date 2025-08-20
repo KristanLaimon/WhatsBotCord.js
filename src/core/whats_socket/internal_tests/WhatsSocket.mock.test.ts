@@ -27,11 +27,11 @@ describe("WhatsSocketMock Generally", () => {
 
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
 
-    await socketMock.SendRawEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "First messsage" });
+    await socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "First messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(1);
-    await socketMock.SendRawEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Second messsage" });
+    await socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Second messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(2);
-    await socketMock.SendRawEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Third messsage" });
+    await socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Third messsage" });
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(3);
   });
 
@@ -50,7 +50,7 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.onStartupAllGroupsIn.Length).toBe(1);
 
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
-    socketMock.SendRawEnqueued(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Hello world" });
+    socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Hello world" });
     expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(1);
 
 

@@ -1,3 +1,4 @@
+
 export enum MsgType {
   Text,
   Image,
@@ -15,3 +16,4 @@ export enum SenderType {
   Individual,
   Unknown
 }
+
