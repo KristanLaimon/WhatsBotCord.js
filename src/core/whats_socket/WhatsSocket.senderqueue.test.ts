@@ -2,10 +2,8 @@ import { beforeEach, it, describe, expect } from "../../TestSuite";
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 import WhatsSocketMinimum from './internal_tests/WhatsSocket.minimum.mock';
 import { WhatsAppGroupIdentifier } from '../../Whatsapp.types';
-// import WhatsSocketMock from './WhatsSocket.mock';
-// import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 
-// const rawSocketMocked = new WhatsSocketMock();
+// import { txtMsgs, noTxtMsgs, allMockMsgs } from "../../helpers/Msg.helper.mocks"
 
 const fakeChatId: string = "23423423234" + WhatsAppGroupIdentifier;
 
@@ -36,5 +34,8 @@ describe("Enqueue", () => {
       expect(sentMsg.isRawMsg).toBe(true);
     }
   });
+
+  //================== Now using all types of msgs =======================
+  //TODO: Make every type of message mock but sending (mocks)
 });
 
