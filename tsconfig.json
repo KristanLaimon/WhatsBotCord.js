@@ -25,16 +25,6 @@
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
     "rootDir": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@core/*": [
-        "./src/core/*"
-      ],
-      "@libs/*": [
-        "./src/libs"
-      ]
-    }
+    "baseUrl": ".",
   }
 }

@@ -9,12 +9,32 @@ type SocketMsgQueueItem = {
   reject: (reason: any) => void,
 }
 
+function Clone_MsgQueueItem(msgItem: SocketMsgQueueItem) {
+  return {
+    chatId: msgItem.chatId,
+    content: { ...msgItem.content },
+    misc: { ...msgItem.misc },
+    resolve: msgItem.resolve,
+    reject: msgItem.reject,
+  }
+}
+
 /**
  * A subclass code of 'WhatsSocket' class that manages a queue of messages to be sent.
  * Helps to prevent overwhelming the WhatsApp socket with too many messages at once incoming from
  * multiple users or a funny user trying to spam the bot.
  */
 export default class WhatsSocketSenderQueue {
+
+  /**
+   * A getter that returns a deep copy of all elements currently in the queue as an array.
+   * This is useful for debugging and logging purposes.
+   * @returns A deep copy of all elements currently in the queue as an array.
+   */
+  public get ActualElementsInQueue() {
+    return this.queue.map(queueItem => Clone_MsgQueueItem(queueItem));
+  }
+
   private queue: SocketMsgQueueItem[] = [];
   private isProcessing: boolean = false;
   private whatsSocket: IWhatsSocketMinimum;

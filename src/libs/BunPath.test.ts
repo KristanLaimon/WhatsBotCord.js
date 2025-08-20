@@ -1,6 +1,6 @@
 import { GetPath } from './BunPath';
 import path from 'node:path';
-import { describe, test, it, expect, beforeEach, mockModule } from "@/TestSuite";
+import { describe, test, it, expect, beforeEach, mockModule } from "../TestSuite";
 
 const EnvsModulePath = "../Envs";
 

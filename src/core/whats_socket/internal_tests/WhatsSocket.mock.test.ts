@@ -1,6 +1,6 @@
-import { describe, it, expect } from "@/TestSuite";
-import { WhatsAppGroupIdentifier } from "@/Whatsapp.types";
-import WhatsSocketMock from './mocks/WhatsSocket.mock';
+import { describe, it, expect } from "../../../TestSuite";
+import { WhatsAppGroupIdentifier } from "../../../Whatsapp.types";
+import WhatsSocketMock from './WhatsSocket.mock';
 
 describe("WhatsSocketMock Generally", () => {
 

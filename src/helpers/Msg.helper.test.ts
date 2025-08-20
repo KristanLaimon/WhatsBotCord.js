@@ -1,9 +1,24 @@
+import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from './Msg.helper';
 import { it, test, expect, describe } from "../TestSuite";
-import fs from "fs";
 import { type WAMessage } from "baileys";
 import { GetPath } from '../libs/BunPath';
-import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from './Msg.helper';
 import { MsgType } from '../Msg.types';
+import fs from "fs";
+import {
+  txtMessage,
+  quotedMsg,
+  noTxtMsgs,
+  imageWithCaptionMsg,
+  imageNoCaptionMsg,
+  videoWithCaptionMsg,
+  videoNoCaptionMsg,
+  stickerMsg,
+  audioMsg,
+  pollMultipleAnswerMsg,
+  pollSingleAnswerMsg,
+  locationMsg,
+  contactMsg
+} from './Msg.helper.mocks';
 
 test("Mockdata from .json can be imported", () => {
   const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
@@ -12,24 +27,6 @@ test("Mockdata from .json can be imported", () => {
   expect(mockMsgs).toBeArray();
 })
 
-const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
-
-//NOTE: The order of messages is fixed and explained in file "Msg.helper.mockinfo.md" in this same folder. Check it out for more details.
-const txtMessage: WAMessage = mockMsgs[0]!;
-const quotedMsg: WAMessage = mockMsgs[1]!;
-const stickerMsg: WAMessage = mockMsgs[2]!;
-const imageWithCaptionMsg: WAMessage = mockMsgs[3]!;
-const imageNoCaptionMsg: WAMessage = mockMsgs[4]!;
-const audioMsg: WAMessage = mockMsgs[5]!;
-const videoNoCaptionMsg: WAMessage = mockMsgs[6]!;
-const videoWithCaptionMsg: WAMessage = mockMsgs[7]!;
-const pollMultipleAnswerMsg: WAMessage = mockMsgs[8]!;
-const pollSingleAnswerMsg: WAMessage = mockMsgs[9]!;
-const locationMsg: WAMessage = mockMsgs[10]!;
-const contactMsg: WAMessage = mockMsgs[11]!;
-
-const txtMsgs = [txtMessage, quotedMsg, imageWithCaptionMsg, videoWithCaptionMsg];
-const noTxtMsgs = mockMsgs.filter(msg => !txtMsgs.includes(msg));
 
 describe("MsgHelper_GetTextFrom", () => {
   it("WhenGivenAValidTxtMessage_ShouldExtractTextMsg", () => {
