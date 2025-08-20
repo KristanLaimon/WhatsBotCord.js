@@ -8,7 +8,7 @@ import type { WhatsSocketMessageSentMock } from './types';
 export default class WhatsSocketMinimum implements IWhatsSocketMinimum {
   public MessagesSentHistory: WhatsSocketMessageSentMock[] = [];
 
-  public async SendEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
+  public async SendRawEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
     this.MessagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: false })
   }
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {

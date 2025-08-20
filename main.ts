@@ -10,11 +10,13 @@ const socket = new WhatsSocket({
   ignoreSelfMessage: true
 });
 
-socket.onIncomingMessage.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
+socket.onIncomingMessage.Subscribe(async (senderId, chatId, rawMsg, msgType, senderType) => {
   if (msgType === MsgType.Text) {
     const msg = MsgHelper_GetTextFrom(rawMsg);
     console.log(`Msg: ${msg} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
   }
+
+  await socket.SendRawEnqueued(chatId, { "text"})
 
   // let msgsStored: any[] = [];
   // if (fs.existsSync("msgExample.json")) {

@@ -42,7 +42,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.IsOn = false;
     return Promise.resolve();
   }
-  public async SendEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
+  public async SendRawEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
     await this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 

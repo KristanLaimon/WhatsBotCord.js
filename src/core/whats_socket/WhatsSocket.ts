@@ -121,7 +121,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this.ConfigureGroupsEnter();
     this.ConfigureGroupsUpdates();
 
-    this.SendEnqueued = this.SendEnqueued.bind(this);
+    this.SendRawEnqueued = this.SendRawEnqueued.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
   }
 
@@ -224,14 +224,6 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  public async SendEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
-    await this._senderQueue.Enqueue(chatId_JID, content, options)
-  }
-
-  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
-    await this._socket.sendMessage(chatId_JID, content, options);
-  }
-
   /**
    * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
    * @param chatId The chat ID of the group you want to get metadata from.
@@ -243,5 +235,18 @@ export default class WhatsSocket implements IWhatsSocket {
       throw new Error("Provided chatId is not a group chat ID. => " + chatId);
     return await this._socket.groupMetadata(chatId);
   }
+
+  //============== SENDING =================
+  // RAW METHODS
+  public async SendRawEnqueued(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
+    await this._senderQueue.Enqueue(chatId_JID, content, options)
+  }
+
+  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
+    await this._socket.sendMessage(chatId_JID, content, options);
+  }
+
+
+
 }
 
