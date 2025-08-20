@@ -3,7 +3,8 @@
   "module": "main.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "mock-fs": "^5.5.0"
   },
   "scripts": {
     "check": "tsc --noEmit"

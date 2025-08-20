@@ -2,7 +2,6 @@ import { type MiscMessageGenerationOptions, type WAMessage } from "baileys";
 import fs from "fs";
 import { Str_NormalizeLiteralString } from 'src/helpers/Strings.helper';
 import type { IWhatsSocketMinimum } from '../IWhatsSocket';
-import type { WhatsMsgQuoted } from 'src/Whatsapp.types';
 
 export type WhatsMsgSenderSendingOptionsMINIMUM = {
   /**
