@@ -57,6 +57,29 @@ export type WhatsSocketOptions = {
   milisecondsDelayBetweenSentMsgs?: number;
 }
 
+/**
+ * Class used to interact with the WhatsApp Web socket client (baileys).
+ * Will start the socket and keep it connected until you call the Shutdown method.
+ * Provides some events you can subscribe to, to get notified when different things happen.
+ * 
+ * @example
+ * const socket = new WhatsSocket({
+ *    credentialsFolder: "./auth",
+ *    loggerMode: "silent",
+ *    maxReconnectionRetries: 5,
+ *    ignoreSelfMessage: true
+ * });
+ * 
+ * socket.onIncomingMessage.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
+ *    console.log(`Msg: ${msgType} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
+ * });
+ * 
+ * socket.Start().then(() => {
+ *    console.log("WhatsSocket initialized successfully!");
+ * }).catch((error) => {
+ *    console.error("Error initializing WhatsSocket:", error);
+ * })
+ */
 export default class WhatsSocket implements IWhatsSocket {
   public onReconnect: Delegate<() => Promise<void>> = new Delegate();
   public onIncomingMessage: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
