@@ -1,10 +1,7 @@
-import { beforeEach, it, describe, expect } from "../../TestSuite";
+import { beforeEach, it, describe, expect } from "../../../TestSuite";
+import WhatsSocketMinimum from '../internal_tests/WhatsSocket.minimum.mock';
+import { WhatsAppGroupIdentifier } from '../../../Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
-import WhatsSocketMinimum from './internal_tests/WhatsSocket.minimum.mock';
-import { WhatsAppGroupIdentifier } from '../../Whatsapp.types';
-
-// import { txtMsgs, noTxtMsgs, allMockMsgs } from "../../helpers/Msg.helper.mocks"
-
 const fakeChatId: string = "23423423234" + WhatsAppGroupIdentifier;
 
 describe("Enqueue", () => {

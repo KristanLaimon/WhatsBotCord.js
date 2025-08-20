@@ -2,7 +2,7 @@ import Delegate from '../../../libs/Delegate';
 import type { IWhatsSocket } from '../IWhatsSocket';
 import type { MsgType, SenderType } from '../../../Msg.types';
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import WhatsSocketSenderQueue from '../WhatsSocket.senderqueue';
+import WhatsSocketSenderQueue from '../internals/WhatsSocket.senderqueue';
 import type { WhatsSocketMessageSentMock } from './types';
 
 export type WhatsSocketMockOptions = {

@@ -1,5 +1,5 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions } from 'baileys';
-import type { IWhatsSocketMinimum } from './IWhatsSocket';
+import type { IWhatsSocketMinimum } from '../IWhatsSocket';
 
 type SocketMsgQueueItem = {
   chatId: string,

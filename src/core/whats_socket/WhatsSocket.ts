@@ -19,7 +19,7 @@ import type { BaileysWASocket, WhatsSocketLoggerMode } from './types';
 import { GetPath } from "../../libs/BunPath";
 import { MsgHelper_GetMsgTypeFromRawMsg } from '../../helpers/Msg.helper';
 import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from '../../Whatsapp.types';
-import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
+import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
 import type { IWhatsSocket } from './IWhatsSocket';
 
 export type WhatsSocketOptions = {
@@ -57,6 +57,10 @@ export type WhatsSocketOptions = {
   milisecondsDelayBetweenSentMsgs?: number;
 }
 
+export type WhatsSocketSendingOptions = {
+  withoutEnqueueing?: boolean;
+}
+
 /**
  * Class used to interact with the WhatsApp Web socket client (baileys).
  * Will start the socket and keep it connected until you call the Shutdown method.
@@ -87,7 +91,9 @@ export default class WhatsSocket implements IWhatsSocket {
   public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
 
-  private _socket!: BaileysWASocket; //It's initialized in "initializeSelf"
+  //=== Subcomponents ===
+  //They're initialized/instantiated in "Start()"
+  private _socket!: BaileysWASocket;
   private _senderQueue!: WhatsSocketSenderQueue;
 
   // === Configuration Private Properties ===
@@ -98,8 +104,6 @@ export default class WhatsSocket implements IWhatsSocket {
   private _actualRetries: number = 0;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
-
-
   constructor(options?: WhatsSocketOptions) {
     this._loggerMode = options?.loggerMode ?? "silent";
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
@@ -246,7 +250,9 @@ export default class WhatsSocket implements IWhatsSocket {
     await this._socket.sendMessage(chatId_JID, content, options);
   }
 
+  public async SendTxt(chatId_JID: string, txtMessage: string, options?: MiscMessageGenerationOptions) {
 
+  }
 
 }
 
