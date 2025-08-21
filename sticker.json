@@ -1,0 +1,44 @@
+[
+  {
+    "key": {
+      "remoteJid": "5216121407908@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3F2D913B3B7EFE927B50"
+    },
+    "messageTimestamp": 1755751036,
+    "pushName": "Kristan Ruiz",
+    "broadcast": false,
+    "message": {
+      "stickerMessage": {
+        "url": "https://mmg.whatsapp.net/v/t62.15575-24/535391214_1433688774621522_8249722839530912743_n.enc?ccb=11-4&oh=01_Q5Aa2QHTKtX-aoueNuZGEZEdGmSl9agJde1IYXN0NUxU08XpoQ&oe=68CE1D9B&_nc_sid=5e03e0&mms3=true",
+        "fileSha256": "9rkk2EXD7oh09VWP5GUscvah7ut/6ChtZzfnmzh+M3c=",
+        "fileEncSha256": "2E1MJjLwQQ1OMKecdbxeOTAUCUqeMeblREPHo00rO/M=",
+        "mediaKey": "jE+avdIAHS19FKq93qebRethrX8utfnPS8pge4faiGQ=",
+        "mimetype": "image/webp",
+        "height": 64,
+        "width": 64,
+        "directPath": "/v/t62.15575-24/535391214_1433688774621522_8249722839530912743_n.enc?ccb=11-4&oh=01_Q5Aa2QHTKtX-aoueNuZGEZEdGmSl9agJde1IYXN0NUxU08XpoQ&oe=68CE1D9B&_nc_sid=5e03e0",
+        "fileLength": "81868",
+        "mediaKeyTimestamp": "1755751035",
+        "contextInfo": {
+          "expiration": 0,
+          "ephemeralSettingTimestamp": "0",
+          "disappearingMode": {
+            "initiator": "CHANGED_IN_CHAT"
+          }
+        },
+        "stickerSentTs": "1755751035167",
+        "isLottie": false
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "zkr6pV5fV58MkA==",
+          "senderTimestamp": "1755394306",
+          "recipientKeyHash": "pQVf5hor9RHmLg==",
+          "recipientTimestamp": "1755726002"
+        },
+        "deviceListMetadataVersion": 2
+      }
+    }
+  }
+]

@@ -1,0 +1,95 @@
+[
+  {
+    "key": {
+      "remoteJid": "5216121407908@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3F3370F5D494492C2E65"
+    },
+    "messageTimestamp": 1755751066,
+    "pushName": "Kristan Ruiz",
+    "broadcast": false,
+    "message": {
+      "extendedTextMessage": {
+        "text": "holis",
+        "contextInfo": {
+          "expiration": 0,
+          "ephemeralSettingTimestamp": "0",
+          "disappearingMode": {
+            "initiator": "CHANGED_IN_CHAT"
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "zkr6pV5fV58MkA==",
+          "senderTimestamp": "1755394306",
+          "recipientKeyHash": "pQVf5hor9RHmLg==",
+          "recipientTimestamp": "1755726002"
+        },
+        "deviceListMetadataVersion": 2
+      }
+    }
+  },
+  {
+    "key": {
+      "remoteJid": "5216121407908@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3F5D5153E3AF7FE3ABBA"
+    },
+    "messageTimestamp": 1755751546,
+    "pushName": "Kristan Ruiz",
+    "broadcast": false,
+    "message": {
+      "extendedTextMessage": {
+        "text": "Hola",
+        "contextInfo": {
+          "expiration": 0,
+          "ephemeralSettingTimestamp": "0",
+          "disappearingMode": {
+            "initiator": "CHANGED_IN_CHAT"
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "zkr6pV5fV58MkA==",
+          "senderTimestamp": "1755394306",
+          "recipientKeyHash": "pQVf5hor9RHmLg==",
+          "recipientTimestamp": "1755726002"
+        },
+        "deviceListMetadataVersion": 2
+      }
+    }
+  },
+  {
+    "key": {
+      "remoteJid": "5216121407908@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3F40BE92AB5C37588BB8"
+    },
+    "messageTimestamp": 1755751581,
+    "pushName": "Kristan Ruiz",
+    "broadcast": false,
+    "message": {
+      "extendedTextMessage": {
+        "text": "holis",
+        "contextInfo": {
+          "expiration": 0,
+          "ephemeralSettingTimestamp": "0",
+          "disappearingMode": {
+            "initiator": "CHANGED_IN_CHAT"
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "zkr6pV5fV58MkA==",
+          "senderTimestamp": "1755394306",
+          "recipientKeyHash": "pQVf5hor9RHmLg==",
+          "recipientTimestamp": "1755726002"
+        },
+        "deviceListMetadataVersion": 2
+      }
+    }
+  }
+]

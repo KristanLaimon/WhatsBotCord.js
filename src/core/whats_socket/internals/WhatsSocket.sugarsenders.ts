@@ -1,7 +1,9 @@
-import { type MiscMessageGenerationOptions, type WAMessage } from "baileys";
+import { type MiscMessageGenerationOptions, type WAMessage, downloadMediaMessage } from "baileys";
 import fs from "fs";
 import { Str_NormalizeLiteralString } from 'src/helpers/Strings.helper';
 import type { IWhatsSocketMinimum } from '../IWhatsSocket';
+import { GetPath } from 'src/libs/BunPath';
+import path from "path";
 
 export type WhatsMsgSenderSendingOptionsMINIMUM = {
   /**
@@ -16,7 +18,7 @@ export type WhatsMsgSenderSendingOptionsMINIMUM = {
    * Use at your own risk!
    */
   sendRawWithoutEnqueue?: boolean;
-}
+} & MiscMessageGenerationOptions;
 
 export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM & {
   /**
@@ -153,7 +155,110 @@ export class WhatsSocketSugarSender {
         text: emojiStr,
         key: rawMsgToReactTo.key
       }
-    });
+    }, options as MiscMessageGenerationOptions);
+  }
+
+  /**
+   * Sends a sticker message to a specific chat.
+   *
+   * This method supports sending stickers from either:
+   * 1. A **local file or Buffer** containing WebP data.
+   * 2. A **remote URL** pointing to an accessible image (e.g., WebP hosted publicly).
+   * 
+   * If `stickerUrlSource` is a `Buffer`, it will be sent directly.  
+   * If it is a `string` URL, Baileys will attempt to fetch the content from that URL.
+   *
+   * @param chatId - The target chat JID (WhatsApp ID), e.g., '5216121407908@s.whatsapp.net'.
+   * @param stickerUrlSource - The sticker content to send:
+   *   - `Buffer`: Directly sends the WebP sticker.
+   *   - `string`: A public URL pointing to the sticker file. Note: WhatsApp encrypted `.enc` URLs **will not work** unless downloaded and decrypted first.
+   * @param options - Optional sending options:
+   *   - `sendRawWithoutEnqueue`: If true, bypasses the safe queue system and sends immediately.
+   *   - Any other Baileys `MiscMessageGenerationOptions` like `quoted`, `contextInfo`, etc.
+   *
+   * @example
+   * // Send a local WebP sticker
+   * await bot.Sticker(chatId, fs.readFileSync('./stickers/dog.webp'));
+   *
+   * @example
+   * // Send a public URL sticker (must be directly accessible)
+   * await bot.Sticker(chatId, 'https://example.com/sticker.webp');
+   */
+  public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+    await (this._getSendingMethod(options))(chatId, {
+      sticker: Buffer.isBuffer(stickerUrlSource) ? stickerUrlSource : {
+        url: stickerUrlSource
+      }
+    }, options as MiscMessageGenerationOptions);
+  }
+
+
+
+  /**
+   * Sends an audio message to a specific chat.
+   *
+   * This method supports sending audio from:
+   * 1. A **local file path** (MP3, OGG, M4A, etc.).
+   * 2. A **remote URL** (publicly accessible audio file).
+   * 3. A **WhatsApp audio message object** (voice note or audio message) via `downloadMediaMessage`.
+   *
+   * @param chatId - The target chat JID (WhatsApp ID), e.g., '5216121407908@s.whatsapp.net'.
+   * @param audioSource - The audio content to send:
+   *   - `string`: Either a local file path or a public URL, it will be converted to absolute path if relative given.
+   *   - `Buffer`: Raw audio data.
+   *   - `WAMessage`: A WhatsApp message object containing an audioMessage.
+   * @param options - Optional sending options:
+   *   - `sendRawWithoutEnqueue`: If true, bypasses the safe queue system and sends immediately.
+   *   - Any other Baileys `MiscMessageGenerationOptions` like `quoted`, `contextInfo`, etc.
+   *
+   * @example
+   * // Send a local MP3
+   * await bot.Audio(chatId, './audios/voice.mp3');
+   *
+   * @example
+   * // Send a remote URL audio
+   * await bot.Audio(chatId, 'https://example.com/audio.mp3');
+   *
+   * @example
+   * // Forward a received WhatsApp audio message
+   * await bot.Audio(chatId, receivedMessage);
+   */
+  public async Audio(chatId: string, audioSource: string | Buffer | WAMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+    let buffer: Buffer;
+    let mimetype = 'audio/mpeg';
+
+    if (Buffer.isBuffer(audioSource)) {
+      buffer = audioSource;
+    } else if (typeof audioSource === 'string') {
+      // Check if local file exists
+      if (fs.existsSync(GetPath(audioSource))) {
+        buffer = fs.readFileSync(GetPath(audioSource));
+        const ext = path.extname(GetPath(audioSource)).toLowerCase();
+        if (ext === '.ogg') mimetype = 'audio/ogg';
+        if (ext === '.m4a') mimetype = 'audio/mp4';
+      } else {
+        // Fetch remote URL
+        const res = await fetch(audioSource);
+        if (!res.ok) {
+          console.error(`Failed to fetch audio: ${res.statusText}`);
+          return;
+        }
+        const arrayBuffer = await res.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+      }
+    } else if ('message' in audioSource && audioSource.message?.audioMessage) {
+      // WhatsApp message object
+      buffer = await downloadMediaMessage(audioSource, 'buffer', {});
+      mimetype = audioSource.message.audioMessage?.mimetype || 'audio/mpeg';
+    } else {
+      console.error('WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg');
+      return;
+    }
+
+    await (this._getSendingMethod(options))(chatId, {
+      audio: buffer,
+      mimetype
+    }, options as MiscMessageGenerationOptions);
   }
 
   // public async ReactEmojiToQuotedMsg(chatId: string, quotedMsg: WhatsMsgQuoted, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
