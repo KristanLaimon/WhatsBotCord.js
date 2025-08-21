@@ -6,10 +6,13 @@
     "@sinonjs/fake-timers": "^14.0.0",
     "@types/bun": "latest",
     "@types/sinonjs__fake-timers": "^8.1.5",
+    "cross-env": "^10.0.0",
     "mock-fs": "^5.5.0"
   },
   "scripts": {
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
+    "fastest": "cross-env SKIP_LONG_TESTS=true bun test"
   },
   "peerDependencies": {
     "typescript": "^5.9.2"

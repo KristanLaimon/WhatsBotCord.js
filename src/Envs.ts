@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "./.env.development" });
+dotenv.config({ path: "./.env.development", quiet: true });
 
 /**
  * This file contains environment variables and flags that are used throughout 

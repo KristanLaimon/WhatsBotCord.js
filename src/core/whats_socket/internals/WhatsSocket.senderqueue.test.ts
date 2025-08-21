@@ -1,5 +1,5 @@
 import { beforeEach, it, describe, expect } from "bun:test";
-import WhatsSocketMinimum from '../mocks/WhatsSocket.minimum.mock';
+import WhatsSocketMockMinimum from '../mocks/WhatsSocket.minimum.mock';
 import { WhatsAppGroupIdentifier } from '../../../Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 import { performance } from "node:perf_hooks";
@@ -8,11 +8,11 @@ import { skipLongTests } from 'src/Envs';
 const fakeChatId: string = "23423423234" + WhatsAppGroupIdentifier;
 
 describe("Enqueue", () => {
-  let mockSocket: WhatsSocketMinimum
+  let mockSocket: WhatsSocketMockMinimum
   let queue: WhatsSocketSenderQueue;
 
   beforeEach(() => {
-    mockSocket = new WhatsSocketMinimum();
+    mockSocket = new WhatsSocketMockMinimum();
     queue = new WhatsSocketSenderQueue(mockSocket, 5, 1);
   });
 
@@ -25,7 +25,7 @@ describe("Enqueue", () => {
     await queue.Enqueue(fakeChatId, { text: "First" });
     await queue.Enqueue(fakeChatId, { text: "Second" });
     await queue.Enqueue(fakeChatId, { text: "Third" });
-    expect(mockSocket.MessagesSentHistory.length).toBe(3);
+    expect(mockSocket.SentMessages.length).toBe(3);
   });
 
   it("WhenSendingMsgsWithoutStart_ShouldAcumulateThemAndSendThemAfterContinue", async () => {
@@ -36,16 +36,16 @@ describe("Enqueue", () => {
     queue.Enqueue(fakeChatId, { text: "Second" });
     queue.Enqueue(fakeChatId, { text: "Third" });
     expect(queue.ActualElementsInQueue.length).toBe(3);
-    expect(mockSocket.MessagesSentHistory.length).toBe(0);
+    expect(mockSocket.SentMessages.length).toBe(0);
     await queue.Continue();
     expect(queue.ActualElementsInQueue.length).toBe(0);
-    expect(mockSocket.MessagesSentHistory.length).toBe(3);
+    expect(mockSocket.SentMessages.length).toBe(3);
     queue = originalQueue;
   });
 
   it("WhenSendingSimpleTxtMsg_ShouldAlwaysUseRawSendMethodFromSocket", async () => {
     await queue.Enqueue(fakeChatId, { text: "Check method" });
-    for (const sentMsg of mockSocket.MessagesSentHistory) {
+    for (const sentMsg of mockSocket.SentMessages) {
       expect(sentMsg.isRawMsg).toBe(true);
     }
   });

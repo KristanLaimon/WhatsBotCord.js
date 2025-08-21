@@ -34,7 +34,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   private _messagesSentHistory: WhatsSocketMessageSentMock[] = [];
 
   //Only get access, not set
-  public get SentMessagesHistoryReadOnly(): WhatsSocketMessageSentMock[] {
+  public get SentMessages(): WhatsSocketMessageSentMock[] {
     return this._messagesSentHistory;
   }
 

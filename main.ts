@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "./env.development" });
+dotenv.config({ path: "./env.development", quiet: true });
 import { MsgHelper_GetTextFrom } from './src/helpers/Msg.helper';
 import { MsgType } from './src/Msg.types';
 import WhatsSocket from './src/core/whats_socket/WhatsSocket'

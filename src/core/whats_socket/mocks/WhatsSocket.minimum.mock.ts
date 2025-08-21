@@ -5,17 +5,22 @@ import type { WhatsSocketMessageSentMock } from './types';
 
 
 
-export default class WhatsSocketMinimum implements IWhatsSocketMinimum {
-  public MessagesSentHistory: WhatsSocketMessageSentMock[] = [];
+export default class WhatsSocketMockMinimum implements IWhatsSocketMinimum {
+  public SentMessages: WhatsSocketMessageSentMock[] = [];
+
+  constructor() {
+    this.SendSafe = this.SendSafe.bind(this);
+    this.SendRaw = this.SendRaw.bind(this);
+  }
 
   public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
-    this.MessagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: false })
+    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: false })
   }
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
-    this.MessagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: true })
+    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: true })
   }
 
-  public Clear() {
-    this.MessagesSentHistory = [];
+  public ClearMock() {
+    this.SentMessages = [];
   }
 }

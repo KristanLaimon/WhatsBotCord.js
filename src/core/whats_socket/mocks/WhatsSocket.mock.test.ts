@@ -17,23 +17,20 @@ describe("WhatsSocketMock Generally", () => {
 
   it("WhenInstatiatingWithNoParams_ShouldBeCleanedAtFirst", () => {
     const socketMock = new WhatsSocketMock();
-
-
-    expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(0);
+    expect(socketMock.SentMessages.length).toBe(0);
     expect(socketMock.GroupsIDTriedToFetch.length).toBe(0);
   })
 
   it("WhenSendingMsgsThroughSocket_MustBeSent", async () => {
     const socketMock = new WhatsSocketMock();
 
-    expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
-
+    expect(socketMock.SentMessages).toHaveLength(0);
     await socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "First messsage" });
-    expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(1);
+    expect(socketMock.SentMessages.length).toBe(1);
     await socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Second messsage" });
-    expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(2);
+    expect(socketMock.SentMessages.length).toBe(2);
     await socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Third messsage" });
-    expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(3);
+    expect(socketMock.SentMessages.length).toBe(3);
   });
 
   it("Clear_WhenSocketMockHasBeenUseALot_ShouldCleanItself", () => {
@@ -50,20 +47,20 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.onGroupUpdate.Length).toBe(1);
     expect(socketMock.onStartupAllGroupsIn.Length).toBe(1);
 
-    expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
+    expect(socketMock.SentMessages).toHaveLength(0);
     socketMock.SendSafe(`chatIdtest${WhatsAppGroupIdentifier}`, { text: "Hello world" });
-    expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(1);
+    expect(socketMock.SentMessages).toHaveLength(1);
 
 
     socketMock.ClearMock();
 
-    expect(socketMock.SentMessagesHistoryReadOnly).toHaveLength(0);
+    expect(socketMock.SentMessages).toHaveLength(0);
     expect(socketMock.onReconnect.Length).toBe(0);
     expect(socketMock.onIncomingMessage.Length).toBe(0);
     expect(socketMock.onGroupEnter.Length).toBe(0);
     expect(socketMock.onGroupUpdate.Length).toBe(0);
     expect(socketMock.onStartupAllGroupsIn.Length).toBe(0);
-    expect(socketMock.SentMessagesHistoryReadOnly).toEqual([]);
+    expect(socketMock.SentMessages).toEqual([]);
     expect(socketMock.GroupsIDTriedToFetch).toEqual([]);
   });
 });
