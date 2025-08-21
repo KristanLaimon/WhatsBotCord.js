@@ -1,9 +1,7 @@
 import { WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
-import { it, test, expect, describe, mockModule, clearAllMocks, beforeAll, beforeEach } from "../../../TestSuite";
-import WhatsSocketMinimum from '../mocks/WhatsSocket.minimum.mock';
+import { it, expect, describe, beforeEach } from "bun:test";
 import WhatsSocketMock from '../mocks/WhatsSocket.mock';
 import { WhatsSocketSugarSender } from './WhatsSocket.sugarsenders';
-
 
 const fakeChatId = "338839029383" + WhatsAppGroupIdentifier;
 

@@ -1,9 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config({ path: "./env.development" });
 import { MsgHelper_GetTextFrom } from './src/helpers/Msg.helper';
 import { MsgType } from './src/Msg.types';
 import WhatsSocket from './src/core/whats_socket/WhatsSocket'
-// import fs from "fs";
-// import type { WAMessage } from "baileys";
-// import { GetPath } from 'src/libs/BunPath';
 import { downloadMediaMessage } from "baileys";
 
 const socket = new WhatsSocket({
@@ -13,8 +12,6 @@ const socket = new WhatsSocket({
   ignoreSelfMessage: true,
   milisecondsDelayBetweenSentMsgs: 10
 });
-
-// const stickerUrl: string = "https://mmg.whatsapp.net/v/t62.15575-24/535391214_1433688774621522_8249722839530912743_n.enc?ccb=11-4&oh=01_Q5Aa2QHTKtX-aoueNuZGEZEdGmSl9agJde1IYXN0NUxU08XpoQ&oe=68CE1D9B&_nc_sid=5e03e0&mms3=true";
 
 socket.onIncomingMessage.Subscribe(async (senderId, chatId, rawMsg, msgType, senderType) => {
   if (msgType === MsgType.Text) {

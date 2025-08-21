@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
+dotenv.config({ path: "./.env.development" });
 
-dotenv.config({ path: "./env.development" });
 /**
  * This file contains environment variables and flags that are used throughout 
  * the project to determine the environment in which the code is running.
@@ -11,9 +11,10 @@ dotenv.config({ path: "./env.development" });
  */
 
 /** This is used to determine if the code is running in development mode or production mode. */
-export const isDev = process.env["ISDEVELOPMENT"] === "true";
+export let isDev = process.env["ISDEVELOPMENT"] === "true";
 
 /** To know if this bot is being compiled using any tool compiler like "bun compile" and similar ones */
-export const isCompiled = process.env["ISCOMPILED"] === "true";
+export let isCompiled = process.env["ISCOMPILED"] === "true";
 
+export let skipLongTests: boolean = process.env["SKIP_LONG_TESTS"] === "true";
 

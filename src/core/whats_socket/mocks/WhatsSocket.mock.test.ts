@@ -1,4 +1,4 @@
-import { describe, it, expect } from "../../../TestSuite";
+import { describe, it, expect } from "bun:test";
 import { WhatsAppGroupIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from './WhatsSocket.mock';
 
@@ -17,6 +17,7 @@ describe("WhatsSocketMock Generally", () => {
 
   it("WhenInstatiatingWithNoParams_ShouldBeCleanedAtFirst", () => {
     const socketMock = new WhatsSocketMock();
+
 
     expect(socketMock.SentMessagesHistoryReadOnly.length).toBe(0);
     expect(socketMock.GroupsIDTriedToFetch.length).toBe(0);

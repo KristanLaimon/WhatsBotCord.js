@@ -1,5 +1,5 @@
 import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from './Msg.helper';
-import { it, test, expect, describe } from "../TestSuite";
+import { it, test, expect, describe } from "bun:test";
 import { type WAMessage } from "baileys";
 import { GetPath } from '../libs/BunPath';
 import { MsgType } from '../Msg.types';

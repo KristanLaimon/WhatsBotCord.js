@@ -1,6 +1,5 @@
-import { GetPath } from './BunPath';
 import path from 'node:path';
-import { describe, test, it, expect, beforeEach, mockModule, resetModules, doMockModule } from "../TestSuite";
+import { describe, it, expect, beforeEach, mock } from "bun:test";
 import { isCompiled, isDev } from 'src/Envs';
 
 const EnvsModulePath = "../Envs";
@@ -12,8 +11,7 @@ it("Envs are normal at the beginning", () => {
 
 describe('Compilation Mode', () => {
   beforeEach(() => {
-    resetModules(); // clear cached modules
-    doMockModule(EnvsModulePath, () => ({
+    mock.module(EnvsModulePath, () => ({
       isCompiled: true,
       isDev: true
     }));
@@ -36,8 +34,7 @@ describe('Compilation Mode', () => {
 
 describe('No Compilation Mode', () => {
   beforeEach(() => {
-    resetModules();
-    doMockModule(EnvsModulePath, () => ({
+    mock.module(EnvsModulePath, () => ({
       isCompiled: false,
       isDev: true
     }));
