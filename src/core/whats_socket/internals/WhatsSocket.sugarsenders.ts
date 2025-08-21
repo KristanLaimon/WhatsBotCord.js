@@ -54,16 +54,16 @@ export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM &
   mentionsIds?: string[];
 } & MiscMessageGenerationOptions;
 
-export type WhatsMsgSenderSendingImgOptions = {
+export type WhatsMsgMediaOptions = {
   /**
-   * Path to the image file to send.
+   * Path to the source file to send.
    *
    * - Supports both relative and absolute paths
    * - For projects where this library is compiled/bundled,
    *   using absolute paths is recommended to avoid issues
    *   with build environments or working directories
    */
-  imagePath: string;
+  sourcePath: string | Buffer;
 
   /**
    * Optional text to include along with the image.
@@ -72,6 +72,19 @@ export type WhatsMsgSenderSendingImgOptions = {
    * - Can be used for descriptions, notes, or additional context
    */
   caption?: string;
+}
+
+export type WhatsMsgPollOptions = {
+  withMultiSelect: boolean;
+  normalizeTitleText?: boolean;
+  normalizeOptionsText?: boolean;
+}
+
+export type WhatsMsgUbicationOptions = {
+  degreesLatitude: number;
+  degreesLongitude: number;
+  name?: string;
+  addressText?: string;
 }
 
 
@@ -130,9 +143,9 @@ export class WhatsSocketSugarSender {
    * });
    * ```
    */
-  public async Img(chatId: string, imageOptions: WhatsMsgSenderSendingImgOptions, options?: WhatsMsgSenderSendingOptions): Promise<boolean> {
-    if (!fs.existsSync(imageOptions.imagePath)) {
-      throw new Error("Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path");
+  public async Img(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<void> {
+    if (!fs.existsSync(imageOptions.sourcePath)) {
+      throw new Error("Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.sourcePath);
     }
 
     let captionToSend: string | null = imageOptions.caption ?? null;
@@ -142,14 +155,17 @@ export class WhatsSocketSugarSender {
       }
     }
     await (this._getSendingMethod(options))(chatId, {
-      image: fs.readFileSync(imageOptions.imagePath),
+      image: Buffer.isBuffer(imageOptions.sourcePath) ? imageOptions.sourcePath : fs.readFileSync(GetPath(imageOptions.sourcePath)),
       caption: captionToSend ?? "",
       mentions: options?.mentionsIds
     }, options as MiscMessageGenerationOptions);
-    return true;
   }
 
   public async ReactEmojiToMsg(chatId: string, rawMsgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+    if (typeof emojiStr !== "string" || emojiStr.length != 1) {
+      throw new Error("WhatsSocketSugarSender.ReactEmojiTomsg() received a non-emoji reaction to send.... It must be a simple emoji string of 1 emoji length. Received instead: " + emojiStr);
+    }
+
     await (this._getSendingMethod(options))(chatId, {
       react: {
         text: emojiStr,
@@ -185,6 +201,12 @@ export class WhatsSocketSugarSender {
    * await bot.Sticker(chatId, 'https://example.com/sticker.webp');
    */
   public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+    if (typeof stickerUrlSource === "string") {
+      if (!fs.existsSync(GetPath(stickerUrlSource))) {
+        throw new Error("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + stickerUrlSource);
+      }
+    }
+
     await (this._getSendingMethod(options))(chatId, {
       sticker: Buffer.isBuffer(stickerUrlSource) ? stickerUrlSource : {
         url: stickerUrlSource
@@ -261,6 +283,202 @@ export class WhatsSocketSugarSender {
     }, options as MiscMessageGenerationOptions);
   }
 
+  /**
+   * Sends a video message to a specific chat.
+   *
+   * This method supports sending videos from either:
+   * 1. A **local file path** (e.g., MP4, MOV, AVI).
+   * 2. A **Buffer** containing raw video data.
+   *
+   * Behavior:
+   * - If a `caption` is provided, it is normalized if
+   *   `options.normalizeMessageText` is true.
+   * - The MIME type is determined by the file extension:
+   *   - `.mov` → `video/mov`
+   *   - `.avi` → `video/avi`
+   *   - Otherwise → defaults to `video/mp4`
+   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set.
+   *
+   * @param chatId - The target chat JID (WhatsApp ID), e.g. `5216121407908@s.whatsapp.net`.
+   * @param videoSource - The video to send:
+   *   - `sourcePath`: Absolute/relative path to video file OR a `Buffer`.
+   *   - `caption` (optional): Text shown below the video in WhatsApp.
+   * @param options - Additional sending options:
+   *   - `normalizeMessageText`: Normalize caption text (default: true).
+   *   - `mentionsIds`: Users to mention in the caption.
+   *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
+   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *
+   * @example
+   * // Send a local MP4 with caption
+   * await bot.Video(chatId, { sourcePath: "./video.mp4", caption: "Check this out!" });
+   *
+   * @example
+   * // Send a raw Buffer without queuing
+   * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
+   */
+  public async Video(chatId: string, videoSource: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<void> {
+    let caption: string | undefined = videoSource.caption;
+    if (caption) {
+      if (options?.normalizeMessageText) {
+        caption = Str_NormalizeLiteralString(caption);
+      }
+    }
+    //Default
+    let mimeTypeToUse: string = "video/mp4";
+    if (typeof videoSource.sourcePath === "string") {
+      const videoPath: string = videoSource.sourcePath;
+      if (videoPath.endsWith(".mov"))
+        mimeTypeToUse = "video/mov"
+      else if (videoPath.endsWith(".avi"))
+        mimeTypeToUse = "video/avi"
+      //Otherwise, use default "video/mp4"
+    }
+    await (this._getSendingMethod(options))(chatId, {
+      video: Buffer.isBuffer(videoSource.sourcePath) ? videoSource.sourcePath : fs.readFileSync(GetPath(videoSource.sourcePath)),
+      caption: caption,
+      mimetype: mimeTypeToUse
+    });
+  }
+
+  /**
+   * Sends a poll message to a specific chat.
+   *
+   * WhatsApp polls allow either:
+   * - **Single-answer polls** (one option selectable).
+   * - **Multi-answer polls** (multiple options selectable).
+   *
+   * Behavior:
+   * - `pollTitle` can be normalized if `normalizeTitleText` is true.
+   * - `selections` can be normalized if `normalizeOptionsText` is true.
+   *
+   * Constraints:
+   * - Poll must contain **1–12 options** (`selections` array length).
+   *
+   * @param chatId - The target chat JID (WhatsApp ID).
+   * @param pollTitle - The question/title of the poll.
+   * @param selections - Array of answer choices (min 1, max 12).
+   * @param pollOptions - Options for poll behavior:
+   *   - `withMultiSelect`: If true, allows multiple answers.
+   *   - `normalizeTitleText`: Normalize the poll title text.
+   *   - `normalizeOptionsText`: Normalize each option string.
+   * @param moreOptions - Additional sending options:
+   *   - `sendRawWithoutEnqueue`: Send immediately, bypass queue.
+   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *
+   * @example
+   * // Single-answer poll
+   * await bot.Poll(chatId, "Favorite color?", ["Red", "Blue", "Green"], { withMultiSelect: false });
+   *
+   * @example
+   * // Multi-answer poll with normalization
+   * await bot.Poll(chatId, "Pick your hobbies:", ["  Reading ", " Coding ", "Gaming"], {
+   *   withMultiSelect: true,
+   *   normalizeOptionsText: true,
+   *   normalizeTitleText: true
+   * }, { sendRawWithoutEnqueue: true });
+   */
+  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+    let title: string = pollTitle;
+    let selects: string[] = selections;
+
+    if (!(selections.length >= 1 && selections.length <= 12)) {
+      throw new Error("WhatsSocketSugarSender.Poll() received less than 1 options or greather than 12, must be in range 1-12. Received: " + selections.length + " options...");
+    }
+
+    if (pollParams.normalizeTitleText) {
+      title = Str_NormalizeLiteralString(title);
+    }
+
+    if (pollParams.normalizeOptionsText) {
+      selects = selections.map(opt => Str_NormalizeLiteralString(opt));
+    }
+
+    await (this._getSendingMethod(moreOptions))(chatId, {
+      poll: {
+        name: title,
+        values: selects,
+        //Whats API receives 0 as multiple answers and 1 for exclusive 1 answer to polls (Thats how it works ¯\_(ツ)_/¯)
+        selectableCount: pollParams.withMultiSelect ? 0 : 1
+      }
+    }, moreOptions as MiscMessageGenerationOptions)
+  }
+
+  public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
+    if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
+      throw new Error(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`);
+    }
+    await (this._getSendingMethod(options))(chatId, {
+      location: {
+        degreesLatitude: ubicationParams.degreesLatitude,
+        degreesLongitude: ubicationParams.degreesLongitude,
+        name: ubicationParams.name,
+        address: ubicationParams.addressText
+      }
+    }, options as MiscMessageGenerationOptions)
+  }
+
+  /**
+   * Sends a contact card (vCard) to a specific chat.
+   *
+   * This method generates a valid vCard internally from simple
+   * `name` and `phone` fields, so callers don’t need to deal
+   * with raw vCard formatting.
+   *
+   * Supports:
+   * - Single contact card
+   * - Multiple contact cards (by passing an array of contact info)
+   *
+   * Behavior:
+   * - Phone numbers should include country code (e.g. `5216121407908`).
+   * - WhatsApp requires the `waid` parameter inside the vCard to link
+   *   the number to a WhatsApp account.
+   *
+   * @param chatId - The target chat JID (WhatsApp ID).
+   * @param contacts - A single contact object or an array of contacts:
+   *   - `name`: Display name for the contact.
+   *   - `phone`: Phone number in international format (no `+` required). 
+   * @param options - Additional sending options:
+   *   - `sendRawWithoutEnqueue`: Send immediately, bypass queue.
+   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *
+   * @example
+   * // Send one contact
+   * await bot.Contact(chatId, { name: "Christian", phone: "52161402883029" });
+   *
+   * @example
+   * // Send multiple contacts
+   * await bot.Contact(chatId, [
+   *   { name: "Alice", phone: "5211111111111" },
+   *   { name: "Bob", phone: "5212222222222" }
+   * ]);
+   * 
+   * @note Number follows "countrycode" + "1" + "10 digits number" for latin-american countries like "5216239389304" for example in mexico. Check
+   * how your country number displays in international format
+   */
+  public async Contact(chatId: string, contacts: { name: string; phone: string } | { name: string; phone: string }[], options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+    const arr = Array.isArray(contacts) ? contacts : [contacts];
+
+    const vCards = arr.map(c => {
+      if (!c.name || !c.phone) {
+        throw new Error("Invalid contact: name and phone are required");
+      }
+      return `BEGIN:VCARD
+VERSION:3.0
+FN:${c.name}
+TEL;type=CELL;type=VOICE;waid=${c.phone}:${c.phone}
+END:VCARD`;
+    });
+
+    await (this._getSendingMethod(options))(chatId, {
+      contacts: {
+        displayName: arr.length === 1 ? arr[0]!.name : `${arr.length} contacts`,
+        contacts: vCards.map(vc => ({ vcard: vc }))
+      }
+    }, options as MiscMessageGenerationOptions);
+  }
+
+
   // public async ReactEmojiToQuotedMsg(chatId: string, quotedMsg: WhatsMsgQuoted, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
   //   await (this._getSendingMethod(options))(chatId, {
   //     react: {
@@ -296,4 +514,14 @@ export class WhatsSocketSugarSender {
       return this.socket.SendSafe;
     }
   }
+}
+
+
+function areValidCoordinates(lat: number, lon: number): boolean {
+  return (
+    typeof lat === "number" &&
+    typeof lon === "number" &&
+    lat >= -90 && lat <= 90 &&
+    lon >= -180 && lon <= 180
+  );
 }
