@@ -10,7 +10,8 @@ const socket = new WhatsSocket({
   credentialsFolder: "./auth",
   loggerMode: "silent",
   maxReconnectionRetries: 5,
-  ignoreSelfMessage: true
+  ignoreSelfMessage: true,
+  milisecondsDelayBetweenSentMsgs: 10
 });
 
 // const stickerUrl: string = "https://mmg.whatsapp.net/v/t62.15575-24/535391214_1433688774621522_8249722839530912743_n.enc?ccb=11-4&oh=01_Q5Aa2QHTKtX-aoueNuZGEZEdGmSl9agJde1IYXN0NUxU08XpoQ&oe=68CE1D9B&_nc_sid=5e03e0&mms3=true";

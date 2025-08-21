@@ -6,4 +6,3 @@ export type WhatsSocketMessageSentMock = {
   miscOptions?: MiscMessageGenerationOptions;
   isRawMsg: boolean;
 }
-

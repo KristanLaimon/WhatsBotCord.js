@@ -1,5 +1,5 @@
 import { beforeEach, it, describe, expect } from "../../../TestSuite";
-import WhatsSocketMinimum from '../internal_tests/WhatsSocket.minimum.mock';
+import WhatsSocketMinimum from '../mocks/WhatsSocket.minimum.mock';
 import { WhatsAppGroupIdentifier } from '../../../Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 const fakeChatId: string = "23423423234" + WhatsAppGroupIdentifier;
@@ -10,7 +10,7 @@ describe("Enqueue", () => {
 
   beforeEach(() => {
     mockSocket = new WhatsSocketMinimum();
-    queue = new WhatsSocketSenderQueue(mockSocket, 5, 200);
+    queue = new WhatsSocketSenderQueue(mockSocket, 5, 1);
   });
 
   it("WhenSendingSimpleTxtMsg_ShouldEmptyTheQueueAfterProcessing", async () => {
@@ -33,6 +33,6 @@ describe("Enqueue", () => {
   });
 
   //================== Now using all types of msgs =======================
-  //TODO: Make every type of message mock but sending (mocks)
+  //TODO: Make every type of message mock but sending (mocks). Note: this will be tested after WhatsSocket.sugarsenders.ts
 });
 

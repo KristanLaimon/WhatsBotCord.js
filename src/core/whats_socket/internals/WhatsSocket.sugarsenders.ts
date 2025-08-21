@@ -478,21 +478,6 @@ END:VCARD`;
     }, options as MiscMessageGenerationOptions);
   }
 
-
-  // public async ReactEmojiToQuotedMsg(chatId: string, quotedMsg: WhatsMsgQuoted, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
-  //   await (this._getSendingMethod(options))(chatId, {
-  //     react: {
-  //       text: emojiStr,
-  //       key: {
-  //         remoteJid: chatId,
-  //         id: quotedMsg.id,
-  //         participant: quotedMsg.participantIdMsgComesFrom,
-  //         fromMe: true
-  //       }
-  //     }
-  //   });
-  // }
-
   /**
    * Selects the sending method based on the options provided.
    *

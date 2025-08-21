@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+
+dotenv.config({ path: "./env.development" });
 /**
  * This file contains environment variables and flags that are used throughout 
  * the project to determine the environment in which the code is running.

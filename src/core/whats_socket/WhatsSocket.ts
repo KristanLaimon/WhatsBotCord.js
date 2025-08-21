@@ -138,6 +138,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this.ConfigureGroupsUpdates();
 
     this.SendSafe = this.SendSafe.bind(this);
+    this.SendRaw = this.SendRaw.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
   }
 

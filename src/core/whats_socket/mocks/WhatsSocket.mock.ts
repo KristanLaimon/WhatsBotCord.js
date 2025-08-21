@@ -1,6 +1,6 @@
 import Delegate from '../../../libs/Delegate';
 import type { IWhatsSocket } from '../IWhatsSocket';
-import type { MsgType, SenderType } from '../../../Msg.types';
+import { SenderType, type MsgType } from '../../../Msg.types';
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
 import WhatsSocketSenderQueue from '../internals/WhatsSocket.senderqueue';
 import type { WhatsSocketMessageSentMock } from './types';
@@ -21,6 +21,14 @@ export default class WhatsSocketMock implements IWhatsSocket {
 
   constructor(options?: WhatsSocketMockOptions) {
     this._senderQueue = new WhatsSocketSenderQueue(this, options?.maxQueueLimit ?? 10, options?.minimumSecondsDelayBetweenMsgs ?? 500);
+
+    //Thanks js, this is never needed on another languages... ☠️
+    this.SendRaw = this.SendRaw.bind(this);
+    this.SendSafe = this.SendRaw.bind(this);
+    this.Start = this.Start.bind(this);
+    this.Shutdown = this.Start.bind(this);
+    this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
+    this.ClearMock = this.ClearMock.bind(this);
   }
 
   private _messagesSentHistory: WhatsSocketMessageSentMock[] = [];

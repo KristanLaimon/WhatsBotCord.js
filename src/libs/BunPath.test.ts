@@ -1,54 +1,57 @@
 import { GetPath } from './BunPath';
 import path from 'node:path';
-import { describe, test, it, expect, beforeEach, mockModule } from "../TestSuite";
+import { describe, test, it, expect, beforeEach, mockModule, resetModules, doMockModule } from "../TestSuite";
+import { isCompiled, isDev } from 'src/Envs';
 
 const EnvsModulePath = "../Envs";
 
-test("Envs path can be mocked (Good path to file)", () => {
-  expect(() => {
-    mockModule(EnvsModulePath, () => ({}));
-  }).not.toThrow();
+it("Envs are normal at the beginning", () => {
+  expect(isCompiled).toBe(false);
+  expect(isDev).toBe(true);
 })
 
-describe("No Compilation Mode", () => {
+describe('Compilation Mode', () => {
   beforeEach(() => {
-    mockModule(EnvsModulePath, () => {
-      return { isCompiled: true, isDev: true };
-    })
-  })
-
-  it('GetPath_WhenUsingSingleStringPath_ShouldReturnRelativeToCWD', () => {
-    const filePath = 'path/to/file';
-    const expectedPath = path.join(process.cwd(), filePath);
-    const res = GetPath(filePath);
-    expect(res).toBe(expectedPath);
+    resetModules(); // clear cached modules
+    doMockModule(EnvsModulePath, () => ({
+      isCompiled: true,
+      isDev: true
+    }));
   });
 
-  it('GetPath_WhenUsingMultiplePathsArray_ShouldReturnRelativeToCWD', () => {
+  it('GetPath_WhenUsingSingleStringPath_ShouldReturnRelativeToCWD', async () => {
+    const { GetPath } = await import('./BunPath'); // import after mock
+    const filePath = 'path/to/file';
+    const expectedPath = path.join(process.cwd(), filePath);
+    expect(GetPath(filePath)).toBe(expectedPath);
+  });
+
+  it('GetPath_WhenUsingMultiplePathsArray_ShouldReturnRelativeToCWD', async () => {
+    const { GetPath } = await import('./BunPath');
     const filePaths = ['path', 'to', 'file'];
     const expectedPath = path.join(process.cwd(), ...filePaths);
     expect(GetPath(...filePaths)).toBe(expectedPath);
   });
+});
 
-  it('GetPath_WhenEmptyStringProvided_ShouldReturnEmptyString', () => {
-    expect(GetPath()).toBe('');
-  });
-})
-
-describe("Compilation Mode", () => {
+describe('No Compilation Mode', () => {
   beforeEach(() => {
-    mockModule(EnvsModulePath, () => {
-      return { isCompiled: false, isDev: true };
-    })
-  })
+    resetModules();
+    doMockModule(EnvsModulePath, () => ({
+      isCompiled: false,
+      isDev: true
+    }));
+  });
 
-  it('GetPath_WhenOneSinglePathStringProvided_ShouldReturnPathWithoutCWD', () => {
+  it('GetPath_WhenOneSinglePathStringProvided_ShouldReturnPathWithoutCWD', async () => {
+    const { GetPath } = await import('./BunPath');
     const filePath = 'path/to/file';
     const expectedPath = path.join(filePath);
     expect(GetPath(filePath)).toBe(expectedPath);
   });
 
-  it('GetPath_WhenNoFilePathsProvided_ShouldReturnEmptyString', () => {
+  it('GetPath_WhenNoFilePathsProvided_ShouldReturnEmptyString', async () => {
+    const { GetPath } = await import('./BunPath');
     expect(GetPath()).toBe('');
   });
 });

@@ -24,7 +24,7 @@ test("Mockdata from .json can be imported", () => {
   const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
   expect(mockMsgs).toBeDefined();
   expect(mockMsgs.length).toBeGreaterThan(0);
-  expect(mockMsgs).toBeArray();
+  expect(Array.isArray(mockMsgs)).toBe(true);
 })
 
 
