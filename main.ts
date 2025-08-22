@@ -5,6 +5,10 @@ import { MsgType } from './src/Msg.types';
 import WhatsSocket from './src/core/whats_socket/WhatsSocket'
 import { downloadMediaMessage } from "baileys";
 
+//DEV porpuses
+import fs from "fs";
+import { GetPath } from 'src/libs/BunPath';
+
 const socket = new WhatsSocket({
   credentialsFolder: "./auth",
   loggerMode: "silent",
@@ -40,12 +44,26 @@ socket.onIncomingMessage.Subscribe(async (senderId, chatId, rawMsg, msgType, sen
     if (msg === "contact") {
       await socket.Send.Contact(chatId, { name: "Christian", phone: "5216149384930" }); //It's not real ofc ☠️
     }
+
+    if (msg === "dog") {
+      const dogStickerPath = GetPath("src", "core", "whats_socket", "internals", "mock_data", "sticker_1755901682947.webp");
+      await socket.Send.Sticker(chatId, dogStickerPath, { quoted: rawMsg });
+    }
   }
 
   if (msgType === MsgType.Sticker) {
     console.log("Msg (STICKER)");
     const a = await downloadMediaMessage(rawMsg, "buffer", {});
     await socket.SendSafe(chatId, { sticker: a });
+
+    if (!fs.existsSync("./TEST")) {
+      fs.mkdirSync("./TEST");
+    }
+
+    const fileName = `sticker_${Date.now()}.webp`;
+    const filePath = GetPath("TEST", fileName);
+
+    fs.writeFileSync(filePath, a);
   }
 });
 

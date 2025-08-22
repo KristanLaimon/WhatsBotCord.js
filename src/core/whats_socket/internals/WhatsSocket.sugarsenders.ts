@@ -4,6 +4,9 @@ import { Str_NormalizeLiteralString } from 'src/helpers/Strings.helper';
 import type { IWhatsSocketMinimum } from '../IWhatsSocket';
 import { GetPath } from 'src/libs/BunPath';
 import path from "path";
+import emojiRegexFabric from "emoji-regex";
+
+const emojiRegex = emojiRegexFabric();
 
 export type WhatsMsgSenderSendingOptionsMINIMUM = {
   /**
@@ -19,6 +22,7 @@ export type WhatsMsgSenderSendingOptionsMINIMUM = {
    */
   sendRawWithoutEnqueue?: boolean;
 } & MiscMessageGenerationOptions;
+
 
 export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM & {
   /**
@@ -161,9 +165,30 @@ export class WhatsSocketSugarSender {
     }, options as MiscMessageGenerationOptions);
   }
 
+  /**
+   * Sends a reaction emoji to a specific message in a chat.
+   * @param chatId - The target chat JID (WhatsApp ID).
+   * @param rawMsgToReactTo - The message to react to.
+   * @param emojiStr - The emoji string to send as a reaction.
+   * @param options - Additional sending options:
+   *   - `normalizeMessageText`: If true, normalizes the emoji reaction
+   *      (trims spaces, cleans up multi-line text).
+   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *
+   * Behavior:
+   * - If the emoji string is not a single emoji character, throws an error.
+   * - If the emoji reaction is valid, sends it to the target chat.
+   */
   public async ReactEmojiToMsg(chatId: string, rawMsgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
-    if (typeof emojiStr !== "string" || emojiStr.length != 1) {
-      throw new Error("WhatsSocketSugarSender.ReactEmojiTomsg() received a non-emoji reaction to send.... It must be a simple emoji string of 1 emoji length. Received instead: " + emojiStr);
+    if (typeof emojiStr !== "string") {
+      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received an non string emoji");
+    }
+    if (emojiStr.length != 1) {
+      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received more than 2 chars as emoji to send.... It must be a simple emoji string of 1 emoji length. Received instead: " + emojiStr);
+    }
+
+    if (!emojiStr.match(emojiRegex)) {
+      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + emojiStr);
     }
 
     await (this._getSendingMethod(options))(chatId, {
@@ -202,7 +227,7 @@ export class WhatsSocketSugarSender {
    */
   public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
     if (typeof stickerUrlSource === "string") {
-      if (!fs.existsSync(GetPath(stickerUrlSource))) {
+      if (!fs.existsSync(stickerUrlSource)) {
         throw new Error("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + stickerUrlSource);
       }
     }
@@ -273,7 +298,7 @@ export class WhatsSocketSugarSender {
       buffer = await downloadMediaMessage(audioSource, 'buffer', {});
       mimetype = audioSource.message.audioMessage?.mimetype || 'audio/mpeg';
     } else {
-      console.error('WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg');
+      throw new Error('WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: ' + audioSource);
       return;
     }
 
@@ -300,7 +325,7 @@ export class WhatsSocketSugarSender {
    * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set.
    *
    * @param chatId - The target chat JID (WhatsApp ID), e.g. `5216121407908@s.whatsapp.net`.
-   * @param videoSource - The video to send:
+   * @param videoSourceParams - The video to send:
    *   - `sourcePath`: Absolute/relative path to video file OR a `Buffer`.
    *   - `caption` (optional): Text shown below the video in WhatsApp.
    * @param options - Additional sending options:
@@ -317,8 +342,20 @@ export class WhatsSocketSugarSender {
    * // Send a raw Buffer without queuing
    * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
    */
-  public async Video(chatId: string, videoSource: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<void> {
-    let caption: string | undefined = videoSource.caption;
+  public async Video(chatId: string, videoSourceParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<void> {
+    const videoSource = videoSourceParams.sourcePath;
+    if (typeof videoSource === "string" && !Buffer.isBuffer(videoSource)) {
+      //It's a local video file path
+      if (!fs.existsSync(videoSource)) {
+        throw new Error("WhatsSocketSugarSender.Video() recognized video source as simple string path but doesn't exist or corrupted. Given: " + videoSource);
+      }
+    } else if (Buffer.isBuffer(videoSource)) {
+      //Ok, do nothing, continue.
+    } else {
+      throw new Error("WhatsSocketSugarSender.Video() couldn't recognize video source, its neither a path nor a buffer. Given: " + videoSourceParams.sourcePath);
+    }
+
+    let caption: string | undefined = videoSourceParams.caption;
     if (caption) {
       if (options?.normalizeMessageText) {
         caption = Str_NormalizeLiteralString(caption);
@@ -326,8 +363,8 @@ export class WhatsSocketSugarSender {
     }
     //Default
     let mimeTypeToUse: string = "video/mp4";
-    if (typeof videoSource.sourcePath === "string") {
-      const videoPath: string = videoSource.sourcePath;
+    if (typeof videoSourceParams.sourcePath === "string") {
+      const videoPath: string = videoSourceParams.sourcePath;
       if (videoPath.endsWith(".mov"))
         mimeTypeToUse = "video/mov"
       else if (videoPath.endsWith(".avi"))
@@ -335,8 +372,8 @@ export class WhatsSocketSugarSender {
       //Otherwise, use default "video/mp4"
     }
     await (this._getSendingMethod(options))(chatId, {
-      video: Buffer.isBuffer(videoSource.sourcePath) ? videoSource.sourcePath : fs.readFileSync(GetPath(videoSource.sourcePath)),
-      caption: caption,
+      video: Buffer.isBuffer(videoSourceParams.sourcePath) ? videoSourceParams.sourcePath : fs.readFileSync(GetPath(videoSourceParams.sourcePath)),
+      caption: caption ?? "",
       mimetype: mimeTypeToUse
     });
   }

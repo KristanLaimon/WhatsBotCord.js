@@ -1,5 +1,5 @@
 import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from './Msg.helper';
-import { it, test, expect, describe } from "bun:test";
+import { it, mock, test, expect, describe } from "bun:test";
 import { type WAMessage } from "baileys";
 import { GetPath } from '../libs/BunPath';
 import { MsgType } from '../Msg.types';
@@ -19,6 +19,10 @@ import {
   locationMsg,
   contactMsg
 } from './Msg.helper.mocks';
+
+const mockSomething = mock();
+mock.restore();
+
 
 test("Mockdata from .json can be imported", () => {
   const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
