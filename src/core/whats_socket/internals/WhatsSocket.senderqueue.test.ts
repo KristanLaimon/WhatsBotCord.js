@@ -86,6 +86,27 @@ describe("Enqueue", () => {
     queue = originalQueue;
   }, { timeout: 15000 })
 
+  it("WhenSendingMoreMsgsThanQueueLimit_ShouldNotSendExtraMsgsAndNotGrowQueue", async () => {
+    const originalQueue = queue;
+    const MAXQUEUELIMIT = 6;
+    queue = new WhatsSocketSenderQueue(mockSocket, MAXQUEUELIMIT, 20);
+    queue.StopGracefully();
+    queue.Enqueue(fakeChatId, { text: "First Message" });
+    queue.Enqueue(fakeChatId, { text: "Second Message" });
+    queue.Enqueue(fakeChatId, { text: "Third Message" });
+    await queue.Continue();//Wait to send those 3 messages first
+    queue.Enqueue(fakeChatId, { text: "Forth Message" });
+    queue.Enqueue(fakeChatId, { text: "Fifth Message" });
+    queue.Enqueue(fakeChatId, { text: "Sixth Message" });
+    queue.Enqueue(fakeChatId, { text: "Seventh Message" });
+    queue.Enqueue(fakeChatId, { text: "Eight Message" });
+    queue.Enqueue(fakeChatId, { text: "Ninth Message" }); //Limit here
+    queue.Enqueue(fakeChatId, { text: "Tenth Message" });
+    queue.Enqueue(fakeChatId, { text: "Eleventh Message" });
+    expect(queue.ActualElementsInQueue.length).toBe(6)
+    queue = originalQueue;
+  });
+
   //================== Now using all types of msgs =======================
   //TODO: Make every type of message mock but sending (mocks). Note: this will be tested after WhatsSocket.sugarsenders.ts
 });

@@ -62,7 +62,8 @@ export default class WhatsSocketSenderQueue {
    */
   public async Enqueue(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions): Promise<void> {
     if (this.queue.length >= this.maxQueueLimit) {
-      throw new Error(`Queue limit of ${this.maxQueueLimit} reached. Please wait.`);
+      console.log(`WhatsSocketSenderQueue: Queue limit of ${this.maxQueueLimit} reached. Ignoring extra img...`);
+      return;
     }
 
     return new Promise((resolve, reject) => {

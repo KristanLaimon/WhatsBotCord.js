@@ -3,11 +3,8 @@
   "module": "main.ts",
   "type": "module",
   "devDependencies": {
-    "@sinonjs/fake-timers": "^14.0.0",
     "@types/bun": "latest",
-    "@types/sinonjs__fake-timers": "^8.1.5",
-    "cross-env": "^10.0.0",
-    "mock-fs": "^5.5.0"
+    "cross-env": "^10.0.0"
   },
   "scripts": {
     "check": "tsc --noEmit",
