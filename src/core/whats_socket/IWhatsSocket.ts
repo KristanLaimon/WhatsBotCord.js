@@ -1,4 +1,4 @@
-import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from 'baileys';
+import type { AnyMessageContent, WAMessageUpdate, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from 'baileys';
 import type Delegate from '../../libs/Delegate';
 import { MsgType, SenderType } from '../../Msg.types';
 
@@ -20,7 +20,7 @@ interface ICanSendMsgs {
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
-  SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void>;
+  SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
 
   /**
    * Sends a message to a specific chat ID with content and optionally with other options.
@@ -37,7 +37,7 @@ interface ICanSendMsgs {
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
-  SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void>
+  SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>
 }
 
 export interface IWhatsSocketMinimum extends ICanSendMsgs {
@@ -52,7 +52,9 @@ export interface IWhatsSocketMinimum extends ICanSendMsgs {
 export interface IWhatsSocket extends ICanSendMsgs {
   // Public Delegates for handling events
   onReconnect: Delegate<() => Promise<void>>;
-  onIncomingMessage: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void>;
+  //Old name: onMessageIncoming
+  onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void>;
+  onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessageUpdate, msgType: MsgType, senderType: SenderType) => void>;
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;

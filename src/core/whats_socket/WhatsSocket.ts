@@ -3,6 +3,8 @@ import {
   type GroupMetadata,
   type MiscMessageGenerationOptions,
   type WAMessage,
+  type WAMessageUpdate,
+  type proto,
   DisconnectReason,
   makeWASocket,
   useMultiFileAuthState,
@@ -22,6 +24,8 @@ import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from '../../Wha
 import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
 import type { IWhatsSocket } from './IWhatsSocket';
 import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
+
+//TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 
 export type WhatsSocketOptions = {
   /** 
@@ -67,8 +71,6 @@ export type WhatsSocketOptions = {
   milisecondsDelayBetweenSentMsgs?: number;
 }
 
-
-
 /**
  * Class used to interact with the WhatsApp Web socket client (baileys).
  * Will start the socket and keep it connected until you call the Shutdown method.
@@ -94,7 +96,8 @@ export type WhatsSocketOptions = {
  */
 export default class WhatsSocket implements IWhatsSocket {
   public onReconnect: Delegate<() => Promise<void>> = new Delegate();
-  public onIncomingMessage: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
+  public onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
+  public onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
   public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
@@ -120,8 +123,6 @@ export default class WhatsSocket implements IWhatsSocket {
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
     this._milisecondsDelayBetweenSentMsgs = options?.milisecondsDelayBetweenSentMsgs ?? 100;
   }
-
-
   private _isRestarting: boolean = false;
 
   /**
@@ -134,13 +135,22 @@ export default class WhatsSocket implements IWhatsSocket {
     await this.InitializeSelf();
     this.ConfigureReconnection();
     this.ConfigureMessageIncoming();
+    this.ConfigureMessagesUpdates();
     this.ConfigureGroupsEnter();
     this.ConfigureGroupsUpdates();
 
+    //Thanks JavaScript ☠️
     this.SendSafe = this.SendSafe.bind(this);
     this.SendRaw = this.SendRaw.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
+    this.InitializeSelf = this.InitializeSelf.bind(this);
+    this.Shutdown = this.Shutdown.bind(this);
+    this.ConfigureReconnection = this.ConfigureReconnection.bind(this);
+    this.ConfigureMessageIncoming = this.ConfigureMessageIncoming.bind(this);
+    this.ConfigureGroupsEnter = this.ConfigureGroupsEnter.bind(this);
+    this.ConfigureGroupsUpdates = this.ConfigureGroupsUpdates.bind(this);
   }
+
 
   private async InitializeSelf() {
     const logger = pino({ level: this._loggerMode });
@@ -149,7 +159,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this._socket = makeWASocket({
       auth: state,
       logger: logger,
-      browser: Browsers.windows("Desktop") //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
+      browser: Browsers.windows("Desktop"), //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
     });
     this._senderQueue = new WhatsSocketSenderQueue(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
     this.Send = new WhatsSocketSugarSender(this);
@@ -212,6 +222,53 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
+
+  private ConfigureMessageIncoming(): void {
+    this._socket.ev.on("messages.upsert", async (messageUpdate) => {
+      if (!messageUpdate.messages) return;
+      for (const msg of messageUpdate.messages) {
+        if (this._ignoreSelfMessages)
+          if (!msg.message || msg.key.fromMe) continue;
+
+        const chatId = msg.key.remoteJid!;
+        const senderId = msg.key.participant ?? null;
+        let senderType: SenderType = SenderType.Unknown;
+        if (chatId && chatId.endsWith(WhatsAppGroupIdentifier)) senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
+        this.onMessageUpsert.CallAll(senderId, chatId, msg, MsgHelper_GetMsgTypeFromRawMsg(msg), senderType);
+      }
+    });
+  }
+
+  private ConfigureMessagesUpdates() {
+    this._socket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
+      if (!msgsUpdates || msgsUpdates.length === 0) return;
+      for (const msgUpdate of msgsUpdates) {
+        if (this._ignoreSelfMessages)
+          if (msgUpdate.key.fromMe) return;
+
+        const chatId: string = msgUpdate.key.remoteJid!;
+        const senderId: string | null = msgUpdate.key.participant ?? null;
+        let senderType: SenderType = SenderType.Unknown;
+        if (chatId && chatId.endsWith(WhatsAppGroupIdentifier)) senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
+        this.onMessageUpdate.CallAll(senderId, chatId, msgUpdate, MsgHelper_GetMsgTypeFromRawMsg(msgUpdate), senderType);
+      }
+    })
+  }
+
+  /**
+   * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
+   * @param chatId The chat ID of the group you want to get metadata from.
+   * @throws Will throw an error if the provided chatId is not a group chat ID
+   * @returns A promise that resolves to the group metadata.
+   */
+  public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
+    if (!chatId.endsWith(WhatsAppGroupIdentifier))
+      throw new Error("Provided chatId is not a group chat ID. => " + chatId);
+    return await this._socket.groupMetadata(chatId);
+  }
+
   private ConfigureGroupsEnter(): void {
     this._socket.ev.on('groups.upsert', async (groupsUpserted: GroupMetadata[]) => {
       for (const group of groupsUpserted) {
@@ -236,42 +293,13 @@ export default class WhatsSocket implements IWhatsSocket {
     })
   }
 
-  private ConfigureMessageIncoming(): void {
-    this._socket.ev.on("messages.upsert", async (messageUpdate) => {
-      if (!messageUpdate.messages) return;
-      for (const msg of messageUpdate.messages) {
-        if (this._ignoreSelfMessages)
-          if (!msg.message || msg.key.fromMe) continue;
-
-        const chatId = msg.key.remoteJid!;
-        const senderId = msg.key.participant ?? null;
-        let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith(WhatsAppGroupIdentifier)) senderType = SenderType.Group;
-        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
-        this.onIncomingMessage.CallAll(senderId, chatId, msg, MsgHelper_GetMsgTypeFromRawMsg(msg), senderType);
-      }
-    });
+  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+    return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  /**
-   * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
-   * @param chatId The chat ID of the group you want to get metadata from.
-   * @throws Will throw an error if the provided chatId is not a group chat ID
-   * @returns A promise that resolves to the group metadata.
-   */
-  public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
-    if (!chatId.endsWith(WhatsAppGroupIdentifier))
-      throw new Error("Provided chatId is not a group chat ID. => " + chatId);
-    return await this._socket.groupMetadata(chatId);
-  }
-
-  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions) {
-    await this._senderQueue.Enqueue(chatId_JID, content, options)
-  }
-
-  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
-    await this._socket.sendMessage(chatId_JID, content, options);
+  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+    //TODO: Do something in case its undefined from this._socket.sendMessage
+    const toReturn: proto.WebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
+    return toReturn;
   }
 }
-
-//TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)

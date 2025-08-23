@@ -36,13 +36,13 @@ describe("WhatsSocketMock Generally", () => {
   it("Clear_WhenSocketMockHasBeenUseALot_ShouldCleanItself", () => {
     const socketMock = new WhatsSocketMock();
     socketMock.onReconnect.Subscribe((() => { }) as any);
-    socketMock.onIncomingMessage.Subscribe(() => { });
+    socketMock.onMessageUpsert.Subscribe(() => { });
     socketMock.onGroupEnter.Subscribe(() => { });
     socketMock.onGroupUpdate.Subscribe(() => { });
     socketMock.onStartupAllGroupsIn.Subscribe(() => { });
 
     expect(socketMock.onReconnect.Length).toBe(1);
-    expect(socketMock.onIncomingMessage.Length).toBe(1);
+    expect(socketMock.onMessageUpsert.Length).toBe(1);
     expect(socketMock.onGroupEnter.Length).toBe(1);
     expect(socketMock.onGroupUpdate.Length).toBe(1);
     expect(socketMock.onStartupAllGroupsIn.Length).toBe(1);
@@ -56,7 +56,7 @@ describe("WhatsSocketMock Generally", () => {
 
     expect(socketMock.SentMessages).toHaveLength(0);
     expect(socketMock.onReconnect.Length).toBe(0);
-    expect(socketMock.onIncomingMessage.Length).toBe(0);
+    expect(socketMock.onMessageUpsert.Length).toBe(0);
     expect(socketMock.onGroupEnter.Length).toBe(0);
     expect(socketMock.onGroupUpdate.Length).toBe(0);
     expect(socketMock.onStartupAllGroupsIn.Length).toBe(0);

@@ -103,6 +103,8 @@ describe("Enqueue", () => {
     queue.Enqueue(fakeChatId, { text: "Ninth Message" }); //Limit here
     queue.Enqueue(fakeChatId, { text: "Tenth Message" });
     queue.Enqueue(fakeChatId, { text: "Eleventh Message" });
+    queue.Enqueue(fakeChatId, { text: "Twelveth Message" });
+    queue.Enqueue(fakeChatId, { text: "Thirteenth Message" });
     expect(queue.ActualElementsInQueue.length).toBe(6)
     queue = originalQueue;
   });

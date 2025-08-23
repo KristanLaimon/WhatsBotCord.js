@@ -438,7 +438,13 @@ export class WhatsSocketSugarSender {
         //Whats API receives 0 as multiple answers and 1 for exclusive 1 answer to polls (Thats how it works ¯\_(ツ)_/¯)
         selectableCount: pollParams.withMultiSelect ? 0 : 1
       }
-    }, moreOptions as MiscMessageGenerationOptions)
+    }, moreOptions as MiscMessageGenerationOptions);
+
+    // const sugarPollObjToReturn = new WhatsPoll(this.socket, {
+    //   pollOptions: selects,
+    //   pollRawMsg: 
+    // })
+
   }
 
   public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM) {

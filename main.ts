@@ -17,7 +17,7 @@ const socket = new WhatsSocket({
   milisecondsDelayBetweenSentMsgs: 10
 });
 
-socket.onIncomingMessage.Subscribe(async (senderId, chatId, rawMsg, msgType, senderType) => {
+socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, senderType) => {
   if (msgType === MsgType.Text) {
     const msg = MsgHelper_GetTextFrom(rawMsg)!;
     console.log(`Msg: ${msg} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);

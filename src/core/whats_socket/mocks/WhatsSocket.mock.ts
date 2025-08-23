@@ -4,6 +4,7 @@ import { SenderType, type MsgType } from '../../../Msg.types';
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
 import WhatsSocketSenderQueue from '../internals/WhatsSocket.senderqueue';
 import type { WhatsSocketMessageSentMock } from './types';
+import { WhatsAppGroupIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
@@ -12,7 +13,8 @@ export type WhatsSocketMockOptions = {
 
 export default class WhatsSocketMock implements IWhatsSocket {
   onReconnect: Delegate<() => Promise<void>> = new Delegate();
-  onIncomingMessage: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
+  onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
+  onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
@@ -50,13 +52,22 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.IsOn = false;
     return Promise.resolve();
   }
-  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
-    await this._senderQueue.Enqueue(chatId_JID, content, options);
+  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+    return await this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<void> {
+  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
     this._messagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: true });
-    return;
+    return {
+      message: {
+        conversation: "Mock Minimum Object WAMessage",
+      },
+      key: {
+        fromMe: false,
+        id: "23423423234" + WhatsappLIDIdentifier,
+        remoteJid: "falseid" + WhatsAppGroupIdentifier
+      }
+    };
   }
 
   public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
@@ -75,10 +86,11 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.GroupsIDTriedToFetch = [];
 
     this.onReconnect.Clear();
-    this.onIncomingMessage.Clear();
+    this.onMessageUpsert.Clear();
     this.onGroupEnter.Clear();
     this.onGroupUpdate.Clear();
     this.onStartupAllGroupsIn.Clear();
+    this.onMessageUpdate.Clear();
   }
 
 }

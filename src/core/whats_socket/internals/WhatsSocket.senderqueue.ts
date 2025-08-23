@@ -1,4 +1,4 @@
-import type { AnyMessageContent, MiscMessageGenerationOptions } from 'baileys';
+import type { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from 'baileys';
 import type { IWhatsSocketMinimum } from '../IWhatsSocket';
 import Delegate from 'src/libs/Delegate';
 
@@ -56,17 +56,18 @@ export default class WhatsSocketSenderQueue {
 
   /**
    * Enqueues a message to be sent.
+   * @throws Error if msg enqueue couldn't be send
    * @param chatId ChatJID of the user.
    * @param content The content of the message.
    * @param misc Miscellaneous options.
    */
-  public async Enqueue(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions): Promise<void> {
-    if (this.queue.length >= this.maxQueueLimit) {
-      console.log(`WhatsSocketSenderQueue: Queue limit of ${this.maxQueueLimit} reached. Ignoring extra img...`);
-      return;
-    }
-
+  public Enqueue(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
     return new Promise((resolve, reject) => {
+      if (this.queue.length >= this.maxQueueLimit) {
+        console.log(`WhatsSocketSenderQueue: Queue limit of ${this.maxQueueLimit} reached. Ignoring extra img...`);
+        resolve(null);
+        return;
+      }
       this.queue.push({ chatId, content, misc, resolve, reject });
       // Only start the processing loop if it's not already running.
       if (!this.isProcessing && !this.isStopped) {
@@ -91,7 +92,7 @@ export default class WhatsSocketSenderQueue {
    */
   public async Continue(): Promise<void> {
     this.isStopped = false;
-    await this.ProcessQueue();
+    return this.ProcessQueue();
   }
 
   /**
@@ -104,9 +105,9 @@ export default class WhatsSocketSenderQueue {
     while (this.queue.length > 0) {
       const item = this.queue.shift()!;
       try {
-        await this.whatsSocket.SendRaw(item.chatId, item.content, item.misc);
+        const sentMsg: WAMessage | null = await this.whatsSocket.SendRaw(item.chatId, item.content, item.misc);
         this.onMessageSent.CallAll(item.chatId, item.content, item.misc);
-        item.resolve(true);
+        item.resolve(sentMsg);
       } catch (error) {
         item.reject(error);
       }
