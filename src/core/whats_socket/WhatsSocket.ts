@@ -102,6 +102,10 @@ export default class WhatsSocket implements IWhatsSocket {
   public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
 
+  public get ownJID(): string {
+    return this._socket.user!.id;
+  }
+
   //=== Subcomponents ===
   //They're initialized/instantiated in "Start()"
   private _socket!: BaileysWASocket;

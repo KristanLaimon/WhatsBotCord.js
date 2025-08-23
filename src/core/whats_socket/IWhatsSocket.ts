@@ -3,7 +3,6 @@ import type Delegate from '../../libs/Delegate';
 import { MsgType, SenderType } from '../../Msg.types';
 
 interface ICanSendMsgs {
-
   /**
    * Send a message to a specific chat ID with content and optionally with other options.
    *
@@ -44,7 +43,6 @@ export interface IWhatsSocketMinimum extends ICanSendMsgs {
   //Only Send*() related functions
 }
 
-
 /**
  * Public interface for the WhatsSocket class.
  * It defines the contract for interacting with the WhatsApp socket client.
@@ -58,6 +56,8 @@ export interface IWhatsSocket extends ICanSendMsgs {
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
+
+  ownJID: string;
 
   // Public Methods
   Start(): Promise<void>;

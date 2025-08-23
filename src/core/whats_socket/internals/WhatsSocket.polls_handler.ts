@@ -33,6 +33,10 @@ export default class WhatsPoll implements IWhatsPoll {
   constructor(borrowedSocket: IWhatsSocket, pollInfo: WhatsPollParamsInfo) {
     this._borrowedSocket = borrowedSocket;
     this._pollInfo = pollInfo;
+
+    // Normalize the original poll message right away
+    this._pollInfo.pollRawMsg.message = this._normalizePollMessage(this._pollInfo.pollRawMsg.message);
+
     this._onMessageUpsertSubcriber = this._onMessageUpsertSubcriber.bind(this);
     this.StopListeningFromPoll = this.StopListeningFromPoll.bind(this);
     this._borrowedSocket.onMessageUpsert.Subscribe(this._onMessageUpsertSubcriber);
@@ -46,29 +50,22 @@ export default class WhatsPoll implements IWhatsPoll {
   public async GetActualResults(): Promise<WhatsPollResult[]> {
     try {
       if (!this._pollInfo.pollRawMsg.message) {
-        console.error('Poll creation message content is missing');
+        console.error("Original poll message is null or undefined.");
         return [];
       }
 
-      // Log the poll creation message to verify its structure
-      console.log('Poll Creation Message:', JSON.stringify(this._pollInfo.pollRawMsg.message, null, 2));
-
       const pollVotes = await getAggregateVotesInPollMessage({
         message: this._pollInfo.pollRawMsg.message,
+        //@ts-ignore
         pollUpdates: this._pollUpdates,
-      });
+      }, this._borrowedSocket.ownJID);
 
-      // Log the aggregated votes for debugging
-      console.log('Aggregated Votes:', JSON.stringify(pollVotes, null, 2));
-
-      const results: WhatsPollResult[] = pollVotes.map((vote): WhatsPollResult => ({
+      return pollVotes.map(vote => ({
         Option: vote.name,
         UsersVotesIds: vote.voters,
       }));
-
-      return results;
-    } catch (error) {
-      console.error('Error fetching poll results:', error);
+    } catch (err) {
+      console.error("Error fetching poll results:", err);
       return [];
     }
   }
@@ -93,6 +90,9 @@ export default class WhatsPoll implements IWhatsPoll {
     if ((rawUpdateMsg.key.remoteJid ?? '') !== (this._pollInfo.pollRawMsg.key.remoteJid ?? '')) return;
     if (!rawUpdateMsg.message.pollUpdateMessage.pollCreationMessageKey) return;
 
+    // Use an improved log for better debugging
+    console.log("Incoming poll update message: ", JSON.stringify(rawUpdateMsg, null, 2));
+
     if (rawUpdateMsg.message.pollUpdateMessage.pollCreationMessageKey.id === this._pollInfo.pollRawMsg.key.id) {
       this._pollUpdates.push(rawUpdateMsg.message.pollUpdateMessage);
       await this._thisPollUpdate(rawUpdateMsg);
@@ -103,13 +103,26 @@ export default class WhatsPoll implements IWhatsPoll {
     try {
       const pollVotes = await getAggregateVotesInPollMessage({
         message: this._pollInfo.pollRawMsg.message,
+        //@ts-ignore
         pollUpdates: this._pollUpdates,
-      });
+      }, this._borrowedSocket.ownJID);
+
+      // Find the new updates
+      const previousVotes = this._pollUpdates.length > 1 ? await getAggregateVotesInPollMessage({
+        message: this._pollInfo.pollRawMsg.message,
+        //@ts-ignore
+        pollUpdates: this._pollUpdates.slice(0, -1),
+      }, this._borrowedSocket.ownJID) : [];
 
       for (const vote of pollVotes) {
         const option = vote.name;
         const voters = vote.voters;
-        for (const voterJid of voters) {
+        const previousVoters = previousVotes.find(v => v.name === option)?.voters || [];
+
+        // Get new voters by comparing the current voters with the previous ones
+        const newVoters = voters.filter(voter => !previousVoters.includes(voter));
+
+        for (const voterJid of newVoters) {
           const nickname = pollMsg.pushName ?? '===NONICKNAME===';
           this.onVoteUpdate.CallAll(option, nickname, voterJid);
         }
@@ -117,5 +130,26 @@ export default class WhatsPoll implements IWhatsPoll {
     } catch (error) {
       console.error('Error processing poll update:', error);
     }
+  }
+
+  // New private method to handle different poll message formats
+  private _normalizePollMessage(msg: proto.IMessage | undefined | null): proto.IMessage | undefined | null {
+    if (!msg) return msg;
+
+    if (msg.pollCreationMessageV3) {
+      return {
+        ...msg,
+        pollCreationMessage: {
+          name: msg.pollCreationMessageV3.name,
+          selectableOptionsCount: msg.pollCreationMessageV3.selectableOptionsCount,
+          options: msg.pollCreationMessageV3.options?.map(o => ({
+            optionName: o.optionName // The structure of optionName is a string, not an object
+          })),
+        },
+        pollCreationMessageV3: undefined // Clear the V3 field to avoid conflicts
+      } as proto.IMessage;
+    }
+
+    return msg;
   }
 }

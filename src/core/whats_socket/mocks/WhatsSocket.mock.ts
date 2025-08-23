@@ -4,7 +4,7 @@ import { SenderType, type MsgType } from '../../../Msg.types';
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
 import WhatsSocketSenderQueue from '../internals/WhatsSocket.senderqueue';
 import type { WhatsSocketMessageSentMock } from './types';
-import { WhatsAppGroupIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
+import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
@@ -18,6 +18,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
+
+  ownJID: string = "ownIDMock" + WhatsappIndividualIdentifier;
 
   private _senderQueue: WhatsSocketSenderQueue;
 

@@ -36,21 +36,6 @@ socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, sende
       await socket.Send.Ubication(chatId, { degreesLatitude: 24.08, degreesLongitude: -110.335, addressText: "address name", name: "a name!" });
     }
 
-    if (msg === "poll") {
-      const poll = await socket.Send.Poll(chatId, "My poll with multiple answers", ["Fox", "Panda", "Snow white fox"], { withMultiSelect: true });
-      // await socket.Send.Poll(chatId, "My poll with one answer only", ["Fox", "Panda", "Snow white fox"], { withMultiSelect: false });
-      if (poll) {
-        console.log("Poll obj created!!!!");
-        console.log("Is Listening for updates: " + poll.isListeningForUpdates)
-
-        poll.onVoteUpdate.Subscribe((optionTxt, nickNameUser, userId) => {
-          console.log("There was a vote!!!" + " from " + nickNameUser);
-        })
-      } else {
-        console.log("fuck")
-      }
-    }
-
     if (msg === "contact") {
       await socket.Send.Contact(chatId, { name: "Christian", phone: "5216149384930" }); //It's not real ofc ☠️
     }

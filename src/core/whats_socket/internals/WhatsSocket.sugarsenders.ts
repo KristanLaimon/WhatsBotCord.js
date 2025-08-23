@@ -380,6 +380,7 @@ export class WhatsSocketSugarSender {
   }
 
   /**
+   * @deprecated Only works for sending, can't retrieve any data from that. (Idk how baileys library works for that, its not documented at all... 🥲)
    * Sends a poll message to a specific chat.
    *
    * WhatsApp polls allow either:
@@ -418,7 +419,7 @@ export class WhatsSocketSugarSender {
    * }, { sendRawWithoutEnqueue: true });
    * 
    */
-  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsPoll | null> {
+  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
     let title: string = pollTitle;
     let selects: string[] = selections;
 
@@ -434,7 +435,7 @@ export class WhatsSocketSugarSender {
       selects = selections.map(opt => Str_NormalizeLiteralString(opt));
     }
 
-    const msgSent: WAMessage | null = await (this._getSendingMethod(moreOptions))(chatId, {
+    await (this._getSendingMethod(moreOptions))(chatId, {
       poll: {
         name: title,
         values: selects,
@@ -444,18 +445,19 @@ export class WhatsSocketSugarSender {
       }
     }, moreOptions as MiscMessageGenerationOptions);
 
-    if (msgSent) {
-      const sugarPollObjToReturn = new WhatsPoll(this.socket, {
-        pollOptions: selects,
-        pollRawMsg: msgSent,
-        titleHeader: title,
-        withMultiSelect: pollParams.withMultiSelect
-      });
+    //Uncomment until I discover a way to fetch votes data from polls, only sending porpuses so far.
+    // if (msgSent) {
+    //   const sugarPollObjToReturn = new WhatsPoll(this.socket, {
+    //     pollOptions: selects,
+    //     pollRawMsg: msgSent,
+    //     titleHeader: title,
+    //     withMultiSelect: pollParams.withMultiSelect
+    //   });
 
-      return sugarPollObjToReturn;
-    } else {
-      return null;
-    }
+    //   return sugarPollObjToReturn;
+    // } else {
+    //   return null;
+    // }
   }
 
   public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
