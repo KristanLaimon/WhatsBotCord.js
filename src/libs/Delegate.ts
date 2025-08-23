@@ -12,7 +12,7 @@ export default class Delegate<functType extends (...args: any[]) => any> {
     this.functions.push(funct);
   }
 
-  public Unsubsribe(funct: functType): boolean {
+  public Unsubscribe(funct: functType): boolean {
     const foundFunctIndex = this.functions.findIndex(f => f === funct);
     if (foundFunctIndex === -1) return false;
     this.functions.splice(foundFunctIndex, 1);

@@ -37,8 +37,18 @@ socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, sende
     }
 
     if (msg === "poll") {
-      await socket.Send.Poll(chatId, "My poll with multiple answers", ["Fox", "Panda", "Snow white fox"], { withMultiSelect: true });
-      await socket.Send.Poll(chatId, "My poll with one answer only", ["Fox", "Panda", "Snow white fox"], { withMultiSelect: false });
+      const poll = await socket.Send.Poll(chatId, "My poll with multiple answers", ["Fox", "Panda", "Snow white fox"], { withMultiSelect: true });
+      // await socket.Send.Poll(chatId, "My poll with one answer only", ["Fox", "Panda", "Snow white fox"], { withMultiSelect: false });
+      if (poll) {
+        console.log("Poll obj created!!!!");
+        console.log("Is Listening for updates: " + poll.isListeningForUpdates)
+
+        poll.onVoteUpdate.Subscribe((optionTxt, nickNameUser, userId) => {
+          console.log("There was a vote!!!" + " from " + nickNameUser);
+        })
+      } else {
+        console.log("fuck")
+      }
     }
 
     if (msg === "contact") {
@@ -49,6 +59,7 @@ socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, sende
       const dogStickerPath = GetPath("src", "core", "whats_socket", "internals", "mock_data", "sticker_1755901682947.webp");
       await socket.Send.Sticker(chatId, dogStickerPath, { quoted: rawMsg });
     }
+
   }
 
   if (msgType === MsgType.Sticker) {

@@ -52,16 +52,16 @@ test("Unsubscribe_WhenRemovingAFunction_ShouldDecreaseInternalFunctionsList", ()
   for (const delegate of all)
     expect(delegate.Length).toBe(2);
 
-  ACTION.Unsubsribe(action1);
-  DELEGATE_STR.Unsubsribe(delegateStr1);
-  DELEGATE_RETURN_INT.Unsubsribe(delegateReturnInt2);
+  ACTION.Unsubscribe(action1);
+  DELEGATE_STR.Unsubscribe(delegateStr1);
+  DELEGATE_RETURN_INT.Unsubscribe(delegateReturnInt2);
 
   for (const delegate of all)
     expect(delegate.Length).toBe(1);
 
-  ACTION.Unsubsribe(action2);
-  DELEGATE_STR.Unsubsribe(delegateStr2);
-  DELEGATE_RETURN_INT.Unsubsribe(delegateReturnInt1);
+  ACTION.Unsubscribe(action2);
+  DELEGATE_STR.Unsubscribe(delegateStr2);
+  DELEGATE_RETURN_INT.Unsubscribe(delegateReturnInt1);
 
   for (const delegate of all)
     expect(delegate.Length).toBe(0);

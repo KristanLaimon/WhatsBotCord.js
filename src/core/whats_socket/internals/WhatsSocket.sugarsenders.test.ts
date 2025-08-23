@@ -1,16 +1,16 @@
 import { WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
 import { it, mock, spyOn, expect, describe, beforeEach, afterEach, type Mock } from "bun:test";
 import { WhatsSocketSugarSender } from './WhatsSocket.sugarsenders';
-import WhatsSocketMockMinimum from '../mocks/WhatsSocket.minimum.mock';
 import { allMockMsgs } from 'src/helpers/Msg.helper.mocks';
 import fs from "fs";
 import { GetPath } from 'src/libs/BunPath';
 import path from "node:path";
+import WhatsSocketMock from '../mocks/WhatsSocket.mock';
 
 const fakeChatId = "338839029383" + WhatsAppGroupIdentifier;
 
 describe("Text", () => {
-  const mockWhatsSocket = new WhatsSocketMockMinimum();
+  const mockWhatsSocket = new WhatsSocketMock();
   const sender = new WhatsSocketSugarSender(mockWhatsSocket);
 
   beforeEach(() => {
@@ -63,7 +63,7 @@ describe("Text", () => {
 });
 
 describe("Images", () => {
-  const mockWhatsSocket = new WhatsSocketMockMinimum();
+  const mockWhatsSocket = new WhatsSocketMock();
   const sender = new WhatsSocketSugarSender(mockWhatsSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
@@ -165,7 +165,7 @@ describe("Images", () => {
 });
 
 describe("ReactEmojiToMsg", () => {
-  const mockWhatsSender = new WhatsSocketMockMinimum()
+  const mockWhatsSender = new WhatsSocketMock()
   const sender = new WhatsSocketSugarSender(mockWhatsSender);
 
   it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
@@ -206,7 +206,7 @@ describe("ReactEmojiToMsg", () => {
 
 const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
 describe("Sticker", () => {
-  const mockWhatsSender = new WhatsSocketMockMinimum();
+  const mockWhatsSender = new WhatsSocketMock();
   const sender = new WhatsSocketSugarSender(mockWhatsSender);
 
   //Getting all real stickers examples in webp from mocks folder
@@ -241,7 +241,7 @@ describe("Sticker", () => {
 });
 
 describe("Audio", () => {
-  const mockWhatsSocket = new WhatsSocketMockMinimum();
+  const mockWhatsSocket = new WhatsSocketMock();
   const sender = new WhatsSocketSugarSender(mockWhatsSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
@@ -348,7 +348,7 @@ describe("Audio", () => {
 });
 
 describe("Video", async () => {
-  const mockSocket = new WhatsSocketMockMinimum();
+  const mockSocket = new WhatsSocketMock();
   const sender = new WhatsSocketSugarSender(mockSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;

@@ -1,10 +1,11 @@
 import { type MiscMessageGenerationOptions, type WAMessage, downloadMediaMessage } from "baileys";
 import fs from "fs";
 import { Str_NormalizeLiteralString } from 'src/helpers/Strings.helper';
-import type { IWhatsSocketMinimum } from '../IWhatsSocket';
+import type { IWhatsSocket } from '../IWhatsSocket';
 import { GetPath } from 'src/libs/BunPath';
 import path from "path";
 import emojiRegexFabric from "emoji-regex";
+import WhatsPoll from './WhatsSocket.polls_handler';
 
 const emojiRegex = emojiRegexFabric();
 
@@ -93,9 +94,9 @@ export type WhatsMsgUbicationOptions = {
 
 
 export class WhatsSocketSugarSender {
-  private socket: IWhatsSocketMinimum;
+  private socket: IWhatsSocket;
 
-  constructor(socket: IWhatsSocketMinimum) {
+  constructor(socket: IWhatsSocket) {
     this.socket = socket;
   }
 
@@ -402,6 +403,7 @@ export class WhatsSocketSugarSender {
    * @param moreOptions - Additional sending options:
    *   - `sendRawWithoutEnqueue`: Send immediately, bypass queue.
    *   - Any other Baileys `MiscMessageGenerationOptions`.
+   * @returns Poll autoself-updating obj with the poll actualvotes, in case the poll couldn't be send, will return null instead.
    *
    * @example
    * // Single-answer poll
@@ -414,8 +416,9 @@ export class WhatsSocketSugarSender {
    *   normalizeOptionsText: true,
    *   normalizeTitleText: true
    * }, { sendRawWithoutEnqueue: true });
+   * 
    */
-  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsPoll | null> {
     let title: string = pollTitle;
     let selects: string[] = selections;
 
@@ -431,20 +434,28 @@ export class WhatsSocketSugarSender {
       selects = selections.map(opt => Str_NormalizeLiteralString(opt));
     }
 
-    await (this._getSendingMethod(moreOptions))(chatId, {
+    const msgSent: WAMessage | null = await (this._getSendingMethod(moreOptions))(chatId, {
       poll: {
         name: title,
         values: selects,
         //Whats API receives 0 as multiple answers and 1 for exclusive 1 answer to polls (Thats how it works ¯\_(ツ)_/¯)
-        selectableCount: pollParams.withMultiSelect ? 0 : 1
+        // selectableCount: pollParams.withMultiSelect ? 0 : 1
+        selectableCount: selections.length
       }
     }, moreOptions as MiscMessageGenerationOptions);
 
-    // const sugarPollObjToReturn = new WhatsPoll(this.socket, {
-    //   pollOptions: selects,
-    //   pollRawMsg: 
-    // })
+    if (msgSent) {
+      const sugarPollObjToReturn = new WhatsPoll(this.socket, {
+        pollOptions: selects,
+        pollRawMsg: msgSent,
+        titleHeader: title,
+        withMultiSelect: pollParams.withMultiSelect
+      });
 
+      return sugarPollObjToReturn;
+    } else {
+      return null;
+    }
   }
 
   public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
