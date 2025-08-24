@@ -5,7 +5,6 @@ import type { IWhatsSocket } from '../IWhatsSocket';
 import { GetPath } from 'src/libs/BunPath';
 import path from "path";
 import emojiRegexFabric from "emoji-regex";
-import WhatsPoll from './WhatsSocket.polls_handler';
 
 const emojiRegex = emojiRegexFabric();
 

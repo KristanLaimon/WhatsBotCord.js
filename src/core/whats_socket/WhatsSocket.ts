@@ -69,6 +69,14 @@ export type WhatsSocketOptions = {
    *  Default: 100 miliseconda (fast)
   */
   milisecondsDelayBetweenSentMsgs?: number;
+
+  /**
+   * Provide your own implementation of the native whatsapp API.
+   * By default, uses Baileys API Socket.
+   * @note Used primarly for TESTING purposes. Use at your own risk if you
+   * know what are you doing!
+   */
+  ownImplementationSocketAPIWhatsapp?: BaileysWASocket;
 }
 
 /**
@@ -120,12 +128,14 @@ export default class WhatsSocket implements IWhatsSocket {
   private _actualRetries: number = 0;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
+  private _customSocketImplementation?: BaileysWASocket;
   constructor(options?: WhatsSocketOptions) {
     this._loggerMode = options?.loggerMode ?? "silent";
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
     this._milisecondsDelayBetweenSentMsgs = options?.milisecondsDelayBetweenSentMsgs ?? 100;
+    this._customSocketImplementation = options?.ownImplementationSocketAPIWhatsapp
   }
   private _isRestarting: boolean = false;
 
@@ -159,15 +169,23 @@ export default class WhatsSocket implements IWhatsSocket {
   private async InitializeSelf() {
     const logger = pino({ level: this._loggerMode });
     let authInfoPath: string = GetPath(this._credentialsFolder)
+
     const { state, saveCreds } = await useMultiFileAuthState(authInfoPath);
-    this._socket = makeWASocket({
-      auth: state,
-      logger: logger,
-      browser: Browsers.windows("Desktop"), //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
-    });
+    if (this._customSocketImplementation) {
+      this._socket = this._customSocketImplementation
+    } else {
+      //By default uses "Baileys" library whatsapp socket API
+      this._socket = makeWASocket({
+        auth: state,
+        logger: logger,
+        browser: Browsers.windows("Desktop"), //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
+      });
+    }
+    this._socket.ev.on("creds.update", saveCreds);
+
+    //== Initializing internal sub-modules == 
     this._senderQueue = new WhatsSocketSenderQueue(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
     this.Send = new WhatsSocketSugarSender(this);
-    this._socket.ev.on("creds.update", saveCreds);
   }
 
   public async Shutdown() {
