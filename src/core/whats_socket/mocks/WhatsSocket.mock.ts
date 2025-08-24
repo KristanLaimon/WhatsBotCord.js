@@ -8,7 +8,7 @@ import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdent
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
-  minimumSecondsDelayBetweenMsgs: number;
+  minimumMilisecondsDelayBetweenMsgs: number;
 }
 
 export default class WhatsSocketMock implements IWhatsSocket {
@@ -24,13 +24,13 @@ export default class WhatsSocketMock implements IWhatsSocket {
   private _senderQueue: WhatsSocketSenderQueue;
 
   constructor(options?: WhatsSocketMockOptions) {
-    this._senderQueue = new WhatsSocketSenderQueue(this, options?.maxQueueLimit ?? 10, options?.minimumSecondsDelayBetweenMsgs ?? 500);
+    this._senderQueue = new WhatsSocketSenderQueue(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
 
     //Thanks js, this is never needed on another languages... ☠️
     this.SendRaw = this.SendRaw.bind(this);
-    this.SendSafe = this.SendRaw.bind(this);
+    this.SendSafe = this.SendSafe.bind(this);
     this.Start = this.Start.bind(this);
-    this.Shutdown = this.Start.bind(this);
+    this.Shutdown = this.Shutdown.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
     this.ClearMock = this.ClearMock.bind(this);
   }
@@ -42,24 +42,25 @@ export default class WhatsSocketMock implements IWhatsSocket {
     return this._messagesSentHistory;
   }
 
+  public SentMessagesThroughQueue: WhatsSocketMessageSentMock[] = []
+
   public GroupsIDTriedToFetch: string[] = [];
 
   public IsOn: boolean = false;
 
-  public Start(): Promise<void> {
+  public async Start(): Promise<void> {
     this.IsOn = true;
-    return Promise.resolve();
   }
-  public Shutdown(): Promise<void> {
+  public async Shutdown(): Promise<void> {
     this.IsOn = false;
-    return Promise.resolve();
   }
   public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    return await this._senderQueue.Enqueue(chatId_JID, content, options);
+    this.SentMessagesThroughQueue.push({ chatId: chatId_JID, content: content, miscOptions: options });
+    return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this._messagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: true });
+    this._messagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options });
     return {
       message: {
         conversation: "Mock Minimum Object WAMessage",
@@ -72,6 +73,13 @@ export default class WhatsSocketMock implements IWhatsSocket {
     };
   }
 
+  /*************  ✨ Windsurf Command ⭐  *************/
+  /**
+   * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
+   * @param chatId The chat ID of the group you want to get metadata from.
+   * @returns A promise that resolves to the group metadata.
+   */
+  /*******  50465ea7-8dc1-4ccd-8c98-3013f7e33b00  *******/
   public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
     this.GroupsIDTriedToFetch.push(chatId);
     return {
@@ -86,6 +94,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.IsOn = false;
     this._messagesSentHistory = [];
     this.GroupsIDTriedToFetch = [];
+    this.SentMessagesThroughQueue = [];
 
     this.onReconnect.Clear();
     this.onMessageUpsert.Clear();

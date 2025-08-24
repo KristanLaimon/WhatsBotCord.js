@@ -445,7 +445,9 @@ export class WhatsSocketSugarSender {
       }
     }, moreOptions as MiscMessageGenerationOptions);
 
-    //Uncomment until I discover a way to fetch votes data from polls, only sending porpuses so far.
+    //Uncomment this section until discover a way to fetch votes data from polls, only sending porpuses so far.
+    //Baileys library doesn't have any documentation at all to achieve this.
+
     // if (msgSent) {
     //   const sugarPollObjToReturn = new WhatsPoll(this.socket, {
     //     pollOptions: selects,
@@ -460,6 +462,7 @@ export class WhatsSocketSugarSender {
     // }
   }
 
+  //TODO: Make unit testing for ubication msgs
   public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
     if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
       throw new Error(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`);
@@ -474,6 +477,7 @@ export class WhatsSocketSugarSender {
     }, options as MiscMessageGenerationOptions)
   }
 
+  //TODO: Make unit testing for sharing contacts
   /**
    * Sends a contact card (vCard) to a specific chat.
    *

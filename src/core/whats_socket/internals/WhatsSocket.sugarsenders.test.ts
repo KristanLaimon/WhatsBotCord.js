@@ -1,5 +1,5 @@
 import { WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
-import { it, mock, spyOn, expect, describe, beforeEach, afterEach, type Mock } from "bun:test";
+import { it, mock, afterAll, spyOn, expect, describe, beforeEach, afterEach, type Mock } from "bun:test";
 import { WhatsSocketSugarSender } from './WhatsSocket.sugarsenders';
 import { allMockMsgs } from 'src/helpers/Msg.helper.mocks';
 import fs from "fs";
@@ -10,7 +10,7 @@ import WhatsSocketMock from '../mocks/WhatsSocket.mock';
 const fakeChatId = "338839029383" + WhatsAppGroupIdentifier;
 
 describe("Text", () => {
-  const mockWhatsSocket = new WhatsSocketMock();
+  const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const sender = new WhatsSocketSugarSender(mockWhatsSocket);
 
   beforeEach(() => {
@@ -38,32 +38,32 @@ describe("Text", () => {
     await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: true });
     await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: true });
     await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: true });
-    for (const msgSent of mockWhatsSocket.SentMessages) {
-      expect(msgSent.isRawMsg).toBe(true);
-    }
+    expect(mockWhatsSocket.SentMessages.length).toBe(3);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
   });
 
   it("WhenSendingTxtMsgQueued_ShouldBeSendThroughSendSafeFromSocket", async () => {
     await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: false });
     await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: false });
     await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: false });
-    for (const msgSent of mockWhatsSocket.SentMessages) {
-      expect(msgSent.isRawMsg).toBe(false);
-    }
+
+    expect(mockWhatsSocket.SentMessages.length).toBe(3);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
+
   });
 
   it("WhenSendingTxtMsgQueuedWithNoExtraOptiosn;Default;_ShouldBeSentThroughSendSafeFromSocket", async () => {
     await sender.Text(fakeChatId, "First msg default");
     await sender.Text(fakeChatId, "Second msg default");
     await sender.Text(fakeChatId, "Third msg default");
-    for (const msgSent of mockWhatsSocket.SentMessages) {
-      expect(msgSent.isRawMsg).toBe(false);
-    }
+
+    expect(mockWhatsSocket.SentMessages.length).toBe(3);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
   });
 });
 
 describe("Images", () => {
-  const mockWhatsSocket = new WhatsSocketMock();
+  const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const sender = new WhatsSocketSugarSender(mockWhatsSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
@@ -76,6 +76,11 @@ describe("Images", () => {
   });
 
   afterEach(() => {
+    FS_existsSync.mockRestore();
+    FS_readFileSync.mockRestore();
+  })
+
+  afterAll(() => {
     FS_existsSync.mockRestore();
     FS_readFileSync.mockRestore();
   })
@@ -165,7 +170,7 @@ describe("Images", () => {
 });
 
 describe("ReactEmojiToMsg", () => {
-  const mockWhatsSender = new WhatsSocketMock()
+  const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 })
   const sender = new WhatsSocketSugarSender(mockWhatsSender);
 
   it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
@@ -206,7 +211,7 @@ describe("ReactEmojiToMsg", () => {
 
 const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
 describe("Sticker", () => {
-  const mockWhatsSender = new WhatsSocketMock();
+  const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const sender = new WhatsSocketSugarSender(mockWhatsSender);
 
   //Getting all real stickers examples in webp from mocks folder
@@ -241,7 +246,7 @@ describe("Sticker", () => {
 });
 
 describe("Audio", () => {
-  const mockWhatsSocket = new WhatsSocketMock();
+  const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const sender = new WhatsSocketSugarSender(mockWhatsSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
@@ -260,6 +265,10 @@ describe("Audio", () => {
     FS_readFileSync.mockRestore();
     GLOBAL_fetch.mockRestore();
   });
+  afterAll(() => {
+    FS_existsSync.mockRestore();
+    FS_readFileSync.mockRestore();
+  })
 
   it("WhenSendingLocalAudio_ShouldSendIt", async () => {
     const audioPath = "./fakeAudio.mp3";
@@ -348,7 +357,7 @@ describe("Audio", () => {
 });
 
 describe("Video", async () => {
-  const mockSocket = new WhatsSocketMock();
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const sender = new WhatsSocketSugarSender(mockSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
@@ -363,6 +372,11 @@ describe("Video", async () => {
   afterEach(() => {
     FS_existsSync.mockClear();
     FS_readFileSync.mockClear();
+  })
+
+  afterAll(() => {
+    FS_existsSync.mockRestore();
+    FS_readFileSync.mockRestore();
   })
 
   it("WhenSendingVideoFromLocalPath_ShouldSendIt", async () => {
@@ -423,4 +437,129 @@ describe("Video", async () => {
   })
 })
 
+describe("Poll", () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+  const sender = new WhatsSocketSugarSender(mockSocket);
 
+  beforeEach(() => {
+    mockSocket.ClearMock();
+  });
+
+  it("WhenGivenMinimalParams_ShouldWorkAndNotThrowAnything", async () => {
+    const pollTitleHeader = "Poll Title Example";
+    const options = ["Option 1", "Option 2", "Option 3"];
+
+    expect(async () => {
+      await sender.Poll(fakeChatId, pollTitleHeader, options, { withMultiSelect: true })
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessages.length).toBe(1);
+    //@ts-ignore
+    expect(mockSocket.SentMessages[0]?.content.poll.name).toBe("Poll Title Example");
+    //@ts-ignore
+    expect(mockSocket.SentMessages[0]?.content.poll.values).toBe(options);
+    //@ts-ignore
+    expect(mockSocket.SentMessages[0]?.content.poll.selectableCount).toBe(options.length);
+  })
+})
+
+describe("Ubication", () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+  const sender = new WhatsSocketSugarSender(mockSocket);
+
+  beforeEach(() => {
+    mockSocket.ClearMock();
+  });
+
+  it("WhenProvidingIdealParams_ShouldWork", async () => {
+    expect(async () => {
+      await sender.Ubication(fakeChatId, { degreesLatitude: -85, degreesLongitude: 125, addressText: "Address Text Example", name: "Ubication Name Example" });
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessages.length).toBe(1);
+    //@ts-ignore
+    expect(mockSocket.SentMessages[0]!.content.location.degreesLatitude).toBe(-85);
+    //@ts-ignore
+    expect(mockSocket.SentMessages[0]!.content.location.degreesLongitude).toBe(125);
+    //@ts-ignore
+    expect(mockSocket.SentMessages[0]!.content.location.name).toBe("Ubication Name Example");
+    //@ts-ignore
+    expect(mockSocket.SentMessages[0]!.content.location.address).toBe("Address Text Example");
+  });
+
+  it("WhenProvidingInvalidLatitude_ShouldThrowError", async () => {
+    const badLatitude = -100;
+    const goodLongitude = 120;
+    expect(async () => {
+      await sender.Ubication(fakeChatId, { degreesLatitude: badLatitude, degreesLongitude: goodLongitude });
+    }).toThrowError(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${badLatitude}, ${goodLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`)
+  });
+
+  it("WhenProvidingInvalidLongitude_ShouldThrowError", async () => {
+    const goodLatitude = 80;
+    const badLongitude = -200;
+    expect(async () => {
+      await sender.Ubication(fakeChatId, { degreesLatitude: goodLatitude, degreesLongitude: badLongitude });
+    }).toThrowError(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${goodLatitude}, ${badLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`)
+  })
+})
+
+describe("Contacts", () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+  const sender = new WhatsSocketSugarSender(mockSocket);
+
+  beforeEach(() => {
+    mockSocket.ClearMock();
+  });
+
+  it("WhenProvidingMinimumIdealParams_ShouldWork", async () => {
+    await sender.Contact(fakeChatId, { name: "Chrismorris", phone: "521612938493020" });
+
+    expect(mockSocket.SentMessages.length).toBe(1);
+
+    //@ts-expect-error
+    const msg = mockSocket.SentMessages[0].content.contacts;
+    expect(msg.displayName).toBe("Chrismorris");
+    expect(msg.contacts[0].vcard).toContain("BEGIN:VCARD");
+    expect(msg.contacts[0].vcard).toContain("FN:Chrismorris");
+    expect(msg.contacts[0].vcard).toContain("waid=521612938493020");
+  });
+
+  it("WhenSendingMultipleContacts_ShouldAggregateThem", async () => {
+    const contacts = [
+      { name: "Alice", phone: "5211111111111" },
+      { name: "Bob", phone: "5212222222222" }
+    ];
+
+    await sender.Contact(fakeChatId, contacts);
+
+    expect(mockSocket.SentMessages.length).toBe(1);
+
+    //@ts-expect-error
+    const msg = mockSocket.SentMessages[0].content.contacts;
+    expect(msg.displayName).toBe("2 contacts");
+    expect(msg.contacts).toHaveLength(2);
+    expect(msg.contacts[0].vcard).toContain("FN:Alice");
+    expect(msg.contacts[1].vcard).toContain("FN:Bob");
+  });
+
+  it("WhenMissingPhone_ShouldThrowError", async () => {
+    expect(async () => {
+      await sender.Contact(fakeChatId, { name: "NoPhone" } as any);
+    }).toThrowError("Invalid contact: name and phone are required");
+  });
+
+  it("WhenMissingName_ShouldThrowError", async () => {
+    expect(async () => {
+      await sender.Contact(fakeChatId, { phone: "5211234567890" } as any);
+    }).toThrowError("Invalid contact: name and phone are required");
+  });
+
+  it("WhenPassingSendRawWithoutEnqueue_ShouldStillSendCorrectly", async () => {
+    await sender.Contact(fakeChatId, { name: "RawSend", phone: "5219876543210" }, { sendRawWithoutEnqueue: true });
+
+    expect(mockSocket.SentMessages.length).toBe(1);
+    //@ts-expect-error
+    expect(mockSocket.SentMessages[0].content.contacts.displayName).toBe("RawSend");
+  });
+});
