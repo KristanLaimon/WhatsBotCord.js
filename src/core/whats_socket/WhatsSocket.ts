@@ -167,13 +167,13 @@ export default class WhatsSocket implements IWhatsSocket {
 
 
   private async InitializeSelf() {
-    const logger = pino({ level: this._loggerMode });
     let authInfoPath: string = GetPath(this._credentialsFolder)
-
     const { state, saveCreds } = await useMultiFileAuthState(authInfoPath);
+
     if (this._customSocketImplementation) {
       this._socket = this._customSocketImplementation
     } else {
+      const logger = pino({ level: this._loggerMode });
       //By default uses "Baileys" library whatsapp socket API
       this._socket = makeWASocket({
         auth: state,

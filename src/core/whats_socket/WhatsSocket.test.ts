@@ -1,6 +1,10 @@
 import type { AnyMessageContent, GroupMetadata, WAMessage } from 'baileys';
+import { useMultiFileAuthState } from "baileys";
 import { type Mock, mock as fn, expect, describe, it, spyOn } from "bun:test";
 import type { BaileysWASocket } from './types';
+import WhatsSocket from './WhatsSocket';
+import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
+import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
 
 export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
   return {
@@ -21,41 +25,101 @@ export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
   } as unknown as BaileysWASocket;
 }
 
-import WhatsSocket from './WhatsSocket';
+function MockFactory(options: { delayMiliseconds: number }) {
+  const internalMockSocket = CreateBaileysWhatsappMockSocket();
+  const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: options.delayMiliseconds, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+  return ws;
+}
 
-describe('WhatsSocket', () => {
-  it('should send a message safely via queue', async () => {
+describe("Initialization", () => {
+  it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {
+    const ws = MockFactory({ delayMiliseconds: 1 });
+    await ws.Start();
+    //@ts-ignore
+    expect(ws._socket).toMatchObject(internalMockSocket);
+  })
+
+  it("Instatiation_WhenUsingStartMethod_ShouldSubscribeToCredsUpdateSocket", async () => {
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, milisecondsDelayBetweenSentMsgs: 1 });
+    await ws.Start();
+    //internalMockSocket.ev.on should be called with 2 arguments: "creds.update", "saveCreds" async function from baileys
+    //We're interested only on creds.update
+    const argumentsArray = (internalMockSocket.ev.on as Mock<typeof internalMockSocket.ev.on>).mock.calls[0]!;
+    const firstArgumentStr = argumentsArray[0];
+    // const secondArgumentSaveCredsAsync = argumentsArray[1]; ||| Not used at all
+    expect(firstArgumentStr).toBeDefined();
+    expect(firstArgumentStr).toBe("creds.update");
+  });
+
+  it("WhenInstatiating_ShouldCreateQueueSocketAndSocketSugarSender", async () => {
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, milisecondsDelayBetweenSentMsgs: 1 });
+    await ws.Start();
+
+    //Private field Senderqueue should be instatiated as well
+    //@ts-ignore
+    expect(ws._senderQueue).toBeDefined();
+    //@ts-ignore
+    expect(ws._senderQueue).toBeInstanceOf(WhatsSocketSenderQueue);
+    expect(ws.Send).toBeDefined();
+    expect(ws.Send).toBeInstanceOf(WhatsSocketSugarSender);
+  });
+
+  it("WhenInstatiatin_ShouldConfigure;ConfigureConnection();CorrectlyOnSocket", async () => {
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, milisecondsDelayBetweenSentMsgs: 1 });
+    await ws.Start();
+
+    /**
+     * We expect it's internal private method "ConfigureConnection()" uses the
+     * 'connection.update' event from socket at least!
+     */
+    const argumentsCalledWith = (internalMockSocket.ev.on as Mock<typeof internalMockSocket.ev.on>).mock.calls.map(call => ({ EventName: call[0], Callback: call[1] }));
+    expect(argumentsCalledWith).toBeDefined();
+    const eventNameCalled = argumentsCalledWith.find(call => call.EventName === "creds.update");
+    expect(eventNameCalled).toBeDefined();
+    //So, from all calls it should at least call the "creds.update"!
+  });
+});
+
+describe('Messages Sending', () => {
+  it('WhenSendingMsgsThroughSendSafe_ShouldSendThemThroughSocket', async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
     const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
-
     const result: WAMessage | null = await ws.SendSafe('123@c.us', { text: 'Hello' });
     //@ts-ignore
     expect(result?.message).toEqual({ text: 'Hello' });
     expect(internalMockSocket.sendMessage as Mock<typeof internalMockSocket.sendMessage>).toHaveBeenCalledTimes(1);
   });
+});
 
-  it('should fetch group metadata', async () => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
-
-    const group = await ws.GetGroupMetadata('123@g.us');
-    expect(group.subject).toBe('Mock Group');
-    expect(mockSocket.groupMetadata).toHaveBeenCalledOnce();
-  });
-
+describe("Events/Delegates", () => {
   it('should call delegates on incoming message', async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
     const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
-
 
     const spy = fn();
     ws.onMessageUpsert.Subscribe(spy);
 
     // simulate message received
     const message = { key: { remoteJid: '123@c.us', fromMe: false }, message: { text: 'Hi' } } as WAMessage;
-    await (mockSocket.ev.on as any).mock.calls.find(([event]) => event === 'messages.upsert')[1]({ messages: [message] });
+    (internalMockSocket.ev.on as Mock<typeof internalMockSocket.ev.on>).mock.calls.find((event) => event[0] === 'messages.upsert')[1]({ messages: [message] });
 
-    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith([message]);
+  });
+});
+
+describe("Info fetching", () => {
+  it('WhenTryingToFetchGroupsData_ShouldFetchThemCorrectlyFromSocket', async () => {
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    await ws.Start();
+
+    const group = await ws.GetGroupMetadata('123@g.us');
+    expect(group.subject).toBe('Mock Group');
+    expect(internalMockSocket.groupMetadata as Mock<typeof internalMockSocket.groupMetadata>).toHaveBeenCalledTimes(1);
   });
 });
