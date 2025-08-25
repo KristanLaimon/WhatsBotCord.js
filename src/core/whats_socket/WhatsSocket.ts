@@ -103,9 +103,11 @@ export type WhatsSocketOptions = {
  * })
  */
 export default class WhatsSocket implements IWhatsSocket {
-  public onReconnect: Delegate<() => Promise<void>> = new Delegate();
+  //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events
   public onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
   public onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
+  public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
+  public onReconnect: Delegate<() => Promise<void>> = new Delegate();
   public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();

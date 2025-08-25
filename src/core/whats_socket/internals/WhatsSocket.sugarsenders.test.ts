@@ -21,24 +21,26 @@ describe("Text", () => {
   it("WhenSendingSimplestTxtMsg_ShouldSendIt", async () => {
     await sender.Text(fakeChatId, "First Message");
     await sender.Text(fakeChatId, "Second Message");
-    expect(mockWhatsSocket.SentMessages.length).toBe(2);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
   });
 
   it("WhenSendingTxtMsgWithNormalizedOption_ShouldSendItNormalized", async () => {
     await sender.Text(fakeChatId, "     \n\nFirst Message             \n\n\n", { normalizeMessageText: true })
     await sender.Text(fakeChatId, "\n\n                                Second message           \n\n\n\n             Hello", { normalizeMessageText: true })
-    expect(mockWhatsSocket.SentMessages.length).toBe(2);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
     //@ts-expect-error Idk why typescript says .text doesn't exist, when it actually does...
-    expect(mockWhatsSocket.SentMessages[0]!.content.text).toBe("First Message");
+    expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.text).toBe("First Message");
     //@ts-expect-error Same...
-    expect(mockWhatsSocket.SentMessages[1]!.content.text).toBe("Second message\n\n\n\nHello")
+    expect(mockWhatsSocket.SentMessagesThroughRaw[1]!.content.text).toBe("Second message\n\n\n\nHello")
   });
 
   it("WhenSendingTxtMsgQueuedRaw_ShouldBeSendThroughSendRawFromSocket", async () => {
     await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: true });
     await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: true });
     await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: true });
-    expect(mockWhatsSocket.SentMessages.length).toBe(3);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
   });
 
@@ -47,7 +49,8 @@ describe("Text", () => {
     await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: false });
     await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: false });
 
-    expect(mockWhatsSocket.SentMessages.length).toBe(3);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
 
   });
@@ -57,7 +60,7 @@ describe("Text", () => {
     await sender.Text(fakeChatId, "Second msg default");
     await sender.Text(fakeChatId, "Third msg default");
 
-    expect(mockWhatsSocket.SentMessages.length).toBe(3);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
   });
 });
@@ -110,15 +113,16 @@ describe("Images", () => {
       expect(FS_existsSync).toHaveBeenCalledTimes(2);
       expect(FS_readFileSync).toHaveBeenCalledTimes(2);
 
-      expect(mockWhatsSocket.SentMessages.length).toBe(2);
+      expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
+      expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
 
       //@ts-expect-error
-      expect(mockWhatsSocket.SentMessages[0].content.image).toBeInstanceOf(Buffer);
+      expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.image).toBeInstanceOf(Buffer);
       //@ts-expect-error
-      expect(mockWhatsSocket.SentMessages[0].content.caption).toBe("");
+      expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.caption).toBe("");
 
       //@ts-expect-error
-      expect(mockWhatsSocket.SentMessages[1].content.caption).toBe("Image path string with caption!");
+      expect(mockWhatsSocket.SentMessagesThroughRaw[1].content.caption).toBe("Image path string with caption!");
     } finally {
       isBufferMock.mockRestore();
     }
@@ -137,7 +141,8 @@ describe("Images", () => {
     await sender.Img(fakeChatId, { sourcePath: imgAsBuffer })
     await sender.Img(fakeChatId, { sourcePath: imgAsBuffer, caption: "Img buffer with caption!" })
 
-    expect(mockWhatsSocket.SentMessages.length).toBe(2);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
     expect(FS_existsSync.mock.calls.length).toBe(2);
     expect(FS_readFileSync.mock.calls.length).toBe(0);
   })
@@ -152,11 +157,12 @@ describe("Images", () => {
 
     await sender.Img(fakeChatId, { sourcePath: imgPath, caption: "     \n\nCaption Text             \n\n\n" }, { normalizeMessageText: true });
 
-    expect(mockWhatsSocket.SentMessages.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
     //@ts-ignore
-    expect(mockWhatsSocket.SentMessages[0]!.content.image).toBeInstanceOf(Buffer);
+    expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.image).toBeInstanceOf(Buffer);
     //@ts-ignore
-    expect(mockWhatsSocket.SentMessages[0]!.content.caption).toBe("Caption Text");
+    expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("Caption Text");
   });
 
 
@@ -281,12 +287,13 @@ describe("Audio", () => {
 
     expect(FS_existsSync).toHaveBeenCalledWith(GetPath(audioPath));
     expect(FS_readFileSync).toHaveBeenCalled();
-    expect(mockWhatsSocket.SentMessages.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
 
     // @ts-expect-error
-    expect(mockWhatsSocket.SentMessages[0].content.audio).toBeInstanceOf(Buffer);
+    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.audio).toBeInstanceOf(Buffer);
     // @ts-expect-error
-    expect(mockWhatsSocket.SentMessages[0].content.mimetype).toBe("audio/mpeg");
+    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.mimetype).toBe("audio/mpeg");
   });
 
   it("WhenSendingAudioFromBuffer_ShouldSendIt", async () => {
@@ -296,10 +303,11 @@ describe("Audio", () => {
 
     expect(FS_existsSync).not.toHaveBeenCalled();
     expect(FS_readFileSync).not.toHaveBeenCalled();
-    expect(mockWhatsSocket.SentMessages.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
 
     // @ts-expect-error
-    expect(mockWhatsSocket.SentMessages[0].content.audio).toBe(audioBuffer);
+    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.audio).toBe(audioBuffer);
   });
 
   it("WhenSendingNonExistingPath_ShouldFetchRemoteUrl", async () => {
@@ -309,9 +317,10 @@ describe("Audio", () => {
     FS_existsSync.mockReturnValue(false);
 
     await sender.Audio(fakeChatId, remoteUrl);
-    expect(mockWhatsSocket.SentMessages.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
     // @ts-expect-error
-    expect(mockWhatsSocket.SentMessages[0].content.audio).toBeInstanceOf(Buffer);
+    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.audio).toBeInstanceOf(Buffer);
   });
 
   it("WhenSendingFromWAMessage_ShouldUseDownloadMediaMessage", async () => {
@@ -338,9 +347,10 @@ describe("Audio", () => {
     try {
       await sender.Audio(fakeChatId, fakeMsg);
       expect(downloadMediaMessageMock).toHaveBeenCalledWith(fakeMsg, "buffer", {});
-      expect(mockWhatsSocket.SentMessages.length).toBe(1);
+      expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
+      expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
       // @ts-expect-error
-      expect(mockWhatsSocket.SentMessages[0].content.mimetype).toBe("audio/ogg");
+      expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.mimetype).toBe("audio/ogg");
 
     } finally {
       mock.restore();
@@ -352,7 +362,8 @@ describe("Audio", () => {
     expect(async () => {
       await sender.Audio(fakeChatId, wrongAudioSource as any);
     }).toThrowError('WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: ' + wrongAudioSource);
-    expect(mockWhatsSocket.SentMessages.length).toBe(0);
+    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
+    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(0);
   });
 });
 
@@ -389,15 +400,16 @@ describe("Video", async () => {
     await sender.Video(fakeChatId, { sourcePath: videoPath, caption: "This video has caption" /** With caption */ });
 
     expect(FS_existsSync).toBeCalledTimes(2);
-    expect(mockSocket.SentMessages).toHaveLength(2);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]!.content.video).toBe(videoContent);
+    expect(mockSocket.SentMessagesThroughRaw[0]!.content.video).toBe(videoContent);
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]!.content.caption).toBe("");
+    expect(mockSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("");
     //@ts-ignore
-    expect(mockSocket.SentMessages[1]!.content.video).toBe(videoContent);
+    expect(mockSocket.SentMessagesThroughRaw[1]!.content.video).toBe(videoContent);
     //@ts-ignore
-    expect(mockSocket.SentMessages[1]!.content.caption).toBe("This video has caption");
+    expect(mockSocket.SentMessagesThroughRaw[1]!.content.caption).toBe("This video has caption");
   });
 
   it("WhenSendingFromBuffer_ShouldSendIt", async () => {
@@ -409,15 +421,16 @@ describe("Video", async () => {
     expect(FS_existsSync).not.toHaveBeenCalled();
     expect(FS_readFileSync).not.toHaveBeenCalled();
 
-    expect(mockSocket.SentMessages).toHaveLength(2);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
     //@ts-ignore
-    expect(mockSocket.SentMessages.at(0)!.content.video).toBe(videoAsBuffer);
+    expect(mockSocket.SentMessagesThroughRaw.at(0)!.content.video).toBe(videoAsBuffer);
     //@ts-ignore
-    expect(mockSocket.SentMessages.at(0)!.content.caption).toBe("");
+    expect(mockSocket.SentMessagesThroughRaw.at(0)!.content.caption).toBe("");
     //@ts-ignore
-    expect(mockSocket.SentMessages.at(1)!.content.video).toBe(videoAsBuffer);
+    expect(mockSocket.SentMessagesThroughRaw.at(1)!.content.video).toBe(videoAsBuffer);
     //@ts-ignore
-    expect(mockSocket.SentMessages.at(1)!.content.caption).toBe("Msg Video from Buffer");
+    expect(mockSocket.SentMessagesThroughRaw.at(1)!.content.caption).toBe("Msg Video from Buffer");
   });
 
   it("WhenSendingWithNormalizeCaptionOption_ShouldNormalizeInternally", async () => {
@@ -429,11 +442,13 @@ describe("Video", async () => {
     await sender.Video(fakeChatId, { sourcePath: videoPath, caption: "        First Video       " }, { normalizeMessageText: true });
     await sender.Video(fakeChatId, { sourcePath: videoPath, caption: " \n\n       Second Video     \n\n\n  " }, { normalizeMessageText: true });
 
-    expect(mockSocket.SentMessages).toHaveLength(2);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
+
     //@ts-ignore
-    expect(mockSocket.SentMessages.at(0)!.content.caption).toBe("First Video");
+    expect(mockSocket.SentMessagesThroughRaw.at(0)!.content.caption).toBe("First Video");
     //@ts-ignore
-    expect(mockSocket.SentMessages.at(1)!.content.caption).toBe("Second Video");
+    expect(mockSocket.SentMessagesThroughRaw.at(1)!.content.caption).toBe("Second Video");
   })
 })
 
@@ -453,13 +468,14 @@ describe("Poll", () => {
       await sender.Poll(fakeChatId, pollTitleHeader, options, { withMultiSelect: true })
     }).not.toThrow();
 
-    expect(mockSocket.SentMessages.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]?.content.poll.name).toBe("Poll Title Example");
+    expect(mockSocket.SentMessagesThroughRaw[0]?.content.poll.name).toBe("Poll Title Example");
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]?.content.poll.values).toBe(options);
+    expect(mockSocket.SentMessagesThroughRaw[0]?.content.poll.values).toBe(options);
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]?.content.poll.selectableCount).toBe(options.length);
+    expect(mockSocket.SentMessagesThroughRaw[0]?.content.poll.selectableCount).toBe(options.length);
   })
 })
 
@@ -476,15 +492,16 @@ describe("Ubication", () => {
       await sender.Ubication(fakeChatId, { degreesLatitude: -85, degreesLongitude: 125, addressText: "Address Text Example", name: "Ubication Name Example" });
     }).not.toThrow();
 
-    expect(mockSocket.SentMessages.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]!.content.location.degreesLatitude).toBe(-85);
+    expect(mockSocket.SentMessagesThroughRaw[0]!.content.location.degreesLatitude).toBe(-85);
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]!.content.location.degreesLongitude).toBe(125);
+    expect(mockSocket.SentMessagesThroughRaw[0]!.content.location.degreesLongitude).toBe(125);
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]!.content.location.name).toBe("Ubication Name Example");
+    expect(mockSocket.SentMessagesThroughRaw[0]!.content.location.name).toBe("Ubication Name Example");
     //@ts-ignore
-    expect(mockSocket.SentMessages[0]!.content.location.address).toBe("Address Text Example");
+    expect(mockSocket.SentMessagesThroughRaw[0]!.content.location.address).toBe("Address Text Example");
   });
 
   it("WhenProvidingInvalidLatitude_ShouldThrowError", async () => {
@@ -515,10 +532,11 @@ describe("Contacts", () => {
   it("WhenProvidingMinimumIdealParams_ShouldWork", async () => {
     await sender.Contact(fakeChatId, { name: "Chrismorris", phone: "521612938493020" });
 
-    expect(mockSocket.SentMessages.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
 
     //@ts-expect-error
-    const msg = mockSocket.SentMessages[0].content.contacts;
+    const msg = mockSocket.SentMessagesThroughRaw[0].content.contacts;
     expect(msg.displayName).toBe("Chrismorris");
     expect(msg.contacts[0].vcard).toContain("BEGIN:VCARD");
     expect(msg.contacts[0].vcard).toContain("FN:Chrismorris");
@@ -533,10 +551,11 @@ describe("Contacts", () => {
 
     await sender.Contact(fakeChatId, contacts);
 
-    expect(mockSocket.SentMessages.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
 
     //@ts-expect-error
-    const msg = mockSocket.SentMessages[0].content.contacts;
+    const msg = mockSocket.SentMessagesThroughRaw[0].content.contacts;
     expect(msg.displayName).toBe("2 contacts");
     expect(msg.contacts).toHaveLength(2);
     expect(msg.contacts[0].vcard).toContain("FN:Alice");
@@ -558,8 +577,9 @@ describe("Contacts", () => {
   it("WhenPassingSendRawWithoutEnqueue_ShouldStillSendCorrectly", async () => {
     await sender.Contact(fakeChatId, { name: "RawSend", phone: "5219876543210" }, { sendRawWithoutEnqueue: true });
 
-    expect(mockSocket.SentMessages.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
     //@ts-expect-error
-    expect(mockSocket.SentMessages[0].content.contacts.displayName).toBe("RawSend");
+    expect(mockSocket.SentMessagesThroughRaw[0].content.contacts.displayName).toBe("RawSend");
   });
 });

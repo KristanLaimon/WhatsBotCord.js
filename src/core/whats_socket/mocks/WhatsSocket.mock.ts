@@ -13,6 +13,7 @@ export type WhatsSocketMockOptions = {
 
 export default class WhatsSocketMock implements IWhatsSocket {
   onReconnect: Delegate<() => Promise<void>> = new Delegate();
+  onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
   onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
   onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
@@ -35,14 +36,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.ClearMock = this.ClearMock.bind(this);
   }
 
-  private _messagesSentHistory: WhatsSocketMessageSentMock[] = [];
-
-  //Only get access, not set
-  public get SentMessages(): WhatsSocketMessageSentMock[] {
-    return this._messagesSentHistory;
-  }
-
   public SentMessagesThroughQueue: WhatsSocketMessageSentMock[] = []
+  public SentMessagesThroughRaw: WhatsSocketMessageSentMock[] = [];
 
   public GroupsIDTriedToFetch: string[] = [];
 
@@ -60,7 +55,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   }
 
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this._messagesSentHistory.push({ chatId: chatId_JID, content, miscOptions: options });
+    this.SentMessagesThroughRaw.push({ chatId: chatId_JID, content, miscOptions: options });
     return {
       message: {
         conversation: "Mock Minimum Object WAMessage",
@@ -92,7 +87,6 @@ export default class WhatsSocketMock implements IWhatsSocket {
 
   public ClearMock(): void {
     this.IsOn = false;
-    this._messagesSentHistory = [];
     this.GroupsIDTriedToFetch = [];
     this.SentMessagesThroughQueue = [];
 
@@ -102,6 +96,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.onGroupUpdate.Clear();
     this.onStartupAllGroupsIn.Clear();
     this.onMessageUpdate.Clear();
+    this.SentMessagesThroughRaw = [];
+    this.SentMessagesThroughQueue = [];
   }
 
 }

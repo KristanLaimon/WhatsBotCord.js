@@ -1,18 +1,18 @@
 import { beforeEach, it, describe, expect } from "bun:test";
-import WhatsSocketMockMinimum from '../mocks/WhatsSocket.minimum.mock';
 import { WhatsAppGroupIdentifier } from '../../../Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 import { performance } from "node:perf_hooks";
 import { skipLongTests } from 'src/Envs';
+import WhatsSocketMock from '../mocks/WhatsSocket.mock';
 
 const fakeChatId: string = "23423423234" + WhatsAppGroupIdentifier;
 
 describe("Enqueue", () => {
-  let mockSocket: WhatsSocketMockMinimum
+  let mockSocket: WhatsSocketMock;
   let queue: WhatsSocketSenderQueue;
 
   beforeEach(() => {
-    mockSocket = new WhatsSocketMockMinimum();
+    mockSocket = new WhatsSocketMock();
     queue = new WhatsSocketSenderQueue(mockSocket, 5, 1);
   });
 
@@ -25,7 +25,8 @@ describe("Enqueue", () => {
     await queue.Enqueue(fakeChatId, { text: "First" });
     await queue.Enqueue(fakeChatId, { text: "Second" });
     await queue.Enqueue(fakeChatId, { text: "Third" });
-    expect(mockSocket.SentMessages.length).toBe(3);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
   });
 
   it("WhenSendingMsgsWithoutStart_ShouldAcumulateThemAndSendThemAfterContinue", async () => {
@@ -36,18 +37,17 @@ describe("Enqueue", () => {
     queue.Enqueue(fakeChatId, { text: "Second" });
     queue.Enqueue(fakeChatId, { text: "Third" });
     expect(queue.ActualElementsInQueue.length).toBe(3);
-    expect(mockSocket.SentMessages.length).toBe(0);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(0);
     await queue.Continue();
     expect(queue.ActualElementsInQueue.length).toBe(0);
-    expect(mockSocket.SentMessages.length).toBe(3);
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
     queue = originalQueue;
   });
 
   it("WhenSendingSimpleTxtMsg_ShouldAlwaysUseRawSendMethodFromSocket", async () => {
     await queue.Enqueue(fakeChatId, { text: "Check method" });
-    for (const sentMsg of mockSocket.SentMessages) {
-      expect(sentMsg.isRawMsg).toBe(true);
-    }
+    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+    expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
   });
 
   //This test will last at least 1.4 seconds due to it's nature
@@ -69,7 +69,7 @@ describe("Enqueue", () => {
     let startTimer: number;
     let result: number;
 
-    queue.onMessageSent.Subscribe(() => {
+    queue.onSentMessageInsideQueue.Subscribe(() => {
       const endTimer: number = performance.now();
       result = endTimer - startTimer!; //Elapsed time (ms) for the message to be sent
       console.log("Message Sent: " + result + " miliseconds");

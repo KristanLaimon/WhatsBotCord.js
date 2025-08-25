@@ -1,5 +1,5 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from 'baileys';
-import type { IWhatsSocketMinimum } from '../IWhatsSocket';
+import type { IWhatsSocket } from '../IWhatsSocket';
 import Delegate from 'src/libs/Delegate';
 
 type SocketMsgQueueItem = {
@@ -27,6 +27,7 @@ function Clone_MsgQueueItem(msgItem: SocketMsgQueueItem) {
  * multiple users or a funny user trying to spam the bot.
  */
 export default class WhatsSocketSenderQueue {
+  public onSentMessageInsideQueue: Delegate<(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions) => void> = new Delegate();
   /**
    * A getter that returns a deep copy of all elements currently in the queue as an array.
    * This is useful for debugging and logging purposes.
@@ -38,17 +39,15 @@ export default class WhatsSocketSenderQueue {
     });
   }
 
-  public onMessageSent: Delegate<(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions) => void> = new Delegate();
-
   private queue: SocketMsgQueueItem[] = [];
   private isProcessing: boolean = false;
-  private whatsSocket: IWhatsSocketMinimum;
+  private whatsSocket: IWhatsSocket;
   private readonly minMillisecondsDelay: number;
   private readonly maxQueueLimit: number;
 
   private isStopped: boolean = false;
 
-  constructor(socket: IWhatsSocketMinimum, maxQueueLimit: number = 3, minMilisecondsDelay: number = 1000) {
+  constructor(socket: IWhatsSocket, maxQueueLimit: number = 3, minMilisecondsDelay: number = 1000) {
     this.whatsSocket = socket;
     this.minMillisecondsDelay = minMilisecondsDelay;
     this.maxQueueLimit = maxQueueLimit;
@@ -106,7 +105,8 @@ export default class WhatsSocketSenderQueue {
       const item = this.queue.shift()!;
       try {
         const sentMsg: WAMessage | null = await this.whatsSocket.SendRaw(item.chatId, item.content, item.misc);
-        this.onMessageSent.CallAll(item.chatId, item.content, item.misc);
+        this.onSentMessageInsideQueue.CallAll(item.chatId, item.content, item.misc);
+        this.whatsSocket.onSentMessage.CallAll(item.chatId, item.content, item.misc);
         item.resolve(sentMsg);
       } catch (error) {
         item.reject(error);

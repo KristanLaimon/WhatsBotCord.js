@@ -48,10 +48,21 @@ export interface IWhatsSocketMinimum extends ICanSendMsgs {
  * It defines the contract for interacting with the WhatsApp socket client.
  */
 export interface IWhatsSocket extends ICanSendMsgs {
-  // Public Delegates for handling events
+  //  ============= Public Delegates for handling events ================
   onReconnect: Delegate<() => Promise<void>>;
-  //Old name: onMessageIncoming
+  /**
+   * Delegate event to subscribe AFTER sending a message.
+   * Useful to verify if a msg was really sent
+   */
+  onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void>;
+  /**
+   * Delegate event to subscribe when socket receives a raw message!
+   * Fun fact: Before it was named 'onMessageIncoming' event 
+   */
   onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void>;
+  /**
+   * Delegate event to subscribe when an already sent messsage (like a pull) receives an update
+   */
   onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessageUpdate, msgType: MsgType, senderType: SenderType) => void>;
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;

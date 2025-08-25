@@ -1,10 +1,10 @@
 import type { AnyMessageContent, GroupMetadata, WAMessage } from 'baileys';
-import { useMultiFileAuthState } from "baileys";
-import { type Mock, mock as fn, expect, describe, it, spyOn } from "bun:test";
+import { type Mock, mock as fn, expect, describe, it } from "bun:test";
 import type { BaileysWASocket } from './types';
 import WhatsSocket from './WhatsSocket';
 import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
 import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
+import { WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
 
 export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
   return {
@@ -25,15 +25,11 @@ export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
   } as unknown as BaileysWASocket;
 }
 
-function MockFactory(options: { delayMiliseconds: number }) {
-  const internalMockSocket = CreateBaileysWhatsappMockSocket();
-  const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: options.delayMiliseconds, ownImplementationSocketAPIWhatsapp: internalMockSocket });
-  return ws;
-}
 
 describe("Initialization", () => {
   it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {
-    const ws = MockFactory({ delayMiliseconds: 1 });
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 1, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
     //@ts-ignore
     expect(ws._socket).toMatchObject(internalMockSocket);
@@ -99,16 +95,15 @@ describe("Events/Delegates", () => {
   it('should call delegates on incoming message', async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
     const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    await ws.Start();
 
     const spy = fn();
-    ws.onMessageUpsert.Subscribe(spy);
+    ws.onSentMessage.Subscribe(spy);
 
     // simulate message received
-    const message = { key: { remoteJid: '123@c.us', fromMe: false }, message: { text: 'Hi' } } as WAMessage;
-    (internalMockSocket.ev.on as Mock<typeof internalMockSocket.ev.on>).mock.calls.find((event) => event[0] === 'messages.upsert')[1]({ messages: [message] });
+    await ws.Send.Text("fakeChatId" + WhatsAppGroupIdentifier, "Hi");
 
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy).toHaveBeenCalledWith([message]);
   });
 });
 

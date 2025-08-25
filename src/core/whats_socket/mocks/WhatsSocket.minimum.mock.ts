@@ -14,7 +14,7 @@ export default class WhatsSocketMockMinimum implements IWhatsSocketMinimum {
   }
 
   public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: false })
+    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options })
     return {
       message: {
         conversation: "Mock Minimum Object WAMessage",
@@ -27,7 +27,7 @@ export default class WhatsSocketMockMinimum implements IWhatsSocketMinimum {
     };
   }
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options, isRawMsg: true })
+    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options })
     return {
       message: {
         conversation: "Mock Minimum Object WAMessage",
