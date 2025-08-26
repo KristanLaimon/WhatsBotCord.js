@@ -1,12 +1,37 @@
 import type { AnyMessageContent, GroupMetadata, WAMessage } from 'baileys';
+
 import { type Mock, mock as fn, expect, describe, it } from "bun:test";
 import type { BaileysWASocket } from './types';
 import WhatsSocket from './WhatsSocket';
 import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
 import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
 import { WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
+import { MsgType, SenderType } from 'src/Msg.types';
+
 
 export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
+  const evOn_Mock: Mock<(BaileysWASocket)["ev"]["on"]> = fn();
+  const storedEvents: Map<string, ((...args: any[]) => void)[]> = new Map();
+  evOn_Mock.mockImplementation((eventName, callBack) => {
+    if (!storedEvents.has(eventName)) {
+      storedEvents.set(eventName, [callBack])
+    }
+    else {
+      storedEvents.get(eventName)!.push(callBack);
+    }
+  });
+
+  const evOn_Emit_Mock: Mock<(BaileysWASocket)["ev"]["emit"]> = fn();
+  evOn_Emit_Mock.mockImplementation((eventName, ...args: any[]) => {
+    const foundSubscribers = storedEvents.get(eventName);
+    if (foundSubscribers) {
+      for (const subscriberFunct of foundSubscribers) {
+        subscriberFunct(...args);
+      }
+      return true;
+    }
+    return false;
+  });
   return {
     user: { id: 'mock-jid' },
     sendMessage: fn(async (jid: string, content: AnyMessageContent) => {
@@ -19,12 +44,12 @@ export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
       creator: 'mock-user'
     } as unknown as GroupMetadata)),
     ev: {
-      on: fn(),
+      on: evOn_Mock,
+      emit: evOn_Emit_Mock
     },
     ws: { close: fn(async () => Promise.resolve()) },
   } as unknown as BaileysWASocket;
 }
-
 
 describe("Initialization", () => {
   it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {
@@ -92,20 +117,58 @@ describe('Messages Sending', () => {
 });
 
 describe("Events/Delegates", () => {
-  it('should call delegates on incoming message', async () => {
+  it('WhenSendingAMsg_ShouldInvokeWS_onSentMessageDelegate', async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
     const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
 
-    const spy = fn();
-    ws.onSentMessage.Subscribe(spy);
-
-    // simulate message received
+    const onSentMessageSpySubscriber = fn();
+    ws.onSentMessage.Subscribe(onSentMessageSpySubscriber);
+    // simulate message send
     await ws.Send.Text("fakeChatId" + WhatsAppGroupIdentifier, "Hi");
+    expect(onSentMessageSpySubscriber).toHaveBeenCalledTimes(1);
+  });
 
-    expect(spy).toHaveBeenCalledTimes(1);
+  it("WhenReceivingAMsg_ShouldInvokeWS_onMessageUpsertDelegate", async () => {
+    // Arrange
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({
+      milisecondsDelayBetweenSentMsgs: 0,
+      ownImplementationSocketAPIWhatsapp: internalMockSocket
+    });
+    await ws.Start();
+
+    const subscriberSpy = fn();
+    ws.onMessageUpsert.Subscribe(subscriberSpy);
+
+    const fakeChatId = "fakeId" + WhatsAppGroupIdentifier;
+    const fakeMessage: WAMessage = {
+      key: { fromMe: false, remoteJid: fakeChatId, id: "123" },
+      message: { conversation: "Hi, im a mocked message from socket!" }
+    } as any;
+
+    // Act – simulate incoming Baileys event
+    internalMockSocket.ev.emit("messages.upsert", {
+      messages: [fakeMessage],
+      type: "append"
+    });
+
+    // Assert
+    expect(subscriberSpy).toHaveBeenCalledTimes(1);
+
+    // extract call args safely
+    const [senderId, chatId, msg, msgType, senderType] =
+      subscriberSpy.mock.calls[0] as [string | null, string, WAMessage, MsgType, SenderType];
+
+    // Only asserts what WhatsSocket transforms
+    expect(senderId).toBeNull(); // group messages = no direct sender id
+    expect(chatId).toBe(fakeChatId); // chat id preserved
+    expect(msg).toMatchObject(fakeMessage); // received message passed along
+    expect(msgType).toBe(MsgType.Text); // classification logic tested
+    expect(senderType).toBe(SenderType.Group); // group detection tested
   });
 });
+
 
 describe("Info fetching", () => {
   it('WhenTryingToFetchGroupsData_ShouldFetchThemCorrectlyFromSocket', async () => {
