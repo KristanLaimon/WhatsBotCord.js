@@ -3,9 +3,12 @@
 </div>
 
 # WhatsBotCord
-<!-- *W*h*A*tsapp dis*CORD* bot -->
 
-A discord-whatsapp bot client ready to use and configure to your taste.
+A discord-whatsapp bot client library ready to use and configure to your taste.
+
+# Features
+---
+
 
 # Contributing
 BUN.JS 1.2.20 needed (for project and testing as well)

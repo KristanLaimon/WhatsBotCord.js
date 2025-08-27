@@ -1,4 +1,4 @@
-import { WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
+import { WhatsappGroupIdentifier } from 'src/Whatsapp.types';
 import { it, mock, afterAll, spyOn, expect, describe, beforeEach, afterEach, type Mock } from "bun:test";
 import { WhatsSocketSugarSender } from './WhatsSocket.sugarsenders';
 import { allMockMsgs } from 'src/helpers/Msg.helper.mocks';
@@ -7,7 +7,7 @@ import { GetPath } from 'src/libs/BunPath';
 import path from "node:path";
 import WhatsSocketMock from '../mocks/WhatsSocket.mock';
 
-const fakeChatId = "338839029383" + WhatsAppGroupIdentifier;
+const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
 
 describe("Text", () => {
   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });

@@ -1,5 +1,5 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import { WhatsAppGroupIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
 // content: AnyMessageContent, misc ?: MiscMessageGenerationOptions
 
 export type WhatsSendMsgMock = {
@@ -41,7 +41,7 @@ export const TxtMsgWithQuote: WhatsSendMsgMock = {
         id: "234324234828349230ID",
         fromMe: false,
         participant: "12345678901234" + WhatsappLIDIdentifier,
-        remoteJid: "23423423" + WhatsAppGroupIdentifier
+        remoteJid: "23423423" + WhatsappGroupIdentifier
       },
       message: {
         conversation: "I'm another msg, being referenced to"

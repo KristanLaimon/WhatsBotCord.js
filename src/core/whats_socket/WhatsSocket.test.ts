@@ -1,11 +1,12 @@
-import type { AnyMessageContent, GroupMetadata, WAMessage } from 'baileys';
+import type { AnyMessageContent, WAMessageUpdate, GroupMetadata, WAMessage } from 'baileys';
+import { Boom } from "@hapi/boom";
 
 import { type Mock, mock as fn, expect, describe, it } from "bun:test";
 import type { BaileysWASocket } from './types';
 import WhatsSocket from './WhatsSocket';
 import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
 import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
-import { WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from 'src/Whatsapp.types';
 import { MsgType, SenderType } from 'src/Msg.types';
 
 
@@ -47,6 +48,7 @@ export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
       on: evOn_Mock,
       emit: evOn_Emit_Mock
     },
+    groupFetchAllParticipating: fn(),
     ws: { close: fn(async () => Promise.resolve()) },
   } as unknown as BaileysWASocket;
 }
@@ -54,7 +56,7 @@ export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
 describe("Initialization", () => {
   it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 1, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 1, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
     //@ts-ignore
     expect(ws._socket).toMatchObject(internalMockSocket);
@@ -62,7 +64,7 @@ describe("Initialization", () => {
 
   it("Instatiation_WhenUsingStartMethod_ShouldSubscribeToCredsUpdateSocket", async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, milisecondsDelayBetweenSentMsgs: 1 });
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, delayMilisecondsBetweenMsgs: 1 });
     await ws.Start();
     //internalMockSocket.ev.on should be called with 2 arguments: "creds.update", "saveCreds" async function from baileys
     //We're interested only on creds.update
@@ -75,7 +77,7 @@ describe("Initialization", () => {
 
   it("WhenInstatiating_ShouldCreateQueueSocketAndSocketSugarSender", async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, milisecondsDelayBetweenSentMsgs: 1 });
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, delayMilisecondsBetweenMsgs: 1 });
     await ws.Start();
 
     //Private field Senderqueue should be instatiated as well
@@ -89,7 +91,7 @@ describe("Initialization", () => {
 
   it("WhenInstatiatin_ShouldConfigure;ConfigureConnection();CorrectlyOnSocket", async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, milisecondsDelayBetweenSentMsgs: 1 });
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: internalMockSocket, delayMilisecondsBetweenMsgs: 1 });
     await ws.Start();
 
     /**
@@ -107,7 +109,7 @@ describe("Initialization", () => {
 describe('Messages Sending', () => {
   it('WhenSendingMsgsThroughSendSafe_ShouldSendThemThroughSocket', async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
     const result: WAMessage | null = await ws.SendSafe('123@c.us', { text: 'Hello' });
     //@ts-ignore
@@ -119,21 +121,22 @@ describe('Messages Sending', () => {
 describe("Events/Delegates", () => {
   it('WhenSendingAMsg_ShouldInvokeWS_onSentMessageDelegate', async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
 
     const onSentMessageSpySubscriber = fn();
     ws.onSentMessage.Subscribe(onSentMessageSpySubscriber);
     // simulate message send
-    await ws.Send.Text("fakeChatId" + WhatsAppGroupIdentifier, "Hi");
+    await ws.Send.Text("fakeChatId" + WhatsappGroupIdentifier, "Hi");
     expect(onSentMessageSpySubscriber).toHaveBeenCalledTimes(1);
   });
 
   it("WhenReceivingAMsg_ShouldInvokeWS_onMessageUpsertDelegate", async () => {
+    //========== Using onMessageUpsert ================
     // Arrange
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
     const ws = new WhatsSocket({
-      milisecondsDelayBetweenSentMsgs: 0,
+      delayMilisecondsBetweenMsgs: 0,
       ownImplementationSocketAPIWhatsapp: internalMockSocket
     });
     await ws.Start();
@@ -141,7 +144,7 @@ describe("Events/Delegates", () => {
     const subscriberSpy = fn();
     ws.onMessageUpsert.Subscribe(subscriberSpy);
 
-    const fakeChatId = "fakeId" + WhatsAppGroupIdentifier;
+    const fakeChatId = "fakeId" + WhatsappGroupIdentifier;
     const fakeMessage: WAMessage = {
       key: { fromMe: false, remoteJid: fakeChatId, id: "123" },
       message: { conversation: "Hi, im a mocked message from socket!" }
@@ -167,13 +170,141 @@ describe("Events/Delegates", () => {
     expect(msgType).toBe(MsgType.Text); // classification logic tested
     expect(senderType).toBe(SenderType.Group); // group detection tested
   });
+
+  it("WhenReceivingMsgUpdate_ShouldInvokeWS_onMessageUpdateDelegate", async () => {
+    // =================== Using onMessageUpdate =====================
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    await ws.Start();
+
+    const subscriberSpy = fn();
+    ws.onMessageUpdate.Subscribe(subscriberSpy);
+
+    const fakeChatId = "fakeChatId" + WhatsappGroupIdentifier;
+    const mockMsg: WAMessageUpdate = {
+      key: {
+        fromMe: false,
+        participant: "324234234" + WhatsappIndividualIdentifier,
+        remoteJid: fakeChatId
+      },
+      update: {
+        pollUpdates: [{}]
+      }
+    }
+    internalMockSocket.ev.emit("messages.update", [mockMsg]);
+
+    expect(subscriberSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("WhenGettingGroupsUPdate_ShouldInvokeWS_onGroupUpdateDelegate", async () => {
+    const mockSocket = CreateBaileysWhatsappMockSocket()
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: mockSocket, delayMilisecondsBetweenMsgs: 1 });
+    await ws.Start();
+
+    const spySubscriber = fn();
+    ws.onGroupUpdate.Subscribe(spySubscriber);
+
+    const fakeChatId = "fakeChatIdGroup" + WhatsappGroupIdentifier;
+    const mockGroupUpdates: Partial<GroupMetadata>[] = [{
+      id: fakeChatId,
+      subject: "A mock group update!",
+      desc: "Description mock for group update"
+    }];
+
+    mockSocket.ev.emit("groups.update", mockGroupUpdates);
+
+    expect(spySubscriber).toHaveBeenCalledTimes(1);
+    expect(spySubscriber).toHaveBeenCalledWith(...mockGroupUpdates);
+  });
+});
+
+describe("Reconnecting", () => {
+  it("WhenSuccessfullyConnected;Ideal;_ShouldFetchGroupMetadataOnce", async () => {
+    // ====== Arrange
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const groupFetchAllParticipantsMock =
+      mockSocket.groupFetchAllParticipating as Mock<typeof mockSocket.groupFetchAllParticipating>;
+
+    const groupFetchMockData = {
+      id: "groupMock" + WhatsappGroupIdentifier,
+      addressingMode: "lid",
+      owner: "Christian",
+      participants: [{ id: "testfakeid" + WhatsappIndividualIdentifier }],
+      subject: "Group Mock Name",
+    };
+
+    groupFetchAllParticipantsMock.mockResolvedValueOnce({
+      GroupIdMock: groupFetchMockData,
+    } as any);
+
+    const ws = new WhatsSocket({
+      ownImplementationSocketAPIWhatsapp: mockSocket,
+      delayMilisecondsBetweenMsgs: 1,
+    });
+    await ws.Start();
+
+    const spyFuncty = fn();
+    const waitForCall = waitUntilCalled(spyFuncty);
+
+    ws.onStartupAllGroupsIn.Subscribe(spyFuncty);
+
+    // ========= Act
+    mockSocket.ev.emit("connection.update", { connection: "open" });
+    await waitForCall;
+
+    // ========== Assert
+    expect(groupFetchAllParticipantsMock).toHaveBeenCalledTimes(1);
+    expect(spyFuncty).toHaveBeenCalledTimes(1);
+  });
+
+  it("WhenNotConnected_ShouldCloseItselfAndRestart", async () => {
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: mockSocket });
+
+    await ws.Start();
+    const spy = fn();
+    ws.onReconnect.Subscribe(spy); // TIP: agrega este delegate para detectar reintentos
+
+    // ==== Act: simula desconexión con un status que permita reconectar
+    mockSocket.ev.emit("connection.update", {
+      connection: "close",
+      lastDisconnect: { error: new Boom("fake error", { statusCode: 408 }) }
+    } as any);
+
+    // ==== Assert
+    await waitUntilCalled(spy); // debería disparar reconexión
+    expect(spy).toHaveBeenCalled();
+  });
+
+  //TODO: FINISH THIS TEST
+  it("WhenNonReconnectingInMaxAttemps_ShouldShutdownCompletely", async () => {
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({
+      ownImplementationSocketAPIWhatsapp: mockSocket,
+      maxReconnectionRetries: 2
+    });
+
+    await ws.Start();
+
+    // ==== Act: Fuerza más intentos que el máximo permitido
+    for (let i = 0; i < 5; i++) {
+      mockSocket.ev.emit("connection.update", {
+        connection: "close",
+        lastDisconnect: { error: new Boom("fake error", { statusCode: 408 }) }
+      } as any);
+    }
+
+    // ==== Assert: verifica que no se reintentó más allá del máximo
+    expect(ws["_actualRetries"]).not.toBeGreaterThan(2);
+    // TIP: aquí puedes testear que no se reinicia más (ej: spy en Start o en ws._socket.ws.close)
+  });
 });
 
 
 describe("Info fetching", () => {
   it('WhenTryingToFetchGroupsData_ShouldFetchThemCorrectlyFromSocket', async () => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ milisecondsDelayBetweenSentMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
 
     const group = await ws.GetGroupMetadata('123@g.us');
@@ -181,3 +312,10 @@ describe("Info fetching", () => {
     expect(internalMockSocket.groupMetadata as Mock<typeof internalMockSocket.groupMetadata>).toHaveBeenCalledTimes(1);
   });
 });
+
+
+async function waitUntilCalled(mock: Mock<(args: any) => void>) {
+  return new Promise<void>((resolve) => {
+    mock.mockImplementationOnce(() => resolve());
+  });
+}

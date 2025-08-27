@@ -1,7 +1,7 @@
 import type { IWhatsSocketMinimum } from '../IWhatsSocket';
 import type { WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
 import type { WhatsSocketMessageSentMock } from './types';
-import { WhatsappLIDIdentifier, WhatsAppGroupIdentifier } from 'src/Whatsapp.types';
+import { WhatsappLIDIdentifier, WhatsappGroupIdentifier } from 'src/Whatsapp.types';
 
 
 
@@ -22,7 +22,7 @@ export default class WhatsSocketMockMinimum implements IWhatsSocketMinimum {
       key: {
         fromMe: false,
         id: "23423423234" + WhatsappLIDIdentifier,
-        remoteJid: "falseid" + WhatsAppGroupIdentifier
+        remoteJid: "falseid" + WhatsappGroupIdentifier
       }
     };
   }
@@ -35,7 +35,7 @@ export default class WhatsSocketMockMinimum implements IWhatsSocketMinimum {
       key: {
         fromMe: false,
         id: "23423423234" + WhatsappLIDIdentifier,
-        remoteJid: "falseid" + WhatsAppGroupIdentifier
+        remoteJid: "falseid" + WhatsappGroupIdentifier
       }
     };
   }

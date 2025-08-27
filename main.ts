@@ -14,7 +14,7 @@ const socket = new WhatsSocket({
   loggerMode: "silent",
   maxReconnectionRetries: 5,
   ignoreSelfMessage: true,
-  milisecondsDelayBetweenSentMsgs: 10
+  delayMilisecondsBetweenMsgs: 10
 });
 
 socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, senderType) => {

@@ -4,7 +4,7 @@ import { SenderType, type MsgType } from '../../../Msg.types';
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
 import WhatsSocketSenderQueue from '../internals/WhatsSocket.senderqueue';
 import type { WhatsSocketMessageSentMock } from './types';
-import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
@@ -63,7 +63,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
       key: {
         fromMe: false,
         id: "23423423234" + WhatsappLIDIdentifier,
-        remoteJid: "falseid" + WhatsAppGroupIdentifier
+        remoteJid: "falseid" + WhatsappGroupIdentifier
       }
     };
   }

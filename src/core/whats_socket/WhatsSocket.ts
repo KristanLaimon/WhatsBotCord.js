@@ -20,7 +20,7 @@ import { MsgType, SenderType } from '../../Msg.types';
 import type { BaileysWASocket, WhatsSocketLoggerMode } from './types';
 import { GetPath } from "../../libs/BunPath";
 import { MsgHelper_GetMsgTypeFromRawMsg } from '../../helpers/Msg.helper';
-import { WhatsAppGroupIdentifier, WhatsappIndividualIdentifier } from '../../Whatsapp.types';
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from '../../Whatsapp.types';
 import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
 import type { IWhatsSocket } from './IWhatsSocket';
 import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
@@ -68,7 +68,7 @@ export type WhatsSocketOptions = {
   /** Delay in miliseconds the socket should send all pending msgs (to send ofc) 
    *  Default: 100 miliseconda (fast)
   */
-  milisecondsDelayBetweenSentMsgs?: number;
+  delayMilisecondsBetweenMsgs?: number;
 
   /**
    * Provide your own implementation of the native whatsapp API.
@@ -136,7 +136,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
-    this._milisecondsDelayBetweenSentMsgs = options?.milisecondsDelayBetweenSentMsgs ?? 100;
+    this._milisecondsDelayBetweenSentMsgs = options?.delayMilisecondsBetweenMsgs ?? 100;
     this._customSocketImplementation = options?.ownImplementationSocketAPIWhatsapp
   }
   private _isRestarting: boolean = false;
@@ -233,6 +233,7 @@ export default class WhatsSocket implements IWhatsSocket {
             try {
               await new Promise((r) => setTimeout(r, 1000));
               await this._socket.ws.close();
+              this.onReconnect.CallAll();
               await this.Start();
               console.log("INFO: Socket restarted successfully!");
             } catch (err) {
@@ -257,7 +258,7 @@ export default class WhatsSocket implements IWhatsSocket {
         const chatId = msg.key.remoteJid!;
         const senderId = msg.key.participant ?? null;
         let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith(WhatsAppGroupIdentifier)) senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
         if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
         this.onMessageUpsert.CallAll(senderId, chatId, msg, MsgHelper_GetMsgTypeFromRawMsg(msg), senderType);
       }
@@ -274,7 +275,7 @@ export default class WhatsSocket implements IWhatsSocket {
         const chatId: string = msgUpdate.key.remoteJid!;
         const senderId: string | null = msgUpdate.key.participant ?? null;
         let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith(WhatsAppGroupIdentifier)) senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
         if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
         this.onMessageUpdate.CallAll(senderId, chatId, msgUpdate, MsgHelper_GetMsgTypeFromRawMsg(msgUpdate), senderType);
       }
@@ -288,7 +289,7 @@ export default class WhatsSocket implements IWhatsSocket {
    * @returns A promise that resolves to the group metadata.
    */
   public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
-    if (!chatId.endsWith(WhatsAppGroupIdentifier))
+    if (!chatId.endsWith(WhatsappGroupIdentifier))
       throw new Error("Provided chatId is not a group chat ID. => " + chatId);
     return await this._socket.groupMetadata(chatId);
   }
@@ -309,7 +310,7 @@ export default class WhatsSocket implements IWhatsSocket {
         return;
       }
       for (let i = 0; i < args.length; i++) {
-        const groupMetadata: Partial<GroupMetadata> | undefined = args[8];
+        const groupMetadata: Partial<GroupMetadata> | undefined = args[i];
         if (groupMetadata) {
           this.onGroupUpdate.CallAll(groupMetadata);
         }

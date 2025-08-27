@@ -1,11 +1,11 @@
 import { beforeEach, it, describe, expect } from "bun:test";
-import { WhatsAppGroupIdentifier } from '../../../Whatsapp.types';
+import { WhatsappGroupIdentifier } from '../../../Whatsapp.types';
 import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
 import { performance } from "node:perf_hooks";
 import { skipLongTests } from 'src/Envs';
 import WhatsSocketMock from '../mocks/WhatsSocket.mock';
 
-const fakeChatId: string = "23423423234" + WhatsAppGroupIdentifier;
+const fakeChatId: string = "23423423234" + WhatsappGroupIdentifier;
 
 describe("Enqueue", () => {
   let mockSocket: WhatsSocketMock;
