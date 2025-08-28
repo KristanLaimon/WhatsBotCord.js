@@ -122,12 +122,14 @@ export default class WhatsSocket implements IWhatsSocket {
   private _senderQueue!: WhatsSocketSenderQueue;
   public Send!: WhatsSocketSugarSender;
 
-  // === Configuration Private Properties ===
+  // === Normal Public Properties ===
+  public ActualReconnectionRetries: number = 0;
+
+  // === Configuration Properties ===
   private _loggerMode: WhatsSocketLoggerMode;
   private _credentialsFolder: string;
   private _ignoreSelfMessages: boolean;
-  private _maxReconnectionRetries: number = 5;
-  private _actualRetries: number = 0;
+  private _maxReconnectionRetries: number;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
   private _customSocketImplementation?: BaileysWASocket;
@@ -137,7 +139,8 @@ export default class WhatsSocket implements IWhatsSocket {
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
     this._milisecondsDelayBetweenSentMsgs = options?.delayMilisecondsBetweenMsgs ?? 100;
-    this._customSocketImplementation = options?.ownImplementationSocketAPIWhatsapp
+    this._customSocketImplementation = options?.ownImplementationSocketAPIWhatsapp;
+    this._maxReconnectionRetries = options?.maxReconnectionRetries ?? 5;
   }
   private _isRestarting: boolean = false;
 
@@ -147,8 +150,24 @@ export default class WhatsSocket implements IWhatsSocket {
    * Can be canceled and shutdown by calling the `Shutdown` method.
    * @returns A promise that will be running in the background all the time until the socket is closed.
    */
-  public async Start() {
-    await this.InitializeSelf();
+  public async Start(): Promise<void> {
+    await this._initializeSelf();
+  }
+
+  /**
+   * Restarts the socket by shutting down current one and then starting a new instance, effectively "restarting" the socket.
+   * @returns A promise that will be running in the background all the time until the socket is closed.
+   */
+  public async Restart(): Promise<void> {
+    this._isRestarting = true;
+    await this.Shutdown();
+    this.ActualReconnectionRetries = 0;
+    await this._initializeSelf();
+    this._isRestarting = false;
+  }
+
+  private async _initializeSelf(): Promise<void> {
+    await this.InitializeInternalSocket();
     this.ConfigureReconnection();
     this.ConfigureMessageIncoming();
     this.ConfigureMessagesUpdates();
@@ -159,16 +178,17 @@ export default class WhatsSocket implements IWhatsSocket {
     this.SendSafe = this.SendSafe.bind(this);
     this.SendRaw = this.SendRaw.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
-    this.InitializeSelf = this.InitializeSelf.bind(this);
+    this.InitializeInternalSocket = this.InitializeInternalSocket.bind(this);
+    this.Start = this.Start.bind(this);
     this.Shutdown = this.Shutdown.bind(this);
+    this._initializeSelf = this._initializeSelf.bind(this);
     this.ConfigureReconnection = this.ConfigureReconnection.bind(this);
     this.ConfigureMessageIncoming = this.ConfigureMessageIncoming.bind(this);
     this.ConfigureGroupsEnter = this.ConfigureGroupsEnter.bind(this);
     this.ConfigureGroupsUpdates = this.ConfigureGroupsUpdates.bind(this);
   }
 
-
-  private async InitializeSelf() {
+  private async InitializeInternalSocket() {
     let authInfoPath: string = GetPath(this._credentialsFolder)
     const { state, saveCreds } = await useMultiFileAuthState(authInfoPath);
 
@@ -203,7 +223,7 @@ export default class WhatsSocket implements IWhatsSocket {
       }
 
       if (connection === "open") {
-        this._actualRetries = 0; // reset retries on successful connection
+        this.ActualReconnectionRetries = 0; // reset retries on successful connection
         try {
           const groups = Object.values(await this._socket.groupFetchAllParticipating());
           this.onStartupAllGroupsIn.CallAll(groups);
@@ -220,21 +240,20 @@ export default class WhatsSocket implements IWhatsSocket {
         console.warn("Socket closed:", lastDisconnect?.error);
 
         if (shouldReconnect) {
-          this._actualRetries++;
-          if (this._actualRetries > this._maxReconnectionRetries) {
+          if (this.ActualReconnectionRetries >= this._maxReconnectionRetries) {
             console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
+            this.Shutdown();
             return;
           }
 
           if (!this._isRestarting) {
-            this._isRestarting = true;
-            console.log(`INFO: Restarting socket (attempt ${this._actualRetries}/${this._maxReconnectionRetries})...`);
+            this.ActualReconnectionRetries++;
+            console.log(`INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
 
             try {
-              await new Promise((r) => setTimeout(r, 1000));
-              await this._socket.ws.close();
+              await new Promise((res) => setTimeout(res, 1000));
+              await this.Restart(); //This method sets "this.is_Restarting = true"
               this.onReconnect.CallAll();
-              await this.Start();
               console.log("INFO: Socket restarted successfully!");
             } catch (err) {
               console.error("ERROR: Socket restart failed", err);

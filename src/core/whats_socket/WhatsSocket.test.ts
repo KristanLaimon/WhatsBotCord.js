@@ -1,7 +1,7 @@
 import type { AnyMessageContent, WAMessageUpdate, GroupMetadata, WAMessage } from 'baileys';
 import { Boom } from "@hapi/boom";
 
-import { type Mock, mock as fn, expect, describe, it } from "bun:test";
+import { type Mock, mock as fn, expect, describe, it, spyOn } from "bun:test";
 import type { BaileysWASocket } from './types';
 import WhatsSocket from './WhatsSocket';
 import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
@@ -218,6 +218,75 @@ describe("Events/Delegates", () => {
   });
 });
 
+describe("Life Cycle: Start/Restart/Shutdown", () => {
+  it("WhenStartingNormalWhatsSocket_ShouldBeAbleToStartOnly", async () => {
+    //Should last at most, 1 second
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({
+      ownImplementationSocketAPIWhatsapp: mockSocket,
+      delayMilisecondsBetweenMsgs: 1
+    });
+    await ws.Start();
+  }, { timeout: 1000 });
+
+  it("WhenStartingNormalWhatsSocket_ShouldBeAbleToStartAndShutdownCompletely", async () => {
+    //Should be fast, and avoid leaving any residual promises or unresolved code!.
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({
+      ownImplementationSocketAPIWhatsapp: mockSocket,
+      delayMilisecondsBetweenMsgs: 1
+    });
+    await ws.Start();
+    await ws.Shutdown();
+    //Max 1 second.
+  }, { timeout: 1000 });;
+
+  it("WhenStartingNormalWhatsSocket_ShouldBeAbleToStartAndRestart", async () => {
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({
+      ownImplementationSocketAPIWhatsapp: mockSocket,
+      delayMilisecondsBetweenMsgs: 1
+    });
+
+    const spyOnStart = spyOn(ws, "Start");
+    const spyOnRestart = spyOn(ws, "Restart");
+
+    await ws.Start();
+    await ws.Restart();
+
+    expect(spyOnStart).toHaveBeenCalledTimes(1);
+    expect(spyOnRestart).toHaveBeenCalledTimes(1);
+  });
+
+  it("WhenRestarting_ShouldNotReinstantiateDelegates", async () => {
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({
+      ownImplementationSocketAPIWhatsapp: mockSocket,
+      delayMilisecondsBetweenMsgs: 1
+    });
+
+    await ws.Start();
+
+    const originalReconnect = ws.onReconnect;
+    const originalGroupEnter = ws.onGroupEnter;
+    const originalGroupUpdate = ws.onGroupUpdate;
+    const originalMessageUpdate = ws.onMessageUpdate;
+    const originalMessageUpsert = ws.onMessageUpsert;
+    const originalSentMessage = ws.onSentMessage;
+    const originalStartupAllGroupsIn = ws.onStartupAllGroupsIn;
+
+    await ws.Restart();
+
+    expect(ws.onReconnect).toMatchObject(originalReconnect);
+    expect(ws.onGroupEnter).toMatchObject(originalGroupEnter);
+    expect(ws.onGroupUpdate).toMatchObject(originalGroupUpdate);
+    expect(ws.onMessageUpdate).toMatchObject(originalMessageUpdate);
+    expect(ws.onMessageUpsert).toMatchObject(originalMessageUpsert);
+    expect(ws.onSentMessage).toMatchObject(originalSentMessage);
+    expect(ws.onStartupAllGroupsIn).toMatchObject(originalStartupAllGroupsIn);
+  });
+});
+
 describe("Reconnecting", () => {
   it("WhenSuccessfullyConnected;Ideal;_ShouldFetchGroupMetadataOnce", async () => {
     // ====== Arrange
@@ -259,45 +328,75 @@ describe("Reconnecting", () => {
 
   it("WhenNotConnected_ShouldCloseItselfAndRestart", async () => {
     const mockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: mockSocket });
-
-    await ws.Start();
-    const spy = fn();
-    ws.onReconnect.Subscribe(spy); // TIP: agrega este delegate para detectar reintentos
-
-    // ==== Act: simula desconexión con un status que permita reconectar
-    mockSocket.ev.emit("connection.update", {
-      connection: "close",
-      lastDisconnect: { error: new Boom("fake error", { statusCode: 408 }) }
-    } as any);
-
-    // ==== Assert
-    await waitUntilCalled(spy); // debería disparar reconexión
-    expect(spy).toHaveBeenCalled();
-  });
-
-  //TODO: FINISH THIS TEST
-  it("WhenNonReconnectingInMaxAttemps_ShouldShutdownCompletely", async () => {
-    const mockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({
-      ownImplementationSocketAPIWhatsapp: mockSocket,
-      maxReconnectionRetries: 2
-    });
-
+    const ws = new WhatsSocket({ ownImplementationSocketAPIWhatsapp: mockSocket, delayMilisecondsBetweenMsgs: 1 });
     await ws.Start();
 
-    // ==== Act: Fuerza más intentos que el máximo permitido
-    for (let i = 0; i < 5; i++) {
+    const restartFunctSpy: Mock<typeof ws.Restart> = spyOn(ws, "Restart");
+    const reconnectSpy = fn();
+    ws.onReconnect.Subscribe(reconnectSpy);
+
+    function EmitErrorConnection() {
+      // Act: simula desconexión con status que permite reconectar
       mockSocket.ev.emit("connection.update", {
         connection: "close",
         lastDisconnect: { error: new Boom("fake error", { statusCode: 408 }) }
       } as any);
     }
 
-    // ==== Assert: verifica que no se reintentó más allá del máximo
-    expect(ws["_actualRetries"]).not.toBeGreaterThan(2);
-    // TIP: aquí puedes testear que no se reinicia más (ej: spy en Start o en ws._socket.ws.close)
+    // Assert: esperamos a que se dispare reconexión
+    EmitErrorConnection();
+    expect(ws.onReconnect.Length).toBe(1);
+    await waitUntilCalled(reconnectSpy);
+    expect(reconnectSpy).toHaveBeenCalledTimes(1);
+    expect(restartFunctSpy).toHaveBeenCalledTimes(1);
+
+    EmitErrorConnection();
+    expect(ws.onReconnect.Length).toBe(1);
+    await waitUntilCalled(reconnectSpy);
+    expect(reconnectSpy).toHaveBeenCalledTimes(2);
+    expect(restartFunctSpy).toHaveBeenCalledTimes(2);
+
+    // Limpieza para no dejar sockets vivos
+    await ws.Shutdown();
   });
+
+
+  //TODO: Improve this test
+  it("WhenNonReconnectingInMaxAttemps_ShouldShutdownCompletely", async () => {
+    const MAX_RECONNECTION_RETRIES = 2;
+
+    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({
+      ownImplementationSocketAPIWhatsapp: mockSocket,
+      maxReconnectionRetries: MAX_RECONNECTION_RETRIES
+    });
+
+    // mockear Restart para no reenganchar listeners reales
+    const ws_Start_Spy: Mock<typeof ws.Start> = spyOn(ws, "Start");
+    const ws_Restart_Spy: Mock<typeof ws.Restart> = spyOn(ws, "Restart");
+
+    await ws.Start();
+
+    const spyFunctyOnReconnect = fn();
+    ws.onReconnect.Subscribe(spyFunctyOnReconnect);
+
+    // Act: disparamos más eventos que el máximo permitido
+    for (let i = 0; i < MAX_RECONNECTION_RETRIES + 3; i++) {
+      mockSocket.ev.emit("connection.update", {
+        connection: "close",
+        lastDisconnect: { error: new Boom("fake error", { statusCode: 408 }) }
+      } as any);
+      // dejamos que el event loop procese
+      await new Promise((r) => setTimeout(r, 10));
+    }
+
+    // Assert
+    expect(ws.ActualReconnectionRetries).toBe(MAX_RECONNECTION_RETRIES);
+    expect(ws_Start_Spy).toHaveBeenCalledTimes(1); // sólo Start inicial
+    expect(ws_Restart_Spy).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES);
+
+    await ws.Shutdown();
+  }, { timeout: 10000 });
 });
 
 
