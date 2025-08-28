@@ -67,7 +67,7 @@ socket.Start().then(() => {
   console.log("WhatsSocket initialized successfully!");
 }).catch((error) => {
   console.error("Error initializing WhatsSocket:", error);
-})
+});
 
 
 // function StoreMsgInJson(filePath: string, rawMsg: WAMessage) {

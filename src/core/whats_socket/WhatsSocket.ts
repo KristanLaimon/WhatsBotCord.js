@@ -66,7 +66,7 @@ export type WhatsSocketOptions = {
   senderQueueMaxLimit?: number;
 
   /** Delay in miliseconds the socket should send all pending msgs (to send ofc) 
-   *  Default: 100 miliseconda (fast)
+   *  Default: 100 miliseconds extra delay (fast)
   */
   delayMilisecondsBetweenMsgs?: number;
 
@@ -120,6 +120,10 @@ export default class WhatsSocket implements IWhatsSocket {
   //They're initialized/instantiated in "Start()"
   private _socket!: BaileysWASocket;
   private _senderQueue!: WhatsSocketSenderQueue;
+  /**
+   * Sender module and sugar layer for sending all kinds of msgs.
+   * Text, Images, Videos, Polls, etc...
+   */
   public Send!: WhatsSocketSugarSender;
 
   // === Normal Public Properties ===

@@ -106,14 +106,27 @@ describe("Initialization", () => {
   });
 });
 
+
+//TODO: Make tests for each type of msg sending!
 describe('Messages Sending', () => {
-  it('WhenSendingMsgsThroughSendSafe_ShouldSendThemThroughSocket', async () => {
+  it('WhenSendingMsgsThroughSendSafe_ShouldSendThemThroughSocket', async (): Promise<void> => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();
-    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 0, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 1, ownImplementationSocketAPIWhatsapp: internalMockSocket });
     await ws.Start();
-    const result: WAMessage | null = await ws.SendSafe('123@c.us', { text: 'Hello' });
+    const result: WAMessage | null = await ws.SendSafe('123' + WhatsappGroupIdentifier, { text: 'Hello' });
     //@ts-ignore
     expect(result?.message).toEqual({ text: 'Hello' });
+    expect(internalMockSocket.sendMessage as Mock<typeof internalMockSocket.sendMessage>).toHaveBeenCalledTimes(1);
+  });
+
+  it("WhenSendingMsgsThroughRaw_ShouldSendThemThroughSocket", async (): Promise<void> => {
+    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const ws = new WhatsSocket({ delayMilisecondsBetweenMsgs: 1, ownImplementationSocketAPIWhatsapp: internalMockSocket });
+    await ws.Start();
+    const result: WAMessage | null = await ws.SendRaw("123@" + WhatsappGroupIdentifier, { text: "Raw text content" });
+
+    //@ts-ignore
+    expect(result!.message!).toEqual({ text: "Raw text content" });
     expect(internalMockSocket.sendMessage as Mock<typeof internalMockSocket.sendMessage>).toHaveBeenCalledTimes(1);
   });
 });
@@ -324,6 +337,8 @@ describe("Reconnecting", () => {
     // ========== Assert
     expect(groupFetchAllParticipantsMock).toHaveBeenCalledTimes(1);
     expect(spyFuncty).toHaveBeenCalledTimes(1);
+
+    await ws.Shutdown();
   });
 
   it("WhenNotConnected_ShouldCloseItselfAndRestart", async () => {
@@ -334,7 +349,6 @@ describe("Reconnecting", () => {
     const restartFunctSpy: Mock<typeof ws.Restart> = spyOn(ws, "Restart");
     const reconnectSpy = fn();
     ws.onRestart.Subscribe(reconnectSpy);
-
 
     function EmitErrorConnection() {
       // Act: simula desconexión con status que permite reconectar
@@ -357,12 +371,10 @@ describe("Reconnecting", () => {
     expect(reconnectSpy).toHaveBeenCalledTimes(2);
     expect(restartFunctSpy).toHaveBeenCalledTimes(2);
 
-    // Limpieza para no dejar sockets vivos
     await ws.Shutdown();
   });
 
 
-  //TODO: Works but... its logging shows a lot of "Socket Closed" way more than expected. CHECK THIS TEST
   it("WhenNonReconnectingInMaxAttemps_ShouldShutdownCompletely", async () => {
     const MAX_RECONNECTION_RETRIES = 2;
 
@@ -372,15 +384,6 @@ describe("Reconnecting", () => {
       maxReconnectionRetries: MAX_RECONNECTION_RETRIES
     });
 
-    // mockear Restart para no reenganchar listeners reales
-    const ws_Start_Spy: Mock<typeof ws.Start> = spyOn(ws, "Start");
-    const ws_Restart_Spy: Mock<typeof ws.Restart> = spyOn(ws, "Restart");
-    const ws_Shutdown_Spy: Mock<typeof ws.Shutdown> = spyOn(ws, "Shutdown");
-
-    await ws.Start();
-
-    const spyFunctyOnReconnect = fn();
-    ws.onRestart.Subscribe(spyFunctyOnReconnect);
     function EmitConnectionError() {
       mockSocket.ev.emit("connection.update", {
         connection: "close",
@@ -388,21 +391,28 @@ describe("Reconnecting", () => {
       } as any);
     }
 
+    const ws_Start_Spy: Mock<typeof ws.Start> = spyOn(ws, "Start");
+    const ws_Restart_Spy: Mock<typeof ws.Restart> = spyOn(ws, "Restart");
+    const ws_Shutdown_Spy: Mock<typeof ws.Shutdown> = spyOn(ws, "Shutdown");
+
+    await ws.Start();
+
+    const onRestartCallbackSpy = fn();
+    ws.onRestart.Subscribe(onRestartCallbackSpy);
+
     //Act: Let's use all allowed reconnection retries
     for (let i = 0; i < MAX_RECONNECTION_RETRIES; i++) {
       EmitConnectionError();
-      await waitUntilCalled(spyFunctyOnReconnect);
+      await waitUntilCalled(onRestartCallbackSpy);
     }
-    waitUntilCalled(spyFunctyOnReconnect);
     //Now, lets try an exceding connection retry
-    // EmitConnectionError();
-    // await waitUntilCalled(ws_Shutdown_Spy);
+    waitUntilCalled(onRestartCallbackSpy);
 
-    expect(ws_Shutdown_Spy).toHaveBeenCalledTimes(3);
-    expect(spyFunctyOnReconnect).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES);
-    expect(ws.ActualReconnectionRetries).toBe(MAX_RECONNECTION_RETRIES);
-    expect(ws_Start_Spy).toHaveBeenCalledTimes(1); // sólo Start inicial
+    expect(ws_Start_Spy).toHaveBeenCalledTimes(1);
     expect(ws_Restart_Spy).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES);
+    expect(ws_Shutdown_Spy).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES + 1);
+    expect(onRestartCallbackSpy).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES);
+    expect(ws.ActualReconnectionRetries).toBe(MAX_RECONNECTION_RETRIES);
 
     await ws.Shutdown();
   }, { timeout: 10000 });
