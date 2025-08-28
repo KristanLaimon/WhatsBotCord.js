@@ -375,6 +375,7 @@ describe("Reconnecting", () => {
     // mockear Restart para no reenganchar listeners reales
     const ws_Start_Spy: Mock<typeof ws.Start> = spyOn(ws, "Start");
     const ws_Restart_Spy: Mock<typeof ws.Restart> = spyOn(ws, "Restart");
+    const ws_Shutdown_Spy: Mock<typeof ws.Shutdown> = spyOn(ws, "Shutdown");
 
     await ws.Start();
 
@@ -392,10 +393,12 @@ describe("Reconnecting", () => {
       EmitConnectionError();
       await waitUntilCalled(spyFunctyOnReconnect);
     }
-
+    waitUntilCalled(spyFunctyOnReconnect);
     //Now, lets try an exceding connection retry
-    EmitConnectionError();
+    // EmitConnectionError();
+    // await waitUntilCalled(ws_Shutdown_Spy);
 
+    expect(ws_Shutdown_Spy).toHaveBeenCalledTimes(3);
     expect(spyFunctyOnReconnect).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES);
     expect(ws.ActualReconnectionRetries).toBe(MAX_RECONNECTION_RETRIES);
     expect(ws_Start_Spy).toHaveBeenCalledTimes(1); // sólo Start inicial

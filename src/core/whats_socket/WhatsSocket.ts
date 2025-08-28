@@ -236,13 +236,12 @@ export default class WhatsSocket implements IWhatsSocket {
       if (connection === "close") {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-
-        console.warn("Socket closed:", lastDisconnect?.error);
+        console.warn("Socket closed");
 
         if (shouldReconnect) {
           if (this.ActualReconnectionRetries >= this._maxReconnectionRetries) {
             console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
-            this.Shutdown();
+            await this.Shutdown();
             return;
           }
 
