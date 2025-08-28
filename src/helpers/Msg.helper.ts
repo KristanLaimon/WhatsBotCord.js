@@ -2,7 +2,7 @@ import { type WAMessage } from "baileys";
 import { MsgType } from '../Msg.types';
 
 export function MsgHelper_GetTextFrom(rawMsg: WAMessage): string | null {
-  if (!rawMsg.message) return "There's no text in that message";
+  if (!rawMsg.message) return null;
   return rawMsg.message.conversation || rawMsg.message.extendedTextMessage?.text || rawMsg.message.imageMessage?.caption || rawMsg.message.videoMessage?.caption || null;
 }
 
