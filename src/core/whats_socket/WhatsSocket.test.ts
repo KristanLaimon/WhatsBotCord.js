@@ -267,7 +267,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
 
     await ws.Start();
 
-    const originalReconnect = ws.onReconnect;
+    const originalReconnect = ws.onRestart;
     const originalGroupEnter = ws.onGroupEnter;
     const originalGroupUpdate = ws.onGroupUpdate;
     const originalMessageUpdate = ws.onMessageUpdate;
@@ -277,7 +277,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
 
     await ws.Restart();
 
-    expect(ws.onReconnect).toMatchObject(originalReconnect);
+    expect(ws.onRestart).toMatchObject(originalReconnect);
     expect(ws.onGroupEnter).toMatchObject(originalGroupEnter);
     expect(ws.onGroupUpdate).toMatchObject(originalGroupUpdate);
     expect(ws.onMessageUpdate).toMatchObject(originalMessageUpdate);
@@ -333,7 +333,8 @@ describe("Reconnecting", () => {
 
     const restartFunctSpy: Mock<typeof ws.Restart> = spyOn(ws, "Restart");
     const reconnectSpy = fn();
-    ws.onReconnect.Subscribe(reconnectSpy);
+    ws.onRestart.Subscribe(reconnectSpy);
+
 
     function EmitErrorConnection() {
       // Act: simula desconexión con status que permite reconectar
@@ -345,13 +346,13 @@ describe("Reconnecting", () => {
 
     // Assert: esperamos a que se dispare reconexión
     EmitErrorConnection();
-    expect(ws.onReconnect.Length).toBe(1);
+    expect(ws.onRestart.Length).toBe(1);
     await waitUntilCalled(reconnectSpy);
     expect(reconnectSpy).toHaveBeenCalledTimes(1);
     expect(restartFunctSpy).toHaveBeenCalledTimes(1);
 
     EmitErrorConnection();
-    expect(ws.onReconnect.Length).toBe(1);
+    expect(ws.onRestart.Length).toBe(1);
     await waitUntilCalled(reconnectSpy);
     expect(reconnectSpy).toHaveBeenCalledTimes(2);
     expect(restartFunctSpy).toHaveBeenCalledTimes(2);
@@ -361,7 +362,7 @@ describe("Reconnecting", () => {
   });
 
 
-  //TODO: Improve this test
+  //TODO: Works but... its logging shows a lot of "Socket Closed" way more than expected. CHECK THIS TEST
   it("WhenNonReconnectingInMaxAttemps_ShouldShutdownCompletely", async () => {
     const MAX_RECONNECTION_RETRIES = 2;
 
@@ -378,19 +379,24 @@ describe("Reconnecting", () => {
     await ws.Start();
 
     const spyFunctyOnReconnect = fn();
-    ws.onReconnect.Subscribe(spyFunctyOnReconnect);
-
-    // Act: disparamos más eventos que el máximo permitido
-    for (let i = 0; i < MAX_RECONNECTION_RETRIES + 3; i++) {
+    ws.onRestart.Subscribe(spyFunctyOnReconnect);
+    function EmitConnectionError() {
       mockSocket.ev.emit("connection.update", {
         connection: "close",
         lastDisconnect: { error: new Boom("fake error", { statusCode: 408 }) }
       } as any);
-      // dejamos que el event loop procese
-      await new Promise((r) => setTimeout(r, 10));
     }
 
-    // Assert
+    //Act: Let's use all allowed reconnection retries
+    for (let i = 0; i < MAX_RECONNECTION_RETRIES; i++) {
+      EmitConnectionError();
+      await waitUntilCalled(spyFunctyOnReconnect);
+    }
+
+    //Now, lets try an exceding connection retry
+    EmitConnectionError();
+
+    expect(spyFunctyOnReconnect).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES);
     expect(ws.ActualReconnectionRetries).toBe(MAX_RECONNECTION_RETRIES);
     expect(ws_Start_Spy).toHaveBeenCalledTimes(1); // sólo Start inicial
     expect(ws_Restart_Spy).toHaveBeenCalledTimes(MAX_RECONNECTION_RETRIES);

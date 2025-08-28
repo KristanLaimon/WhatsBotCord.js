@@ -12,7 +12,7 @@ export type WhatsSocketMockOptions = {
 }
 
 export default class WhatsSocketMock implements IWhatsSocket {
-  onReconnect: Delegate<() => Promise<void>> = new Delegate();
+  onRestart: Delegate<() => Promise<void>> = new Delegate();
   onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
   onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
   onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
@@ -90,7 +90,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.GroupsIDTriedToFetch = [];
     this.SentMessagesThroughQueue = [];
 
-    this.onReconnect.Clear();
+    this.onRestart.Clear();
     this.onMessageUpsert.Clear();
     this.onGroupEnter.Clear();
     this.onGroupUpdate.Clear();

@@ -49,7 +49,7 @@ export interface IWhatsSocketMinimum extends ICanSendMsgs {
  */
 export interface IWhatsSocket extends ICanSendMsgs {
   //  ============= Public Delegates for handling events ================
-  onReconnect: Delegate<() => Promise<void>>;
+  onRestart: Delegate<() => Promise<void>>;
   /**
    * Delegate event to subscribe AFTER sending a message.
    * Useful to verify if a msg was really sent

@@ -107,7 +107,7 @@ export default class WhatsSocket implements IWhatsSocket {
   public onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
   public onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
   public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
-  public onReconnect: Delegate<() => Promise<void>> = new Delegate();
+  public onRestart: Delegate<() => Promise<void>> = new Delegate();
   public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
@@ -151,6 +151,7 @@ export default class WhatsSocket implements IWhatsSocket {
    * @returns A promise that will be running in the background all the time until the socket is closed.
    */
   public async Start(): Promise<void> {
+    this.ActualReconnectionRetries = 0;
     await this._initializeSelf();
   }
 
@@ -161,7 +162,6 @@ export default class WhatsSocket implements IWhatsSocket {
   public async Restart(): Promise<void> {
     this._isRestarting = true;
     await this.Shutdown();
-    this.ActualReconnectionRetries = 0;
     await this._initializeSelf();
     this._isRestarting = false;
   }
@@ -251,9 +251,8 @@ export default class WhatsSocket implements IWhatsSocket {
             console.log(`INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
 
             try {
-              await new Promise((res) => setTimeout(res, 1000));
               await this.Restart(); //This method sets "this.is_Restarting = true"
-              this.onReconnect.CallAll();
+              this.onRestart.CallAll();
               console.log("INFO: Socket restarted successfully!");
             } catch (err) {
               console.error("ERROR: Socket restart failed", err);
