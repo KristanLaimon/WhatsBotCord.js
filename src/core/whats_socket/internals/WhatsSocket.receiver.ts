@@ -1,37 +1,72 @@
 
-import type { GroupMetadata, WAMessage } from 'baileys';
+import type { WAMessage } from 'baileys';
 import { MsgType, SenderType } from 'src/Msg.types';
-import type WhatsSocket from '../WhatsSocket';
 import type { IWhatsSocket } from '../IWhatsSocket';
 import { MsgHelper_GetTextFrom } from 'src/helpers/Msg.helper';
-// import type { BotWaitMessageError } from '../types/bot';
-// import { MsgType, SenderType } from '../types/commands';
-// import WhatsSocket from './WhatsSocket';
-// import { Msg_GetTextFromRawMsg, Msg_MsgTypeToString } from '../utils/rawmsgs';
-// import { Phone_GetFullPhoneInfoFromRawMsg } from '../utils/phonenumbers';
 
+/**
+ * Callback type used to determine whether a received message satisfies a success condition.
+ *
+ * @param userId - The WhatsApp sender ID of the message (may be null for broadcasts).
+ * @param chatId - The ID of the chat the message belongs to.
+ * @param incomingRawMsg - The raw message object from Baileys.
+ * @param incomingMsgType - The type of the message.
+ * @param incomingSenderType - Whether the sender is a group member, self, etc.
+ * @returns true if the message satisfies the success condition; false otherwise.
+ */
 type SuccessConditionCallback = (userId: string | null, chatId: string, incomingRawMsg: WAMessage, incomingMsgType: MsgType, incomingSenderType: SenderType) => boolean;
 
+/**
+ * Options used to configure the WaitNextMsg behavior.
+ */
 type WaitOptions = {
+  /** Maximum time (in seconds) to wait for a valid message before rejecting. */
   timeoutSeconds: number;
+
+  /** Array of keywords that, if present in a message, will cancel the wait. */
   cancelKeywords: string[];
+
+  /** Message sent back to the user if they send a message of the wrong type. */
   wrongTypeFeedbackMsg: string;
+
+  /** Whether to ignore messages sent by the bot itself. Default: true */
   ignoreSelfMessages: boolean;
 }
 
+/**
+ * Represents an error that occurs during message reception.
+ */
 export type WhatsMsgReceiverError = {
+  /** Human-readable error message. */
   errorMessage: string;
+
+  /** Whether the wait was aborted because the user sent a cancel keyword. */
   wasAbortedByUser: boolean;
 }
 
-export class WhatsMsgReceiver {
+/**
+ * Submodule responsible for listening and waiting for messages through a WhatsSocket instance.
+ */
+export class WhatsSocketReceiver_SubModule {
   private _whatsSocket: IWhatsSocket;
 
+  /**
+ * @param socket - An instance of a WhatsSocket (must implement IWhatsSocket).
+ */
   constructor(socket: IWhatsSocket) {
     this._whatsSocket = socket;
   }
 
-  private _waitNextMsg(successConditionCallback: SuccessConditionCallback, chatSenderId: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
+  /**
+  * Internal helper that waits for the next message satisfying a success condition.
+  *
+  * @param successConditionCallback - Callback to determine if the message meets the success criteria.
+  * @param chatIdToLookFor - Chat ID where the message should arrive.
+  * @param expectedMsgType - Expected type of the message.
+  * @param options - Configuration options for timeout, cancel keywords, etc.
+  * @returns Promise that resolves with the WAMessage that met the condition or rejects with an error.
+  */
+  private _waitNextMsg(successConditionCallback: SuccessConditionCallback, chatIdToLookFor: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
     //Options default values
     const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg } = options
 
@@ -46,7 +81,7 @@ export class WhatsMsgReceiver {
       }
 
       const listener = (userId: string | null, chatId: string, msg: WAMessage, msgType: MsgType, senderType: SenderType) => {
-        if (msg.key.remoteJid !== chatSenderId) return;
+        if (msg.key.remoteJid !== chatIdToLookFor) return;
 
         if (ignoreSelfMessages) {
           if (msg.key.fromMe) return;
@@ -97,33 +132,36 @@ export class WhatsMsgReceiver {
     });
   }
 
-  //TODO: Add senderID: string | null and finish refactoring this whole class to be usable with i18n | localization facilities
-  public async WaitNextRawMsgFromSenderId(senderId: string, chatId: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
-    const conditionCallback: SuccessConditionCallback = (_senderID, _chatId, msg, _msgType, _senderType) => ((msg.key.participant || msg.key.remoteJid) === senderId);
-    return await this._waitNextMsg(conditionCallback, chatId, expectedMsgType, options);
+  /**
+  * Waits for the next message from a specific user in a group chat.
+  *
+  * @param userIDToWait - The participant ID to wait for.
+  * @param chatToWaitOnID - Group chat ID to monitor.
+  * @param expectedMsgType - Type of message expected.
+  * @param options - Options for timeout, cancel keywords, etc.
+  * @returns The next WAMessage from the specified user.
+  */
+  public async WaitUntilNextRawMsgFromUserIDInGroup(userIDToWait: string, chatToWaitOnID: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
+    const conditionCallback: SuccessConditionCallback =
+      (_senderID, _chatId, msg, _msgType, _senderType) =>
+        msg.key.participant === userIDToWait;
+    return await this._waitNextMsg(conditionCallback, chatToWaitOnID, expectedMsgType, options);
   }
 
-  public async WaitNextRawMsgFromWhatsId(chatSenderId: string, userSenderId: string, expectedWhatsId: string, expectedMsgType: MsgType, timeout?: number, wrongTypeMsgFeedback?: string): Promise<WAMessage> {
-    const conditionCallback: SuccessConditionCallback = (_chatId, msg, _msgType, _senderType) => {
-      const actualWhatsId = Phone_GetFullPhoneInfoFromRawMsg(msg)!.whatsappId;
-      return actualWhatsId === expectedWhatsId;
-    }
-    return await this._waitNextMsg(conditionCallback, chatSenderId, userSenderId, expectedMsgType, timeout, wrongTypeMsgFeedback);
-  }
-
-  public async WaitUntilRawTxtMsgFromWhatsId(chatSenderId: string, userSenderId: string, expectedCleanedWhatsappId: string, regexExpected: RegExp, timeout?: number, wrongTypeMsgFeedback?: string): Promise<WAMessage> {
-    const cb: SuccessConditionCallback = (_chatId, msg, msgType, _senderType) => {
-      if (msgType !== MsgType.text) return false;
-      const actualWhatsId = Phone_GetFullPhoneInfoFromRawMsg(msg)!.whatsappId;
-      const msgTxt = Msg_GetTextFromRawMsg(msg);
-      const isFromExpectedPhoneUser = actualWhatsId === expectedCleanedWhatsappId;
-      const isMsgFormatExpected = regexExpected.test(msgTxt);
-      return isFromExpectedPhoneUser && isMsgFormatExpected;
-    }
-    return await this._waitNextMsg(cb, chatSenderId, userSenderId, MsgType.text, timeout, wrongTypeMsgFeedback);
-  }
-
-  public async GetGroupMetadata(chatSenderId: string): Promise<GroupMetadata | null> {
-    return await this._whatsSocket.GetGroupMetadata(chatSenderId);
+  /**
+   * Waits for the next message from a specific user in a private 1:1 conversation.
+   * 
+   * Fun fact: Whatsapp takes user id as CHAT ID when talking to them in 1:1 conversation.
+   *
+   * @param userIdToWait - The user ID to wait for.
+   * @param expectedMsgType - Expected message type.
+   * @param options - Options for timeout, cancel keywords, etc.
+   * @returns The next WAMessage from the specified user.
+   */
+  public async WaitUntilNextRawMsgFromUserIdInPrivateConversation(userIdToWait: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
+    const conditionCallback: SuccessConditionCallback =
+      (__userId, chatId, __incomingRawMsg, __incomingMsgType, __incomindSenderType) =>
+        chatId === userIdToWait;
+    return await this._waitNextMsg(conditionCallback, userIdToWait, expectedMsgType, options);
   }
 }

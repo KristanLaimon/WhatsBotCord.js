@@ -4,8 +4,8 @@ import { Boom } from "@hapi/boom";
 import { type Mock, mock as fn, expect, describe, it, spyOn } from "bun:test";
 import type { BaileysWASocket } from './types';
 import WhatsSocket from './WhatsSocket';
-import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
-import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
+import WhatsSocketSenderQueue_SubModule from './internals/WhatsSocket.senderqueue';
+import { WhatsSocketSugarSender_Submodule } from './internals/WhatsSocket.sugarsenders';
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from 'src/Whatsapp.types';
 import { MsgType, SenderType } from 'src/Msg.types';
 
@@ -84,9 +84,9 @@ describe("Initialization", () => {
     //@ts-ignore
     expect(ws._senderQueue).toBeDefined();
     //@ts-ignore
-    expect(ws._senderQueue).toBeInstanceOf(WhatsSocketSenderQueue);
+    expect(ws._senderQueue).toBeInstanceOf(WhatsSocketSenderQueue_SubModule);
     expect(ws.Send).toBeDefined();
-    expect(ws.Send).toBeInstanceOf(WhatsSocketSugarSender);
+    expect(ws.Send).toBeInstanceOf(WhatsSocketSugarSender_Submodule);
   });
 
   it("WhenInstatiatin_ShouldConfigure;ConfigureConnection();CorrectlyOnSocket", async () => {

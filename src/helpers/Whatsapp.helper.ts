@@ -3,7 +3,7 @@ import type { WAMessage } from "baileys";
 
 export type WhatsappsenderIDType = "lid" | "full";
 
-export type WhatsappSenderIDInfo = {
+export type WhatsappIDInfo = {
   /**
    * The original WhatsApp ID as assigned by WhatsApp.
    * This is the raw identifier you receive in messages, without any formatting.
@@ -44,7 +44,7 @@ export type WhatsappSenderIDInfo = {
  * const rawMsg = { key: { participant: '1234567890123@s.whatsapp.net' } };
  * const phoneInfo = Phone_GetFullPhoneInfoFromRawmsg(rawMsg);
  */
-export function WhatsappHelper_ExtractWhatsappIdFromSenderRawMsg(rawMsg: WAMessage): WhatsappSenderIDInfo {
+export function WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(rawMsg: WAMessage): WhatsappIDInfo {
   //Let's check if comes from private msg or group
   let id: string | null = rawMsg.key.participant || rawMsg.key.remoteJid || null;
   if (!id) {
@@ -66,7 +66,7 @@ export function WhatsappHelper_ExtractWhatsappIdFromSenderRawMsg(rawMsg: WAMessa
   }
 }
 
-export function WhatsappHelper_ExtractWhatsappIdFromMention(mentionId: string): WhatsappSenderIDInfo | null {
+export function WhatsappHelper_ExtractWhatsappIdFromMention(mentionId: string): WhatsappIDInfo | null {
   if (!WhatsappHelper_isMentionId(mentionId)) return null;
   let number = mentionId.slice(1);
   return {

@@ -2,7 +2,7 @@ import Delegate from '../../../libs/Delegate';
 import type { IWhatsSocket } from '../IWhatsSocket';
 import { SenderType, type MsgType } from '../../../Msg.types';
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import WhatsSocketSenderQueue from '../internals/WhatsSocket.senderqueue';
+import WhatsSocketSenderQueue_SubModule from '../internals/WhatsSocket.senderqueue';
 import type { WhatsSocketMessageSentMock } from './types';
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
 
@@ -22,10 +22,10 @@ export default class WhatsSocketMock implements IWhatsSocket {
 
   ownJID: string = "ownIDMock" + WhatsappIndividualIdentifier;
 
-  private _senderQueue: WhatsSocketSenderQueue;
+  private _senderQueue: WhatsSocketSenderQueue_SubModule;
 
   constructor(options?: WhatsSocketMockOptions) {
-    this._senderQueue = new WhatsSocketSenderQueue(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
+    this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
 
     //Thanks js, this is never needed on another languages... ☠️
     this.SendRaw = this.SendRaw.bind(this);

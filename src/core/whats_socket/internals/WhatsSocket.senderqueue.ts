@@ -26,7 +26,7 @@ function Clone_MsgQueueItem(msgItem: SocketMsgQueueItem) {
  * Helps to prevent overwhelming the WhatsApp socket with too many messages at once incoming from
  * multiple users or a funny user trying to spam the bot.
  */
-export default class WhatsSocketSenderQueue {
+export default class WhatsSocketSenderQueue_SubModule {
   public onSentMessageInsideQueue: Delegate<(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions) => void> = new Delegate();
   /**
    * A getter that returns a deep copy of all elements currently in the queue as an array.

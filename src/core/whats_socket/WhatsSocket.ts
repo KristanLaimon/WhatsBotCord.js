@@ -21,9 +21,9 @@ import type { BaileysWASocket, WhatsSocketLoggerMode } from './types';
 import { GetPath } from "../../libs/BunPath";
 import { MsgHelper_GetMsgTypeFromRawMsg } from '../../helpers/Msg.helper';
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from '../../Whatsapp.types';
-import WhatsSocketSenderQueue from './internals/WhatsSocket.senderqueue';
+import WhatsSocketSenderQueue_SubModule from './internals/WhatsSocket.senderqueue';
 import type { IWhatsSocket } from './IWhatsSocket';
-import { WhatsSocketSugarSender } from './internals/WhatsSocket.sugarsenders';
+import { WhatsSocketSugarSender_Submodule } from './internals/WhatsSocket.sugarsenders';
 
 //TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 
@@ -119,12 +119,12 @@ export default class WhatsSocket implements IWhatsSocket {
   //=== Subcomponents ===
   //They're initialized/instantiated in "Start()"
   private _socket!: BaileysWASocket;
-  private _senderQueue!: WhatsSocketSenderQueue;
+  private _senderQueue!: WhatsSocketSenderQueue_SubModule;
   /**
    * Sender module and sugar layer for sending all kinds of msgs.
    * Text, Images, Videos, Polls, etc...
    */
-  public Send!: WhatsSocketSugarSender;
+  public Send!: WhatsSocketSugarSender_Submodule;
 
   // === Normal Public Properties ===
   public ActualReconnectionRetries: number = 0;
@@ -210,8 +210,8 @@ export default class WhatsSocket implements IWhatsSocket {
     this._socket.ev.on("creds.update", saveCreds);
 
     //== Initializing internal sub-modules == 
-    this._senderQueue = new WhatsSocketSenderQueue(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
-    this.Send = new WhatsSocketSugarSender(this);
+    this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
+    this.Send = new WhatsSocketSugarSender_Submodule(this);
   }
 
   public async Shutdown() {

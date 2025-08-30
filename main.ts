@@ -9,7 +9,7 @@ import { type WAMessage } from "baileys";
 //DEV porpuses
 import fs from "fs";
 import { GetPath } from 'src/libs/BunPath';
-import { WhatsappHelper_ExtractWhatsappIdFromSenderRawMsg } from 'src/helpers/Whatsapp.helper';
+import { WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg } from 'src/helpers/Whatsapp.helper';
 
 const socket = new WhatsSocket({
   credentialsFolder: "./auth",
@@ -27,7 +27,7 @@ socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, sende
 
     // const groupMetadta = await socket.GetGroupMetadata(chatId);
     // console.log(groupMetadta);
-    const whatsIdInfo = WhatsappHelper_ExtractWhatsappIdFromSenderRawMsg(rawMsg);
+    const whatsIdInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(rawMsg);
     console.log("WhatsIdInfo: ", whatsIdInfo)
     const txtMsg = await socket.Send.Text(chatId, whatsIdInfo.asMentionFormatted, { mentionsIds: [whatsIdInfo.rawId] });
     if (txtMsg) {
