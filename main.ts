@@ -1,13 +1,15 @@
 import dotenv from "dotenv";
 dotenv.config({ path: "./env.development", quiet: true });
 import { MsgHelper_GetTextFrom } from './src/helpers/Msg.helper';
-import { MsgType } from './src/Msg.types';
+import { MsgType, SenderType } from './src/Msg.types';
 import WhatsSocket from './src/core/whats_socket/WhatsSocket'
 import { downloadMediaMessage } from "baileys";
+import { type WAMessage } from "baileys";
 
 //DEV porpuses
 import fs from "fs";
 import { GetPath } from 'src/libs/BunPath';
+import { WhatsappHelper_ExtractWhatsappIdFromSenderRawMsg } from 'src/helpers/Whatsapp.helper';
 
 const socket = new WhatsSocket({
   credentialsFolder: "./auth",
@@ -23,27 +25,40 @@ socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, sende
     console.log(`Msg: ${msg} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
     await socket.Send.Text(chatId, msg ?? "Wtf");
 
-    if (msg === "song") {
-      await socket.Send.Audio(chatId, "./TEST/wolf.mp3");
+    // const groupMetadta = await socket.GetGroupMetadata(chatId);
+    // console.log(groupMetadta);
+    const whatsIdInfo = WhatsappHelper_ExtractWhatsappIdFromSenderRawMsg(rawMsg);
+    console.log("WhatsIdInfo: ", whatsIdInfo)
+    const txtMsg = await socket.Send.Text(chatId, whatsIdInfo.asMentionFormatted, { mentionsIds: [whatsIdInfo.rawId] });
+    if (txtMsg) {
+      const sentText = MsgHelper_GetTextFrom(txtMsg);
+      if (sentText) {
+        console.log(sentText);
+      }
     }
 
-    if (msg === "video") {
-      await socket.Send.Video(chatId, { sourcePath: "./TEST/video.mp4" /** No caption */ });
-      await socket.Send.Video(chatId, { sourcePath: "./TEST/video.mp4", caption: "This video has a caption!" });
-    }
+    StoreMsgInJson("./MESSAGESMOCK.json", rawMsg);
+    // if (msg === "song") {
+    //   await socket.Send.Audio(chatId, "./TEST/wolf.mp3");
+    // }
 
-    if (msg === "gps") {
-      await socket.Send.Ubication(chatId, { degreesLatitude: 24.08, degreesLongitude: -110.335, addressText: "address name", name: "a name!" });
-    }
+    // if (msg === "video") {
+    //   await socket.Send.Video(chatId, { sourcePath: "./TEST/video.mp4" /** No caption */ });
+    //   await socket.Send.Video(chatId, { sourcePath: "./TEST/video.mp4", caption: "This video has a caption!" });
+    // }
 
-    if (msg === "contact") {
-      await socket.Send.Contact(chatId, { name: "Christian", phone: "5216149384930" }); //It's not real ofc ☠️
-    }
+    // if (msg === "gps") {
+    //   await socket.Send.Ubication(chatId, { degreesLatitude: 24.08, degreesLongitude: -110.335, addressText: "address name", name: "a name!" });
+    // }
 
-    if (msg === "dog") {
-      const dogStickerPath = GetPath("src", "core", "whats_socket", "internals", "mock_data", "sticker_1755901682947.webp");
-      await socket.Send.Sticker(chatId, dogStickerPath, { quoted: rawMsg });
-    }
+    // if (msg === "contact") {
+    //   await socket.Send.Contact(chatId, { name: "Christian", phone: "5216149384930" }); //It's not real ofc ☠️
+    // }
+
+    // if (msg === "dog") {
+    //   const dogStickerPath = GetPath("src", "core", "whats_socket", "internals", "mock_data", "sticker_1755901682947.webp");
+    //   await socket.Send.Sticker(chatId, dogStickerPath, { quoted: rawMsg });
+    // }
 
   }
 
@@ -70,21 +85,21 @@ socket.Start().then(() => {
 });
 
 
-// function StoreMsgInJson(filePath: string, rawMsg: WAMessage) {
-//   let msgsStored: any[] = [];
-//   if (fs.existsSync(GetPath(filePath))) {
-//     const before = fs.readFileSync(GetPath(filePath), "utf-8");
-//     if (before.trim() === "") {
-//       msgsStored = [];
-//     } else {
-//       msgsStored = JSON.parse(before);
-//     }
-//   } else {
-//     //Creates the file if it doesn't exist
-//     fs.writeFileSync(GetPath(filePath), "", "utf-8");
-//     msgsStored = [];
-//   }
-//   msgsStored.push(rawMsg);
-//   const json = JSON.stringify(msgsStored, null, 2);
-//   fs.writeFileSync(GetPath(filePath), json, "utf-8");
-// }
+function StoreMsgInJson(filePath: string, rawMsg: WAMessage) {
+  let msgsStored: any[] = [];
+  if (fs.existsSync(GetPath(filePath))) {
+    const before = fs.readFileSync(GetPath(filePath), "utf-8");
+    if (before.trim() === "") {
+      msgsStored = [];
+    } else {
+      msgsStored = JSON.parse(before);
+    }
+  } else {
+    //Creates the file if it doesn't exist
+    fs.writeFileSync(GetPath(filePath), "", "utf-8");
+    msgsStored = [];
+  }
+  msgsStored.push(rawMsg);
+  const json = JSON.stringify(msgsStored, null, 2);
+  fs.writeFileSync(GetPath(filePath), json, "utf-8");
+}

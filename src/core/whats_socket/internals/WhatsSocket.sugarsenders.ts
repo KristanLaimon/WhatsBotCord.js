@@ -112,7 +112,7 @@ export class WhatsSocketSugarSender {
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions) {
     text = options?.normalizeMessageText ? Str_NormalizeLiteralString(text) : text;
     //_getSendingMethod() returns a functions, it seems cursed I know, get used to it 
-    await (this._getSendingMethod(options))(chatId, { text, mentions: options?.mentionsIds }, options as MiscMessageGenerationOptions);
+    return await (this._getSendingMethod(options))(chatId, { text, mentions: options?.mentionsIds }, options as MiscMessageGenerationOptions);
   }
 
   /**
@@ -147,7 +147,7 @@ export class WhatsSocketSugarSender {
    * });
    * ```
    */
-  public async Img(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<void> {
+  public async Img(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     if (!fs.existsSync(imageOptions.sourcePath)) {
       throw new Error("Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.sourcePath);
     }
@@ -158,7 +158,7 @@ export class WhatsSocketSugarSender {
         captionToSend = Str_NormalizeLiteralString(captionToSend);
       }
     }
-    await (this._getSendingMethod(options))(chatId, {
+    return await (this._getSendingMethod(options))(chatId, {
       image: Buffer.isBuffer(imageOptions.sourcePath) ? imageOptions.sourcePath : fs.readFileSync(GetPath(imageOptions.sourcePath)),
       caption: captionToSend ?? "",
       mentions: options?.mentionsIds
@@ -179,7 +179,7 @@ export class WhatsSocketSugarSender {
    * - If the emoji string is not a single emoji character, throws an error.
    * - If the emoji reaction is valid, sends it to the target chat.
    */
-  public async ReactEmojiToMsg(chatId: string, rawMsgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+  public async ReactEmojiToMsg(chatId: string, rawMsgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     if (typeof emojiStr !== "string") {
       throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received an non string emoji");
     }
@@ -191,7 +191,7 @@ export class WhatsSocketSugarSender {
       throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + emojiStr);
     }
 
-    await (this._getSendingMethod(options))(chatId, {
+    return await (this._getSendingMethod(options))(chatId, {
       react: {
         text: emojiStr,
         key: rawMsgToReactTo.key
@@ -225,14 +225,14 @@ export class WhatsSocketSugarSender {
    * // Send a public URL sticker (must be directly accessible)
    * await bot.Sticker(chatId, 'https://example.com/sticker.webp');
    */
-  public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+  public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     if (typeof stickerUrlSource === "string") {
       if (!fs.existsSync(stickerUrlSource)) {
         throw new Error("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + stickerUrlSource);
       }
     }
 
-    await (this._getSendingMethod(options))(chatId, {
+    return await (this._getSendingMethod(options))(chatId, {
       sticker: Buffer.isBuffer(stickerUrlSource) ? stickerUrlSource : {
         url: stickerUrlSource
       }
@@ -270,7 +270,7 @@ export class WhatsSocketSugarSender {
    * // Forward a received WhatsApp audio message
    * await bot.Audio(chatId, receivedMessage);
    */
-  public async Audio(chatId: string, audioSource: string | Buffer | WAMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+  public async Audio(chatId: string, audioSource: string | Buffer | WAMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     let buffer: Buffer;
     let mimetype = 'audio/mpeg';
 
@@ -288,7 +288,7 @@ export class WhatsSocketSugarSender {
         const res = await fetch(audioSource);
         if (!res.ok) {
           console.error(`Failed to fetch audio: ${res.statusText}`);
-          return;
+          return null;
         }
         const arrayBuffer = await res.arrayBuffer();
         buffer = Buffer.from(arrayBuffer);
@@ -299,10 +299,10 @@ export class WhatsSocketSugarSender {
       mimetype = audioSource.message.audioMessage?.mimetype || 'audio/mpeg';
     } else {
       throw new Error('WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: ' + audioSource);
-      return;
+      return null;
     }
 
-    await (this._getSendingMethod(options))(chatId, {
+    return await (this._getSendingMethod(options))(chatId, {
       audio: buffer,
       mimetype
     }, options as MiscMessageGenerationOptions);
@@ -342,7 +342,7 @@ export class WhatsSocketSugarSender {
    * // Send a raw Buffer without queuing
    * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
    */
-  public async Video(chatId: string, videoSourceParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<void> {
+  public async Video(chatId: string, videoSourceParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     const videoSource = videoSourceParams.sourcePath;
     if (typeof videoSource === "string" && !Buffer.isBuffer(videoSource)) {
       //It's a local video file path
@@ -371,7 +371,7 @@ export class WhatsSocketSugarSender {
         mimeTypeToUse = "video/avi"
       //Otherwise, use default "video/mp4"
     }
-    await (this._getSendingMethod(options))(chatId, {
+    return await (this._getSendingMethod(options))(chatId, {
       video: Buffer.isBuffer(videoSourceParams.sourcePath) ? videoSourceParams.sourcePath : fs.readFileSync(GetPath(videoSourceParams.sourcePath)),
       caption: caption ?? "",
       mimetype: mimeTypeToUse
@@ -418,7 +418,7 @@ export class WhatsSocketSugarSender {
    * }, { sendRawWithoutEnqueue: true });
    * 
    */
-  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     let title: string = pollTitle;
     let selects: string[] = selections;
 
@@ -434,7 +434,7 @@ export class WhatsSocketSugarSender {
       selects = selections.map(opt => Str_NormalizeLiteralString(opt));
     }
 
-    await (this._getSendingMethod(moreOptions))(chatId, {
+    return await (this._getSendingMethod(moreOptions))(chatId, {
       poll: {
         name: title,
         values: selects,
@@ -444,8 +444,8 @@ export class WhatsSocketSugarSender {
       }
     }, moreOptions as MiscMessageGenerationOptions);
 
-    //Uncomment this section until discover a way to fetch votes data from polls, only sending porpuses so far.
-    //Baileys library doesn't have any documentation at all to achieve this.
+    //INFO: Uncomment this section until discover a way to fetch votes data from polls, only sending porpuses so far.
+    //Baileys library doesn't have any documentation at all to achieve this, so ill wait. - 20/august/2025
 
     // if (msgSent) {
     //   const sugarPollObjToReturn = new WhatsPoll(this.socket, {
@@ -461,12 +461,11 @@ export class WhatsSocketSugarSender {
     // }
   }
 
-  //TODO: Make unit testing for ubication msgs
-  public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM) {
+  public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
       throw new Error(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`);
     }
-    await (this._getSendingMethod(options))(chatId, {
+    return await (this._getSendingMethod(options))(chatId, {
       location: {
         degreesLatitude: ubicationParams.degreesLatitude,
         degreesLongitude: ubicationParams.degreesLongitude,
@@ -476,7 +475,6 @@ export class WhatsSocketSugarSender {
     }, options as MiscMessageGenerationOptions)
   }
 
-  //TODO: Make unit testing for sharing contacts
   /**
    * Sends a contact card (vCard) to a specific chat.
    *
@@ -515,7 +513,7 @@ export class WhatsSocketSugarSender {
    * @note Number follows "countrycode" + "1" + "10 digits number" for latin-american countries like "5216239389304" for example in mexico. Check
    * how your country number displays in international format
    */
-  public async Contact(chatId: string, contacts: { name: string; phone: string } | { name: string; phone: string }[], options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<void> {
+  public async Contact(chatId: string, contacts: { name: string; phone: string } | { name: string; phone: string }[], options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     const arr = Array.isArray(contacts) ? contacts : [contacts];
 
     const vCards = arr.map(c => {
@@ -529,7 +527,7 @@ TEL;type=CELL;type=VOICE;waid=${c.phone}:${c.phone}
 END:VCARD`;
     });
 
-    await (this._getSendingMethod(options))(chatId, {
+    return await (this._getSendingMethod(options))(chatId, {
       contacts: {
         displayName: arr.length === 1 ? arr[0]!.name : `${arr.length} contacts`,
         contacts: vCards.map(vc => ({ vcard: vc }))

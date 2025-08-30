@@ -1,0 +1,24 @@
+[
+  {
+    "key": {
+      "remoteJid": "120363419336657555@g.us",
+      "fromMe": false,
+      "id": "3FA64AEB7CB7AF02C832",
+      "participant": "136777696288768@lid"
+    },
+    "messageTimestamp": 1756509112,
+    "pushName": "Kristan Ruiz",
+    "broadcast": false,
+    "message": {
+      "extendedTextMessage": {
+        "text": "@5216121311687",
+        "contextInfo": {
+          "mentionedJid": [
+            "5216121311687@s.whatsapp.net"
+          ],
+          "expiration": 0
+        }
+      }
+    }
+  }
+]

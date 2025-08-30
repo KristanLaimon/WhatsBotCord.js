@@ -98,18 +98,17 @@ export class WhatsMsgReceiver {
   }
 
   //TODO: Add senderID: string | null and finish refactoring this whole class to be usable with i18n | localization facilities
-  public async WaitNextRawMsgFromId(chatSenderId: string, userSenderId: string, expectedMsgType: MsgType, timeout?: number, wrongTypeMsgFeedback?: string): Promise<WAMessage> {
-    const cb: SuccessConditionCallback = (_chatId, msg, _msgType, _senderType) => ((msg.key.participant || msg.key.remoteJid) === userSenderId);
-    return await this._waitNextMsg(cb, chatSenderId, userSenderId, expectedMsgType, timeout, wrongTypeMsgFeedback);
+  public async WaitNextRawMsgFromSenderId(senderId: string, chatId: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
+    const conditionCallback: SuccessConditionCallback = (_senderID, _chatId, msg, _msgType, _senderType) => ((msg.key.participant || msg.key.remoteJid) === senderId);
+    return await this._waitNextMsg(conditionCallback, chatId, expectedMsgType, options);
   }
 
   public async WaitNextRawMsgFromWhatsId(chatSenderId: string, userSenderId: string, expectedWhatsId: string, expectedMsgType: MsgType, timeout?: number, wrongTypeMsgFeedback?: string): Promise<WAMessage> {
-
-    const cb: SuccessConditionCallback = (_chatId, msg, _msgType, _senderType) => {
+    const conditionCallback: SuccessConditionCallback = (_chatId, msg, _msgType, _senderType) => {
       const actualWhatsId = Phone_GetFullPhoneInfoFromRawMsg(msg)!.whatsappId;
       return actualWhatsId === expectedWhatsId;
     }
-    return await this._waitNextMsg(cb, chatSenderId, userSenderId, expectedMsgType, timeout, wrongTypeMsgFeedback);
+    return await this._waitNextMsg(conditionCallback, chatSenderId, userSenderId, expectedMsgType, timeout, wrongTypeMsgFeedback);
   }
 
   public async WaitUntilRawTxtMsgFromWhatsId(chatSenderId: string, userSenderId: string, expectedCleanedWhatsappId: string, regexExpected: RegExp, timeout?: number, wrongTypeMsgFeedback?: string): Promise<WAMessage> {
