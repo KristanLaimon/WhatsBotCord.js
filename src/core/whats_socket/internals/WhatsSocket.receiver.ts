@@ -19,7 +19,7 @@ type SuccessConditionCallback = (userId: string | null, chatId: string, incoming
 /**
  * Options used to configure the WaitNextMsg behavior.
  */
-type WaitOptions = {
+export type WhatsSocketReceiverWaitOptions = {
   /** Maximum time (in seconds) to wait for a valid message before rejecting. */
   timeoutSeconds: number;
 
@@ -66,7 +66,7 @@ export class WhatsSocketReceiver_SubModule {
   * @param options - Configuration options for timeout, cancel keywords, etc.
   * @returns Promise that resolves with the WAMessage that met the condition or rejects with an error.
   */
-  private _waitNextMsg(successConditionCallback: SuccessConditionCallback, chatIdToLookFor: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
+  private _waitNextMsg(successConditionCallback: SuccessConditionCallback, chatIdToLookFor: string, expectedMsgType: MsgType, options: WhatsSocketReceiverWaitOptions): Promise<WAMessage> {
     //Options default values
     const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg } = options
 
@@ -141,7 +141,7 @@ export class WhatsSocketReceiver_SubModule {
   * @param options - Options for timeout, cancel keywords, etc.
   * @returns The next WAMessage from the specified user.
   */
-  public async WaitUntilNextRawMsgFromUserIDInGroup(userIDToWait: string, chatToWaitOnID: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
+  public async WaitUntilNextRawMsgFromUserIDInGroup(userIDToWait: string, chatToWaitOnID: string, expectedMsgType: MsgType, options: WhatsSocketReceiverWaitOptions): Promise<WAMessage> {
     const conditionCallback: SuccessConditionCallback =
       (_senderID, _chatId, msg, _msgType, _senderType) =>
         msg.key.participant === userIDToWait;
@@ -158,7 +158,7 @@ export class WhatsSocketReceiver_SubModule {
    * @param options - Options for timeout, cancel keywords, etc.
    * @returns The next WAMessage from the specified user.
    */
-  public async WaitUntilNextRawMsgFromUserIdInPrivateConversation(userIdToWait: string, expectedMsgType: MsgType, options: WaitOptions): Promise<WAMessage> {
+  public async WaitUntilNextRawMsgFromUserIdInPrivateConversation(userIdToWait: string, expectedMsgType: MsgType, options: WhatsSocketReceiverWaitOptions): Promise<WAMessage> {
     const conditionCallback: SuccessConditionCallback =
       (__userId, chatId, __incomingRawMsg, __incomingMsgType, __incomindSenderType) =>
         chatId === userIdToWait;
