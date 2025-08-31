@@ -299,7 +299,6 @@ export class WhatsSocketSugarSender_Submodule {
       mimetype = audioSource.message.audioMessage?.mimetype || 'audio/mpeg';
     } else {
       throw new Error('WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: ' + audioSource);
-      return null;
     }
 
     return await (this._getSendingMethod(options))(chatId, {
