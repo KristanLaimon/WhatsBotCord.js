@@ -1,11 +1,11 @@
 import { describe, it, expect } from "bun:test";
-import { IndividualMsg, Groupmsg } from './Whatsapp.helper.mocks';
+import { IndividualMsg, GroupMsg } from './Whatsapp.helper.mocks';
 import { WhatsappHelper_ExtractWhatsappIdFromMention, WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg, WhatsappHelper_isLIDIdentifier, WhatsappHelper_isMentionId, type WhatsappIDInfo } from './Whatsapp.helper';
 
 
 describe("WhatsappHelper_ExtractWhatsappIdFromSender", () => {
   it("WhenMsgFromGroup_ShouldExtractWhatsappLID_id_Correctly", () => {
-    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(Groupmsg);
+    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupMsg);
     expect(res.WhatsappIdType).toBe("lid");
     expect(res.asMentionFormatted).toBe("@999888777666");
     expect(res.rawId).toBe("999888777666@lid");
@@ -52,6 +52,6 @@ describe("WhatsappHelper Auxiliary Functions", () => {
     // Indirect test via regex
     expect(WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(IndividualMsg).WhatsappIdType).toBe("full");
     // false cases
-    expect(() => WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(Groupmsg)).not.toThrow();
+    expect(() => WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupMsg)).not.toThrow();
   });
 });

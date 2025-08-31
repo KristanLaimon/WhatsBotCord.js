@@ -1,29 +1,28 @@
 import { it, expect } from "bun:test";
 import { type WAMessage } from "baileys";
 import WhatsSocketMock from '../mocks/WhatsSocket.mock';
-import { WhatsSocketReceiver_SubModule, type WhatsSocketReceiverWaitOptions } from './WhatsSocket.receiver';
-import { Groupmsg, IndividualMsg } from 'src/helpers/Whatsapp.helper.mocks';
+import { WhatsSocketReceiver_SubModule, type WhatsMsgReceiverError, type WhatsSocketReceiverWaitOptions } from './WhatsSocket.receiver';
+import { GroupMsg, IndividualMsg } from 'src/helpers/Whatsapp.helper.mocks';
 import { MsgType, SenderType } from 'src/Msg.types';
 import { performance } from "node:perf_hooks";
 import { skipLongTests } from 'src/Envs';
 
-//TODO: Complete this TODO LIST tests to make for WhatsSocketReceiver
 /**TODO: List of things to test for receiving messages
  * WhatsSocketReceiver
  * === Basic ===
  * 1. [X] Receives the msg the moment it arrives (Works at least the basic feature expected, receive a msg)
  * 2. [X] Receives the msg the moment it arreives with delay time => e.g (user takes more than 2-3 seconds to send);
  * === Params ===
- * 1. [ ] Doesn't accept messages with incorrect type 
+ * 1. [X] Doesn't accept messages with incorrect type 
  *    - Must keep waiting until get correct type msg or timeout expires (what happens first)
  *    - Must succeed if it gets the correct msg before timeout occurs
- *    - 1.1 [ ] Must send a wrongtypemsg string when incorrect type
+ *    - 1.1 [X] Must send a wrongtypemsg string when incorrect type
  * 
- * 2. [ ] Uses cancel keywords
+ * 2. [X] Uses cancel keywords
  *    - If user sends one of cancel keywords, the whole process is canceled and should not keep waiting for a msg
  *    
- * 3. [ ] Timeout waiting time
- *    - If timeout occurs, should cancel itself and stop waiting for msg from user, even though user sends a correct msg type
+ * 3. [X] Timeout waiting time
+ *    - If timeout occurs, should cancel itself and stop waiting for msg from user, even though user sends a correct msg type after time
  */
 
 const WAITOPTIONS: WhatsSocketReceiverWaitOptions = {
@@ -55,12 +54,12 @@ it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected 
   const chatId: string = "123456789012345@g.us"
   const msgWaitingPromise: Promise<WAMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(senderId, chatId, MsgType.Text, WAITOPTIONS);
   const userFromGroupSendingMsgPromise: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onMessageUpsert.CallAll(senderId, chatId, Groupmsg, MsgType.Text, SenderType.Group);
+    mockSocket.onMessageUpsert.CallAll(senderId, chatId, GroupMsg, MsgType.Text, SenderType.Group);
     resolve();
   });
   const waitedMsg: WAMessage = await Promise.all([msgWaitingPromise, userFromGroupSendingMsgPromise]).then(([waitedMsg, _void]) => waitedMsg);
   expect(waitedMsg).toBeDefined();
-  expect(waitedMsg).toMatchObject(Groupmsg);
+  expect(waitedMsg).toMatchObject(GroupMsg);
 })
 
 //=========================  MINIMUM FEATURE (like before) with Delays timers inside timeout time range | LONG TESTS ========================= 
@@ -110,7 +109,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMGROUP_ShouldReceiveIt
   const msgWaitingPromise: Promise<WAMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(senderId, chatId, MsgType.Text, { ...WAITOPTIONS, timeoutSeconds: timeoutSecondsExpected });
   const userActuallySendsMsgWithDelayPromise: Promise<void> = new Promise((resolve) => {
     setTimeout(() => {
-      mockSocket.onMessageUpsert.CallAll(senderId, chatId, Groupmsg, MsgType.Text, SenderType.Group);
+      mockSocket.onMessageUpsert.CallAll(senderId, chatId, GroupMsg, MsgType.Text, SenderType.Group);
       resolve();
     }, secondsFromUserToSendMsgDelay * 1000)
   });
@@ -121,71 +120,157 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMGROUP_ShouldReceiveIt
   console.log(`WhatsSocketReceiver: Getting msg with delay from group chat: Took ${totalTimeMiliseconds} miliseconds to receive the message`);
 
   expect(messageReceived).toBeDefined();
-  expect(messageReceived).toMatchObject(Groupmsg);
+  expect(messageReceived).toMatchObject(GroupMsg);
 
   // Checking if inside margin error sending time
   expect(totalTimeMiliseconds).toBeGreaterThan((secondsFromUserToSendMsgDelay * 1000) - marginErrorMiliseconds);
   expect(totalTimeMiliseconds).toBeLessThan((secondsFromUserToSendMsgDelay * 1000) + marginErrorMiliseconds);
 });
 
-// it.skipIf(false)("WhenGettingIncorrectMsgType_ShouldIgnoreItAndKeepWaiting", async () => {
-//   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
-//   const receive/**module*/ = new WhatsSocketReceiver_SubModule(mockSocket);
+it.skipIf(skipLongTests)("WhenGettingIncorrectMsgType_FROMGROUP_ShouldIgnoreItAndKeepWaiting", async () => {
+  //Arrange
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
+  const receive/**module*/ = new WhatsSocketReceiver_SubModule(mockSocket);
 
-//   const userID = "999888777666@lid";
-//   const chatID = "123456789012345@g.us";
+  const timeoutSeconds: number = 2;
+  const userID = "999888777666@lid";
+  const chatID = "123456789012345@g.us";
 
-//   //Testing how it works in groups as well
-//   const msgWaitingPromise: Promise<WAMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(userID, chatID, MsgType.Image, {
-//     cancelKeywords: ["cancel", "cancelar"],
-//     ignoreSelfMessages: true,
-//     timeoutSeconds: 5,
-//     wrongTypeFeedbackMsg: "Wrong msg type, expected an image"
-//   })
-// })
+  const startTime = performance.now();
+  const msgWaitingPromise: Promise<WAMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(userID, chatID, MsgType.Text, {
+    ...WAITOPTIONS,
+    timeoutSeconds
+  });
 
+  //Act
+  //Should not expect any of these messages (types)                                       //No. of messages sent (incorrect)
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Image, SenderType.Group);  //1
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Contact, SenderType.Group);//2
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Sticker, SenderType.Group);//3
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Video, SenderType.Group);  //4
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Audio, SenderType.Group);  //5
 
-// it.skipIf(false)("Should reject messages of wrong type and accept the expected type", async () => {
-//   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
-//   const receiver = new WhatsSocketReceiver_SubModule(mockSocket);
-//   const senderId = "555123456789@s.whatsapp.net";
+  let error: WhatsMsgReceiverError | undefined;
+  try {
+    await msgWaitingPromise;
+  } catch (e) {
+    error = e as WhatsMsgReceiverError;
+  }
+  const endTime: number = performance.now();
+  const totalTimeInMs = endTime - startTime;
 
-//   const timeoutSecondsExpected = 5;
+  //Check
+  expect(error).toBeDefined();
+  expect(error).toMatchObject({
+    wasAbortedByUser: false,
+    errorMessage: "User didn't responded in time"
+  });
+  //Expected in range +-250ms to be rejected
+  expect(totalTimeInMs).toBeGreaterThan((timeoutSeconds * 1000) - 250)
+  expect(totalTimeInMs).toBeLessThan((timeoutSeconds * 1000) + 250);
+  expect(mockSocket.SentMessagesThroughQueue.length).toBe(5); //5 msgs incorrect sent
+  for (const msgSentFrom of mockSocket.SentMessagesThroughQueue) {
+    expect(msgSentFrom.content).toMatchObject({
+      text: "Generic error msg for wrong type receiver msg.... (change if needed)",
+    })
+  }
+});
 
-//   // Promesa para enviar mensaje de tipo incorrecto primero
-//   const wrongTypeMsgPromise = new Promise<void>((resolve) => {
-//     setTimeout(() => {
-//       mockSocket.onMessageUpsert.CallAll(null, senderId, IndividualMsg, MsgType.Image, SenderType.Individual);
-//       resolve();
-//     }, 1000);
-//   });
+it.skipIf(skipLongTests)("WhenExpectingMsgAndUserSendsACancelWord_FROMGROUP_ShouldRecognizeCancelWorldAndCancelWaiting", async () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
+  const receiver = new WhatsSocketReceiver_SubModule(mockSocket);
 
-//   // Promesa para enviar mensaje correcto
-//   const correctMsgPromise = new Promise<void>((resolve) => {
-//     setTimeout(() => {
-//       mockSocket.onMessageUpsert.CallAll(null, senderId, IndividualMsg, MsgType.Text, SenderType.Individual);
-//       resolve();
-//     }, 2000);
-//   });
+  const userID = "999888777666@lid";
+  const chatID = "123456789012345@g.us";
+  const cancelWords: string[] = ["cancel", "cancelar"];
 
-//   const startTime = performance.now();
-//   const msgWaitingPromise = receiver.WaitUntilNextRawMsgFromUserIdInPrivateConversation(senderId, MsgType.Text, {
-//     cancelKeywords: ["cancelar"],
-//     ignoreSelfMessages: true,
-//     timeoutSeconds: timeoutSecondsExpected,
-//     wrongTypeFeedbackMsg: "Debes de responder en formato de texto!"
-//   });
+  const waitingMsgPromise: Promise<WAMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(userID, chatID, MsgType.Image, { ...WAITOPTIONS, cancelKeywords: cancelWords });
+  const msgsPromise: Promise<void> = new Promise<void>((resolve) => {
+    mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Text, SenderType.Group); //Wrong msg
+    mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Text, SenderType.Group); //Wrong msg
+    const cancelKeywordMockMsg: WAMessage = {
+      key: {
+        fromMe: false,
+        participant: userID,
+        remoteJid: chatID
+      },
+      message: {
+        conversation: "I'd like to cancel this command" //Should recognize cancel inside the text, not strictly "cancel" or any other keyword
+      }
+    }
+    //Even though its not a MsgType.Image, socket should have priority looking for cancel words before checking type (to be able to cancel)
+    mockSocket.onMessageUpsert.CallAll(userID, chatID, cancelKeywordMockMsg, MsgType.Text, SenderType.Group);
+    resolve();
+  });
 
-//   // Esperamos todas las simulaciones de envío
-//   await Promise.all([wrongTypeMsgPromise, correctMsgPromise]);
+  let error: WhatsMsgReceiverError | undefined;
+  try {
+    await Promise.all([waitingMsgPromise, msgsPromise]);
+  } catch (e) {
+    error = e as WhatsMsgReceiverError;
+  }
 
-//   // El receptor debería resolver solo con el mensaje correcto
-//   const receivedMsg = await msgWaitingPromise;
-//   const endTime = performance.now();
-//   const totalTimeMs = endTime - startTime;
+  expect(error).toBeDefined();
+  expect(error!).toMatchObject({
+    wasAbortedByUser: true,
+    errorMessage: "User has canceled the dialog"
+  });
 
-//   expect(receivedMsg).toMatchObject(IndividualMsg);
-//   // Debe haber esperado aproximadamente hasta el mensaje correcto (2s)
-//   expect(totalTimeMs).toBeGreaterThan(1900);
-//   expect(totalTimeMs).toBeLessThan(2500);
-// });
+  //Expecting the socket has sent two first wrong type errors.
+  expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+  expect(mockSocket.SentMessagesThroughQueue[0]).toMatchObject({
+    chatId: chatID,
+    content: {
+      text: "Generic error msg for wrong type receiver msg.... (change if needed)",
+    },
+    miscOptions: undefined
+  });
+  expect(mockSocket.SentMessagesThroughQueue[1]).toMatchObject({
+    chatId: chatID,
+    content: {
+      text: "Generic error msg for wrong type receiver msg.... (change if needed)",
+    },
+    miscOptions: undefined
+  });
+});
+
+it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP_ShouldContinueAsUsualAndIgnoreGoodMsgType", async () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
+  const receiver = new WhatsSocketReceiver_SubModule(mockSocket);
+
+  const userID = "999888777666@lid";
+  const chatID = "123456789012345@g.us";
+
+  const waitingMsgPromise: Promise<WAMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(userID, chatID, MsgType.Image, { ...WAITOPTIONS, timeoutSeconds: 3 });
+
+  //Sending many wrong msgs (to simulate bad interaction from user) None of these are Images
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Text, SenderType.Group);
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Sticker, SenderType.Group);
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Video, SenderType.Group);
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Location, SenderType.Group);
+
+  let awaitedMsg: WAMessage | undefined;
+  let error: WhatsMsgReceiverError | undefined;
+  try {
+    awaitedMsg = await waitingMsgPromise;
+  } catch (e) {
+    error = e as WhatsMsgReceiverError;
+  }
+
+  expect(awaitedMsg).toBeUndefined();
+  expect(error).toBeDefined();
+  expect(error!).toMatchObject({ wasAbortedByUser: false, errorMessage: "User didn't responded in time" });
+  expect(mockSocket.SentMessagesThroughQueue.length).toBe(4);
+  for (const msgSentFrom of mockSocket.SentMessagesThroughQueue) {
+    expect(msgSentFrom.content).toMatchObject({
+      text: "Generic error msg for wrong type receiver msg.... (change if needed)",
+    })
+  }
+
+  //No user sends a correct image message (should be ignored, not waited at all)
+  mockSocket.onMessageUpsert.CallAll(userID, chatID, GroupMsg, MsgType.Image, SenderType.Group);
+  //Should continue being undefined
+  expect(awaitedMsg).toBeUndefined();
+  //Should not send any other msg (like feedback or any other thing)
+  expect(mockSocket.SentMessagesThroughQueue.length).toBe(4);
+});

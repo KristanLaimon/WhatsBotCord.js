@@ -68,13 +68,11 @@ export default class WhatsSocketMock implements IWhatsSocket {
     };
   }
 
-  /*************  ✨ Windsurf Command ⭐  *************/
   /**
    * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
    * @param chatId The chat ID of the group you want to get metadata from.
    * @returns A promise that resolves to the group metadata.
    */
-  /*******  50465ea7-8dc1-4ccd-8c98-3013f7e33b00  *******/
   public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
     this.GroupsIDTriedToFetch.push(chatId);
     return {
@@ -99,5 +97,4 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.SentMessagesThroughRaw = [];
     this.SentMessagesThroughQueue = [];
   }
-
 }

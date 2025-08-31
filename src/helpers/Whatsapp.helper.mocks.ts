@@ -13,4 +13,4 @@ if (!Array.isArray(contents)) {
 }
 
 export const IndividualMsg: WAMessage = contents[0]!;
-export const Groupmsg: WAMessage = contents[1]!;
+export const GroupMsg: WAMessage = contents[1]!;

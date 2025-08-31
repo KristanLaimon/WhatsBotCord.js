@@ -87,15 +87,12 @@ export class WhatsSocketReceiver_SubModule {
           if (msg.key.fromMe) return;
         }
 
-        if (msgType !== expectedMsgType) {
-          this._whatsSocket.SendSafe(chatId, { text: wrongTypeFeedbackMsg })
-          return;
-        }
-
         resetTimeout();
 
         //If not null, means it is a valid text message with readable content as plain text;
         const expectedTxtMsgContent: string | null = MsgHelper_GetTextFrom(msg);
+
+        //Priority #1: Check if its a suspicious msg (very large)
         if (expectedTxtMsgContent) {
           if (expectedTxtMsgContent.length > 1000) {
             this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
@@ -105,8 +102,10 @@ export class WhatsSocketReceiver_SubModule {
           }
         }
 
+        //Priority #2: Check if it fits our conditions
         if (!successConditionCallback(userId, chatId, msg, msgType, senderType)) return;
 
+        //Priority #3: Check if user is trying to cancel this command
         if (expectedTxtMsgContent) {
           for (let i = 0; i < cancelKeywords.length; i++) {
             const cancelKeyWordToCheck = cancelKeywords[i];
@@ -117,6 +116,12 @@ export class WhatsSocketReceiver_SubModule {
               return;
             }
           }
+        }
+
+        //Priority #4: All good?, User not cancelling, large text, or even text, let's verify if its the type expected
+        if (msgType !== expectedMsgType) {
+          this._whatsSocket.SendSafe(chatId, { text: wrongTypeFeedbackMsg })
+          return;
         }
 
         this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
