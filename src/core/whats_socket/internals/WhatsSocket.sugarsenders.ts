@@ -107,7 +107,7 @@ export class WhatsSocketSugarSender_Submodule {
    * @param sanitizeText - A boolean indicating whether to sanitize the text or not. Defaults to true.
    * @param options - Miscellaneous message generation options.
    * @param mentionsIds - Array of IDs of users to mention in the message. The 'text' must contain '@' characters in the same order as this array.
-   * @returns A promise that resolves when the text message has been sent successfully.
+   * @returns The msg sent, null if it couldn't be send.
    */
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions) {
     text = options?.normalizeMessageText ? Str_NormalizeLiteralString(text) : text;

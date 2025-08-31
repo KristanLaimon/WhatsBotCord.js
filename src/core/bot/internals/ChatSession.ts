@@ -7,7 +7,7 @@ import type {
 import type { WAMessage } from "baileys";
 
 /**
- * A sugar-layer abstraction bound to the actual chat.
+ * A sugar-layer abstraction for sending/receiving msgs bound to the actual chat.
  * 
  * This class simplifies sending messages and reactions to a fixed chat
  * without needing to repeatedly provide the chat ID. It also provides
