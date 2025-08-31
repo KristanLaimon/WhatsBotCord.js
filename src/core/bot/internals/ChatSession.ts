@@ -7,7 +7,7 @@ import type {
 import type { WAMessage } from "baileys";
 
 /**
- * A sugar-layer abstraction bound to a single chat session.
+ * A sugar-layer abstraction bound to the actual chat.
  * 
  * This class simplifies sending messages and reactions to a fixed chat
  * without needing to repeatedly provide the chat ID. It also provides
@@ -16,7 +16,7 @@ import type { WAMessage } from "baileys";
  */
 export class ChatSession {
   /** Low-level sender dependency used to actually send messages */
-  public Send: WhatsSocketSugarSender_Submodule;
+  private _internalSend: WhatsSocketSugarSender_Submodule;
 
   /** The chat ID this session is permanently bound to */
   private _fixedChatId: string;
@@ -32,7 +32,7 @@ export class ChatSession {
    * @param senderDependency - Low-level sender utility used to dispatch messages
    */
   constructor(fixedChatId: string, initialMsg: WAMessage, senderDependency: WhatsSocketSugarSender_Submodule) {
-    this.Send = senderDependency;
+    this._internalSend = senderDependency;
     this._fixedChatId = fixedChatId;
     this._initialMsg = initialMsg;
   }
@@ -45,7 +45,7 @@ export class ChatSession {
    * @returns The WhatsApp message object, or `null` if sending failed
    */
   public SendText(text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    return this.Send.Text(this._fixedChatId, text, options);
+    return this._internalSend.Text(this._fixedChatId, text, options);
   }
 
   /**
@@ -60,7 +60,7 @@ export class ChatSession {
    * - Mentions are injected if `mentionsIds` is specified.
    */
   public SendImg(imagePath: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    return this.Send.Img(this._fixedChatId, { sourcePath: imagePath, caption: undefined }, options);
+    return this._internalSend.Img(this._fixedChatId, { sourcePath: imagePath, caption: undefined }, options);
   }
 
   /**
@@ -78,7 +78,7 @@ export class ChatSession {
    * - Mentions are injected if `mentionsIds` is specified.
    */
   public SendImgWithCaption(imagePath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    return this.Send.Img(this._fixedChatId, { sourcePath: imagePath, caption }, options);
+    return this._internalSend.Img(this._fixedChatId, { sourcePath: imagePath, caption }, options);
   }
 
   /**
@@ -90,7 +90,7 @@ export class ChatSession {
    * @returns The WhatsApp message object, or `null` if sending failed
    */
   public SendReactEmojiTo(msgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.ReactEmojiToMsg(this._fixedChatId, msgToReactTo, emojiStr, options);
+    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, msgToReactTo, emojiStr, options);
   }
 
   /**
@@ -105,7 +105,7 @@ export class ChatSession {
    * - If the emoji reaction is valid, sends it to the target chat.
    */
   public SendReactEmojiToInitialMsg(emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, emojiStr, options);
+    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, emojiStr, options);
   }
 
   /**
@@ -117,7 +117,7 @@ export class ChatSession {
    * @returns The WhatsApp message object, or `null` if sending failed
    */
   public Ok(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "✅", options);
+    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "✅", options);
   }
 
   /**
@@ -129,7 +129,7 @@ export class ChatSession {
    * @returns The WhatsApp message object, or `null` if sending failed
    */
   public Fail(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "❌", options);
+    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "❌", options);
   }
 
   /**
@@ -159,7 +159,7 @@ export class ChatSession {
    * 
    */
   public SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.Sticker(this._fixedChatId, stickerUrlSource, options);
+    return this._internalSend.Sticker(this._fixedChatId, stickerUrlSource, options);
   }
 
   /**
@@ -191,7 +191,7 @@ export class ChatSession {
    * await bot.Audio(chatId, receivedMessage);
    */
   public SendAudio(audioSource: string | Buffer | WAMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.Audio(this._fixedChatId, audioSource, options);
+    return this._internalSend.Audio(this._fixedChatId, audioSource, options);
   }
 
   /**
@@ -224,7 +224,7 @@ export class ChatSession {
    * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
    */
   public SendVideo(sourcePath: string | Buffer, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    return this.Send.Video(this._fixedChatId, { sourcePath: sourcePath, caption: undefined }, options);
+    return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: undefined }, options);
   }
 
   /**
@@ -258,7 +258,7 @@ export class ChatSession {
   * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
   */
   public SendVideWithCaption(sourcePath: string | Buffer, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    return this.Send.Video(this._fixedChatId, { sourcePath: sourcePath, caption: caption }, options);
+    return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: caption }, options);
   }
 
   /**
@@ -301,7 +301,7 @@ export class ChatSession {
    * 
    */
   public SendPoll(pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.Poll(this._fixedChatId, pollTitle, selections, pollParams, options);
+    return this._internalSend.Poll(this._fixedChatId, pollTitle, selections, pollParams, options);
   }
 
   /**
@@ -313,7 +313,7 @@ export class ChatSession {
    * @returns The WhatsApp message object, or `null` if sending failed
    */
   public SendUbication(degreesLatitude: number, degreesLongitude: number, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
+    return this._internalSend.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
   };
 
   /**
@@ -327,7 +327,7 @@ export class ChatSession {
    * @returns The WhatsApp message object, or `null` if sending failed
    */
   public SendUbicationWithDescription(degreesLatitude: number, degreesLongitude: number, ubicationName: string, moreInfoAddress: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
+    return this._internalSend.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
   };
 
   /**
@@ -362,7 +362,7 @@ export class ChatSession {
    * how your country number displays in international format to prevent any errors.
    */
   public SendContact(contacts: { name: string; phone: string } | { name: string; phone: string }[], options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this.Send.Contact(this._fixedChatId, contacts, options)
+    return this._internalSend.Contact(this._fixedChatId, contacts, options)
   }
 }
 

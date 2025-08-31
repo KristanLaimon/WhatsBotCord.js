@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config({ path: "./env.development", quiet: true });
 import { MsgHelper_GetTextFrom } from './src/helpers/Msg.helper';
-import { MsgType, SenderType } from './src/Msg.types';
+import { MsgType } from './src/Msg.types';
 import WhatsSocket from './src/core/whats_socket/WhatsSocket'
 import { downloadMediaMessage } from "baileys";
 import { type WAMessage } from "baileys";
