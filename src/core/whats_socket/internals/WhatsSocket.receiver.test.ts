@@ -62,7 +62,7 @@ it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected 
   expect(waitedMsg).toMatchObject(GroupMsg);
 })
 
-it("Only original sender can cancel waiting msg", async () => {
+it("Only original sender can cancel waiting msg", async (): Promise<void> => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
   const receive = new WhatsSocketReceiver_SubModule(mockSocket);
 
@@ -111,7 +111,7 @@ it("Only original sender can cancel waiting msg", async () => {
     errorMessage: "User has canceled the dialog",
   });
   expect(error?.chatId).toBe(chatId);
-  expect(error?.userId).toBe(originalSenderId);
+  expect(error?.userId).toBe(originalSenderId); //Should be cancelled by expecting "waitedMsg" promise to be rejected
 });
 
 
