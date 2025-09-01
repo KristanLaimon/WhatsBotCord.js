@@ -42,6 +42,18 @@ export type WhatsMsgReceiverError = {
 
   /** Whether the wait was aborted because the user sent a cancel keyword. */
   wasAbortedByUser: boolean;
+
+  /**
+   * If this error msg comes from group, this will be the participant ID who
+   * triggered this waiting msg.
+   * Otherwise, if this comes from private chat, will be null
+   */
+  userId: string | null;
+
+  /**
+   * Whatsapp chat ID where this msgError came from
+   */
+  chatId: string;
 }
 
 /**
@@ -76,7 +88,7 @@ export class WhatsSocketReceiver_SubModule {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
-          reject({ wasAbortedByUser: false, errorMessage: "User didn't responded in time" });
+          reject({ wasAbortedByUser: false, errorMessage: "User didn't responded in time", chatId: chatIdToLookFor, userId: null });
         }, timeoutSeconds * 1000);
       }
 
@@ -97,7 +109,7 @@ export class WhatsSocketReceiver_SubModule {
           if (expectedTxtMsgContent.length > 1000) {
             this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
             clearTimeout(timer);
-            reject({ wasAbortedByUser: false, errorMessage: "User has sent too much text" });
+            reject({ wasAbortedByUser: false, errorMessage: "User has sent too much text", chatId: chatId, userId: userId });
             return;
           }
         }
@@ -112,7 +124,7 @@ export class WhatsSocketReceiver_SubModule {
             if (cancelKeyWordToCheck && expectedTxtMsgContent.includes(cancelKeyWordToCheck)) {
               this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
               clearTimeout(timer);
-              reject({ wasAbortedByUser: true, errorMessage: "User has canceled the dialog" });
+              reject({ wasAbortedByUser: true, errorMessage: "User has canceled the dialog", chatId: chatId, userId: userId });
               return;
             }
           }

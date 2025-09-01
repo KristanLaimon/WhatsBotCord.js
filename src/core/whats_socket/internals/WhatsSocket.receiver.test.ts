@@ -62,6 +62,59 @@ it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected 
   expect(waitedMsg).toMatchObject(GroupMsg);
 })
 
+it("Only original sender can cancel waiting msg", async () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
+  const receive = new WhatsSocketReceiver_SubModule(mockSocket);
+
+  const chatId = "123456789012345@g.us";
+  const originalSenderId = "999888777666@lid";
+  const notRelatedSenderId = "123456789012@lid";
+
+  const msgWaitingPromise: Promise<WAMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(
+    originalSenderId,
+    chatId,
+    MsgType.Image,
+    { ...WAITOPTIONS, cancelKeywords: ["cancel", "cancelar"] }
+  );
+
+  //At least should reject once and only once
+  const sendingMsgsPromise: Promise<void> = new Promise<void>((resolve) => {
+    // Non waiting-related msg with "cancel" text. Should be ignored
+    mockSocket.onMessageUpsert.CallAll(notRelatedSenderId, chatId, {
+      ...GroupMsg,
+      key: { ...GroupMsg.key, participant: notRelatedSenderId },
+      message: { ...GroupMsg.message, extendedTextMessage: { text: "cancel" } }
+    }, MsgType.Text, SenderType.Group);
+
+    // Related waiting msg with "cancel" text. Should reject waiting code with this one
+    mockSocket.onMessageUpsert.CallAll(originalSenderId, chatId, {
+      ...GroupMsg,
+      key: { ...GroupMsg.key, participant: originalSenderId },
+      message: { ...GroupMsg.message, extendedTextMessage: { text: "cancel" } }
+    }, MsgType.Text, SenderType.Group);
+    resolve();
+  });
+
+  let error: WhatsMsgReceiverError | null = null;
+  let waitedMsg: WAMessage | undefined;
+  try {
+    waitedMsg = await Promise.all([msgWaitingPromise, sendingMsgsPromise]).then(([waitedMessage, _void]) => waitedMessage);
+    throw new Error("Should be rejected!");
+  } catch (e) {
+    error = e as WhatsMsgReceiverError;
+  }
+
+  expect(error).toBeDefined();
+  expect(waitedMsg).not.toBeDefined();
+  expect(error).toMatchObject({
+    wasAbortedByUser: true,
+    errorMessage: "User has canceled the dialog",
+  });
+  expect(error?.chatId).toBe(chatId);
+  expect(error?.userId).toBe(originalSenderId);
+});
+
+
 //=========================  MINIMUM FEATURE (like before) with Delays timers inside timeout time range | LONG TESTS ========================= 
 //TODO: Use skipLongTests variable when finishing this tests
 it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMINDIVIDUAL_ShouldReceiveItAtTheMomentBeingSent (Expected Minimum Features)", async () => {
