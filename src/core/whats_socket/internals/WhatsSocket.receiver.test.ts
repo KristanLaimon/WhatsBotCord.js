@@ -116,7 +116,6 @@ it("Only original sender can cancel waiting msg", async (): Promise<void> => {
 
 
 //=========================  MINIMUM FEATURE (like before) with Delays timers inside timeout time range | LONG TESTS ========================= 
-//TODO: Use skipLongTests variable when finishing this tests
 it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMINDIVIDUAL_ShouldReceiveItAtTheMomentBeingSent (Expected Minimum Features)", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
   const receive/**module*/ = new WhatsSocketReceiver_SubModule(mockSocket);

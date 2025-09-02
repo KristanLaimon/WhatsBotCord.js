@@ -108,8 +108,5 @@ describe("Enqueue", () => {
     expect(queue.ActualElementsInQueue.length).toBe(6)
     queue = originalQueue;
   });
-
-  //================== Now using all types of msgs =======================
-  //TODO: Make every type of message mock but sending (mocks). Note: this will be tested after WhatsSocket.sugarsenders.ts
 });
 

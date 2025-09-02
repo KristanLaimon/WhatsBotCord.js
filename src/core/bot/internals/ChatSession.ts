@@ -257,7 +257,7 @@ export class ChatSession {
   * // Send a raw Buffer without queuing
   * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
   */
-  public SendVideWithCaption(sourcePath: string | Buffer, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+  public SendVideoWithCaption(sourcePath: string | Buffer, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: caption }, options);
   }
 

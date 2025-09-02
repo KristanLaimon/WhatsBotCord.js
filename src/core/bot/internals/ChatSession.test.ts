@@ -172,5 +172,28 @@ it("Audio_WhenUsingSendAudio_ShouldCorrectlyUseSugarSenderAudio", async (): Prom
 
 //TODO: Continue with => Video, Video With Caption, Poll, Ubication, Ubication With Description, Contact!
 it("Video_WhenUsingSendVideoWithoutCaption_ShouldCorrectlyUseSugarSenderVideo", async (): Promise<void> => {
-  // const { chat, sender }
+  const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const sendVideoSenderSpy: Mock<typeof sender.Video> = spyOn(sender, "Video");
+  sendVideoSenderSpy.mockResolvedValueOnce({} as any);
+  expect(async (): Promise<void> => {
+    await chat.SendVideo("./fake_video.mp4", WHATSMSGOPTIONSPARAM);
+  }).not.toThrow();
+  expect(sendVideoSenderSpy).toHaveBeenCalledTimes(1);
+  expect(sendVideoSenderSpy).toHaveBeenCalledWith(CHATID, { sourcePath: "./fake_video.mp4", caption: undefined }, WHATSMSGOPTIONSPARAM);
+});
+
+it("Video_WhenUsingSendVideoWithCaption_ShouldCorrectlyUseSugarSenderVideo", async (): Promise<void> => {
+  const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const sendVideoSenderSpy: Mock<typeof sender.Video> = spyOn(sender, "Video");
+  sendVideoSenderSpy.mockResolvedValueOnce({} as any);
+  expect(async (): Promise<void> => {
+    await chat.SendVideoWithCaption("./fake_video_with_caption.mp4", "video caption", WHATSMSGOPTIONSPARAM);
+  }).not.toThrow();
+  expect(sendVideoSenderSpy).toHaveBeenCalledTimes(1);
+  expect(sendVideoSenderSpy).toHaveBeenCalledWith(CHATID, { sourcePath: "./fake_video_with_caption.mp4", caption: "video caption" }, WHATSMSGOPTIONSPARAM);
+});
+
+it("Poll_WhenUsingSendPoll_ShouldCorrectlyUseSugarSenderVideo", async (): Promise<void> => {
+  const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const sendPollSenderSpy: Mock<typeof sender.Poll> = spyOn(sender, "Poll");
 });

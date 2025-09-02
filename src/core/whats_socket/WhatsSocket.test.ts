@@ -107,7 +107,6 @@ describe("Initialization", () => {
 });
 
 
-//TODO: Make tests for each type of msg sending!
 describe('Messages Sending', () => {
   it('WhenSendingMsgsThroughSendSafe_ShouldSendThemThroughSocket', async (): Promise<void> => {
     const internalMockSocket = CreateBaileysWhatsappMockSocket();

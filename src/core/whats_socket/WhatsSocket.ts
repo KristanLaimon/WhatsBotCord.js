@@ -26,7 +26,6 @@ import type { IWhatsSocket } from './IWhatsSocket';
 import { WhatsSocketSugarSender_Submodule } from './internals/WhatsSocket.sugarsenders';
 
 //TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
-
 export type WhatsSocketOptions = {
   /** 
    * Logger mode for the WhatsSocket instance. e.g: 'debug' for max details, 

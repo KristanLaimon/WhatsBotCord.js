@@ -5,7 +5,6 @@ import { MsgType } from './src/Msg.types';
 import WhatsSocket from './src/core/whats_socket/WhatsSocket'
 import { downloadMediaMessage } from "baileys";
 
-//DEV porpuses
 import fs from "fs";
 import { GetPath } from 'src/libs/BunPath';
 
@@ -26,8 +25,9 @@ socket.onMessageUpsert.Subscribe(async (senderId, chatId, rawMsg, msgType, sende
 
   if (msgType === MsgType.Sticker) {
     console.log("Msg (STICKER)");
-    const a = await downloadMediaMessage(rawMsg, "buffer", {});
+    const a: Buffer = await downloadMediaMessage(rawMsg, "buffer", {});
     await socket.SendSafe(chatId, { sticker: a });
+
     if (!fs.existsSync("./TEST")) {
       fs.mkdirSync("./TEST");
     }
@@ -42,23 +42,3 @@ socket.Start().then(() => {
 }).catch((error) => {
   console.error("Error initializing WhatsSocket:", error);
 });
-
-
-// function StoreMsgInJson(filePath: string, rawMsg: WAMessage) {
-//   let msgsStored: any[] = [];
-//   if (fs.existsSync(GetPath(filePath))) {
-//     const before = fs.readFileSync(GetPath(filePath), "utf-8");
-//     if (before.trim() === "") {
-//       msgsStored = [];
-//     } else {
-//       msgsStored = JSON.parse(before);
-//     }
-//   } else {
-//     //Creates the file if it doesn't exist
-//     fs.writeFileSync(GetPath(filePath), "", "utf-8");
-//     msgsStored = [];
-//   }
-//   msgsStored.push(rawMsg);
-//   const json = JSON.stringify(msgsStored, null, 2);
-//   fs.writeFileSync(GetPath(filePath), json, "utf-8");
-// }
