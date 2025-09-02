@@ -3,7 +3,7 @@ import type {
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
   WhatsSocketSugarSender_Submodule
-} from 'src/core/whats_socket/internals/WhatsSocket.sugarsenders';
+} from "src/core/whats_socket/internals/WhatsSocket.sugarsenders";
 import type { WAMessage } from "baileys";
 
 /**
@@ -300,6 +300,7 @@ export class ChatSession {
    * }, { sendRawWithoutEnqueue: true });
    * 
    */
+
   public SendPoll(pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.Poll(this._fixedChatId, pollTitle, selections, pollParams, options);
   }
@@ -361,8 +362,8 @@ export class ChatSession {
    * @note Number follows "countrycode" + "1" + "10 digits number" for latin-american countries like "5216239389304" for example in mexico. Check
    * how your country number displays in international format to prevent any errors.
    */
-  public SendContact(contacts: { name: string; phone: string } | { name: string; phone: string }[], options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    return this._internalSend.Contact(this._fixedChatId, contacts, options)
+  public SendContact(contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+    return this._internalSend.Contact(this._fixedChatId, contacts, options);
   }
 }
 

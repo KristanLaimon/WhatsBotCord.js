@@ -18,6 +18,6 @@
  * @returns The normalized string with consistent whitespace handling.
  */
 export function Str_NormalizeLiteralString(str: string): string {
-  if (!str) return '';
+  if (!str) return "";
   return str.trim().split("\n").map((line) => line.trim() || line).join("\n");
 }

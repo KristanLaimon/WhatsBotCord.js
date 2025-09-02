@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
-import WhatsSocketMock from './WhatsSocket.mock';
+import WhatsSocketMock from "./WhatsSocket.mock";
 
 describe("WhatsSocketMock Generally", () => {
 
@@ -20,7 +20,7 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.SentMessagesThroughQueue.length).toBe(0);
     expect(socketMock.SentMessagesThroughRaw.length).toBe(0);
     expect(socketMock.GroupsIDTriedToFetch.length).toBe(0);
-  })
+  });
 
   it("WhenSendingMsgsThroughSocket_MustBeSent", async () => {
     const socketMock = new WhatsSocketMock();

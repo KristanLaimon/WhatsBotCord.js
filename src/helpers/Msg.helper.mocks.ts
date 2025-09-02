@@ -1,14 +1,14 @@
-import { GetPath } from '../libs/BunPath';
+import { GetPath } from "../libs/BunPath";
 import type { WAMessage } from "baileys";
 import fs from "fs";
 
 const messagesMocksPath = GetPath("src", "helpers", "Msg.helper.mocks.json");
 if (!fs.existsSync(messagesMocksPath)) {
-  throw new Error(`DEVELOPMENT ERROR: Json file with whatsapp mock msgs coudn't be found. Provide the correct path to this file in 'Msg.helper.mocks.ts' file!`)
+  throw new Error("DEVELOPMENT ERROR: Json file with whatsapp mock msgs coudn't be found. Provide the correct path to this file in 'Msg.helper.mocks.ts' file!");
 }
 export const allMockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
 if (!Array.isArray(allMockMsgs)) {
-  throw new Error(`DEVELOPMENT ERROR: Json file with whatsapp mock msgs FOUND, but it's not an array of expected msgs for some reason... check that`);
+  throw new Error("DEVELOPMENT ERROR: Json file with whatsapp mock msgs FOUND, but it's not an array of expected msgs for some reason... check that");
 }
 
 export const txtMessage: WAMessage = allMockMsgs[0]!;

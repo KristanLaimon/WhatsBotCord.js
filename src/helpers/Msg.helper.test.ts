@@ -1,8 +1,8 @@
-import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from './Msg.helper';
+import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from "./Msg.helper";
 import { it, test, expect, describe } from "bun:test";
 import { type WAMessage } from "baileys";
-import { GetPath } from '../libs/BunPath';
-import { MsgType } from '../Msg.types';
+import { GetPath } from "../libs/BunPath";
+import { MsgType } from "../Msg.types";
 import fs from "fs";
 import {
   txtMessage,
@@ -18,7 +18,7 @@ import {
   pollSingleAnswerMsg,
   locationMsg,
   contactMsg
-} from './Msg.helper.mocks';
+} from "./Msg.helper.mocks";
 
 
 
@@ -27,7 +27,7 @@ test("Mockdata from .json can be imported", () => {
   expect(mockMsgs).toBeDefined();
   expect(mockMsgs.length).toBeGreaterThan(0);
   expect(Array.isArray(mockMsgs)).toBe(true);
-})
+});
 
 
 describe("MsgHelper_GetTextFrom", () => {
@@ -41,7 +41,7 @@ describe("MsgHelper_GetTextFrom", () => {
     const txt = MsgHelper_GetTextFrom(quotedMsg);
     expect(txt).not.toBeNull();
     expect(txt).toBe("Este es un mensaje citando otro mensaje");
-  })
+  });
 
   it("WhenGivenANonTextMsg_ShouldReturnNull", () => {
     for (const msg of noTxtMsgs) {
@@ -57,7 +57,7 @@ describe("MsgHelper_GetTextFrom", () => {
   });
 
   it("WhenGivenImageWithoutCaption_ShouldReturnNull", () => {
-    const expectedNull = MsgHelper_GetTextFrom(imageNoCaptionMsg)
+    const expectedNull = MsgHelper_GetTextFrom(imageNoCaptionMsg);
     expect(expectedNull).toBeNull();
   });
 

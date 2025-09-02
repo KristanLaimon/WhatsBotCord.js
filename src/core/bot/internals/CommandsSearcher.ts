@@ -1,4 +1,4 @@
-import type { ICommand } from './IBotCommand';
+import type { ICommand } from "./IBotCommand";
 
 export enum CommandType {
   Normal,
@@ -9,19 +9,19 @@ export default class CommandsSearcher {
   private _normalCommands: Map<string, ICommand> = new Map();
   private _tagCommands: Map<string, ICommand> = new Map();
 
-  public get NormalCommands(): [string, ICommand][] {
+  public get NormalCommands(): Array<[string, ICommand]> {
     return Object.entries(this._normalCommands);
   }
 
-  public get TagCommands(): [string, ICommand][] {
+  public get TagCommands(): Array<[string, ICommand]> {
     return Object.entries(this._tagCommands);
   }
 
   public AddCommand(commandInstance: ICommand, commandType: CommandType = CommandType.Normal): void {
     const commandNameLowercase = commandInstance.name.toLowerCase();
-    let mapToStoreInto: Map<string, ICommand> = commandType === CommandType.Normal ? this._normalCommands : this._tagCommands;
+    const mapToStoreInto: Map<string, ICommand> = commandType === CommandType.Normal ? this._normalCommands : this._tagCommands;
     //If already exists, it'll be overwritten
-    mapToStoreInto.set(commandNameLowercase, commandInstance)
+    mapToStoreInto.set(commandNameLowercase, commandInstance);
   }
 
   public Exists(commandName: string) {
@@ -35,7 +35,7 @@ export default class CommandsSearcher {
       return CommandType.Normal;
 
     if (this._tagCommands.has(commandNameLowerCase))
-      return CommandType.Tag
+      return CommandType.Tag;
 
     return null;
   }
@@ -63,7 +63,7 @@ export default class CommandsSearcher {
         return true;
     });
     if (foundTag)
-      return { command: foundTag[1], type: CommandType.Tag }
+      return { command: foundTag[1], type: CommandType.Tag };
 
     return null;
   }

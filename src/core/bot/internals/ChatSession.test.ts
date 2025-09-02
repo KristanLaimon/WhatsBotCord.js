@@ -1,9 +1,9 @@
 import { it, test, expect, spyOn, type Mock } from "bun:test";
-import { WhatsSocketSugarSender_Submodule, type WhatsMsgSenderSendingOptions } from 'src/core/whats_socket/internals/WhatsSocket.sugarsenders';
-import WhatsSocketMock from 'src/core/whats_socket/mocks/WhatsSocket.mock';
-import { ChatSession } from './ChatSession';
-import { GroupMsg as InitialMsg } from 'src/helpers/Whatsapp.helper.mocks';
-import { WhatsappIndividualIdentifier } from 'src/Whatsapp.types';
+import { WhatsSocketSugarSender_Submodule, type WhatsMsgSenderSendingOptions } from "src/core/whats_socket/internals/WhatsSocket.sugarsenders";
+import WhatsSocketMock from "src/core/whats_socket/mocks/WhatsSocket.mock";
+import { ChatSession } from "./ChatSession";
+import { GroupMsg as InitialMsg } from "src/helpers/Whatsapp.helper.mocks";
+import { WhatsappIndividualIdentifier } from "src/Whatsapp.types";
 
 /**
  * ChatSession Testing Suite
@@ -29,7 +29,7 @@ function GenerateLocalToolKit_ChatSession_FromGroup(): { mockSocket: WhatsSocket
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocketSugarSender_Submodule(mockSocket);
   const chatSession = new ChatSession(InitialMsg.key.remoteJid!, InitialMsg, senderDependency);
-  return { mockSocket, sender: senderDependency, chat: chatSession }
+  return { mockSocket, sender: senderDependency, chat: chatSession };
 }
 
 test("WhenInstatiating_ShouldNotThrowAnyError", () => {
@@ -45,7 +45,7 @@ it("Text_WhenUsingSendText_ShouldUseCorrectlySugarSender", async () => {
 
   expect(senderTextSpy).toHaveBeenCalledTimes(1);
   expect(senderTextSpy).toBeCalledWith(CHATID, "Hello world with options", WHATSMSGOPTIONSPARAM);
-})
+});
 
 it("Image_WhenUsingSendImg_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
@@ -84,7 +84,7 @@ it("ReactionEmoji_WhenUsingSendReactEmojiTo_ShouldUseCorrectlySugarSender", asyn
 
 it("ReactionEmoji_WhenUsingSendReactEmojiToOriginalMsg_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const senderReactEmojiToSpy: Mock<typeof sender.ReactEmojiToMsg> = spyOn(sender, 'ReactEmojiToMsg');
+  const senderReactEmojiToSpy: Mock<typeof sender.ReactEmojiToMsg> = spyOn(sender, "ReactEmojiToMsg");
   const emojiToSendTwoCharLength = "🦊"; //Two javascript chars length
   const emojiToSendOneCharLength = "✨"; //One javascript char length
 

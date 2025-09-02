@@ -1,4 +1,4 @@
-import Delegate from './Delegate';
+import Delegate from "./Delegate";
 import { expect, test, beforeEach, mock as fn, describe, it } from "bun:test";
 
 /** In C# delegate with no params and no return types are called 'Actions' */
@@ -6,7 +6,7 @@ let ACTION: Delegate<() => void>;
 let DELEGATE_STR: Delegate<(strParam: string) => void>;
 let DELEGATE_RETURN_INT: Delegate<() => number>;
 
-let all: Delegate<any>[];
+let all: Array<Delegate<any>>;
 
 beforeEach(() => {
   ACTION = new Delegate();
@@ -35,12 +35,12 @@ test("Subscribe_WhenAddingAFunction_ShouldIncreseaseInternalFunctionsList", () =
 });
 
 test("Unsubscribe_WhenRemovingAFunction_ShouldDecreaseInternalFunctionsList", () => {
-  let action1 = (): void => { };
-  let action2 = (): void => { };
-  let delegateStr1 = (_strParam: string): void => { };
-  let delegateStr2 = (_strParam: string): void => { };
-  let delegateReturnInt1 = (): number => 42;
-  let delegateReturnInt2 = (): number => 42;
+  const action1 = (): void => { };
+  const action2 = (): void => { };
+  const delegateStr1 = (_strParam: string): void => { };
+  const delegateStr2 = (_strParam: string): void => { };
+  const delegateReturnInt1 = (): number => 42;
+  const delegateReturnInt2 = (): number => 42;
 
   ACTION.Subscribe(action1);
   ACTION.Subscribe(action2);
@@ -70,7 +70,7 @@ test("Unsubscribe_WhenRemovingAFunction_ShouldDecreaseInternalFunctionsList", ()
 
 
 describe("Delegate.CallAll()", () => {
-  it('WhenNoArguments_ShouldBeCalledCorrectly', () => {
+  it("WhenNoArguments_ShouldBeCalledCorrectly", () => {
     const delegate = new Delegate<() => void>();
     const func1 = fn();
     const func2 = fn();
@@ -81,7 +81,7 @@ describe("Delegate.CallAll()", () => {
     expect(func2).toHaveBeenCalledTimes(1);
   });
 
-  it('WhenTwoArgumentsProvided_ShouldBeCalledCorrectly', () => {
+  it("WhenTwoArgumentsProvided_ShouldBeCalledCorrectly", () => {
     const delegate = new Delegate<(x: number, y: number) => void>();
     const func1 = fn();
     const func2 = fn();
@@ -94,7 +94,7 @@ describe("Delegate.CallAll()", () => {
     expect(func2).toHaveBeenCalledWith(1, 2);
   });
 
-  it('WhenNoSubscribers_ShouldntHappenAnything;NoErrorThrown', () => {
+  it("WhenNoSubscribers_ShouldntHappenAnything;NoErrorThrown", () => {
     const delegate = new Delegate<() => void>();
     delegate.CallAll();
     // no expectations, just verifying no error is thrown

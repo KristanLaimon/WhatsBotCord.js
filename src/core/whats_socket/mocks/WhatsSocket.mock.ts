@@ -1,10 +1,11 @@
-import Delegate from '../../../libs/Delegate';
-import type { IWhatsSocket } from '../IWhatsSocket';
-import { SenderType, type MsgType } from '../../../Msg.types';
+import Delegate from "../../../libs/Delegate";
+import type { IWhatsSocket } from "../IWhatsSocket";
+import type { SenderType} from "../../../Msg.types";
+import { type MsgType } from "../../../Msg.types";
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import WhatsSocketSenderQueue_SubModule from '../internals/WhatsSocket.senderqueue';
-import type { WhatsSocketMessageSentMock } from './types';
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
+import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
+import type { WhatsSocketMessageSentMock } from "./types";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "src/Whatsapp.types";
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
@@ -36,7 +37,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.ClearMock = this.ClearMock.bind(this);
   }
 
-  public SentMessagesThroughQueue: WhatsSocketMessageSentMock[] = []
+  public SentMessagesThroughQueue: WhatsSocketMessageSentMock[] = [];
   public SentMessagesThroughRaw: WhatsSocketMessageSentMock[] = [];
 
   public GroupsIDTriedToFetch: string[] = [];

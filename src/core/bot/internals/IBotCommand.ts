@@ -1,7 +1,7 @@
-import type { WhatsSocketSugarSender_Submodule } from 'src/core/whats_socket/internals/WhatsSocket.sugarsenders';
-import type { ChatSession } from './ChatSession';
-import type { CommandArgs } from './CommandsSearcher.types';
-import type { WhatsSocketReceiver_SubModule } from 'src/core/whats_socket/internals/WhatsSocket.receiver';
+import type { WhatsSocketSugarSender_Submodule } from "src/core/whats_socket/internals/WhatsSocket.sugarsenders";
+import type { ChatSession } from "./ChatSession";
+import type { CommandArgs } from "./CommandsSearcher.types";
+import type { WhatsSocketReceiver_SubModule } from "src/core/whats_socket/internals/WhatsSocket.receiver";
 
 /**
  * Represents a bot command.

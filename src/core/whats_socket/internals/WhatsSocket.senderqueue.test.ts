@@ -1,9 +1,9 @@
 import { beforeEach, it, describe, expect } from "bun:test";
-import { WhatsappGroupIdentifier } from '../../../Whatsapp.types';
-import WhatsSocketSenderQueue from './WhatsSocket.senderqueue';
+import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
+import WhatsSocketSenderQueue from "./WhatsSocket.senderqueue";
 import { performance } from "node:perf_hooks";
-import { skipLongTests } from 'src/Envs';
-import WhatsSocketMock from '../mocks/WhatsSocket.mock';
+import { skipLongTests } from "src/Envs";
+import WhatsSocketMock from "../mocks/WhatsSocket.mock";
 
 const fakeChatId: string = "23423423234" + WhatsappGroupIdentifier;
 
@@ -84,7 +84,7 @@ describe("Enqueue", () => {
     startTimer = performance.now();
     await queue.Continue();
     queue = originalQueue;
-  }, { timeout: 15000 })
+  }, { timeout: 15000 });
 
   it("WhenSendingMoreMsgsThanQueueLimit_ShouldNotSendExtraMsgsAndNotGrowQueue", async () => {
     const originalQueue = queue;
@@ -105,7 +105,7 @@ describe("Enqueue", () => {
     queue.Enqueue(fakeChatId, { text: "Eleventh Message" });
     queue.Enqueue(fakeChatId, { text: "Twelveth Message" });
     queue.Enqueue(fakeChatId, { text: "Thirteenth Message" });
-    expect(queue.ActualElementsInQueue.length).toBe(6)
+    expect(queue.ActualElementsInQueue.length).toBe(6);
     queue = originalQueue;
   });
 });

@@ -9,21 +9,22 @@ import {
   makeWASocket,
   useMultiFileAuthState,
   Browsers
-} from 'baileys';
-import { Boom } from "@hapi/boom";
+} from "baileys";
+import type { Boom } from "@hapi/boom";
 
 import pino from "pino";
 import moment from "moment";
 import encodeQr from "qr";
-import Delegate from '../../libs/Delegate';
-import { MsgType, SenderType } from '../../Msg.types';
-import type { BaileysWASocket, WhatsSocketLoggerMode } from './types';
+import Delegate from "../../libs/Delegate";
+import type { MsgType} from "../../Msg.types";
+import { SenderType } from "../../Msg.types";
+import type { BaileysWASocket, WhatsSocketLoggerMode } from "./types";
 import { GetPath } from "../../libs/BunPath";
-import { MsgHelper_GetMsgTypeFromRawMsg } from '../../helpers/Msg.helper';
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from '../../Whatsapp.types';
-import WhatsSocketSenderQueue_SubModule from './internals/WhatsSocket.senderqueue';
-import type { IWhatsSocket } from './IWhatsSocket';
-import { WhatsSocketSugarSender_Submodule } from './internals/WhatsSocket.sugarsenders';
+import { MsgHelper_GetMsgTypeFromRawMsg } from "../../helpers/Msg.helper";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
+import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
+import type { IWhatsSocket } from "./IWhatsSocket";
+import { WhatsSocketSugarSender_Submodule } from "./internals/WhatsSocket.sugarsenders";
 
 //TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 export type WhatsSocketOptions = {
@@ -192,11 +193,11 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private async InitializeInternalSocket() {
-    let authInfoPath: string = GetPath(this._credentialsFolder)
+    const authInfoPath: string = GetPath(this._credentialsFolder);
     const { state, saveCreds } = await useMultiFileAuthState(authInfoPath);
 
     if (this._customSocketImplementation) {
-      this._socket = this._customSocketImplementation
+      this._socket = this._customSocketImplementation;
     } else {
       const logger = pino({ level: this._loggerMode });
       //By default uses "Baileys" library whatsapp socket API
@@ -299,7 +300,7 @@ export default class WhatsSocket implements IWhatsSocket {
         if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
         this.onMessageUpdate.CallAll(senderId, chatId, msgUpdate, MsgHelper_GetMsgTypeFromRawMsg(msgUpdate), senderType);
       }
-    })
+    });
   }
 
   /**
@@ -315,12 +316,12 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureGroupsEnter(): void {
-    this._socket.ev.on('groups.upsert', async (groupsUpserted: GroupMetadata[]) => {
+    this._socket.ev.on("groups.upsert", async (groupsUpserted: GroupMetadata[]) => {
       for (const group of groupsUpserted) {
         this.onGroupEnter.CallAll(group);
-        console.info(`INFO: Joined to a new group ${group.subject} at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+        console.info(`INFO: Joined to a new group ${group.subject} at ${moment().format("YYYY-MM-DD HH:mm:ss")}`);
       }
-    })
+    });
   }
 
   private ConfigureGroupsUpdates(): void {
@@ -335,7 +336,7 @@ export default class WhatsSocket implements IWhatsSocket {
           this.onGroupUpdate.CallAll(groupMetadata);
         }
       }
-    })
+    });
   }
 
   public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {

@@ -1,5 +1,5 @@
 import { type WAMessage } from "baileys";
-import { GetPath } from './libs/BunPath';
+import { GetPath } from "./libs/BunPath";
 import fs from "node:fs";
 
 export function Debugging_StoreWhatsappMsgInJsonFile(filePath: string, rawMsg: WAMessage) {

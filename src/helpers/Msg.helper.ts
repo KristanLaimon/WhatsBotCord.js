@@ -1,5 +1,5 @@
 import { type WAMessage } from "baileys";
-import { MsgType } from '../Msg.types';
+import { MsgType } from "../Msg.types";
 
 export function MsgHelper_GetTextFrom(rawMsg: WAMessage): string | null {
   if (!rawMsg.message) return null;
@@ -39,5 +39,5 @@ function _getTypeOfMsg(generic: any): MsgType {
   if (generic.locationMessage) return MsgType.Location;
   if (generic.contactMessage) return MsgType.Contact;
   if (generic.conversation || generic.extendedTextMessage) return MsgType.Text;
-  return MsgType.Unknown
+  return MsgType.Unknown;
 }

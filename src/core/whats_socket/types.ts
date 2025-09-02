@@ -1,4 +1,4 @@
-import { makeWASocket } from 'baileys';
+import type { makeWASocket } from "baileys";
 export type BaileysWASocket = ReturnType<typeof makeWASocket>;
 
 /**

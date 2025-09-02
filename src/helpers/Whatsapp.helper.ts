@@ -1,4 +1,4 @@
-import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from 'src/Whatsapp.types';
+import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "src/Whatsapp.types";
 import type { WAMessage } from "baileys";
 
 export type WhatsappsenderIDType = "lid" | "full";
@@ -46,16 +46,16 @@ export type WhatsappIDInfo = {
  */
 export function WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(rawMsg: WAMessage): WhatsappIDInfo {
   //Let's check if comes from private msg or group
-  let id: string | null = rawMsg.key.participant || rawMsg.key.remoteJid || null;
+  const id: string | null = rawMsg.key.participant || rawMsg.key.remoteJid || null;
   if (!id) {
-    throw Error("This shouldn't happen, baileys library never gives both participant and remoteJid as undefined, only one of them")
+    throw Error("This shouldn't happen, baileys library never gives both participant and remoteJid as undefined, only one of them");
   }
-  const idNumbersOnly = id.split("@")[0]!;
+  const idNumbersOnly = id.split("@").at(0)!;
   let whatsIdType: WhatsappsenderIDType;
   if (WhatsappHelper_isLIDIdentifier(id)) {
     whatsIdType = "lid";
   } else if (WhatsappHelper_isFullWhatsappIdUser(id)) {
-    whatsIdType = "full"
+    whatsIdType = "full";
   } else {
     throw new Error("WhatsappHelper_ExtractWhatsappIdFromSender couldn't get rawMsgs type id. Got insted: " + id);
   }
@@ -63,17 +63,17 @@ export function WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(rawMsg: WAM
     asMentionFormatted: `@${idNumbersOnly}`,
     rawId: id,
     WhatsappIdType: whatsIdType
-  }
+  };
 }
 
 export function WhatsappHelper_ExtractWhatsappIdFromMention(mentionId: string): WhatsappIDInfo | null {
   if (!WhatsappHelper_isMentionId(mentionId)) return null;
-  let number = mentionId.slice(1);
+  const number = mentionId.slice(1);
   return {
     rawId: `${number}${WhatsappLIDIdentifier}`,
     asMentionFormatted: mentionId,
     WhatsappIdType: "lid"
-  }
+  };
 }
 
 export function WhatsappHelper_isLIDIdentifier(whatsIdExpected: string): boolean {

@@ -1,8 +1,8 @@
 
-import type { WAMessage } from 'baileys';
-import { MsgType, SenderType } from 'src/Msg.types';
-import type { IWhatsSocket } from '../IWhatsSocket';
-import { MsgHelper_GetTextFrom } from 'src/helpers/Msg.helper';
+import type { WAMessage } from "baileys";
+import type { MsgType, SenderType } from "src/Msg.types";
+import type { IWhatsSocket } from "../IWhatsSocket";
+import { MsgHelper_GetTextFrom } from "src/helpers/Msg.helper";
 
 /**
  * Callback type used to determine whether a received message satisfies a success condition.
@@ -80,7 +80,7 @@ export class WhatsSocketReceiver_SubModule {
   */
   private _waitNextMsg(successConditionCallback: SuccessConditionCallback, chatIdToLookFor: string, expectedMsgType: MsgType, options: WhatsSocketReceiverWaitOptions): Promise<WAMessage> {
     //Options default values
-    const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg } = options
+    const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg } = options;
 
     return new Promise((resolve: (waMessage: WAMessage) => void, reject: (reason: WhatsMsgReceiverError) => void) => {
       let timer: NodeJS.Timeout;
@@ -90,7 +90,7 @@ export class WhatsSocketReceiver_SubModule {
           this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
           reject({ wasAbortedByUser: false, errorMessage: "User didn't responded in time", chatId: chatIdToLookFor, userId: null });
         }, timeoutSeconds * 1000);
-      }
+      };
 
       const listener = (userId: string | null, chatId: string, msg: WAMessage, msgType: MsgType, senderType: SenderType) => {
         if (msg.key.remoteJid !== chatIdToLookFor) return;
@@ -132,7 +132,7 @@ export class WhatsSocketReceiver_SubModule {
 
         //Priority #4: All good?, User not cancelling, large text, or even text, let's verify if its the type expected
         if (msgType !== expectedMsgType) {
-          this._whatsSocket.SendSafe(chatId, { text: wrongTypeFeedbackMsg })
+          this._whatsSocket.SendSafe(chatId, { text: wrongTypeFeedbackMsg });
           return;
         }
 
@@ -140,7 +140,7 @@ export class WhatsSocketReceiver_SubModule {
         clearTimeout(timer);
         resolve(msg);
         return;
-      }
+      };
       //Set initial timeout
       resetTimeout();
 

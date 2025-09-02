@@ -1,6 +1,6 @@
-import type { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from 'baileys';
-import type { IWhatsSocket } from '../IWhatsSocket';
-import Delegate from 'src/libs/Delegate';
+import type { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import type { IWhatsSocket } from "../IWhatsSocket";
+import Delegate from "src/libs/Delegate";
 
 type SocketMsgQueueItem = {
   chatId: string,
@@ -35,7 +35,7 @@ export default class WhatsSocketSenderQueue_SubModule {
    */
   public get ActualElementsInQueue() {
     return this.queue.map(queueItem => {
-      return Clone_MsgQueueItem(queueItem)
+      return Clone_MsgQueueItem(queueItem);
     });
   }
 

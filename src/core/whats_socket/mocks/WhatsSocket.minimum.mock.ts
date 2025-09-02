@@ -1,7 +1,7 @@
-import type { IWhatsSocketMinimum } from '../IWhatsSocket';
+import type { IWhatsSocketMinimum } from "../IWhatsSocket";
 import type { WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import type { WhatsSocketMessageSentMock } from './types';
-import { WhatsappLIDIdentifier, WhatsappGroupIdentifier } from 'src/Whatsapp.types';
+import type { WhatsSocketMessageSentMock } from "./types";
+import { WhatsappLIDIdentifier, WhatsappGroupIdentifier } from "src/Whatsapp.types";
 
 
 
@@ -14,7 +14,7 @@ export default class WhatsSocketMockMinimum implements IWhatsSocketMinimum {
   }
 
   public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options })
+    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options });
     return {
       message: {
         conversation: "Mock Minimum Object WAMessage",
@@ -27,7 +27,7 @@ export default class WhatsSocketMockMinimum implements IWhatsSocketMinimum {
     };
   }
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options })
+    this.SentMessages.push({ chatId: chatId_JID, content, miscOptions: options });
     return {
       message: {
         conversation: "Mock Minimum Object WAMessage",

@@ -1,8 +1,8 @@
 import { type MiscMessageGenerationOptions, type WAMessage, downloadMediaMessage } from "baileys";
 import fs from "fs";
-import { Str_NormalizeLiteralString } from 'src/helpers/Strings.helper';
-import type { IWhatsSocket } from '../IWhatsSocket';
-import { GetPath } from 'src/libs/BunPath';
+import { Str_NormalizeLiteralString } from "src/helpers/Strings.helper";
+import type { IWhatsSocket } from "../IWhatsSocket";
+import { GetPath } from "src/libs/BunPath";
 import path from "path";
 import emojiRegexFabric from "emoji-regex";
 import GraphemeSplitter from "grapheme-splitter";
@@ -275,17 +275,17 @@ export class WhatsSocketSugarSender_Submodule {
    */
   public async Audio(chatId: string, audioSource: string | Buffer | WAMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     let buffer: Buffer;
-    let mimetype = 'audio/mpeg';
+    let mimetype = "audio/mpeg";
 
     if (Buffer.isBuffer(audioSource)) {
       buffer = audioSource;
-    } else if (typeof audioSource === 'string') {
+    } else if (typeof audioSource === "string") {
       // Check if local file exists
       if (fs.existsSync(GetPath(audioSource))) {
         buffer = fs.readFileSync(GetPath(audioSource));
         const ext = path.extname(GetPath(audioSource)).toLowerCase();
-        if (ext === '.ogg') mimetype = 'audio/ogg';
-        if (ext === '.m4a') mimetype = 'audio/mp4';
+        if (ext === ".ogg") mimetype = "audio/ogg";
+        if (ext === ".m4a") mimetype = "audio/mp4";
       } else {
         if (!audioSource.startsWith("http")) {
           throw new Error("It's not an existing file in your system or even a url!, check your audioSource. Audio source given to send: " + audioSource);
@@ -299,12 +299,12 @@ export class WhatsSocketSugarSender_Submodule {
         const arrayBuffer = await res.arrayBuffer();
         buffer = Buffer.from(arrayBuffer);
       }
-    } else if ('message' in audioSource && audioSource.message?.audioMessage) {
+    } else if ("message" in audioSource && audioSource.message?.audioMessage) {
       // WhatsApp message object
-      buffer = await downloadMediaMessage(audioSource, 'buffer', {});
-      mimetype = audioSource.message.audioMessage?.mimetype || 'audio/mpeg';
+      buffer = await downloadMediaMessage(audioSource, "buffer", {});
+      mimetype = audioSource.message.audioMessage?.mimetype || "audio/mpeg";
     } else {
-      throw new Error('WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: ' + audioSource);
+      throw new Error("WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: " + audioSource);
     }
 
     return await (this._getSendingMethod(options))(chatId, {
@@ -371,9 +371,9 @@ export class WhatsSocketSugarSender_Submodule {
     if (typeof videoSourceParams.sourcePath === "string") {
       const videoPath: string = videoSourceParams.sourcePath;
       if (videoPath.endsWith(".mov"))
-        mimeTypeToUse = "video/mov"
+        mimeTypeToUse = "video/mov";
       else if (videoPath.endsWith(".avi"))
-        mimeTypeToUse = "video/avi"
+        mimeTypeToUse = "video/avi";
       //Otherwise, use default "video/mp4"
     }
     return await (this._getSendingMethod(options))(chatId, {
@@ -477,7 +477,7 @@ export class WhatsSocketSugarSender_Submodule {
         name: ubicationParams.name,
         address: ubicationParams.addressText
       }
-    }, options as MiscMessageGenerationOptions)
+    }, options as MiscMessageGenerationOptions);
   }
 
   /**
@@ -518,7 +518,7 @@ export class WhatsSocketSugarSender_Submodule {
    * @note Number follows "countrycode" + "1" + "10 digits number" for latin-american countries like "5216239389304" for example in mexico. Check
    * how your country number displays in international format
    */
-  public async Contact(chatId: string, contacts: { name: string; phone: string } | { name: string; phone: string }[], options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Contact(chatId: string, contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     const arr = Array.isArray(contacts) ? contacts : [contacts];
 
     const vCards = arr.map(c => {

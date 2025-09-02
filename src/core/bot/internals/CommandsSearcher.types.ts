@@ -1,5 +1,5 @@
 import { type WAMessage } from "baileys";
-import type { MsgType, SenderType } from 'src/Msg.types';
+import type { MsgType, SenderType } from "src/Msg.types";
 
 export type CommandArgs = {
   originalContent: WAMessage,

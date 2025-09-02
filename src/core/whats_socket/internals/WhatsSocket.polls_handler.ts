@@ -1,8 +1,8 @@
-import Delegate from 'src/libs/Delegate';
-import type { IWhatsSocket } from '../IWhatsSocket';
-import type { proto, WAMessage } from 'baileys';
-import { getAggregateVotesInPollMessage } from 'baileys';
-import type { MsgType, SenderType } from 'src/Msg.types';
+import Delegate from "src/libs/Delegate";
+import type { IWhatsSocket } from "../IWhatsSocket";
+import type { proto, WAMessage } from "baileys";
+import { getAggregateVotesInPollMessage } from "baileys";
+import type { MsgType, SenderType } from "src/Msg.types";
 
 type WhatsPollResult = {
   Option: string;
@@ -56,7 +56,7 @@ export default class WhatsPoll implements IWhatsPoll {
 
       const pollVotes = await getAggregateVotesInPollMessage({
         message: this._pollInfo.pollRawMsg.message,
-        //@ts-ignore
+        //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
         pollUpdates: this._pollUpdates,
       }, this._borrowedSocket.ownJID);
 
@@ -80,14 +80,14 @@ export default class WhatsPoll implements IWhatsPoll {
         withMultiSelect: this._pollInfo.withMultiSelect,
       });
     } catch (error) {
-      console.error('Error serializing poll:', error);
-      return '';
+      console.error("Error serializing poll:", error);
+      return "";
     }
   }
 
   private async _onMessageUpsertSubcriber(_senderId: string | null, _chatId: string, rawUpdateMsg: WAMessage, _msgType: MsgType, _senderType: SenderType) {
     if (!rawUpdateMsg.message?.pollUpdateMessage) return;
-    if ((rawUpdateMsg.key.remoteJid ?? '') !== (this._pollInfo.pollRawMsg.key.remoteJid ?? '')) return;
+    if ((rawUpdateMsg.key.remoteJid ?? "") !== (this._pollInfo.pollRawMsg.key.remoteJid ?? "")) return;
     if (!rawUpdateMsg.message.pollUpdateMessage.pollCreationMessageKey) return;
 
     // Use an improved log for better debugging
@@ -103,14 +103,14 @@ export default class WhatsPoll implements IWhatsPoll {
     try {
       const pollVotes = await getAggregateVotesInPollMessage({
         message: this._pollInfo.pollRawMsg.message,
-        //@ts-ignore
+        //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
         pollUpdates: this._pollUpdates,
       }, this._borrowedSocket.ownJID);
 
       // Find the new updates
       const previousVotes = this._pollUpdates.length > 1 ? await getAggregateVotesInPollMessage({
         message: this._pollInfo.pollRawMsg.message,
-        //@ts-ignore
+        //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
         pollUpdates: this._pollUpdates.slice(0, -1),
       }, this._borrowedSocket.ownJID) : [];
 
@@ -123,12 +123,12 @@ export default class WhatsPoll implements IWhatsPoll {
         const newVoters = voters.filter(voter => !previousVoters.includes(voter));
 
         for (const voterJid of newVoters) {
-          const nickname = pollMsg.pushName ?? '===NONICKNAME===';
+          const nickname = pollMsg.pushName ?? "===NONICKNAME===";
           this.onVoteUpdate.CallAll(option, nickname, voterJid);
         }
       }
     } catch (error) {
-      console.error('Error processing poll update:', error);
+      console.error("Error processing poll update:", error);
     }
   }
 

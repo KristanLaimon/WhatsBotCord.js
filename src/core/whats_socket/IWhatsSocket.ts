@@ -1,6 +1,6 @@
-import type { AnyMessageContent, WAMessageUpdate, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from 'baileys';
-import type Delegate from '../../libs/Delegate';
-import { MsgType, SenderType } from '../../Msg.types';
+import type { AnyMessageContent, WAMessageUpdate, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import type Delegate from "../../libs/Delegate";
+import type { MsgType, SenderType } from "../../Msg.types";
 
 interface ICanSendMsgs {
   /**
