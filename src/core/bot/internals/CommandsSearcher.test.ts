@@ -1,8 +1,6 @@
-import { test, it, describe, mock as fn, expect } from "bun:test";
+import { test, expect } from "bun:test";
 import CommandsSearcher, { CommandType } from "./CommandsSearcher";
 import type { ICommand, RawMsgAPI } from "./IBotCommand";
-import type { WhatsSocketReceiver_SubModule } from "src/core/whats_socket/internals/WhatsSocket.receiver";
-import type { WhatsSocketSugarSender_Submodule } from "src/core/whats_socket/internals/WhatsSocket.sugarsenders";
 import type { ChatSession } from "./ChatSession";
 import type { CommandArgs } from "./CommandsSearcher.types";
 
@@ -20,17 +18,23 @@ import type { CommandArgs } from "./CommandsSearcher.types";
  * f. Getting (either tag or normal command) by alias (if they had)
  */
 
+/**
+ * .
+ */
+const CommandIdealName = "commandMock";
+const CommandIdealAliases: string[] = ["mocky"];
 class CommandIdeal implements ICommand {
-  name: string = "commandmock";
-  aliases?: string[] = ["mocky"];
+  name: string = CommandIdealName;
+  aliases?: string[] = CommandIdealAliases;
   description: string = "An ideal command object with all properties health";
   async run(_rawMsgApi: RawMsgAPI, _chat: ChatSession, _args: CommandArgs): Promise<boolean> {
     return true;
   }
 }
 
+const CommandMinimumName = "commandminimal";
 class CommandMinimum implements ICommand {
-  name: string = "commandminimal";
+  name: string = CommandMinimumName;
   aliases?: string[];
   description: string = "An ideal command object with all properties health";
   async run(_rawMsgApi: RawMsgAPI, _chat: ChatSession, _args: CommandArgs): Promise<boolean> {
@@ -38,9 +42,11 @@ class CommandMinimum implements ICommand {
   }
 }
 
+const CommandDesnormalizedName = "DesNorMaLizEdCoMaNd";
+const CommandDesnormalizedAliases: string[] = ["DesnOrmaLizy", "nOtConsIsTentAlIa✅"];
 class CommandDesnormalized implements ICommand {
-  name: string = "DesNorMaLizEdCoMaNd";
-  aliases?: string[] = ["DesnOrmaLizy", "nOtConsIsTentAlIa✅"];
+  name: string = CommandDesnormalizedName;
+  aliases?: string[] = CommandDesnormalizedAliases;
   description: string = "An ideal command object with all properties health";
   async run(_rawMsgApi: RawMsgAPI, _chat: ChatSession, _args: CommandArgs): Promise<boolean> {
     return true;
@@ -55,8 +61,119 @@ test("AddingCommand_ShouldStoreItAndBeSearchable", () => {
   expect(searcher.NormalCommands).toHaveLength(0);
   expect(searcher.TagCommands).toHaveLength(0);
   searcher.AddCommand(new CommandIdeal(), CommandType.Normal);
+  searcher.AddCommand(new CommandMinimum(), CommandType.Normal);
+  searcher.AddCommand(new CommandDesnormalized(), CommandType.Tag);
+  expect(searcher.NormalCommands).toHaveLength(2);
+  expect(searcher.TagCommands).toHaveLength(1);
+});
+
+test("Adding_WhenAddingDuplicatesCommands_ShouldOverrideWithLastAdded", () => {
+  const searcher = new CommandsSearcher();
+
+  const firstToAdd = new CommandIdeal();
+  firstToAdd.description = "First Command";
+  const secondToAdd = new CommandIdeal();
+  secondToAdd.description = "Second Command Overwrite";
+
+  searcher.AddCommand(firstToAdd, CommandType.Normal);
   expect(searcher.NormalCommands).toHaveLength(1);
+  expect(searcher.NormalCommands[0]!.commandObj.description).toBe("First Command");
+  searcher.AddCommand(secondToAdd, CommandType.Normal);
+  expect(searcher.NormalCommands).toHaveLength(1);
+  expect(searcher.NormalCommands.at(0)!.commandObj.description).toBe("Second Command Overwrite");
+});
+
+test("Exists_WhenNoCommands_ShouldReturnFalse", (): void => {
+  const searcher = new CommandsSearcher();
+  const exists: boolean = searcher.Exists(CommandIdealName);
+  expect(exists).toBe(false);
+});
+
+test("Exists_WhenNormalCommandPresent_ShouldReturnTrue", (): void => {
+  const searcher = new CommandsSearcher();
+  searcher.AddCommand(new CommandIdeal(), CommandType.Normal);
+  const existsIdeal: boolean = searcher.Exists(CommandIdealName);
+  expect(existsIdeal).toBe(true);
+
+  searcher.AddCommand(new CommandMinimum, CommandType.Normal);
+  const existsMinimum: boolean = searcher.Exists(CommandMinimumName);
+  expect(existsMinimum).toBe(true);
+
+  searcher.AddCommand(new CommandDesnormalized(), CommandType.Normal);
+
+  //Should find it. Command-system is (should) NOT (be) case-sensitive
+  const existsDesnormalized: boolean = searcher.Exists(CommandDesnormalizedName);
+  const existsDesnormalizedButLowerCased: boolean = searcher.Exists(CommandDesnormalizedName.toLowerCase());
+  const existsDesnormalizedButUpperCased: boolean = searcher.Exists(CommandDesnormalizedName.toUpperCase());
+
+  expect(existsDesnormalized).toBe(true);
+  expect(existsDesnormalizedButLowerCased).toBe(true);
+  expect(existsDesnormalizedButUpperCased).toBe(true);
+
+  expect(searcher.NormalCommands).toHaveLength(3);
   expect(searcher.TagCommands).toHaveLength(0);
 });
 
+test("Exists_WhenTagCommandPresent_ShouldReturnTrue", (): void => {
+  const searcher = new CommandsSearcher();
+  searcher.AddCommand(new CommandIdeal(), CommandType.Tag);
+  expect(searcher.Exists(CommandIdealName)).toBe(true);
+  searcher.AddCommand(new CommandMinimum(), CommandType.Tag);
+  expect(searcher.Exists(CommandMinimumName)).toBe(true);
 
+  //Must be case insensitive as well for tags
+  searcher.AddCommand(new CommandDesnormalized(), CommandType.Tag);
+  expect(searcher.Exists(CommandDesnormalizedName)).toBe(true);
+  expect(searcher.Exists(CommandDesnormalizedName.toLowerCase())).toBe(true);
+  expect(searcher.Exists(CommandDesnormalizedName.toUpperCase())).toBe(true);
+});
+
+test("GetType_WithMixedCommandsAdded_ShouldRecognizeEachType", (): void => {
+  const searcher = new CommandsSearcher();
+  searcher.AddCommand(new CommandIdeal(), CommandType.Normal);
+  searcher.AddCommand(new CommandMinimum(), CommandType.Tag);
+  searcher.AddCommand(new CommandDesnormalized, CommandType.Normal);
+
+  expect(searcher.GetTypeOf(CommandIdealName)).toBe(CommandType.Normal);
+  expect(searcher.GetTypeOf(CommandMinimumName)).toBe(CommandType.Tag);
+  expect(searcher.GetTypeOf(CommandDesnormalizedName)).toBe(CommandType.Normal);
+  expect(searcher.GetTypeOf("non_existing_command")).toBe(null);
+
+  expect(searcher.NormalCommands).toHaveLength(2);
+  expect(searcher.TagCommands).toHaveLength(1);
+});
+
+test("GetCommand_WithMixedCommandsAdded_ShouldFetchCorrectCommand", (): void => {
+  const searcher = new CommandsSearcher();
+  const idealCommand = new CommandIdeal();
+  const minimalTagCommand = new CommandMinimum();
+  searcher.AddCommand(idealCommand, CommandType.Normal);
+  searcher.AddCommand(minimalTagCommand, CommandType.Tag);
+
+  expect(searcher.GetCommand(CommandIdealName)).toMatchObject(idealCommand);
+  expect(searcher.GetTag(CommandIdealName)).toBe(null);
+
+  expect(searcher.GetCommand(CommandMinimumName)).toBe(null);
+  expect(searcher.GetTag(CommandMinimumName)).toMatchObject(minimalTagCommand);
+});
+
+test("GetWhateverWithAlias_WithMixedCommands_ShouldFetchOnlyCommandWithAlias", (): void => {
+  const searcher = new CommandsSearcher();
+  const idealNormalCommand = new CommandIdeal();
+  searcher.AddCommand(idealNormalCommand, CommandType.Normal);
+
+  const found = searcher.GetWhateverWithAlias(CommandIdealAliases.at(0)!);
+  expect(found).toBeDefined();
+  expect(found!.command).toMatchObject(idealNormalCommand);
+  expect(found!.type).toBe(CommandType.Normal);
+
+  const desnormalizedTagCommand: ICommand = new CommandDesnormalized();
+  searcher.AddCommand(desnormalizedTagCommand, CommandType.Tag);
+  const found2 = searcher.GetWhateverWithAlias(CommandDesnormalizedAliases.at(0)!);
+  expect(found2).toBeDefined();
+  expect(found2!.command).toMatchObject(desnormalizedTagCommand);
+  expect(found2!.type).toBe(CommandType.Tag);
+
+  const notFound = searcher.GetWhateverWithAlias("not-existing-alias");
+  expect(notFound).toBe(null);
+});

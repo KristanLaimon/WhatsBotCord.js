@@ -1,25 +1,35 @@
 import type { ICommand } from "./IBotCommand";
 
 export enum CommandType {
-  Normal,
-  Tag
+  Normal = "Normal",
+  Tag = "Tag"
 }
+
+export type CommandEntry = {
+  commandName: string;
+  commandObj: ICommand;
+}
+
 //TODO: Create a SUITE TEST
 export default class CommandsSearcher {
   private _normalCommands: Map<string, ICommand> = new Map();
   private _tagCommands: Map<string, ICommand> = new Map();
 
-  public get NormalCommands(): Array<[string, ICommand]> {
-    return [...(this._normalCommands)];
+  public get NormalCommands(): CommandEntry[] {
+    const toReturn: CommandEntry[] = [];
+    this._normalCommands.forEach((commandObj, commandName) => toReturn.push({ commandName, commandObj }));
+    return toReturn;
   }
 
-  public get TagCommands(): Array<[string, ICommand]> {
-    return [...(this._tagCommands)];
+  public get TagCommands(): CommandEntry[] {
+    const toReturn: CommandEntry[] = [];
+    this._tagCommands.forEach((commandObj, commandName) => toReturn.push({ commandName, commandObj }));
+    return toReturn;
   }
 
-  public AddCommand(commandInstance: ICommand, commandType: CommandType = CommandType.Normal): void {
+  public AddCommand(commandInstance: ICommand, addCommandAsType: CommandType): void {
     const commandNameLowercase = commandInstance.name.toLowerCase();
-    const mapToStoreInto: Map<string, ICommand> = commandType === CommandType.Normal ? this._normalCommands : this._tagCommands;
+    const mapToStoreInto: Map<string, ICommand> = addCommandAsType === CommandType.Normal ? this._normalCommands : this._tagCommands;
     //If already exists, it'll be overwritten
     mapToStoreInto.set(commandNameLowercase, commandInstance);
   }
@@ -49,22 +59,18 @@ export default class CommandsSearcher {
   }
 
   public GetWhateverWithAlias(possibleAlias: string): { command: ICommand, type: CommandType } | null {
-    const foundCommand: [string, ICommand] | undefined = Array(...this._normalCommands).find(([_commandNameLowerCased, commandObj]) => {
-      if (!commandObj.aliases) return false;
-      if (commandObj.aliases.includes(possibleAlias))
-        return true;
-    });
-    if (foundCommand)
-      return { command: foundCommand[1], type: CommandType.Normal };
+    const aliasLower = possibleAlias.toLowerCase();
 
-    const foundTag: [string, ICommand] | undefined = Array(...this._tagCommands).find(([_commandNameLowerCased, commandObj]) => {
-      if (!commandObj.aliases) return false;
-      if (commandObj.aliases.includes(possibleAlias))
-        return true;
-    });
-    if (foundTag)
-      return { command: foundTag[1], type: CommandType.Tag };
+    const findInMap = (map: Map<string, ICommand>, type: CommandType) => {
+      for (const [, commandObj] of map) {
+        if (commandObj.aliases?.some(alias => alias.toLowerCase() === aliasLower)) {
+          return { command: commandObj, type };
+        }
+      }
+      return null;
+    };
 
-    return null;
+    return findInMap(this._normalCommands, CommandType.Normal)
+      ?? findInMap(this._tagCommands, CommandType.Tag);
   }
 }
