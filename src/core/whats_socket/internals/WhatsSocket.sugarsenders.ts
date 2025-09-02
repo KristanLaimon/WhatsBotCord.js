@@ -5,8 +5,10 @@ import type { IWhatsSocket } from '../IWhatsSocket';
 import { GetPath } from 'src/libs/BunPath';
 import path from "path";
 import emojiRegexFabric from "emoji-regex";
+import GraphemeSplitter from "grapheme-splitter";
 
 const emojiRegex = emojiRegexFabric();
+const emojiSplitter = new GraphemeSplitter();
 
 export type WhatsMsgSenderSendingOptionsMINIMUM = {
   /**
@@ -183,8 +185,9 @@ export class WhatsSocketSugarSender_Submodule {
     if (typeof emojiStr !== "string") {
       throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received an non string emoji");
     }
-    if (emojiStr.length != 1) {
-      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received more than 2 chars as emoji to send.... It must be a simple emoji string of 1 emoji length. Received instead: " + emojiStr);
+    const emojisCount: number = emojiSplitter.countGraphemes(emojiStr);
+    if (emojisCount !== 1) {
+      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received (less than 1 or greater than 2) chars as emoji to send.... It must be a simple emoji string of 1-2 emoji char length. Received instead: " + emojiStr);
     }
 
     if (!emojiStr.match(emojiRegex)) {
@@ -284,6 +287,9 @@ export class WhatsSocketSugarSender_Submodule {
         if (ext === '.ogg') mimetype = 'audio/ogg';
         if (ext === '.m4a') mimetype = 'audio/mp4';
       } else {
+        if (!audioSource.startsWith("http")) {
+          throw new Error("It's not an existing file in your system or even a url!, check your audioSource. Audio source given to send: " + audioSource);
+        }
         // Fetch remote URL
         const res = await fetch(audioSource);
         if (!res.ok) {

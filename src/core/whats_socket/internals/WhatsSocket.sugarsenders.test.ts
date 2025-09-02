@@ -181,8 +181,16 @@ describe("ReactEmojiToMsg", () => {
 
   it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
     const emoji = "✨";
+    let i = 0;
     for (const mockMsg of allMockMsgs) {
       await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emoji);
+      expect(mockWhatsSender.SentMessagesThroughQueue[i]).toBeDefined();
+      expect(mockWhatsSender.SentMessagesThroughQueue[i]?.content).toMatchObject({
+        react: {
+          text: emoji,
+        }
+      })
+      i++;
     }
   });
 
@@ -191,16 +199,25 @@ describe("ReactEmojiToMsg", () => {
     for (const mockMsg of allMockMsgs) {
       expect(async () => {
         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojiWrong);
-      }).toThrowError("WhatsSocketSugarSender.ReactEmojiToMsg() received more than 2 chars as emoji to send.... It must be a simple emoji string of 1 emoji length. Received instead: " + emojiWrong);
+      }).toThrowError();
     }
   });
 
-  it("WhenGivenDoubleEmoji_ShouldThrowError", async () => {
-    const emojis = "☠️🦊";
+  it("WhenGivenTwoCharactersEmoji_ShouldAcceptIt", async () => {
+    const emojis = "🦊";
     for (const mockMsg of allMockMsgs) {
       expect(async () => {
         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis)
-      }).toThrowError("WhatsSocketSugarSender.ReactEmojiToMsg() received more than 2 chars as emoji to send.... It must be a simple emoji string of 1 emoji length. Received instead: " + emojis);
+      }).not.toThrowError();
+    }
+  });
+
+  it("WhenGivenTwoEmojis_ShouldRejectIt", async (): Promise<void> => {
+    const emojis = "😯🦊";
+    for (const mockMsg of allMockMsgs) {
+      expect(async () => {
+        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis)
+      }).toThrowError();
     }
   });
 
