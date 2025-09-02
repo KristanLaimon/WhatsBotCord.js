@@ -10,11 +10,11 @@ export default class CommandsSearcher {
   private _tagCommands: Map<string, ICommand> = new Map();
 
   public get NormalCommands(): Array<[string, ICommand]> {
-    return Object.entries(this._normalCommands);
+    return [...(this._normalCommands)];
   }
 
   public get TagCommands(): Array<[string, ICommand]> {
-    return Object.entries(this._tagCommands);
+    return [...(this._tagCommands)];
   }
 
   public AddCommand(commandInstance: ICommand, commandType: CommandType = CommandType.Normal): void {

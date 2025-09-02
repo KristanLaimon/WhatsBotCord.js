@@ -193,7 +193,55 @@ it("Video_WhenUsingSendVideoWithCaption_ShouldCorrectlyUseSugarSenderVideo", asy
   expect(sendVideoSenderSpy).toHaveBeenCalledWith(CHATID, { sourcePath: "./fake_video_with_caption.mp4", caption: "video caption" }, WHATSMSGOPTIONSPARAM);
 });
 
-it("Poll_WhenUsingSendPoll_ShouldCorrectlyUseSugarSenderVideo", async (): Promise<void> => {
+it("Poll_WhenUsingSendPoll_ShouldCorrectlyUseSugarSenderPoll", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
   const sendPollSenderSpy: Mock<typeof sender.Poll> = spyOn(sender, "Poll");
+  const pollTitle: string = "Title";
+  const pollOptions: string[] = ["options"];
+  expect(async (): Promise<void> => {
+    await chat.SendPoll(pollTitle, pollOptions, { withMultiSelect: true }, WHATSMSGOPTIONSPARAM);
+  }).not.toThrow();
+  expect(sendPollSenderSpy).toHaveBeenCalledTimes(1);
+  expect(sendPollSenderSpy).toHaveBeenCalledWith(CHATID, pollTitle, pollOptions, { withMultiSelect: true }, WHATSMSGOPTIONSPARAM);
+});
+
+it("Ubication_WhenSendingUbicationWithoutExtraInfo_ShouldCorrectlyUseSugarenderUbication", async (): Promise<void> => {
+  const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const sendUbicationSenderSpy: Mock<typeof sender.Ubication> = spyOn(sender, "Ubication");
+  const latitude: number = 80;
+  const longitude: number = -120;
+  expect(async (): Promise<void> => {
+    await chat.SendUbication(latitude, longitude, WHATSMSGOPTIONSPARAM);
+  }).not.toThrow();
+  expect(sendUbicationSenderSpy).toHaveBeenCalledTimes(1);
+  expect(sendUbicationSenderSpy).toHaveBeenCalledWith(CHATID, { degreesLatitude: latitude, degreesLongitude: longitude, addressText: undefined, name: undefined }, WHATSMSGOPTIONSPARAM);
+});
+
+it("Ubication_WhenSendingUbicationWithExtraInfo_ShouldCorrectlyUseSugaSenderUbication", async (): Promise<void> => {
+  const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const sendUbicationSenderSpy: Mock<typeof sender.Ubication> = spyOn(sender, "Ubication");
+  const latitude: number = 80;
+  const longitude: number = -120;
+  expect(async (): Promise<void> => {
+    await chat.SendUbicationWithDescription(latitude, longitude, "Ubication Name", "more extra info", WHATSMSGOPTIONSPARAM);
+  }).not.toThrow();
+  expect(sendUbicationSenderSpy).toHaveBeenCalledTimes(1);
+  expect(sendUbicationSenderSpy).toHaveBeenCalledWith(CHATID, {
+    degreesLatitude: latitude,
+    degreesLongitude: longitude,
+    addressText: "more extra info",
+    name: "Ubication Name"
+  }, WHATSMSGOPTIONSPARAM);
+});
+
+
+it("Contacts_WhenSendingContacts_ShouldCorrectlyUseSugarSendContacts", async (): Promise<void> => {
+  const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const sendContactSenderSpy: Mock<typeof sender.Contact> = spyOn(sender, "Contact");
+  const contactMockInfo = { name: "ChristianLaimon", phone: "521948930283" };
+  expect(async (): Promise<void> => {
+    await chat.SendContact(contactMockInfo, WHATSMSGOPTIONSPARAM);
+  }).not.toThrow();
+  expect(sendContactSenderSpy).toHaveBeenCalledTimes(1);
+  expect(sendContactSenderSpy).toHaveBeenCalledWith(CHATID, contactMockInfo, WHATSMSGOPTIONSPARAM);
 });

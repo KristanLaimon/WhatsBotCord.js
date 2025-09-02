@@ -40,7 +40,7 @@ export interface ICommand {
   run(rawMsgApi: RawMsgAPI, chat: ChatSession, args: CommandArgs): Promise<boolean>
 }
 
-type RawMsgAPI = {
+export type RawMsgAPI = {
   Send: WhatsSocketSugarSender_Submodule;
   Receive: WhatsSocketReceiver_SubModule;
 }

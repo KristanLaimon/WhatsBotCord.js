@@ -384,9 +384,8 @@ export class WhatsSocketSugarSender_Submodule {
   }
 
   /**
-   * @deprecated Only works for sending, can't retrieve any data from that. (Idk how baileys library works for that, its not documented at all... 🥲)
    * Sends a poll message to a specific chat.
-   *
+   * Only works for sending, can't retrieve any data from that. (Idk how baileys library works for that, its not documented at all... 🥲)
    * WhatsApp polls allow either:
    * - **Single-answer polls** (one option selectable).
    * - **Multi-answer polls** (multiple options selectable).
