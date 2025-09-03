@@ -1,7 +1,15 @@
 {
   "name": "whatsbotcord",
-  "module": "main.ts",
+  "private": "false",
+  "version": "0.8.0",
+  "author": "ChrisLaimon",
+  "main": "build/index.js",
   "type": "module",
+  "types": "build/index.d.ts",
+  "files": [
+    "build",
+    "README.md"
+  ],
   "devDependencies": {
     "@eslint/js": "^9.34.0",
     "@eslint/json": "^0.13.2",
@@ -14,6 +22,7 @@
     "typescript-eslint": "^8.42.0"
   },
   "scripts": {
+    "build": "bunx tsc",
     "check": "tsc --noEmit && eslint",
     "lint": "eslint",
     "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",

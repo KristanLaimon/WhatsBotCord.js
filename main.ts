@@ -1,18 +1,26 @@
 import Bot from "src/core/bot/bot";
-import { MsgHelper_GetTextFrom } from "src/helpers/Msg.helper";
-import { MsgType } from "src/Msg.types";
+import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom } from "src/helpers/Msg.helper";
+import {
+  WhatsappHelper_ExtractWhatsappIdFromMention,
+  WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
+  WhatsappHelper_isFullWhatsappIdUser,
+  WhatsappHelper_isLIDIdentifier,
+  WhatsappHelper_isMentionId,
+} from "src/helpers/Whatsapp.helper";
 
-const bot = new Bot({ credentialsFolder: "./auth", loggerMode: "silent" });
+// Helpers namespace
+const MsgHelpers = {
+  GetTextFromQuotedMsg: MsgHelper_GetQuotedMsgTextFrom,
+  GetMsgTypeFrom: MsgHelper_GetMsgTypeFromRawMsg,
+};
 
-bot.Events.onIncomingMsg.Subscribe(
-  (_senderId, chatId, _rawMsg, msgType, _senderType) => {
-    if (msgType === MsgType.Text) {
-      const txt = MsgHelper_GetTextFrom(_rawMsg);
-      if (txt) {
-        bot.SendMsg.Text(chatId, txt);
-      }
-    }
-  }
-);
+const WhatsappHelpers = {
+  GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
+  GetWhatsInfoFromMentionStr: WhatsappHelper_ExtractWhatsappIdFromMention,
+  IsLidIdentifier: WhatsappHelper_isLIDIdentifier,
+  IsMentionString: WhatsappHelper_isMentionId,
+  IsIDIdentifier: WhatsappHelper_isFullWhatsappIdUser,
+};
 
-bot.Start();
+export default Bot;
+export { MsgHelpers, WhatsappHelpers };

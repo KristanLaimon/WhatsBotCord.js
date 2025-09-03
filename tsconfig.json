@@ -1,26 +1,25 @@
 {
+  "exclude": [
+    "node_modules",
+    "build",
+    "eslint.config.js"
+  ],
   "compilerOptions": {
-    // Environment setup & latest features
+    // == Library Bundling Options ==
     "lib": [
       "ESNext"
     ],
+    "module": "esnext",
     "target": "ESNext",
-    "module": "Preserve",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-    // Best practices
-    "strict": true,
+    "outDir": "build",
     "skipLibCheck": true,
+    "strict": true,
+    //== Opinionated Options ==
+    "allowJs": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    // Some stricter flags (disabled by default)
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -28,3 +27,9 @@
     "baseUrl": ".",
   }
 }
+// Bundler mode
+// "moduleResolution": "bundler",
+// "allowImportingTsExtensions": true,
+// "verbatimModuleSyntax": true,
+// "noEmit": true,
+// Best practices

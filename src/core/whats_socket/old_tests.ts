@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config({ path: "./env.development", quiet: true });
-import { MsgHelper_GetTextFrom } from "./src/helpers/Msg.helper";
-import { MsgType } from "./src/Msg.types";
-import WhatsSocket from "./src/core/whats_socket/WhatsSocket";
+import { MsgHelper_GetTextFrom } from "../../helpers/Msg.helper";
+import { MsgType } from "../../Msg.types";
+import WhatsSocket from "./WhatsSocket";
 import { downloadMediaMessage } from "baileys";
 
 import fs from "fs";
@@ -13,7 +13,7 @@ const socket = new WhatsSocket({
   loggerMode: "silent",
   maxReconnectionRetries: 5,
   ignoreSelfMessage: true,
-  delayMilisecondsBetweenMsgs: 10
+  delayMilisecondsBetweenMsgs: 10,
 });
 
 socket.onIncomingMsg.Subscribe(async (senderId, chatId, rawMsg, msgType, senderType) => {
@@ -37,8 +37,11 @@ socket.onIncomingMsg.Subscribe(async (senderId, chatId, rawMsg, msgType, senderT
   }
 });
 
-socket.Start().then(() => {
-  console.log("WhatsSocket initialized successfully!");
-}).catch((error) => {
-  console.error("Error initializing WhatsSocket:", error);
-});
+socket
+  .Start()
+  .then(() => {
+    console.log("WhatsSocket initialized successfully!");
+  })
+  .catch((error) => {
+    console.error("Error initializing WhatsSocket:", error);
+  });

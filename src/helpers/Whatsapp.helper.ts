@@ -13,12 +13,12 @@ export type WhatsappIDInfo = {
   /**
    * The phone number formatted for mentions in messages.
    * This is the normalized WhatsApp ID prefixed with '@', ready to be used in quotes or mentions.
-   * 
+   *
    * Example:
    * ```ts
    * // If the rawId is '1234567890@s.whatsapp.net', asMentionFormatted will be '@1234567890'
    * ```
-   * 
+   *
    * Note: When sending a message through the socket, make sure to include the sender's full raw ID in the array if required.
    */
   asMentionFormatted: string;
@@ -29,13 +29,13 @@ export type WhatsappIDInfo = {
    * - "full": The ID comes from a private chat and is a full WhatsApp ID (e.g., '1234567890@s.whatsapp.net'), which can be used to send messages directly.
    */
   WhatsappIdType: WhatsappsenderIDType;
-}
+};
 
 /**
  * Extracts detailed phone number information from a raw WhatsApp message.
  *
  * @param rawMsg - The raw WhatsApp message from which to extract the phone number.
- * @returns An object containing the phone number details, including country code, 
+ * @returns An object containing the phone number details, including country code,
  *          full number, number without country code, and WhatsApp ID.
  *
  * @throws {Error} If the phone number is invalid or both participant and remoteJid are undefined.
@@ -62,7 +62,7 @@ export function WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(rawMsg: WAM
   return {
     asMentionFormatted: `@${idNumbersOnly}`,
     rawId: id,
-    WhatsappIdType: whatsIdType
+    WhatsappIdType: whatsIdType,
   };
 }
 
@@ -72,7 +72,7 @@ export function WhatsappHelper_ExtractWhatsappIdFromMention(mentionId: string): 
   return {
     rawId: `${number}${WhatsappLIDIdentifier}`,
     asMentionFormatted: mentionId,
-    WhatsappIdType: "lid"
+    WhatsappIdType: "lid",
   };
 }
 
@@ -83,7 +83,7 @@ export function WhatsappHelper_isLIDIdentifier(whatsIdExpected: string): boolean
 
 /**
  * Checks if the given string is a valid mention ID for a WhatsApp user.
- * 
+ *
  * @example
  * const isValid = WhatsappHelper_isMentionId('@1234567890123');
  *
@@ -103,7 +103,7 @@ export function WhatsappHelper_isMentionId(numberStr: string): boolean {
  * @example
  * const isValid = WhatsappHelper_isFullWhatsappIdUser('1234567890@s.whatsapp.net');
  */
-function WhatsappHelper_isFullWhatsappIdUser(expectedWhatsappId: string): boolean {
+export function WhatsappHelper_isFullWhatsappIdUser(expectedWhatsappId: string): boolean {
   const UserCompleteWhatsappIdRegex = new RegExp(`^\\d{11,16}${WhatsappIndividualIdentifier}$`);
   return UserCompleteWhatsappIdRegex.test(expectedWhatsappId);
 }

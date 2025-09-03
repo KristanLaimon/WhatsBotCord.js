@@ -1,18 +1,18 @@
+import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "src/Whatsapp.types";
 import Delegate from "../../../libs/Delegate";
-import type { IWhatsSocket } from "../IWhatsSocket";
 import type { SenderType } from "../../../Msg.types";
 import { type MsgType } from "../../../Msg.types";
-import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
+import { WhatsSocketReceiver_SubModule } from "../internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
+import { WhatsSocketSugarSender_Submodule } from "../internals/WhatsSocket.sugarsenders";
+import type { IWhatsSocket } from "../IWhatsSocket";
 import type { WhatsSocketMessageSentMock } from "./types";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "src/Whatsapp.types";
-import { WhatsSocketSugarSender_Submodule } from '../internals/WhatsSocket.sugarsenders';
-import { WhatsSocketReceiver_SubModule } from '../internals/WhatsSocket.receiver';
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
   minimumMilisecondsDelayBetweenMsgs: number;
-}
+};
 
 export default class WhatsSocketMock implements IWhatsSocket {
   // ==== Interface dependencies ====
@@ -56,12 +56,20 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.IsOn = false;
   }
   public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this.SentMessagesThroughQueue.push({ chatId: chatId_JID, content: content, miscOptions: options });
+    this.SentMessagesThroughQueue.push({
+      chatId: chatId_JID,
+      content: content,
+      miscOptions: options,
+    });
     return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
   public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
-    this.SentMessagesThroughRaw.push({ chatId: chatId_JID, content, miscOptions: options });
+    this.SentMessagesThroughRaw.push({
+      chatId: chatId_JID,
+      content,
+      miscOptions: options,
+    });
     return {
       message: {
         conversation: "Mock Minimum Object WAMessage",
@@ -69,8 +77,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
       key: {
         fromMe: false,
         id: "23423423234" + WhatsappLIDIdentifier,
-        remoteJid: "falseid" + WhatsappGroupIdentifier
-      }
+        remoteJid: "falseid" + WhatsappGroupIdentifier,
+      },
     };
   }
 
@@ -85,7 +93,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
       id: chatId,
       subject: "Mock Group",
       creation: Date.now(),
-      creator: "Some User"
+      creator: "Some User",
     } as any;
   }
 
