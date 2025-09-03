@@ -26,7 +26,8 @@
     "check": "tsc --noEmit && eslint",
     "lint": "eslint",
     "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
-    "fastest": "cross-env SKIP_LONG_TESTS=true bun test"
+    "fastest": "cross-env SKIP_LONG_TESTS=true bun test",
+    "prerelease_upgrade": "npm version prerelease --preid=beta"
   },
   "peerDependencies": {
     "typescript": "^5.9.2"
