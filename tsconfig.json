@@ -2,19 +2,30 @@
   "exclude": [
     "node_modules",
     "build",
-    "eslint.config.js"
+    "eslint.config.js",
+    "test"
+  ],
+  "include": [
+    "src",
   ],
   "compilerOptions": {
     // == Library Bundling Options ==
     "lib": [
       "ESNext"
     ],
-    "module": "esnext",
-    "target": "ESNext",
+    "module": "es2022",
+    "target": "ESnext",
     "moduleDetection": "force",
     "outDir": "build",
     "skipLibCheck": true,
     "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "rootDir": "src",
     //== Opinionated Options ==
     "allowJs": true,
     "noFallthroughCasesInSwitch": true,
@@ -23,7 +34,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
-    "rootDir": ".",
     "baseUrl": ".",
   }
 }
