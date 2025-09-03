@@ -1,6 +1,5 @@
 {
   "name": "whatsbotcord",
-  "private": "false",
   "version": "0.1.1-beta.0",
   "author": "KristanLaimon",
   "main": "build/index.js",
