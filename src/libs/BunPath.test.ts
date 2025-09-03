@@ -1,6 +1,6 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import path from "node:path";
-import { describe, it, expect, beforeEach, mock } from "bun:test";
-import { isCompiled, isDev } from "src/Envs";
+import { isCompiled, isDev } from "../Envs";
 
 const EnvsModulePath = "../Envs";
 
@@ -13,7 +13,7 @@ describe("Compilation Mode", () => {
   beforeEach(() => {
     mock.module(EnvsModulePath, () => ({
       isCompiled: true,
-      isDev: true
+      isDev: true,
     }));
   });
 
@@ -36,7 +36,7 @@ describe("No Compilation Mode", () => {
   beforeEach(() => {
     mock.module(EnvsModulePath, () => ({
       isCompiled: false,
-      isDev: true
+      isDev: true,
     }));
   });
 
@@ -52,9 +52,3 @@ describe("No Compilation Mode", () => {
     expect(GetPath()).toBe("");
   });
 });
-
-
-
-
-
-

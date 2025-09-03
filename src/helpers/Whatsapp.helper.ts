@@ -1,5 +1,5 @@
-import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "src/Whatsapp.types";
 import type { WAMessage } from "baileys";
+import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types";
 
 export type WhatsappsenderIDType = "lid" | "full";
 

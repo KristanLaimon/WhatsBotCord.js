@@ -1,8 +1,8 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "src/Whatsapp.types";
 import Delegate from "../../../libs/Delegate";
 import type { SenderType } from "../../../Msg.types";
 import { type MsgType } from "../../../Msg.types";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types";
 import { WhatsSocketReceiver_SubModule } from "../internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
 import { WhatsSocketSugarSender_Submodule } from "../internals/WhatsSocket.sugarsenders";

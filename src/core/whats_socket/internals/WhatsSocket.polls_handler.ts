@@ -1,8 +1,8 @@
-import Delegate from "src/libs/Delegate";
-import type { IWhatsSocket } from "../IWhatsSocket";
 import type { proto, WAMessage } from "baileys";
 import { getAggregateVotesInPollMessage } from "baileys";
-import type { MsgType, SenderType } from "src/Msg.types";
+import Delegate from "../../../libs/Delegate";
+import type { MsgType, SenderType } from "../../../Msg.types";
+import type { IWhatsSocket } from "../IWhatsSocket";
 
 type WhatsPollResult = {
   Option: string;
@@ -54,13 +54,16 @@ export default class WhatsPoll implements IWhatsPoll {
         return [];
       }
 
-      const pollVotes = await getAggregateVotesInPollMessage({
-        message: this._pollInfo.pollRawMsg.message,
-        //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
-        pollUpdates: this._pollUpdates,
-      }, this._borrowedSocket.ownJID);
+      const pollVotes = await getAggregateVotesInPollMessage(
+        {
+          message: this._pollInfo.pollRawMsg.message,
+          //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
+          pollUpdates: this._pollUpdates,
+        },
+        this._borrowedSocket.ownJID
+      );
 
-      return pollVotes.map(vote => ({
+      return pollVotes.map((vote) => ({
         Option: vote.name,
         UsersVotesIds: vote.voters,
       }));
@@ -101,26 +104,35 @@ export default class WhatsPoll implements IWhatsPoll {
 
   private async _thisPollUpdate(pollMsg: WAMessage): Promise<void> {
     try {
-      const pollVotes = await getAggregateVotesInPollMessage({
-        message: this._pollInfo.pollRawMsg.message,
-        //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
-        pollUpdates: this._pollUpdates,
-      }, this._borrowedSocket.ownJID);
+      const pollVotes = await getAggregateVotesInPollMessage(
+        {
+          message: this._pollInfo.pollRawMsg.message,
+          //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
+          pollUpdates: this._pollUpdates,
+        },
+        this._borrowedSocket.ownJID
+      );
 
       // Find the new updates
-      const previousVotes = this._pollUpdates.length > 1 ? await getAggregateVotesInPollMessage({
-        message: this._pollInfo.pollRawMsg.message,
-        //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
-        pollUpdates: this._pollUpdates.slice(0, -1),
-      }, this._borrowedSocket.ownJID) : [];
+      const previousVotes =
+        this._pollUpdates.length > 1
+          ? await getAggregateVotesInPollMessage(
+              {
+                message: this._pollInfo.pollRawMsg.message,
+                //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
+                pollUpdates: this._pollUpdates.slice(0, -1),
+              },
+              this._borrowedSocket.ownJID
+            )
+          : [];
 
       for (const vote of pollVotes) {
         const option = vote.name;
         const voters = vote.voters;
-        const previousVoters = previousVotes.find(v => v.name === option)?.voters || [];
+        const previousVoters = previousVotes.find((v) => v.name === option)?.voters || [];
 
         // Get new voters by comparing the current voters with the previous ones
-        const newVoters = voters.filter(voter => !previousVoters.includes(voter));
+        const newVoters = voters.filter((voter) => !previousVoters.includes(voter));
 
         for (const voterJid of newVoters) {
           const nickname = pollMsg.pushName ?? "===NONICKNAME===";
@@ -142,11 +154,11 @@ export default class WhatsPoll implements IWhatsPoll {
         pollCreationMessage: {
           name: msg.pollCreationMessageV3.name,
           selectableOptionsCount: msg.pollCreationMessageV3.selectableOptionsCount,
-          options: msg.pollCreationMessageV3.options?.map(o => ({
-            optionName: o.optionName // The structure of optionName is a string, not an object
+          options: msg.pollCreationMessageV3.options?.map((o) => ({
+            optionName: o.optionName, // The structure of optionName is a string, not an object
           })),
         },
-        pollCreationMessageV3: undefined // Clear the V3 field to avoid conflicts
+        pollCreationMessageV3: undefined, // Clear the V3 field to avoid conflicts
       } as proto.IMessage;
     }
 

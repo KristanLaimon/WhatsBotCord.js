@@ -9,12 +9,12 @@ import {
 } from "src/helpers/Whatsapp.helper";
 
 // Helpers namespace
-const MsgHelpers = {
+export const MsgHelpers = {
   GetTextFromQuotedMsg: MsgHelper_GetQuotedMsgTextFrom,
   GetMsgTypeFrom: MsgHelper_GetMsgTypeFromRawMsg,
 };
 
-const WhatsappHelpers = {
+export const WhatsappHelpers = {
   GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
   GetWhatsInfoFromMentionStr: WhatsappHelper_ExtractWhatsappIdFromMention,
   IsLidIdentifier: WhatsappHelper_isLIDIdentifier,
@@ -23,4 +23,3 @@ const WhatsappHelpers = {
 };
 
 export default Bot;
-export { MsgHelpers, WhatsappHelpers };

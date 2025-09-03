@@ -1,11 +1,11 @@
-import type { WhatsSocketSugarSender_Submodule } from "src/core/whats_socket/internals/WhatsSocket.sugarsenders";
+import type { WhatsSocketReceiver_SubModule } from "../../../core/whats_socket/internals/WhatsSocket.receiver";
+import type { WhatsSocketSugarSender_Submodule } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
 import type { ChatSession } from "./ChatSession";
 import type { CommandArgs } from "./CommandsSearcher.types";
-import type { WhatsSocketReceiver_SubModule } from "src/core/whats_socket/internals/WhatsSocket.receiver";
 
 /**
  * Represents a bot command.
- * 
+ *
  * Each command has a unique `name`, optional aliases, a description,
  * and a `run` method which contains the logic to execute when the command
  * is invoked.
@@ -37,10 +37,10 @@ export interface IBotCommand {
    * @returns A Promise resolving to `true` if the command executed successfully,
    *          or `false` otherwise.
    */
-  run(rawMsgApi: RawMsgAPI, chat: ChatSession, args: CommandArgs): Promise<boolean>
+  run(rawMsgApi: RawMsgAPI, chat: ChatSession, args: CommandArgs): Promise<boolean>;
 }
 
 export type RawMsgAPI = {
   Send: WhatsSocketSugarSender_Submodule;
   Receive: WhatsSocketReceiver_SubModule;
-}
+};

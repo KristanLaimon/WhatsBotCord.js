@@ -1,14 +1,14 @@
+import type { WAMessage } from "baileys";
 import type {
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
-  WhatsSocketSugarSender_Submodule
-} from "src/core/whats_socket/internals/WhatsSocket.sugarsenders";
-import type { WAMessage } from "baileys";
+  WhatsSocketSugarSender_Submodule,
+} from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
 
 /**
  * A sugar-layer abstraction for sending/receiving msgs bound to the actual chat.
- * 
+ *
  * This class simplifies sending messages and reactions to a fixed chat
  * without needing to repeatedly provide the chat ID. It also provides
  * helpers for common bot patterns like reacting with ✅ or ❌ to the
@@ -26,7 +26,7 @@ export class ChatSession {
 
   /**
    * Creates a new chat session bound to a specific chat and initial message.
-   * 
+   *
    * @param fixedChatId - The WhatsApp chat ID this session is tied to
    * @param initialMsg - The original triggering message (used for reactions)
    * @param senderDependency - Low-level sender utility used to dispatch messages
@@ -39,7 +39,7 @@ export class ChatSession {
 
   /**
    * Sends a plain text message to the chat.
-   * 
+   *
    * @param text - Message body
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
@@ -50,11 +50,11 @@ export class ChatSession {
 
   /**
    * Sends an image without a caption.
-   * 
+   *
    * @param imagePath - Local file path to the image
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
-   * 
+   *
    *  Behavior:
    * - Reads the image file from `imagePath` into memory and attaches it.
    * - Mentions are injected if `mentionsIds` is specified.
@@ -65,12 +65,12 @@ export class ChatSession {
 
   /**
    * Sends an image with a caption.
-   * 
+   *
    * @param imagePath - Local file path to the image
    * @param caption - Caption text
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
-   * 
+   *
    * Behavior:
    * - Reads the image file from `imagePath` into memory and attaches it.
    * - If normalization is enabled, caption  will be cleaned/normalized before sending.
@@ -83,7 +83,7 @@ export class ChatSession {
 
   /**
    * Reacts with an emoji to a specific message.
-   * 
+   *
    * @param msgToReactTo - The message to react to
    * @param emojiStr - Emoji string (e.g. "✅", "❌")
    * @param options - Optional send configuration
@@ -95,11 +95,11 @@ export class ChatSession {
 
   /**
    * Reacts with an emoji to the initial message that started the session.
-   * 
+   *
    * @param emojiStr - Emoji string (e.g. "✅", "❌")
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
-   * 
+   *
    * Behavior:
    * - If the emoji string is not a single emoji character, throws an error.
    * - If the emoji reaction is valid, sends it to the target chat.
@@ -110,9 +110,9 @@ export class ChatSession {
 
   /**
    * Reacts with a ✅ emoji to the initial message.
-   * 
+   *
    * Typically used to indicate that the command completed successfully.
-   * 
+   *
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
@@ -122,9 +122,9 @@ export class ChatSession {
 
   /**
    * Reacts with a ❌ emoji to the initial message.
-   * 
+   *
    * Typically used to indicate that the command failed or was invalid.
-   * 
+   *
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
@@ -138,8 +138,8 @@ export class ChatSession {
    * This method supports sending stickers from either:
    * 1. A **local file or Buffer** containing WebP data.
    * 2. A **remote URL** pointing to an accessible image (e.g., WebP hosted publicly).
-   * 
-   * If `stickerUrlSource` is a `Buffer`, it will be sent directly.  
+   *
+   * If `stickerUrlSource` is a `Buffer`, it will be sent directly.
    * If it is a `string` URL, Baileys will attempt to fetch the content from that URL.
    *
    * @param stickerUrlSource - The sticker content to send:
@@ -156,7 +156,7 @@ export class ChatSession {
    * @example
    * // Send a public URL sticker (must be directly accessible)
    * await bot.Sticker(chatId, 'https://example.com/sticker.webp');
-   * 
+   *
    */
   public SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.Sticker(this._fixedChatId, stickerUrlSource, options);
@@ -196,7 +196,7 @@ export class ChatSession {
 
   /**
    * Sends a video message;
-   * 
+   *
    * This method supports sending videos from either:
    * 1. A **local file path** (e.g., MP4, MOV, AVI).
    * 2. A **Buffer** containing raw video data.
@@ -228,35 +228,35 @@ export class ChatSession {
   }
 
   /**
-  * Sends a video message;
-  * 
-  * This method supports sending videos from either:
-  * 1. A **local file path** (e.g., MP4, MOV, AVI).
-  * 2. A **Buffer** containing raw video data.
-  *
-  * Behavior:
-  * - The MIME type is determined by the file extension:
-  *   - `.mov` → `video/mov`
-  *   - `.avi` → `video/avi`
-  *   - Otherwise → defaults to `video/mp4`
-  * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set in options param.
-  *
-  * @param sourcePath Absolute/relative path to video file OR a `Buffer`.
-  * @param caption String caption to send along the video
-  * @param options - Additional sending options:
-  *   - `normalizeMessageText`: Normalize caption text (default: true).
-  *   - `mentionsIds`: Users to mention in the caption.
-  *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
-  *   - Any other Baileys `MiscMessageGenerationOptions`.
-  *
-  * @example
-  * // Send a local MP4 with caption
-  * await bot.Video(chatId, { sourcePath: "./video.mp4", caption: "Check this out!" });
-  *
-  * @example
-  * // Send a raw Buffer without queuing
-  * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
-  */
+   * Sends a video message;
+   *
+   * This method supports sending videos from either:
+   * 1. A **local file path** (e.g., MP4, MOV, AVI).
+   * 2. A **Buffer** containing raw video data.
+   *
+   * Behavior:
+   * - The MIME type is determined by the file extension:
+   *   - `.mov` → `video/mov`
+   *   - `.avi` → `video/avi`
+   *   - Otherwise → defaults to `video/mp4`
+   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set in options param.
+   *
+   * @param sourcePath Absolute/relative path to video file OR a `Buffer`.
+   * @param caption String caption to send along the video
+   * @param options - Additional sending options:
+   *   - `normalizeMessageText`: Normalize caption text (default: true).
+   *   - `mentionsIds`: Users to mention in the caption.
+   *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
+   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *
+   * @example
+   * // Send a local MP4 with caption
+   * await bot.Video(chatId, { sourcePath: "./video.mp4", caption: "Check this out!" });
+   *
+   * @example
+   * // Send a raw Buffer without queuing
+   * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
+   */
   public SendVideoWithCaption(sourcePath: string | Buffer, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: caption }, options);
   }
@@ -298,16 +298,21 @@ export class ChatSession {
    *   normalizeOptionsText: true,
    *   normalizeTitleText: true
    * }, { sendRawWithoutEnqueue: true });
-   * 
+   *
    */
 
-  public SendPoll(pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public SendPoll(
+    pollTitle: string,
+    selections: string[],
+    pollParams: WhatsMsgPollOptions,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WAMessage | null> {
     return this._internalSend.Poll(this._fixedChatId, pollTitle, selections, pollParams, options);
   }
 
   /**
    * Sends a location (geopoint) to the chat.
-   * 
+   *
    * @param degreesLatitude - Latitude of the location
    * @param degreesLongitude - Longitude of the location
    * @param options - Optional send configuration
@@ -315,11 +320,11 @@ export class ChatSession {
    */
   public SendUbication(degreesLatitude: number, degreesLongitude: number, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
-  };
+  }
 
   /**
    * Sends a location (geopoint) with additional description to the chat.
-   * 
+   *
    * @param degreesLatitude - Latitude of the location
    * @param degreesLongitude - Longitude of the location
    * @param ubicationName - A name/title for the location (e.g., "Central Park")
@@ -327,9 +332,15 @@ export class ChatSession {
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
-  public SendUbicationWithDescription(degreesLatitude: number, degreesLongitude: number, ubicationName: string, moreInfoAddress: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public SendUbicationWithDescription(
+    degreesLatitude: number,
+    degreesLongitude: number,
+    ubicationName: string,
+    moreInfoAddress: string,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WAMessage | null> {
     return this._internalSend.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
-  };
+  }
 
   /**
    * Sends a contact card (vCard).
@@ -343,7 +354,7 @@ export class ChatSession {
    *
    * @param contacts - A single contact object or an array of contacts:
    *   - `name`: Display name for the contact.
-   *   - `phone`: Phone number in international format (no `+` required). 
+   *   - `phone`: Phone number in international format (no `+` required).
    * @param options - Additional sending options:
    *   - `sendRawWithoutEnqueue`: Send immediately, bypass queue.
    *   - Any other Baileys `MiscMessageGenerationOptions`.
@@ -358,14 +369,16 @@ export class ChatSession {
    *   { name: "Alice", phone: "5211111111111" },
    *   { name: "Bob", phone: "5212222222222" }
    * ]);
-   * 
+   *
    * @note Number follows "countrycode" + "1" + "10 digits number" for latin-american countries like "5216239389304" for example in mexico. Check
    * how your country number displays in international format to prevent any errors.
    */
-  public SendContact(contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public SendContact(
+    contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WAMessage | null> {
     return this._internalSend.Contact(this._fixedChatId, contacts, options);
   }
 }
-
 
 // amongus zorro bruh skibidi beatbox - N.

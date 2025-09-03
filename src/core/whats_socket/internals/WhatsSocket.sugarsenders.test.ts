@@ -1,11 +1,11 @@
-import { WhatsappGroupIdentifier } from "src/Whatsapp.types";
-import { it, mock, afterAll, spyOn, expect, describe, beforeEach, afterEach, type Mock } from "bun:test";
-import { WhatsSocketSugarSender_Submodule } from "./WhatsSocket.sugarsenders";
-import { allMockMsgs } from "src/helpers/Msg.helper.mocks";
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from "bun:test";
 import fs from "fs";
-import { GetPath } from "src/libs/BunPath";
 import path from "node:path";
+import { allMockMsgs } from "../../../helpers/Msg.helper.mocks";
+import { GetPath } from "../../../libs/BunPath";
+import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
+import { WhatsSocketSugarSender_Submodule } from "./WhatsSocket.sugarsenders";
 
 const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
 
@@ -52,7 +52,6 @@ describe("Text", () => {
     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
-
   });
 
   it("WhenSendingTxtMsgQueuedWithNoExtraOptiosn;Default;_ShouldBeSentThroughSendSafeFromSocket", async () => {
@@ -97,14 +96,13 @@ describe("Images", () => {
 
     // --- Mock Buffer.isBuffer ---
     const originalIsBuffer = Buffer.isBuffer;
-    const isBufferMock = spyOn(Buffer, "isBuffer")
-      .mockImplementation((value: any) => {
-        const res = originalIsBuffer(value);
-        //We do expect always the original method returns false, due to we're sending imgs with paths strings not buffers.
-        //like in "imgPath" at the beginning of this it() test;
-        expect(res).toBe(false);
-        return res;
-      });
+    const isBufferMock = spyOn(Buffer, "isBuffer").mockImplementation((value: any) => {
+      const res = originalIsBuffer(value);
+      //We do expect always the original method returns false, due to we're sending imgs with paths strings not buffers.
+      //like in "imgPath" at the beginning of this it() test;
+      expect(res).toBe(false);
+      return res;
+    });
 
     try {
       await sender.Img(fakeChatId, { sourcePath: imgPath });
@@ -128,7 +126,6 @@ describe("Images", () => {
     }
   });
 
-
   it("WhenSendingSimplestImgFromBuffer_ShouldSendIt", async () => {
     const imgAsBuffer = Buffer.from([1, 2, 3, 4, 5, 6, 7]);
 
@@ -147,7 +144,6 @@ describe("Images", () => {
     expect(FS_readFileSync.mock.calls.length).toBe(0);
   });
 
-
   it("WhenSendingImgWithCaptionNormalized_ShouldSendItNormalized", async () => {
     const imgPath = "./hello.png";
     const imgContent = Buffer.from([1]);
@@ -165,13 +161,14 @@ describe("Images", () => {
     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("Caption Text");
   });
 
-
   //I want to think this works as well with nonBuffer things
   it("WhenTryingToSendAnInvalidMsgPath_ShouldThrowError", async () => {
     FS_existsSync.mockReturnValue(false);
     expect(async () => {
       await sender.Img(fakeChatId, { sourcePath: "./invalid.pathhh///", caption: "With caption" });
-    }).toThrowError("Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + "./invalid.pathhh///");
+    }).toThrowError(
+      "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + "./invalid.pathhh///"
+    );
   });
 });
 
@@ -188,7 +185,7 @@ describe("ReactEmojiToMsg", () => {
       expect(mockWhatsSender.SentMessagesThroughQueue[i]?.content).toMatchObject({
         react: {
           text: emoji,
-        }
+        },
       });
       i++;
     }
@@ -231,16 +228,16 @@ describe("ReactEmojiToMsg", () => {
   });
 });
 
-
 const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
 describe("Sticker", () => {
   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const sender = new WhatsSocketSugarSender_Submodule(mockWhatsSender);
 
   //Getting all real stickers examples in webp from mocks folder
-  const stickerFilesPaths = fs.readdirSync(mockDataFolderPath)
-    .filter(fileName => fileName.endsWith(".webp"))
-    .map(webpFile => path.join(mockDataFolderPath, webpFile));
+  const stickerFilesPaths = fs
+    .readdirSync(mockDataFolderPath)
+    .filter((fileName) => fileName.endsWith(".webp"))
+    .map((webpFile) => path.join(mockDataFolderPath, webpFile));
 
   it("WhenIdealConditions_ShouldSimpleSendIt", async () => {
     for (const realStickerPath of stickerFilesPaths) {
@@ -256,7 +253,6 @@ describe("Sticker", () => {
       await sender.Sticker(fakeChatId, invalidStickerPath);
     }).toThrow("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + invalidStickerPath);
   });
-
 
   it("WhenProvidingRealStickersPathsAsBuffer_ShouldSendIt", async () => {
     for (const realStickerPath of stickerFilesPaths) {
@@ -355,11 +351,10 @@ describe("Audio", () => {
     mock.module("baileys", () => {
       return {
         ...import("baileys"),
-        "downloadMediaMessage": downloadMediaMessageMock
+        downloadMediaMessage: downloadMediaMessageMock,
       };
     });
     downloadMediaMessageMock.mockResolvedValue(Buffer.from([13, 14, 15]));
-
 
     try {
       await sender.Audio(fakeChatId, fakeMsg);
@@ -368,7 +363,6 @@ describe("Audio", () => {
       expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
       // @ts-expect-error Content.mimetype exists!
       expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.mimetype).toBe("audio/ogg");
-
     } finally {
       mock.restore();
     }
@@ -463,10 +457,10 @@ describe("Video", async () => {
     expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
     expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
     expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
-      caption: "First Video"
+      caption: "First Video",
     });
     expect(mockSocket.SentMessagesThroughRaw.at(1)!.content).toMatchObject({
-      caption: "Second Video"
+      caption: "Second Video",
     });
   });
 });
@@ -493,8 +487,8 @@ describe("Poll", () => {
       poll: {
         name: "Poll Title Example",
         values: options,
-        selectableCount: options.length
-      }
+        selectableCount: options.length,
+      },
     });
   });
 });
@@ -519,8 +513,8 @@ describe("Ubication", () => {
         degreesLongitude: 125,
         degreesLatitude: -85,
         name: "Ubication Name Example",
-        address: "Address Text Example"
-      }
+        address: "Address Text Example",
+      },
     });
   });
 
@@ -529,7 +523,9 @@ describe("Ubication", () => {
     const goodLongitude = 120;
     expect(async () => {
       await sender.Ubication(fakeChatId, { degreesLatitude: badLatitude, degreesLongitude: goodLongitude });
-    }).toThrowError(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${badLatitude}, ${goodLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`);
+    }).toThrowError(
+      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${badLatitude}, ${goodLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+    );
   });
 
   it("WhenProvidingInvalidLongitude_ShouldThrowError", async () => {
@@ -537,7 +533,9 @@ describe("Ubication", () => {
     const badLongitude = -200;
     expect(async () => {
       await sender.Ubication(fakeChatId, { degreesLatitude: goodLatitude, degreesLongitude: badLongitude });
-    }).toThrowError(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${goodLatitude}, ${badLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`);
+    }).toThrowError(
+      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${goodLatitude}, ${badLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+    );
   });
 });
 
@@ -566,7 +564,7 @@ describe("Contacts", () => {
   it("WhenSendingMultipleContacts_ShouldAggregateThem", async () => {
     const contacts = [
       { name: "Alice", phone: "5211111111111" },
-      { name: "Bob", phone: "5212222222222" }
+      { name: "Bob", phone: "5212222222222" },
     ];
 
     await sender.Contact(fakeChatId, contacts);
@@ -601,8 +599,8 @@ describe("Contacts", () => {
     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
     expect(mockSocket.SentMessagesThroughRaw[0]!.content).toMatchObject({
       contacts: {
-        displayName: "RawSend"
-      }
+        displayName: "RawSend",
+      },
     });
   });
 });

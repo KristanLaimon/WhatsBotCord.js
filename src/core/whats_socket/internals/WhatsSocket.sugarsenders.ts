@@ -1,11 +1,11 @@
 import { type MiscMessageGenerationOptions, type WAMessage, downloadMediaMessage } from "baileys";
-import fs from "fs";
-import { Str_NormalizeLiteralString } from "src/helpers/Strings.helper";
-import type { IWhatsSocket } from "../IWhatsSocket";
-import { GetPath } from "src/libs/BunPath";
-import path from "path";
 import emojiRegexFabric from "emoji-regex";
+import fs from "fs";
 import GraphemeSplitter from "grapheme-splitter";
+import path from "path";
+import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
+import { GetPath } from "../../../libs/BunPath";
+import type { IWhatsSocket } from "../IWhatsSocket";
 
 const emojiRegex = emojiRegexFabric();
 const emojiSplitter = new GraphemeSplitter();
@@ -19,12 +19,11 @@ export type WhatsMsgSenderSendingOptionsMINIMUM = {
    *   - This may cause issues if too many messages are sent too quickly
    *   - Use only for critical cases where immediate delivery is required
    *   - Default: false (messages go through the queue)
-   * 
+   *
    * Use at your own risk!
    */
   sendRawWithoutEnqueue?: boolean;
 } & MiscMessageGenerationOptions;
-
 
 export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM & {
   /**
@@ -36,7 +35,7 @@ export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM &
    *
    * Useful for cleaning up multi-line or user-generated strings
    * before sending them.
-   * 
+   *
    * Default: true (message text is normalized by default)
    */
   normalizeMessageText?: boolean;
@@ -78,21 +77,20 @@ export type WhatsMsgMediaOptions = {
    * - Can be used for descriptions, notes, or additional context
    */
   caption?: string;
-}
+};
 
 export type WhatsMsgPollOptions = {
   withMultiSelect: boolean;
   normalizeTitleText?: boolean;
   normalizeOptionsText?: boolean;
-}
+};
 
 export type WhatsMsgUbicationOptions = {
   degreesLatitude: number;
   degreesLongitude: number;
   name?: string;
   addressText?: string;
-}
-
+};
 
 export class WhatsSocketSugarSender_Submodule {
   private socket: IWhatsSocket;
@@ -113,8 +111,8 @@ export class WhatsSocketSugarSender_Submodule {
    */
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions) {
     text = options?.normalizeMessageText ? Str_NormalizeLiteralString(text) : text;
-    //_getSendingMethod() returns a functions, it seems cursed I know, get used to it 
-    return await (this._getSendingMethod(options))(chatId, { text, mentions: options?.mentionsIds }, options as MiscMessageGenerationOptions);
+    //_getSendingMethod() returns a functions, it seems cursed I know, get used to it
+    return await this._getSendingMethod(options)(chatId, { text, mentions: options?.mentionsIds }, options as MiscMessageGenerationOptions);
   }
 
   /**
@@ -151,7 +149,9 @@ export class WhatsSocketSugarSender_Submodule {
    */
   public async Img(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     if (!fs.existsSync(imageOptions.sourcePath)) {
-      throw new Error("Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.sourcePath);
+      throw new Error(
+        "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.sourcePath
+      );
     }
 
     let captionToSend: string | null = imageOptions.caption ?? null;
@@ -160,11 +160,15 @@ export class WhatsSocketSugarSender_Submodule {
         captionToSend = Str_NormalizeLiteralString(captionToSend);
       }
     }
-    return await (this._getSendingMethod(options))(chatId, {
-      image: Buffer.isBuffer(imageOptions.sourcePath) ? imageOptions.sourcePath : fs.readFileSync(GetPath(imageOptions.sourcePath)),
-      caption: captionToSend ?? "",
-      mentions: options?.mentionsIds
-    }, options as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        image: Buffer.isBuffer(imageOptions.sourcePath) ? imageOptions.sourcePath : fs.readFileSync(GetPath(imageOptions.sourcePath)),
+        caption: captionToSend ?? "",
+        mentions: options?.mentionsIds,
+      },
+      options as MiscMessageGenerationOptions
+    );
   }
 
   /**
@@ -181,25 +185,37 @@ export class WhatsSocketSugarSender_Submodule {
    * - If the emoji string is not a single emoji character, throws an error.
    * - If the emoji reaction is valid, sends it to the target chat.
    */
-  public async ReactEmojiToMsg(chatId: string, rawMsgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async ReactEmojiToMsg(
+    chatId: string,
+    rawMsgToReactTo: WAMessage,
+    emojiStr: string,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WAMessage | null> {
     if (typeof emojiStr !== "string") {
       throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received an non string emoji");
     }
     const emojisCount: number = emojiSplitter.countGraphemes(emojiStr);
     if (emojisCount !== 1) {
-      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received (less than 1 or greater than 2) chars as emoji to send.... It must be a simple emoji string of 1-2 emoji char length. Received instead: " + emojiStr);
+      throw new Error(
+        "WhatsSocketSugarSender.ReactEmojiToMsg() received (less than 1 or greater than 2) chars as emoji to send.... It must be a simple emoji string of 1-2 emoji char length. Received instead: " +
+          emojiStr
+      );
     }
 
     if (!emojiStr.match(emojiRegex)) {
       throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + emojiStr);
     }
 
-    return await (this._getSendingMethod(options))(chatId, {
-      react: {
-        text: emojiStr,
-        key: rawMsgToReactTo.key
-      }
-    }, options as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        react: {
+          text: emojiStr,
+          key: rawMsgToReactTo.key,
+        },
+      },
+      options as MiscMessageGenerationOptions
+    );
   }
 
   /**
@@ -208,8 +224,8 @@ export class WhatsSocketSugarSender_Submodule {
    * This method supports sending stickers from either:
    * 1. A **local file or Buffer** containing WebP data.
    * 2. A **remote URL** pointing to an accessible image (e.g., WebP hosted publicly).
-   * 
-   * If `stickerUrlSource` is a `Buffer`, it will be sent directly.  
+   *
+   * If `stickerUrlSource` is a `Buffer`, it will be sent directly.
    * If it is a `string` URL, Baileys will attempt to fetch the content from that URL.
    *
    * @param chatId - The target chat JID (WhatsApp ID), e.g., '5216121407908@s.whatsapp.net'.
@@ -235,14 +251,18 @@ export class WhatsSocketSugarSender_Submodule {
       }
     }
 
-    return await (this._getSendingMethod(options))(chatId, {
-      sticker: Buffer.isBuffer(stickerUrlSource) ? stickerUrlSource : {
-        url: stickerUrlSource
-      }
-    }, options as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        sticker: Buffer.isBuffer(stickerUrlSource)
+          ? stickerUrlSource
+          : {
+              url: stickerUrlSource,
+            },
+      },
+      options as MiscMessageGenerationOptions
+    );
   }
-
-
 
   /**
    * Sends an audio message to a specific chat.
@@ -307,10 +327,14 @@ export class WhatsSocketSugarSender_Submodule {
       throw new Error("WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: " + audioSource);
     }
 
-    return await (this._getSendingMethod(options))(chatId, {
-      audio: buffer,
-      mimetype
-    }, options as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        audio: buffer,
+        mimetype,
+      },
+      options as MiscMessageGenerationOptions
+    );
   }
 
   /**
@@ -357,7 +381,9 @@ export class WhatsSocketSugarSender_Submodule {
     } else if (Buffer.isBuffer(videoSource)) {
       //Ok, do nothing, continue.
     } else {
-      throw new Error("WhatsSocketSugarSender.Video() couldn't recognize video source, its neither a path nor a buffer. Given: " + videoSourceParams.sourcePath);
+      throw new Error(
+        "WhatsSocketSugarSender.Video() couldn't recognize video source, its neither a path nor a buffer. Given: " + videoSourceParams.sourcePath
+      );
     }
 
     let caption: string | undefined = videoSourceParams.caption;
@@ -370,16 +396,14 @@ export class WhatsSocketSugarSender_Submodule {
     let mimeTypeToUse: string = "video/mp4";
     if (typeof videoSourceParams.sourcePath === "string") {
       const videoPath: string = videoSourceParams.sourcePath;
-      if (videoPath.endsWith(".mov"))
-        mimeTypeToUse = "video/mov";
-      else if (videoPath.endsWith(".avi"))
-        mimeTypeToUse = "video/avi";
+      if (videoPath.endsWith(".mov")) mimeTypeToUse = "video/mov";
+      else if (videoPath.endsWith(".avi")) mimeTypeToUse = "video/avi";
       //Otherwise, use default "video/mp4"
     }
-    return await (this._getSendingMethod(options))(chatId, {
+    return await this._getSendingMethod(options)(chatId, {
       video: Buffer.isBuffer(videoSourceParams.sourcePath) ? videoSourceParams.sourcePath : fs.readFileSync(GetPath(videoSourceParams.sourcePath)),
       caption: caption ?? "",
-      mimetype: mimeTypeToUse
+      mimetype: mimeTypeToUse,
     });
   }
 
@@ -420,14 +444,22 @@ export class WhatsSocketSugarSender_Submodule {
    *   normalizeOptionsText: true,
    *   normalizeTitleText: true
    * }, { sendRawWithoutEnqueue: true });
-   * 
+   *
    */
-  public async Poll(chatId: string, pollTitle: string, selections: string[], pollParams: WhatsMsgPollOptions, moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Poll(
+    chatId: string,
+    pollTitle: string,
+    selections: string[],
+    pollParams: WhatsMsgPollOptions,
+    moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WAMessage | null> {
     let title: string = pollTitle;
     let selects: string[] = selections;
 
     if (!(selections.length >= 1 && selections.length <= 12)) {
-      throw new Error("WhatsSocketSugarSender.Poll() received less than 1 options or greather than 12, must be in range 1-12. Received: " + selections.length + " options...");
+      throw new Error(
+        "WhatsSocketSugarSender.Poll() received less than 1 options or greather than 12, must be in range 1-12. Received: " + selections.length + " options..."
+      );
     }
 
     if (pollParams.normalizeTitleText) {
@@ -435,18 +467,22 @@ export class WhatsSocketSugarSender_Submodule {
     }
 
     if (pollParams.normalizeOptionsText) {
-      selects = selections.map(opt => Str_NormalizeLiteralString(opt));
+      selects = selections.map((opt) => Str_NormalizeLiteralString(opt));
     }
 
-    return await (this._getSendingMethod(moreOptions))(chatId, {
-      poll: {
-        name: title,
-        values: selects,
-        //Whats API receives 0 as multiple answers and 1 for exclusive 1 answer to polls (Thats how it works ¯\_(ツ)_/¯)
-        // selectableCount: pollParams.withMultiSelect ? 0 : 1
-        selectableCount: selections.length
-      }
-    }, moreOptions as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(moreOptions)(
+      chatId,
+      {
+        poll: {
+          name: title,
+          values: selects,
+          //Whats API receives 0 as multiple answers and 1 for exclusive 1 answer to polls (Thats how it works ¯\_(ツ)_/¯)
+          // selectableCount: pollParams.withMultiSelect ? 0 : 1
+          selectableCount: selections.length,
+        },
+      },
+      moreOptions as MiscMessageGenerationOptions
+    );
 
     //INFO: Uncomment this section until discover a way to fetch votes data from polls, only sending porpuses so far.
     //Baileys library doesn't have any documentation at all to achieve this, so ill wait. - 20/august/2025
@@ -467,16 +503,22 @@ export class WhatsSocketSugarSender_Submodule {
 
   public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
-      throw new Error(`WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`);
+      throw new Error(
+        `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+      );
     }
-    return await (this._getSendingMethod(options))(chatId, {
-      location: {
-        degreesLatitude: ubicationParams.degreesLatitude,
-        degreesLongitude: ubicationParams.degreesLongitude,
-        name: ubicationParams.name,
-        address: ubicationParams.addressText
-      }
-    }, options as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        location: {
+          degreesLatitude: ubicationParams.degreesLatitude,
+          degreesLongitude: ubicationParams.degreesLongitude,
+          name: ubicationParams.name,
+          address: ubicationParams.addressText,
+        },
+      },
+      options as MiscMessageGenerationOptions
+    );
   }
 
   /**
@@ -498,7 +540,7 @@ export class WhatsSocketSugarSender_Submodule {
    * @param chatId - The target chat JID (WhatsApp ID).
    * @param contacts - A single contact object or an array of contacts:
    *   - `name`: Display name for the contact.
-   *   - `phone`: Phone number in international format (no `+` required). 
+   *   - `phone`: Phone number in international format (no `+` required).
    * @param options - Additional sending options:
    *   - `sendRawWithoutEnqueue`: Send immediately, bypass queue.
    *   - Any other Baileys `MiscMessageGenerationOptions`.
@@ -513,14 +555,18 @@ export class WhatsSocketSugarSender_Submodule {
    *   { name: "Alice", phone: "5211111111111" },
    *   { name: "Bob", phone: "5212222222222" }
    * ]);
-   * 
+   *
    * @note Number follows "countrycode" + "1" + "10 digits number" for latin-american countries like "5216239389304" for example in mexico. Check
    * how your country number displays in international format
    */
-  public async Contact(chatId: string, contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Contact(
+    chatId: string,
+    contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WAMessage | null> {
     const arr = Array.isArray(contacts) ? contacts : [contacts];
 
-    const vCards = arr.map(c => {
+    const vCards = arr.map((c) => {
       if (!c.name || !c.phone) {
         throw new Error("Invalid contact: name and phone are required");
       }
@@ -531,12 +577,16 @@ TEL;type=CELL;type=VOICE;waid=${c.phone}:${c.phone}
 END:VCARD`;
     });
 
-    return await (this._getSendingMethod(options))(chatId, {
-      contacts: {
-        displayName: arr.length === 1 ? arr[0]!.name : `${arr.length} contacts`,
-        contacts: vCards.map(vc => ({ vcard: vc }))
-      }
-    }, options as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        contacts: {
+          displayName: arr.length === 1 ? arr[0]!.name : `${arr.length} contacts`,
+          contacts: vCards.map((vc) => ({ vcard: vc })),
+        },
+      },
+      options as MiscMessageGenerationOptions
+    );
   }
 
   /**
@@ -552,8 +602,7 @@ END:VCARD`;
    * @returns The method to call to send the message.
    */
   private _getSendingMethod(options?: WhatsMsgSenderSendingOptionsMINIMUM) {
-    if (!options)
-      return this.socket.SendSafe;
+    if (!options) return this.socket.SendSafe;
     else if (options.sendRawWithoutEnqueue) {
       return this.socket.SendRaw;
     } else {
@@ -562,12 +611,6 @@ END:VCARD`;
   }
 }
 
-
 function areValidCoordinates(lat: number, lon: number): boolean {
-  return (
-    typeof lat === "number" &&
-    typeof lon === "number" &&
-    lat >= -90 && lat <= 90 &&
-    lon >= -180 && lon <= 180
-  );
+  return typeof lat === "number" && typeof lon === "number" && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }

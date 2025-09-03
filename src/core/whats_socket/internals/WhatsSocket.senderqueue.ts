@@ -1,14 +1,14 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import Delegate from "../../../libs/Delegate";
 import type { IWhatsSocket } from "../IWhatsSocket";
-import Delegate from "src/libs/Delegate";
 
 type SocketMsgQueueItem = {
-  chatId: string,
-  content: AnyMessageContent,
-  misc?: MiscMessageGenerationOptions,
-  resolve: (result: any) => void,
-  reject: (reason: any) => void,
-}
+  chatId: string;
+  content: AnyMessageContent;
+  misc?: MiscMessageGenerationOptions;
+  resolve: (result: any) => void;
+  reject: (reason: any) => void;
+};
 
 function Clone_MsgQueueItem(msgItem: SocketMsgQueueItem) {
   const toReturn = {
@@ -34,7 +34,7 @@ export default class WhatsSocketSenderQueue_SubModule {
    * @returns A deep copy of all elements currently in the queue as an array.
    */
   public get ActualElementsInQueue() {
-    return this.queue.map(queueItem => {
+    return this.queue.map((queueItem) => {
       return Clone_MsgQueueItem(queueItem);
     });
   }
@@ -112,7 +112,7 @@ export default class WhatsSocketSenderQueue_SubModule {
         item.reject(error);
       }
       // Wait for the delay before processing the next message.
-      await new Promise(resolve => setTimeout(resolve, this.minMillisecondsDelay));
+      await new Promise((resolve) => setTimeout(resolve, this.minMillisecondsDelay));
     }
     this.isProcessing = false;
   }

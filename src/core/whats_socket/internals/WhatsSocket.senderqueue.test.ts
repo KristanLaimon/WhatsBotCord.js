@@ -1,9 +1,9 @@
-import { beforeEach, it, describe, expect } from "bun:test";
-import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
-import WhatsSocketSenderQueue from "./WhatsSocket.senderqueue";
+import { beforeEach, describe, expect, it } from "bun:test";
 import { performance } from "node:perf_hooks";
-import { skipLongTests } from "src/Envs";
+import { skipLongTests } from "../../../Envs";
+import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
+import WhatsSocketSenderQueue from "./WhatsSocket.senderqueue";
 
 const fakeChatId: string = "23423423234" + WhatsappGroupIdentifier;
 
@@ -52,39 +52,44 @@ describe("Enqueue", () => {
 
   //This test will last at least 1.4 seconds due to it's nature
   //This will be runned with SKIP_LONG_TESTS env variable is false or undefined. Check the .env file if you want to run these long tests
-  it.skipIf(skipLongTests)("LONG_WhenSendingMsgsWithDelay_ShouldSendMessagesWithThatDelayMilisecondsBetween", async () => {
-    const originalQueue = queue;
-    const milisecondsDelayBetweenMsgs: number = 1500;
+  it.skipIf(skipLongTests)(
+    "LONG_WhenSendingMsgsWithDelay_ShouldSendMessagesWithThatDelayMilisecondsBetween",
+    async () => {
+      const originalQueue = queue;
+      const milisecondsDelayBetweenMsgs: number = 1500;
 
-    queue = new WhatsSocketSenderQueue(mockSocket, /** Max Queue messages: */ 5, milisecondsDelayBetweenMsgs);
-    queue.StopGracefully();
-    queue.Enqueue(fakeChatId, { text: "First" });
-    queue.Enqueue(fakeChatId, { text: "Second" });
-    queue.Enqueue(fakeChatId, { text: "Third" });
-    queue.Enqueue(fakeChatId, { text: "Fourth" });
-    queue.Enqueue(fakeChatId, { text: "Fifth" });
-    expect(queue.ActualElementsInQueue.length).toBe(5);
+      queue = new WhatsSocketSenderQueue(mockSocket, /** Max Queue messages: */ 5, milisecondsDelayBetweenMsgs);
+      queue.StopGracefully();
+      queue.Enqueue(fakeChatId, { text: "First" });
+      queue.Enqueue(fakeChatId, { text: "Second" });
+      queue.Enqueue(fakeChatId, { text: "Third" });
+      queue.Enqueue(fakeChatId, { text: "Fourth" });
+      queue.Enqueue(fakeChatId, { text: "Fifth" });
+      expect(queue.ActualElementsInQueue.length).toBe(5);
 
-    let itsFirstMsg: boolean = true;
-    let startTimer: number;
-    let result: number;
+      let itsFirstMsg: boolean = true;
+      let startTimer: number;
+      let result: number;
 
-    queue.onSentMessageInsideQueue.Subscribe(() => {
-      const endTimer: number = performance.now();
-      result = endTimer - startTimer!; //Elapsed time (ms) for the message to be sent
-      console.log("Message Sent: " + result + " miliseconds");
-      if (!itsFirstMsg)
-        expect(result).toBeGreaterThanOrEqual(milisecondsDelayBetweenMsgs - 10 /** little threshold in case it goes a little faster than expected (little means by +-10 ms) */);
-      else
-        itsFirstMsg = false;
-      //Resets for the incoming msg
+      queue.onSentMessageInsideQueue.Subscribe(() => {
+        const endTimer: number = performance.now();
+        result = endTimer - startTimer!; //Elapsed time (ms) for the message to be sent
+        console.log("Message Sent: " + result + " miliseconds");
+        if (!itsFirstMsg)
+          expect(result).toBeGreaterThanOrEqual(
+            milisecondsDelayBetweenMsgs - 10 /** little threshold in case it goes a little faster than expected (little means by +-10 ms) */
+          );
+        else itsFirstMsg = false;
+        //Resets for the incoming msg
+        startTimer = performance.now();
+      });
+
       startTimer = performance.now();
-    });
-
-    startTimer = performance.now();
-    await queue.Continue();
-    queue = originalQueue;
-  }, { timeout: 15000 });
+      await queue.Continue();
+      queue = originalQueue;
+    },
+    { timeout: 15000 }
+  );
 
   it("WhenSendingMoreMsgsThanQueueLimit_ShouldNotSendExtraMsgsAndNotGrowQueue", async () => {
     const originalQueue = queue;
@@ -94,7 +99,7 @@ describe("Enqueue", () => {
     queue.Enqueue(fakeChatId, { text: "First Message" });
     queue.Enqueue(fakeChatId, { text: "Second Message" });
     queue.Enqueue(fakeChatId, { text: "Third Message" });
-    await queue.Continue();//Wait to send those 3 messages first
+    await queue.Continue(); //Wait to send those 3 messages first
     queue.Enqueue(fakeChatId, { text: "Forth Message" });
     queue.Enqueue(fakeChatId, { text: "Fifth Message" });
     queue.Enqueue(fakeChatId, { text: "Sixth Message" });
@@ -109,4 +114,3 @@ describe("Enqueue", () => {
     queue = originalQueue;
   });
 });
-

@@ -1,12 +1,12 @@
+import { downloadMediaMessage } from "baileys";
 import dotenv from "dotenv";
-dotenv.config({ path: "./env.development", quiet: true });
 import { MsgHelper_GetTextFrom } from "../../helpers/Msg.helper";
 import { MsgType } from "../../Msg.types";
 import WhatsSocket from "./WhatsSocket";
-import { downloadMediaMessage } from "baileys";
+dotenv.config({ path: "./env.development", quiet: true });
 
 import fs from "fs";
-import { GetPath } from "src/libs/BunPath";
+import { GetPath } from "../../libs/BunPath";
 
 const socket = new WhatsSocket({
   credentialsFolder: "./auth",

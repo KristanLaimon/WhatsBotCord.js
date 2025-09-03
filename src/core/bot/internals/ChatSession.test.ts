@@ -1,31 +1,31 @@
-import { it, test, expect, spyOn, type Mock } from "bun:test";
-import { WhatsSocketSugarSender_Submodule, type WhatsMsgSenderSendingOptions } from "src/core/whats_socket/internals/WhatsSocket.sugarsenders";
-import WhatsSocketMock from "src/core/whats_socket/mocks/WhatsSocket.mock";
+import { expect, it, spyOn, test, type Mock } from "bun:test";
+import WhatsSocketMock from "../../../core/whats_socket/mocks/WhatsSocket.mock";
+import { GroupMsg as InitialMsg } from "../../../helpers/Whatsapp.helper.mocks";
+import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
+import { WhatsSocketSugarSender_Submodule, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import { ChatSession } from "./ChatSession";
-import { GroupMsg as InitialMsg } from "src/helpers/Whatsapp.helper.mocks";
-import { WhatsappIndividualIdentifier } from "src/Whatsapp.types";
 
 /**
  * ChatSession Testing Suite
- * * Here we only test how 'ChatSession' (Object) delegates correclty to its internal 
+ * * Here we only test how 'ChatSession' (Object) delegates correclty to its internal
  * * WhatsSocketsugarSender(_Submodule) object with correct params.
- * 
- * All testing corresponding about how msgs are going through socket or any 
+ *
+ * All testing corresponding about how msgs are going through socket or any
  * low-level testing, it's already made on the following files:
  *
- * 1. src/core/whats_socket/internals/WhatsSocket.sugarsenders.test.ts
- * 2. src/core/whats_socket/WhatsSocket.mock.test.ts
- * 3. src/core/wahts_socket/mocks/Whatssocket.mock.test.ts
+ * 1. /core/whats_socket/internals/WhatsSocket.sugarsenders.test.ts
+ * 2. /core/whats_socket/WhatsSocket.mock.test.ts
+ * 3. /core/wahts_socket/mocks/Whatssocket.mock.test.ts
  */
 
 // ========= Utilities ===========
 const CHATID: string = InitialMsg.key.remoteJid!;
 const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
   sendRawWithoutEnqueue: false,
-  mentionsIds: ["testID" + WhatsappIndividualIdentifier, "testID2" + WhatsappIndividualIdentifier]
+  mentionsIds: ["testID" + WhatsappIndividualIdentifier, "testID2" + WhatsappIndividualIdentifier],
 };
 
-function GenerateLocalToolKit_ChatSession_FromGroup(): { mockSocket: WhatsSocketMock, sender: WhatsSocketSugarSender_Submodule, chat: ChatSession } {
+function GenerateLocalToolKit_ChatSession_FromGroup(): { mockSocket: WhatsSocketMock; sender: WhatsSocketSugarSender_Submodule; chat: ChatSession } {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocketSugarSender_Submodule(mockSocket);
   const chatSession = new ChatSession(InitialMsg.key.remoteJid!, InitialMsg, senderDependency);
@@ -92,7 +92,7 @@ it("ReactionEmoji_WhenUsingSendReactEmojiToOriginalMsg_ShouldUseCorrectlySugarSe
     //Without needing to refer to original msg
     await chat.SendReactEmojiToInitialMsg(emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
     await chat.SendReactEmojiToInitialMsg(emojiToSendTwoCharLength, WHATSMSGOPTIONSPARAM);
-  }).not.toThrow();;
+  }).not.toThrow();
 
   expect(senderReactEmojiToSpy).toHaveBeenCalledTimes(2);
   expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, InitialMsg, emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
@@ -122,7 +122,6 @@ it("OK_WhenUsingOKWithoutOptions_ShouldCorrectlyUseSugarSenderReactEmojiToMsg", 
   expect(sendReactEmojiSpy).toHaveBeenCalledTimes(1);
   expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, InitialMsg, "✅", undefined /** Additional param options wasn't provided */);
 });
-
 
 it("Fail_WhenUsingFail_ShouldCorrectlyUseInternalSugarSenderReactEmojiToMsg", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
@@ -214,7 +213,11 @@ it("Ubication_WhenSendingUbicationWithoutExtraInfo_ShouldCorrectlyUseSugarenderU
     await chat.SendUbication(latitude, longitude, WHATSMSGOPTIONSPARAM);
   }).not.toThrow();
   expect(sendUbicationSenderSpy).toHaveBeenCalledTimes(1);
-  expect(sendUbicationSenderSpy).toHaveBeenCalledWith(CHATID, { degreesLatitude: latitude, degreesLongitude: longitude, addressText: undefined, name: undefined }, WHATSMSGOPTIONSPARAM);
+  expect(sendUbicationSenderSpy).toHaveBeenCalledWith(
+    CHATID,
+    { degreesLatitude: latitude, degreesLongitude: longitude, addressText: undefined, name: undefined },
+    WHATSMSGOPTIONSPARAM
+  );
 });
 
 it("Ubication_WhenSendingUbicationWithExtraInfo_ShouldCorrectlyUseSugaSenderUbication", async (): Promise<void> => {
@@ -226,14 +229,17 @@ it("Ubication_WhenSendingUbicationWithExtraInfo_ShouldCorrectlyUseSugaSenderUbic
     await chat.SendUbicationWithDescription(latitude, longitude, "Ubication Name", "more extra info", WHATSMSGOPTIONSPARAM);
   }).not.toThrow();
   expect(sendUbicationSenderSpy).toHaveBeenCalledTimes(1);
-  expect(sendUbicationSenderSpy).toHaveBeenCalledWith(CHATID, {
-    degreesLatitude: latitude,
-    degreesLongitude: longitude,
-    addressText: "more extra info",
-    name: "Ubication Name"
-  }, WHATSMSGOPTIONSPARAM);
+  expect(sendUbicationSenderSpy).toHaveBeenCalledWith(
+    CHATID,
+    {
+      degreesLatitude: latitude,
+      degreesLongitude: longitude,
+      addressText: "more extra info",
+      name: "Ubication Name",
+    },
+    WHATSMSGOPTIONSPARAM
+  );
 });
-
 
 it("Contacts_WhenSendingContacts_ShouldCorrectlyUseSugarSendContacts", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
