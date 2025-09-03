@@ -1,3 +1,4 @@
+import type { Boom } from "@hapi/boom";
 import {
   type AnyMessageContent,
   type GroupMetadata,
@@ -5,85 +6,95 @@ import {
   type WAMessage,
   type WAMessageUpdate,
   type proto,
+  Browsers,
   DisconnectReason,
   makeWASocket,
   useMultiFileAuthState,
-  Browsers
 } from "baileys";
-import type { Boom } from "@hapi/boom";
 
-import pino from "pino";
 import moment from "moment";
+import pino from "pino";
 import encodeQr from "qr";
-import Delegate from "../../libs/Delegate";
-import type { MsgType} from "../../Msg.types";
-import { SenderType } from "../../Msg.types";
-import type { BaileysWASocket, WhatsSocketLoggerMode } from "./types";
-import { GetPath } from "../../libs/BunPath";
 import { MsgHelper_GetMsgTypeFromRawMsg } from "../../helpers/Msg.helper";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
+import { GetPath } from "../../libs/BunPath";
+import Delegate from "../../libs/Delegate";
+import type { MsgType } from "../../Msg.types";
+import { SenderType } from "../../Msg.types";
+import {
+  WhatsappGroupIdentifier,
+  WhatsappIndividualIdentifier,
+} from "../../Whatsapp.types";
+import { WhatsSocketReceiver_SubModule } from "./internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import type { IWhatsSocket } from "./IWhatsSocket";
 import { WhatsSocketSugarSender_Submodule } from "./internals/WhatsSocket.sugarsenders";
+import type { IWhatsSocket } from "./IWhatsSocket";
+import type { BaileysWASocket, WhatsSocketLoggerMode } from "./types";
 
 //TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 export type WhatsSocketOptions = {
-  /** 
-   * Logger mode for the WhatsSocket instance. e.g: 'debug' for max details, 
-   * 'silent' to the minimum (nothing)
-   * 
-   * Default: "silent"
-   * */
+  /**
+   * Determines the logging level of the WhatsSocket instance.
+   * - "debug": full details for troubleshooting.
+   * - "silent": minimal output (no logs).
+   *
+   * @default "debug"
+   */
   loggerMode?: WhatsSocketLoggerMode;
 
-  /** 
-   * Folder path relative to root proyect path (or current working directory if 
-   * you compile this whole proyect (Likely with bun)) 
-   * 
-   * Default: "./auth" relative folder
-   * */
+  /**
+   * Path to the folder where authentication credentials are stored.
+   * Can be relative to the project root or the current working directory.
+   *
+   * @default "./auth"
+   */
   credentialsFolder?: string;
 
-  /** 
-   * Max number of retries if something goes wrong the socket will try before 
-   * shut down completely 
-   * Default: 5 retries
+  /**
+   * Maximum number of reconnection attempts if the socket encounters errors.
+   *
+   * @default 5
    */
   maxReconnectionRetries?: number;
 
-  /** 
-   * If true, the socket will ignore messages sent by itself, so they won't 
-   * be shown on 'onIncomingMessage' event 
-   * Default: true
-   * */
+  /**
+   * If true, the socket ignores messages sent by itself, so they won't trigger
+   * the 'onIncomingMessage' event.
+   *
+   * @default true
+   */
   ignoreSelfMessage?: boolean;
-  /** 
-   * Sets the max of messages can be queued to send to all users (global config). 
-   * Used to store a buffer of pending messages to send if for some reason this 
-   * bot gets a lot of messages incoming in a short period of time 
-   * Default: 20 messages
+
+  /**
+   * Maximum number of messages that can be queued for sending globally.
+   * Useful for buffering pending messages if the bot receives many messages
+   * in a short time.
+   *
+   * @default 20
    */
   senderQueueMaxLimit?: number;
 
-  /** Delay in miliseconds the socket should send all pending msgs (to send ofc) 
-   *  Default: 100 miliseconds extra delay (fast)
-  */
+  /**
+   * Delay (in milliseconds) between sending queued messages.
+   * Helps prevent spamming or flooding when sending many messages rapidly.
+   *
+   * @default 100
+   */
   delayMilisecondsBetweenMsgs?: number;
 
   /**
-   * Provide your own implementation of the native whatsapp API.
-   * By default, uses Baileys API Socket.
-   * @note Used primarly for TESTING purposes. Use at your own risk if you
-   * know what are you doing!
+   * Optionally provide a custom implementation of the WhatsApp socket API.
+   * By default, Baileys is used.
+   *
+   * @note Primarily intended for testing. Use at your own risk if you override.
    */
   ownImplementationSocketAPIWhatsapp?: BaileysWASocket;
-}
+};
 
 /**
  * Class used to interact with the WhatsApp Web socket client (baileys).
  * Will start the socket and keep it connected until you call the Shutdown method.
  * Provides some events you can subscribe to, to get notified when different things happen.
- * 
+ *
  * @example
  * const socket = new WhatsSocket({
  *    credentialsFolder: "./auth",
@@ -91,11 +102,11 @@ export type WhatsSocketOptions = {
  *    maxReconnectionRetries: 5,
  *    ignoreSelfMessage: true
  * });
- * 
+ *
  * socket.onIncomingMessage.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
  *    console.log(`Msg: ${msgType} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
  * });
- * 
+ *
  * socket.Start().then(() => {
  *    console.log("WhatsSocket initialized successfully!");
  * }).catch((error) => {
@@ -104,13 +115,39 @@ export type WhatsSocketOptions = {
  */
 export default class WhatsSocket implements IWhatsSocket {
   //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events
-  public onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
-  public onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
-  public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
+  public onIncomingMsg: Delegate<
+    (
+      senderId: string | null,
+      chatId: string,
+      rawMsg: WAMessage,
+      msgType: MsgType,
+      senderType: SenderType
+    ) => void
+  > = new Delegate();
+  public onUpdateMsg: Delegate<
+    (
+      senderId: string | null,
+      chatId: string,
+      rawMsgUpdate: WAMessage,
+      msgType: MsgType,
+      senderType: SenderType
+    ) => void
+  > = new Delegate();
+  public onSentMessage: Delegate<
+    (
+      chatId: string,
+      rawContentMsg: AnyMessageContent,
+      optionalMisc?: MiscMessageGenerationOptions
+    ) => void
+  > = new Delegate();
   public onRestart: Delegate<() => Promise<void>> = new Delegate();
-  public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
-  public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
-  public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
+  public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> =
+    new Delegate();
+  public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> =
+    new Delegate();
+  public onStartupAllGroupsIn: Delegate<
+    (allGroupsIn: GroupMetadata[]) => void
+  > = new Delegate();
 
   public get ownJID(): string {
     return this._socket.user!.id;
@@ -125,6 +162,11 @@ export default class WhatsSocket implements IWhatsSocket {
    * Text, Images, Videos, Polls, etc...
    */
   public Send!: WhatsSocketSugarSender_Submodule;
+
+  /**
+   * Receive internal module. To wait for someone msg's.
+   */
+  public Receive!: WhatsSocketReceiver_SubModule;
 
   // === Normal Public Properties ===
   public ActualReconnectionRetries: number = 0;
@@ -142,8 +184,10 @@ export default class WhatsSocket implements IWhatsSocket {
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
-    this._milisecondsDelayBetweenSentMsgs = options?.delayMilisecondsBetweenMsgs ?? 100;
-    this._customSocketImplementation = options?.ownImplementationSocketAPIWhatsapp;
+    this._milisecondsDelayBetweenSentMsgs =
+      options?.delayMilisecondsBetweenMsgs ?? 100;
+    this._customSocketImplementation =
+      options?.ownImplementationSocketAPIWhatsapp;
     this._maxReconnectionRetries = options?.maxReconnectionRetries ?? 5;
   }
   private _isRestarting: boolean = false;
@@ -209,9 +253,14 @@ export default class WhatsSocket implements IWhatsSocket {
     }
     this._socket.ev.on("creds.update", saveCreds);
 
-    //== Initializing internal sub-modules == 
-    this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
+    //== Initializing internal sub-modules ==
+    this._senderQueue = new WhatsSocketSenderQueue_SubModule(
+      this,
+      this._senderQueueMaxLimit,
+      this._milisecondsDelayBetweenSentMsgs
+    );
     this.Send = new WhatsSocketSugarSender_Submodule(this);
+    this.Receive = new WhatsSocketReceiver_SubModule(this);
   }
 
   public async Shutdown() {
@@ -220,16 +269,20 @@ export default class WhatsSocket implements IWhatsSocket {
 
   private ConfigureReconnection(): void {
     this._socket.ev.on("connection.update", async (update) => {
-      const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect, qr } = update;
 
-      if (update.qr) {
-        console.log(encodeQr(update.qr, "ascii"));
+      // Show QR code if needed
+      if (qr) {
+        console.log(encodeQr(qr, "ascii"));
       }
 
+      // Successfully connected
       if (connection === "open") {
-        this.ActualReconnectionRetries = 0; // reset retries on successful connection
+        this.ActualReconnectionRetries = 0; // reset retries
         try {
-          const groups = Object.values(await this._socket.groupFetchAllParticipating());
+          const groups = Object.values(
+            await this._socket.groupFetchAllParticipating()
+          );
           this.onStartupAllGroupsIn.CallAll(groups);
           console.log("INFO: All groups data fetched successfully");
         } catch (err) {
@@ -237,37 +290,55 @@ export default class WhatsSocket implements IWhatsSocket {
         }
       }
 
+      // Connection closed
       if (connection === "close") {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+
+        // Only attempt to reconnect if not logged out
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-        console.warn("Socket closed");
+        console.warn(
+          "Socket closed",
+          statusCode ? `(code: ${statusCode})` : ""
+        );
 
-        if (shouldReconnect) {
-          if (this.ActualReconnectionRetries >= this._maxReconnectionRetries) {
-            console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
-            await this.Shutdown();
-            return;
-          }
+        if (!shouldReconnect) {
+          console.error("ERROR: Socket logged out. Not reconnecting.");
+          await this.Shutdown();
+          return;
+        }
 
-          if (!this._isRestarting) {
-            this.ActualReconnectionRetries++;
-            console.log(`INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
+        // Increment retries immediately
+        this.ActualReconnectionRetries++;
 
-            try {
-              await this.Restart(); //This method sets "this.is_Restarting = true"
-              this.onRestart.CallAll();
-              console.log("INFO: Socket restarted successfully!");
-            } catch (err) {
-              console.error("ERROR: Socket restart failed", err);
-            } finally {
-              this._isRestarting = false;
-            }
-          }
+        // Check max retries
+        if (this.ActualReconnectionRetries > this._maxReconnectionRetries) {
+          console.error(
+            `ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`
+          );
+          await this.Shutdown();
+          return;
+        }
+
+        // Prevent overlapping restarts
+        if (this._isRestarting) return;
+
+        this._isRestarting = true;
+        console.log(
+          `INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`
+        );
+
+        try {
+          await this.Restart();
+          this.onRestart.CallAll();
+          console.log("INFO: Socket restarted successfully!");
+        } catch (err) {
+          console.error("ERROR: Socket restart failed", err);
+        } finally {
+          this._isRestarting = false;
         }
       }
     });
   }
-
 
   private ConfigureMessageIncoming(): void {
     this._socket.ev.on("messages.upsert", async (messageUpdate) => {
@@ -279,9 +350,17 @@ export default class WhatsSocket implements IWhatsSocket {
         const chatId = msg.key.remoteJid!;
         const senderId = msg.key.participant ?? null;
         let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
-        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
-        this.onMessageUpsert.CallAll(senderId, chatId, msg, MsgHelper_GetMsgTypeFromRawMsg(msg), senderType);
+        if (chatId && chatId.endsWith(WhatsappGroupIdentifier))
+          senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier))
+          senderType = SenderType.Individual;
+        this.onIncomingMsg.CallAll(
+          senderId,
+          chatId,
+          msg,
+          MsgHelper_GetMsgTypeFromRawMsg(msg),
+          senderType
+        );
       }
     });
   }
@@ -290,15 +369,22 @@ export default class WhatsSocket implements IWhatsSocket {
     this._socket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
       if (!msgsUpdates || msgsUpdates.length === 0) return;
       for (const msgUpdate of msgsUpdates) {
-        if (this._ignoreSelfMessages)
-          if (msgUpdate.key.fromMe) return;
+        if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
 
         const chatId: string = msgUpdate.key.remoteJid!;
         const senderId: string | null = msgUpdate.key.participant ?? null;
         let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
-        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
-        this.onMessageUpdate.CallAll(senderId, chatId, msgUpdate, MsgHelper_GetMsgTypeFromRawMsg(msgUpdate), senderType);
+        if (chatId && chatId.endsWith(WhatsappGroupIdentifier))
+          senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier))
+          senderType = SenderType.Individual;
+        this.onUpdateMsg.CallAll(
+          senderId,
+          chatId,
+          msgUpdate,
+          MsgHelper_GetMsgTypeFromRawMsg(msgUpdate),
+          senderType
+        );
       }
     });
   }
@@ -316,12 +402,19 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureGroupsEnter(): void {
-    this._socket.ev.on("groups.upsert", async (groupsUpserted: GroupMetadata[]) => {
-      for (const group of groupsUpserted) {
-        this.onGroupEnter.CallAll(group);
-        console.info(`INFO: Joined to a new group ${group.subject} at ${moment().format("YYYY-MM-DD HH:mm:ss")}`);
+    this._socket.ev.on(
+      "groups.upsert",
+      async (groupsUpserted: GroupMetadata[]) => {
+        for (const group of groupsUpserted) {
+          this.onGroupEnter.CallAll(group);
+          console.info(
+            `INFO: Joined to a new group ${group.subject} at ${moment().format(
+              "YYYY-MM-DD HH:mm:ss"
+            )}`
+          );
+        }
       }
-    });
+    );
   }
 
   private ConfigureGroupsUpdates(): void {
@@ -339,13 +432,22 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async SendSafe(
+    chatId_JID: string,
+    content: AnyMessageContent,
+    options?: MiscMessageGenerationOptions
+  ): Promise<WAMessage | null> {
     return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async SendRaw(
+    chatId_JID: string,
+    content: AnyMessageContent,
+    options?: MiscMessageGenerationOptions
+  ): Promise<WAMessage | null> {
     //TODO: Do something in case its undefined from this._socket.sendMessage
-    const toReturn: proto.WebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
+    const toReturn: proto.WebMessageInfo | null =
+      (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;
   }
 }

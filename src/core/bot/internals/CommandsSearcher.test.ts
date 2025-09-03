@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import CommandsSearcher, { CommandType } from "./CommandsSearcher";
-import type { ICommand, RawMsgAPI } from "./IBotCommand";
+import type { IBotCommand, RawMsgAPI } from "./IBotCommand";
 import type { ChatSession } from "./ChatSession";
 import type { CommandArgs } from "./CommandsSearcher.types";
 
@@ -23,7 +23,7 @@ import type { CommandArgs } from "./CommandsSearcher.types";
  */
 const CommandIdealName = "commandMock";
 const CommandIdealAliases: string[] = ["mocky"];
-class CommandIdeal implements ICommand {
+class CommandIdeal implements IBotCommand {
   name: string = CommandIdealName;
   aliases?: string[] = CommandIdealAliases;
   description: string = "An ideal command object with all properties health";
@@ -33,7 +33,7 @@ class CommandIdeal implements ICommand {
 }
 
 const CommandMinimumName = "commandminimal";
-class CommandMinimum implements ICommand {
+class CommandMinimum implements IBotCommand {
   name: string = CommandMinimumName;
   aliases?: string[];
   description: string = "An ideal command object with all properties health";
@@ -44,7 +44,7 @@ class CommandMinimum implements ICommand {
 
 const CommandDesnormalizedName = "DesNorMaLizEdCoMaNd";
 const CommandDesnormalizedAliases: string[] = ["DesnOrmaLizy", "nOtConsIsTentAlIa✅"];
-class CommandDesnormalized implements ICommand {
+class CommandDesnormalized implements IBotCommand {
   name: string = CommandDesnormalizedName;
   aliases?: string[] = CommandDesnormalizedAliases;
   description: string = "An ideal command object with all properties health";
@@ -167,7 +167,7 @@ test("GetWhateverWithAlias_WithMixedCommands_ShouldFetchOnlyCommandWithAlias", (
   expect(found!.command).toMatchObject(idealNormalCommand);
   expect(found!.type).toBe(CommandType.Normal);
 
-  const desnormalizedTagCommand: ICommand = new CommandDesnormalized();
+  const desnormalizedTagCommand: IBotCommand = new CommandDesnormalized();
   searcher.AddCommand(desnormalizedTagCommand, CommandType.Tag);
   const found2 = searcher.GetWhateverWithAlias(CommandDesnormalizedAliases.at(0)!);
   expect(found2).toBeDefined();

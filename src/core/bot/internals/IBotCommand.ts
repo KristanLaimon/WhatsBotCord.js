@@ -10,7 +10,7 @@ import type { WhatsSocketReceiver_SubModule } from "src/core/whats_socket/intern
  * and a `run` method which contains the logic to execute when the command
  * is invoked.
  */
-export interface ICommand {
+export interface IBotCommand {
   /** Unique name of the command (used to trigger it) */
   name: string;
 

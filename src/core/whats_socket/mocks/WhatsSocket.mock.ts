@@ -1,11 +1,13 @@
 import Delegate from "../../../libs/Delegate";
 import type { IWhatsSocket } from "../IWhatsSocket";
-import type { SenderType} from "../../../Msg.types";
+import type { SenderType } from "../../../Msg.types";
 import { type MsgType } from "../../../Msg.types";
 import type { GroupMetadata, WAMessage, AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
 import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
 import type { WhatsSocketMessageSentMock } from "./types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "src/Whatsapp.types";
+import { WhatsSocketSugarSender_Submodule } from '../internals/WhatsSocket.sugarsenders';
+import { WhatsSocketReceiver_SubModule } from '../internals/WhatsSocket.receiver';
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
@@ -13,15 +15,18 @@ export type WhatsSocketMockOptions = {
 }
 
 export default class WhatsSocketMock implements IWhatsSocket {
+  // ==== Interface dependencies ====
   onRestart: Delegate<() => Promise<void>> = new Delegate();
   onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
-  onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
-  onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
+  onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
+  onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
-
   ownJID: string = "ownIDMock" + WhatsappIndividualIdentifier;
+
+  Send: WhatsSocketSugarSender_Submodule = new WhatsSocketSugarSender_Submodule(this);
+  Receive: WhatsSocketReceiver_SubModule = new WhatsSocketReceiver_SubModule(this);
 
   private _senderQueue: WhatsSocketSenderQueue_SubModule;
 
@@ -90,11 +95,11 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.SentMessagesThroughQueue = [];
 
     this.onRestart.Clear();
-    this.onMessageUpsert.Clear();
+    this.onIncomingMsg.Clear();
     this.onGroupEnter.Clear();
     this.onGroupUpdate.Clear();
     this.onStartupAllGroupsIn.Clear();
-    this.onMessageUpdate.Clear();
+    this.onUpdateMsg.Clear();
     this.SentMessagesThroughRaw = [];
     this.SentMessagesThroughQueue = [];
   }

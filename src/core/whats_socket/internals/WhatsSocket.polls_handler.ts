@@ -39,11 +39,11 @@ export default class WhatsPoll implements IWhatsPoll {
 
     this._onMessageUpsertSubcriber = this._onMessageUpsertSubcriber.bind(this);
     this.StopListeningFromPoll = this.StopListeningFromPoll.bind(this);
-    this._borrowedSocket.onMessageUpsert.Subscribe(this._onMessageUpsertSubcriber);
+    this._borrowedSocket.onIncomingMsg.Subscribe(this._onMessageUpsertSubcriber);
   }
 
   public StopListeningFromPoll(): void {
-    this._borrowedSocket.onMessageUpsert.Unsubscribe(this._onMessageUpsertSubcriber);
+    this._borrowedSocket.onIncomingMsg.Unsubscribe(this._onMessageUpsertSubcriber);
     this.isListeningForUpdates = false;
   }
 

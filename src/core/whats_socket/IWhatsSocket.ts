@@ -1,8 +1,10 @@
 import type { AnyMessageContent, WAMessageUpdate, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
 import type Delegate from "../../libs/Delegate";
 import type { MsgType, SenderType } from "../../Msg.types";
+import type { WhatsSocketSugarSender_Submodule } from "./internals/WhatsSocket.sugarsenders";
+import type { WhatsSocketReceiver_SubModule } from "./internals/WhatsSocket.receiver";
 
-interface ICanSendMsgs {
+interface IWhatsSocket_SendingMsgsOnly_Module {
   /**
    * Send a message to a specific chat ID with content and optionally with other options.
    *
@@ -39,46 +41,205 @@ interface ICanSendMsgs {
   SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>
 }
 
-export interface IWhatsSocketMinimum extends ICanSendMsgs {
+export interface IWhatsSocketMinimum extends IWhatsSocket_SendingMsgsOnly_Module {
   //Only Send*() related functions
 }
 
 /**
- * Public interface for the WhatsSocket class.
- * It defines the contract for interacting with the WhatsApp socket client.
+ * Event-only module of the WhatsSocket.
+ *
+ * Provides delegates (C#-like event emitters) for subscribing to lifecycle,
+ * message, and group-related events.
+ *
+ * ## Example: subscribing to a message event
+ * ```ts
+ * socket.onMessageUpsert.Subscribe((senderId, chatId, msg, msgType, senderType) => {
+ *   console.log(`New message in ${chatId}:`, msgType, msg);
+ * });
+ * ```
+ *
+ * ## Example: unsubscribing
+ * ```ts
+ * const handler = (group) => console.log("Entered group:", group.subject);
+ * socket.onGroupEnter.Subscribe(handler);
+ *
+ * // Later...
+ * socket.onGroupEnter.Unsubscribe(handler);
+ * ```
  */
-export interface IWhatsSocket extends ICanSendMsgs {
-  //  ============= Public Delegates for handling events ================
-  onRestart: Delegate<() => Promise<void>>;
-  /**
-   * Delegate event to subscribe AFTER sending a message.
-   * Useful to verify if a msg was really sent
-   */
-  onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void>;
-  /**
-   * Delegate event to subscribe when socket receives a raw message!
-   * Fun fact: Before it was named 'onMessageIncoming' event 
-   */
-  onMessageUpsert: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void>;
-  /**
-   * Delegate event to subscribe when an already sent messsage (like a pull) receives an update
-   */
-  onMessageUpdate: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessageUpdate, msgType: MsgType, senderType: SenderType) => void>;
-  onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
-  onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
-  onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
+export interface IWhatsSocket_EventsOnly_Module {
+  // ================= Lifecycle Events =================
 
+  /**
+   * Triggered when the socket restarts (e.g., after a reconnection).
+   *
+   * Example:
+   * ```ts
+   * socket.onRestart.Subscribe(async () => {
+   *   console.log("Socket restarted. Re-initializing state...");
+   * });
+   * ```
+   */
+  onRestart: Delegate<() => Promise<void>>;
+
+  // ================= Message Events =================
+
+  /**
+   * Triggered after a message is successfully sent.
+   * Useful for verifying delivery or logging outgoing messages.
+   *
+   * Example:
+   * ```ts
+   * socket.onSentMessage.Subscribe((chatId, rawContent, misc) => {
+   *   console.log(`Sent a message to ${chatId}`, rawContent, misc);
+   * });
+   * ```
+   */
+  onSentMessage: Delegate<(
+    chatId: string,
+    rawContentMsg: AnyMessageContent,
+    optionalMisc?: MiscMessageGenerationOptions
+  ) => void>;
+
+  /**
+   * Triggered when a new raw message arrives.
+   *
+   * Example:
+   * ```ts
+   * socket.onMessageUpsert.Subscribe((senderId, chatId, rawMsg, type, senderType) => {
+   *   console.log(`[${chatId}] ${senderId}:`, rawMsg);
+   * });
+   * ```
+   */
+  onIncomingMsg: Delegate<(
+    senderId: string | null,
+    chatId: string,
+    rawMsg: WAMessage,
+    msgType: MsgType,
+    senderType: SenderType
+  ) => void>;
+
+  /**
+   * Triggered when an already sent message receives an update
+   * (e.g., delivery receipts, edits, or reactions).
+   *
+   * Example:
+   * ```ts
+   * socket.onMessageUpdate.Subscribe((senderId, chatId, update, type) => {
+   *   console.log(`Message update in ${chatId}:`, update);
+   * });
+   * ```
+   */
+  onUpdateMsg: Delegate<(
+    senderId: string | null,
+    chatId: string,
+    rawMsgUpdate: WAMessageUpdate,
+    msgType: MsgType,
+    senderType: SenderType
+  ) => void>;
+
+  // ================= Group Events =================
+
+  /**
+   * Triggered when the bot enters a group.
+   *
+   * Example:
+   * ```ts
+   * socket.onGroupEnter.Subscribe((groupInfo) => {
+   *   console.log("Joined group:", groupInfo.subject);
+   * });
+   * ```
+   */
+  onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
+
+  /**
+   * Triggered when a group’s metadata changes
+   * (e.g., subject, description, settings).
+   *
+   * Example:
+   * ```ts
+   * socket.onGroupUpdate.Subscribe((update) => {
+   *   console.log("Group updated:", update);
+   * });
+   * ```
+   */
+  onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
+
+  /**
+   * Triggered once on startup with metadata for all groups
+   * the bot is currently a member of.
+   *
+   * Example:
+   * ```ts
+   * socket.onStartupAllGroupsIn.Subscribe((groups) => {
+   *   console.log("Bot is in groups:", groups.map(g => g.subject));
+   * });
+   * ```
+   */
+  onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
+}
+
+
+
+/**
+ * Public interface for the WhatsSocket class.
+ *
+ * Defines the contract for interacting with the WhatsApp socket client.
+ * 
+ * Responsibilities:
+ * - Provides modules for sending messages and receiving events.
+ * - Manages connection lifecycle (start, shutdown).
+ * - Exposes utility methods for chat and group operations.
+ */
+export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhatsSocket_EventsOnly_Module {
+  /**
+   * The JID (WhatsApp ID) of the connected account (e.g., "123456789@s.whatsapp.net").
+   */
   ownJID: string;
 
-  // Public Methods
+  /**
+   * High-level "sugar" sender module for dispatching all types of messages.
+   * 
+   * Supported types: text, images, videos, polls, documents, etc.
+   * 
+   * Prefer this module over raw sending methods since it handles
+   * formatting, throttling, and common WhatsApp-specific quirks.
+   */
+  Send: WhatsSocketSugarSender_Submodule;
+
+  /**
+   * Receive module for handling incoming messages and events.
+   * 
+   * Normally you won’t call this directly—commands and event listeners
+   * should be wired to it under the hood. Use it when you need fine-grained
+   * control over incoming raw events.
+   */
+  Receive: WhatsSocketReceiver_SubModule;
+
+  /**
+   * Establishes the socket connection and starts the client.
+   * Must be called before using `Send` or `Receive`.
+   */
   Start(): Promise<void>;
+
+  /**
+   * Gracefully shuts down the socket connection, cleaning up resources
+   * and ensuring the client disconnects properly.
+   */
   Shutdown(): Promise<void>;
 
   /**
-   * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
-   * @param chatId The chat ID of the group you want to get metadata from.
-   * @throws Will throw an error if the provided chatId is not a group chat ID
-   * @returns A promise that resolves to the group metadata.
+   * Retrieves the metadata of a group chat.
+   *
+   * @param chatId - The chat ID of the group (e.g., "1234567890@g.us").
+   * @returns A promise resolving to the group’s metadata object.
+   * @throws If the provided chatId does not represent a group.
+   *
+   * Typical metadata includes:
+   * - Group subject (name)
+   * - Participant list
+   * - Admin information
+   * - Group settings
    */
   GetGroupMetadata(chatId: string): Promise<GroupMetadata>;
 }

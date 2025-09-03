@@ -87,7 +87,7 @@ export class WhatsSocketReceiver_SubModule {
       const resetTimeout = () => {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
-          this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
+          this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
           reject({ wasAbortedByUser: false, errorMessage: "User didn't responded in time", chatId: chatIdToLookFor, userId: null });
         }, timeoutSeconds * 1000);
       };
@@ -107,7 +107,7 @@ export class WhatsSocketReceiver_SubModule {
         //Priority #1: Check if its a suspicious msg (very large)
         if (expectedTxtMsgContent) {
           if (expectedTxtMsgContent.length > 1000) {
-            this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
+            this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
             clearTimeout(timer);
             reject({ wasAbortedByUser: false, errorMessage: "User has sent too much text", chatId: chatId, userId: userId });
             return;
@@ -122,7 +122,7 @@ export class WhatsSocketReceiver_SubModule {
           for (let i = 0; i < cancelKeywords.length; i++) {
             const cancelKeyWordToCheck = cancelKeywords[i];
             if (cancelKeyWordToCheck && expectedTxtMsgContent.includes(cancelKeyWordToCheck)) {
-              this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
+              this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
               clearTimeout(timer);
               reject({ wasAbortedByUser: true, errorMessage: "User has canceled the dialog", chatId: chatId, userId: userId });
               return;
@@ -136,7 +136,7 @@ export class WhatsSocketReceiver_SubModule {
           return;
         }
 
-        this._whatsSocket.onMessageUpsert.Unsubscribe(listener);
+        this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
         clearTimeout(timer);
         resolve(msg);
         return;
@@ -145,7 +145,7 @@ export class WhatsSocketReceiver_SubModule {
       resetTimeout();
 
       // Start listening for msgs
-      this._whatsSocket.onMessageUpsert.Subscribe(listener);
+      this._whatsSocket.onIncomingMsg.Subscribe(listener);
     });
   }
 
