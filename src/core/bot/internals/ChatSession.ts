@@ -5,6 +5,7 @@ import type {
   WhatsMsgSenderSendingOptionsMINIMUM,
   WhatsSocketSugarSender_Submodule,
 } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
+import { MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
 
 /**
  * A sugar-layer abstraction for sending/receiving msgs bound to the actual chat.
@@ -14,7 +15,7 @@ import type {
  * helpers for common bot patterns like reacting with ✅ or ❌ to the
  * initial message and other common high-level utilities.
  */
-export class ChatSession {
+export class ChatContext {
   /** Low-level sender dependency used to actually send messages */
   private _internalSend: WhatsSocketSugarSender_Submodule;
 
@@ -23,6 +24,28 @@ export class ChatSession {
 
   /** The initial message that triggered the command/session */
   private _initialMsg: WAMessage;
+
+  /**
+   * Retrieves the text from the initial message that triggered this session.
+   * Returns `null` if the initial message is not a text message.
+   */
+  public get InitialText(): string | null {
+    return MsgHelper_GetTextFrom(this._initialMsg);
+  }
+
+  /**
+   * Retrieves the original WAMessage object that triggered this session.
+   *
+   * Useful if you need to access the message's metadata, such as the sender's ID
+   * or the message ID.
+   *
+   * *If you only want to get the text (if text msg), use 'InitialText' prop instead*
+   *
+   * @returns The raw WAMessage object that triggered this session.
+   */
+  public get InitialRawMsg(): WAMessage {
+    return this._initialMsg;
+  }
 
   /**
    * Creates a new chat session bound to a specific chat and initial message.

@@ -115,14 +115,15 @@ export class WhatsSocketReceiver_SubModule {
         const expectedTxtMsgContent: string | null = MsgHelper_GetTextFrom(msg);
 
         //Priority #1: Check if its a suspicious msg (very large)
-        if (expectedTxtMsgContent) {
-          if (expectedTxtMsgContent.length > 1000) {
-            this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
-            clearTimeout(timer);
-            reject({ wasAbortedByUser: false, errorMessage: "User has sent too much text", chatId: chatId, userId: userId });
-            return;
-          }
-        }
+        // @deprecated!
+        // if (expectedTxtMsgContent) {
+        //   if (expectedTxtMsgContent.length > 1000) {
+        //     this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
+        //     clearTimeout(timer);
+        //     reject({ wasAbortedByUser: false, errorMessage: "User has sent too much text", chatId: chatId, userId: userId });
+        //     return;
+        //   }
+        // }
 
         //Priority #2: Check if it fits our conditions
         if (!successConditionCallback(userId, chatId, msg, msgType, senderType)) return;

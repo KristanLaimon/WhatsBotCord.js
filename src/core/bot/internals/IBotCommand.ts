@@ -1,6 +1,6 @@
 import type { WhatsSocketReceiver_SubModule } from "../../../core/whats_socket/internals/WhatsSocket.receiver";
 import type { WhatsSocketSugarSender_Submodule } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
-import type { ChatSession } from "./ChatSession";
+import type { ChatContext } from "./ChatSession";
 import type { CommandArgs } from "./CommandsSearcher.types";
 
 /**
@@ -26,7 +26,7 @@ export interface IBotCommand {
    *                Direct usage of bot's whatsapp socket, you need to provide
    *                your own whatsapp chatID and params are more explicit.
    *                *Use it if you need finer control of how msgs are sent*
-   * @param chat - (High-Level API sbstraction for sending and receiving methods)
+   * @param ctx - (High-Level API sbstraction for sending and receiving methods)
    *               The chat session this command is being executed in.
    *               Provides helper methods to send messages, react, ask questions, etc
    *               and strictly bound to this command chat.
@@ -34,13 +34,35 @@ export interface IBotCommand {
    *               need to send messages across chats, use rawMsgApi instead or create
    *               another ChatSession object on your own.
    * @param args - Arguments passed to the command when invoked.
-   * @returns A Promise resolving to `true` if the command executed successfully,
-   *          or `false` otherwise.
    */
-  run(rawMsgApi: RawMsgAPI, chat: ChatSession, args: CommandArgs): Promise<boolean>;
+  run(ctx: ChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void>;
 }
 
+/**
+ * Low-level WhatsApp socket API.
+ *
+ * Provides direct access to the underlying send/receive submodules.
+ *
+ * ⚡ Use this when you need finer control over message flow:
+ * - Sending across different chats without creating a new `ChatContext`.
+ * - Using advanced/raw socket features that `ChatContext` does not expose.
+ *
+ * For most command logic, prefer using the `ChatContext` (high-level API).
+ * `RawMsgAPI` is usually a fallback for edge cases or cross-chat operations.
+ */
 export type RawMsgAPI = {
+  /**
+   * Outgoing message sender submodule.
+   *
+   * Provides low-level methods to send messages, media, reactions, etc.
+   * Requires explicit chat IDs and parameters.
+   */
   Send: WhatsSocketSugarSender_Submodule;
+
+  /**
+   * Incoming message receiver submodule.
+   *
+   * Provides low-level access to incoming message events and raw data.
+   */
   Receive: WhatsSocketReceiver_SubModule;
 };

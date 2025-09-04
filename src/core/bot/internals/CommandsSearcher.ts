@@ -2,13 +2,13 @@ import type { IBotCommand } from "./IBotCommand";
 
 export enum CommandType {
   Normal = "Normal",
-  Tag = "Tag"
+  Tag = "Tag",
 }
 
 export type CommandEntry = {
   commandName: string;
   commandObj: IBotCommand;
-}
+};
 
 //TODO: Create a SUITE TEST
 export default class CommandsSearcher {
@@ -27,7 +27,7 @@ export default class CommandsSearcher {
     return toReturn;
   }
 
-  public AddCommand(commandInstance: IBotCommand, addCommandAsType: CommandType): void {
+  public Add(commandInstance: IBotCommand, addCommandAsType: CommandType): void {
     const commandNameLowercase = commandInstance.name.toLowerCase();
     const mapToStoreInto: Map<string, IBotCommand> = addCommandAsType === CommandType.Normal ? this._normalCommands : this._tagCommands;
     //If already exists, it'll be overwritten
@@ -41,11 +41,9 @@ export default class CommandsSearcher {
   public GetTypeOf(commandName: string): CommandType | null {
     const commandNameLowerCase: string = commandName.toLowerCase();
 
-    if (this._normalCommands.has(commandNameLowerCase))
-      return CommandType.Normal;
+    if (this._normalCommands.has(commandNameLowerCase)) return CommandType.Normal;
 
-    if (this._tagCommands.has(commandNameLowerCase))
-      return CommandType.Tag;
+    if (this._tagCommands.has(commandNameLowerCase)) return CommandType.Tag;
 
     return null;
   }
@@ -58,19 +56,18 @@ export default class CommandsSearcher {
     return this._tagCommands.get(tagName.toLowerCase()) ?? null;
   }
 
-  public GetWhateverWithAlias(possibleAlias: string): { command: IBotCommand, type: CommandType } | null {
+  public GetWhateverWithAlias(possibleAlias: string): { command: IBotCommand; type: CommandType } | null {
     const aliasLower = possibleAlias.toLowerCase();
 
     const findInMap = (map: Map<string, IBotCommand>, type: CommandType) => {
       for (const [, commandObj] of map) {
-        if (commandObj.aliases?.some(alias => alias.toLowerCase() === aliasLower)) {
+        if (commandObj.aliases?.some((alias) => alias.toLowerCase() === aliasLower)) {
           return { command: commandObj, type };
         }
       }
       return null;
     };
 
-    return findInMap(this._normalCommands, CommandType.Normal)
-      ?? findInMap(this._tagCommands, CommandType.Tag);
+    return findInMap(this._normalCommands, CommandType.Normal) ?? findInMap(this._tagCommands, CommandType.Tag);
   }
 }

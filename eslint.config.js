@@ -1,12 +1,13 @@
 import js from "@eslint/js";
+import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
-import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   // == Js Checking ==
   js.configs.recommended,
   // == Typescript Checking ==
   tseslint.configs.strict,
+  globalIgnores(["build/", "node_modules/"]),
   {
     files: ["**/*.ts"],
     languageOptions: {
@@ -28,10 +29,7 @@ export default defineConfig([
       "no-extra-bind": "error",
       quotes: ["error", "double"], // or "single"
       "@typescript-eslint/array-type": ["error", { default: "array-simple" }], // enforce Foo[] over Array<Foo>
-      "@typescript-eslint/consistent-type-imports": [
-        "error",
-        { prefer: "type-imports" },
-      ],
+      "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
     },
   },
 ]);

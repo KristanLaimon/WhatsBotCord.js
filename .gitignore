@@ -3,7 +3,7 @@
 auth/
 test/
 build/
-
+main.ts
 
 # =============== DEFAULT GITIGNORE CONFIG NODE.JS ===================
 

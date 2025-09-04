@@ -22,8 +22,10 @@
     "typescript-eslint": "^8.42.0"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.json",
-    "check": "tsc --noEmit && eslint",
+    "build": "bun fullcheck && bun fulltest && bun run build",
+    "buildonly": "tsc --project tsconfig.build.json",
+    "fullcheck": "bun check && bun lint",
+    "check": "tsc --noEmit",
     "lint": "eslint",
     "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
     "fastest": "cross-env SKIP_LONG_TESTS=true bun test",

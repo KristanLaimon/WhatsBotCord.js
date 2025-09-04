@@ -3,7 +3,7 @@ import WhatsSocketMock from "../../../core/whats_socket/mocks/WhatsSocket.mock";
 import { GroupMsg as InitialMsg } from "../../../helpers/Whatsapp.helper.mocks";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import { WhatsSocketSugarSender_Submodule, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
-import { ChatSession } from "./ChatSession";
+import { ChatContext } from "./ChatSession";
 
 /**
  * ChatSession Testing Suite
@@ -25,10 +25,10 @@ const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
   mentionsIds: ["testID" + WhatsappIndividualIdentifier, "testID2" + WhatsappIndividualIdentifier],
 };
 
-function GenerateLocalToolKit_ChatSession_FromGroup(): { mockSocket: WhatsSocketMock; sender: WhatsSocketSugarSender_Submodule; chat: ChatSession } {
+function GenerateLocalToolKit_ChatSession_FromGroup(): { mockSocket: WhatsSocketMock; sender: WhatsSocketSugarSender_Submodule; chat: ChatContext } {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocketSugarSender_Submodule(mockSocket);
-  const chatSession = new ChatSession(InitialMsg.key.remoteJid!, InitialMsg, senderDependency);
+  const chatSession = new ChatContext(InitialMsg.key.remoteJid!, InitialMsg, senderDependency);
   return { mockSocket, sender: senderDependency, chat: chatSession };
 }
 

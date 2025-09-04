@@ -501,6 +501,45 @@ export class WhatsSocketSugarSender_Submodule {
     // }
   }
 
+  /**
+   * Sends a location (geographic coordinates) message to a specific chat.
+   *
+   * This method allows sharing a point on the map with optional metadata.
+   *
+   * Behavior:
+   * - Validates that the latitude is between **-90 and 90** and longitude is
+   *   between **-180 and 180**. If invalid, it throws an error.
+   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set.
+   *
+   * @param chatId - The target chat JID (WhatsApp ID), e.g. `5216121407908@s.whatsapp.net`.
+   * @param ubicationParams - Location parameters:
+   *   - `degreesLatitude`: Latitude of the location (range: -90 to 90).
+   *   - `degreesLongitude`: Longitude of the location (range: -180 to 180).
+   *   - `name` (optional): Short label/name for the location.
+   *   - `addressText` (optional): Human-readable address string.
+   * @param options - Additional sending options:
+   *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
+   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *
+   * @returns A `WAMessage` object representing the sent location,
+   *          or `null` if the message could not be sent.
+   *
+   * @example
+   * // Send basic coordinates
+   * await bot.Ubication(chatId, {
+   *   degreesLatitude: 19.4326,
+   *   degreesLongitude: -99.1332
+   * });
+   *
+   * @example
+   * // Send coordinates with a label and address
+   * await bot.Ubication(chatId, {
+   *   degreesLatitude: 40.7128,
+   *   degreesLongitude: -74.0060,
+   *   name: "New York City",
+   *   addressText: "NY, USA"
+   * }, { sendRawWithoutEnqueue: true });
+   */
   public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
       throw new Error(

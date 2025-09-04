@@ -1,18 +1,73 @@
-import { type WAMessage } from "baileys";
+import { type WAMessage, type proto } from "baileys";
 import type { MsgType, SenderType } from "../../../Msg.types";
 
+/**
+ * Arguments provided to a bot command when it is executed.
+ *
+ * Contains both metadata about the incoming message and
+ * pre-parsed arguments extracted from the message text.
+ */
 export type CommandArgs = {
-  originalContent: WAMessage;
-  userId?: string;
+  /**
+   * The raw WhatsApp message object from Baileys.
+   * Gives full access to low-level details of the incoming message.
+   */
+  originalRawMsg: WAMessage;
+
+  /**
+   * WhatsApp ID of the user who triggered the command.
+   * Example: `5216121407908@s.whatsapp.net`.
+   * Undefined if the sender could not be resolved.
+   */
+  userId: string | null;
+
+  /**
+   * WhatsApp ID of the chat where the command was triggered.
+   * Can be a private chat ID or a group chat ID.
+   */
   chatId: string;
+
+  /**
+   * Type of sender (e.g. private user, group participant, system).
+   * Derived from the incoming message context.
+   */
   senderType: SenderType;
+
+  /**
+   * The detected type of the incoming message.
+   * Example: `"text"`, `"image"`, `"audio"`, etc.
+   */
   msgType: MsgType;
+
+  /**
+   * Parsed arguments passed to the command.
+   * Example: in `!ban @user reason here`, args would be `["@user", "reason", "here"]`.
+   */
   args: string[];
-  quotedMsg?: FoundQuotedMsg;
+
+  /**
+   * Information about a quoted (replied-to) message, if present.
+   * Useful for commands that operate on a specific previous message.
+   */
+  quotedMsg: FoundQuotedMsg | null;
 };
 
+/**
+ * Represents a quoted (replied-to) message.
+ */
 export type FoundQuotedMsg = {
-  msg: WAMessage;
+  /**
+   * The raw quoted WhatsApp message object from Baileys.
+   */
+  msg: proto.IMessage;
+
+  /**
+   * The type of the quoted message (text, image, audio, etc.).
+   */
   type: MsgType;
+
+  /**
+   * WhatsApp ID of the user who originally sent the quoted message.
+   */
   userIdItComesFrom: string;
 };
