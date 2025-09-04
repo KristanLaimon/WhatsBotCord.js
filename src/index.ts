@@ -16,10 +16,11 @@ import type { WhatsappMessage } from "./core/whats_socket/types";
 export type { ChatContext, CommandArgs, IBotCommand, RawMsgAPI, WhatsappMessage };
 
 // == Runtime deps exporting ==
-import { MsgType, SenderType } from "./Msg.types";
 import { CommandType } from "./core/bot/internals/CommandsSearcher";
 import WhatsSocket from "./core/whats_socket/WhatsSocket";
 import Delegate from "./libs/Delegate";
+import { MsgType, SenderType } from "./Msg.types";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types";
 export { CommandType, Delegate, MsgType, SenderType, WhatsSocket };
 
 // === Helpers ===
@@ -47,6 +48,31 @@ export const WhatsappHelpers = {
   IsLidIdentifier: WhatsappHelper_isLIDIdentifier,
   IsMentionString: WhatsappHelper_isMentionId,
   IsIDIdentifier: WhatsappHelper_isFullWhatsappIdUser,
+};
+/**
+ * Object containing all common patterns identifers from whatsapp API and
+ * Whatsapp messages.
+ * For example: "@s.whatsapp.net"
+ */
+export const WhatsappIdentifiers = {
+  /**
+   * Identifier for group chats. Example: "@g.us"
+   *
+   * @note Just for reference
+   */
+  GroupIdentifier: WhatsappGroupIdentifier,
+  /**
+   * Identifer for local IDs. Example: "@lid"
+   *
+   * @note Just for reference
+   */
+  LIDIdentifier: WhatsappLIDIdentifier,
+  /**
+   * Identifier for individual user chats. Example: "@s.whatsapp.net"
+   *
+   * @note Just for reference
+   */
+  IndividualUserIdentifier: WhatsappIndividualIdentifier,
 };
 
 // === Main Default Export ===

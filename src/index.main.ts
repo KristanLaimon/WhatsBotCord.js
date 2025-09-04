@@ -1,6 +1,5 @@
 //============= Testing file simulating user consumption ====================
 //TODO: Add event when entering into a new group.
-
 import Whatsbotcord, {
   CommandType,
   MsgHelpers,
@@ -67,6 +66,7 @@ class EveryoneTag implements IBotCommand {
 
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
 bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
+
 bot.Use((_senderId, chatId, rawMsg, msgType, _senderType, next) => {
   if (msgType === MsgType.Text) {
     const txt: string | null = MsgHelpers.GetTextFromMsg(rawMsg);
@@ -77,6 +77,7 @@ bot.Use((_senderId, chatId, rawMsg, msgType, _senderType, next) => {
   }
   next();
 });
+
 bot.Start();
 
 //TODO: Testing

@@ -1,9 +1,11 @@
 import { expect, it, spyOn, test, type Mock } from "bun:test";
-import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
-import { GroupMsg as InitialMsg } from "../../../helpers/Whatsapp.helper.mocks";
+import { GroupMsg, GroupMsg_CHATID, GroupMsg_SENDERID, IndividualMsg, IndividualMsg_CHATID } from "../../../helpers/Whatsapp.helper.mocks";
+import { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import { WhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/WhatsSocket.receiver";
 import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
+import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
+import type { WhatsappMessage } from "../../whats_socket/types";
 import { ChatContext } from "./ChatContext";
 
 /**
@@ -20,23 +22,46 @@ import { ChatContext } from "./ChatContext";
  */
 
 // ========= Utilities ===========
-const CHATID: string = InitialMsg.key.remoteJid!;
+const CHATID: string = GroupMsg.key.remoteJid!;
 const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
   sendRawWithoutEnqueue: false,
   mentionsIds: ["testID" + WhatsappIndividualIdentifier, "testID2" + WhatsappIndividualIdentifier],
 };
 
-function GenerateLocalToolKit_ChatSession_FromGroup(): { mockSocket: WhatsSocketMock; sender: WhatsSocket_Submodule_SugarSender; chat: ChatContext } {
+function GenerateLocalToolKit_ChatSession_FromGroup() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
-  const chatSession = new ChatContext(InitialMsg.key.participant ?? null, InitialMsg.key.remoteJid!, InitialMsg, senderDependency, receiverDependency, {
+  const chatSession = new ChatContext(GroupMsg.key.participant ?? null, GroupMsg.key.remoteJid!, GroupMsg, senderDependency, receiverDependency, {
     cancelKeywords: ["cancel", "cancelar"],
     ignoreSelfMessages: true,
     timeoutSeconds: 5,
     wrongTypeFeedbackMsg: "❌",
   });
-  return { mockSocket, sender: senderDependency, chat: chatSession };
+  return {
+    mockSocket: mockSocket,
+    sender: senderDependency,
+    chat: chatSession,
+    receiver: receiverDependency,
+  };
+}
+
+function GenerateLocalToolKit_ChatSession_FromIndividual() {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+  const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
+  const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
+  const chatSession = new ChatContext(null, IndividualMsg.key.remoteJid!, IndividualMsg, senderDependency, receiverDependency, {
+    cancelKeywords: ["cancel", "cancelar"],
+    ignoreSelfMessages: true,
+    timeoutSeconds: 5,
+    wrongTypeFeedbackMsg: "❌",
+  });
+  return {
+    mockSocket: mockSocket,
+    sender: senderDependency,
+    chat: chatSession,
+    receiver: receiverDependency,
+  };
 }
 
 test("WhenInstatiating_ShouldNotThrowAnyError", () => {
@@ -80,13 +105,13 @@ it("ReactionEmoji_WhenUsingSendReactEmojiTo_ShouldUseCorrectlySugarSender", asyn
   const emojiToSendTwoCharLength = "🦊"; //Two javascript chars length
   const emojiToSendOneCharLength = "✨"; //One javascript char length
   expect(async () => {
-    await chat.SendReactEmojiTo(InitialMsg, emojiToSendTwoCharLength, WHATSMSGOPTIONSPARAM);
-    await chat.SendReactEmojiTo(InitialMsg, emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
+    await chat.SendReactEmojiTo(GroupMsg, emojiToSendTwoCharLength, WHATSMSGOPTIONSPARAM);
+    await chat.SendReactEmojiTo(GroupMsg, emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
   }).not.toThrow();
 
   expect(senderReactEmojiToSpy).toHaveBeenCalledTimes(2);
-  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, InitialMsg, emojiToSendTwoCharLength, WHATSMSGOPTIONSPARAM);
-  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, InitialMsg, emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
+  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, GroupMsg, emojiToSendTwoCharLength, WHATSMSGOPTIONSPARAM);
+  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, GroupMsg, emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
 });
 
 it("ReactionEmoji_WhenUsingSendReactEmojiToOriginalMsg_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
@@ -102,8 +127,8 @@ it("ReactionEmoji_WhenUsingSendReactEmojiToOriginalMsg_ShouldUseCorrectlySugarSe
   }).not.toThrow();
 
   expect(senderReactEmojiToSpy).toHaveBeenCalledTimes(2);
-  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, InitialMsg, emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
-  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, InitialMsg, emojiToSendTwoCharLength, WHATSMSGOPTIONSPARAM);
+  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, GroupMsg, emojiToSendOneCharLength, WHATSMSGOPTIONSPARAM);
+  expect(senderReactEmojiToSpy).toBeCalledWith(CHATID, GroupMsg, emojiToSendTwoCharLength, WHATSMSGOPTIONSPARAM);
 });
 
 it("OK_WhenUsingOK_ShouldCorrectlyUseInternalSugarSenderReactEmojiToMsg", async (): Promise<void> => {
@@ -115,7 +140,7 @@ it("OK_WhenUsingOK_ShouldCorrectlyUseInternalSugarSenderReactEmojiToMsg", async 
   }).not.toThrow();
 
   expect(sendReactEmojiSpy).toHaveBeenCalledTimes(1);
-  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, InitialMsg, "✅", WHATSMSGOPTIONSPARAM);
+  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, GroupMsg, "✅", WHATSMSGOPTIONSPARAM);
 });
 
 it("OK_WhenUsingOKWithoutOptions_ShouldCorrectlyUseSugarSenderReactEmojiToMsg", async (): Promise<void> => {
@@ -127,7 +152,7 @@ it("OK_WhenUsingOKWithoutOptions_ShouldCorrectlyUseSugarSenderReactEmojiToMsg", 
   }).not.toThrow();
 
   expect(sendReactEmojiSpy).toHaveBeenCalledTimes(1);
-  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, InitialMsg, "✅", undefined /** Additional param options wasn't provided */);
+  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, GroupMsg, "✅", undefined /** Additional param options wasn't provided */);
 });
 
 it("Fail_WhenUsingFail_ShouldCorrectlyUseInternalSugarSenderReactEmojiToMsg", async (): Promise<void> => {
@@ -139,7 +164,7 @@ it("Fail_WhenUsingFail_ShouldCorrectlyUseInternalSugarSenderReactEmojiToMsg", as
   }).not.toThrow();
 
   expect(sendReactEmojiSpy).toHaveBeenCalledTimes(1);
-  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, InitialMsg, "❌", WHATSMSGOPTIONSPARAM);
+  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, GroupMsg, "❌", WHATSMSGOPTIONSPARAM);
 });
 
 it("Fail_WhenUsingFailWithoutOptions_ShouldCorrectlyUseSugarSenderReactEmojiToMsg", async (): Promise<void> => {
@@ -151,7 +176,7 @@ it("Fail_WhenUsingFailWithoutOptions_ShouldCorrectlyUseSugarSenderReactEmojiToMs
   }).not.toThrow();
 
   expect(sendReactEmojiSpy).toHaveBeenCalledTimes(1);
-  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, InitialMsg, "❌", undefined /** Additional param options wasn't provided */);
+  expect(sendReactEmojiSpy).toHaveBeenCalledWith(CHATID, GroupMsg, "❌", undefined /** Additional param options wasn't provided */);
 });
 
 it("Sticker_WhenUsingSendSticker_ShouldCorrectlyUseSugarSenderSticker", async (): Promise<void> => {
@@ -258,3 +283,128 @@ it("Contacts_WhenSendingContacts_ShouldCorrectlyUseSugarSendContacts", async ():
   expect(sendContactSenderSpy).toHaveBeenCalledTimes(1);
   expect(sendContactSenderSpy).toHaveBeenCalledWith(CHATID, contactMockInfo, WHATSMSGOPTIONSPARAM);
 });
+
+// ============ Receive Methods =============
+
+//Basic functioning
+it("WaitMsg_WhenExpectingForMsg_FROMGROUP_ShouldReceiveIt", async (): Promise<void> => {
+  const { chat, mockSocket } = GenerateLocalToolKit_ChatSession_FromGroup();
+
+  const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
+  const msging: Promise<void> = new Promise<void>((resolve) => {
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupMsg, MsgType.Text, SenderType.Group);
+    resolve();
+  });
+
+  let res: WhatsappMessage | null = null;
+  expect(async (): Promise<void> => {
+    res = await Promise.all([main, msging]).then(([msg, _void]) => msg);
+  }).not.toThrow();
+
+  expect(res).toBeDefined();
+  expect(res).not.toBeNull();
+  expect(res).toMatchObject(GroupMsg);
+});
+
+it("WaitMsg_WhenExpectingForMsg_FROMINDIVIDUAL_ShouldReceiveIt", async (): Promise<void> => {
+  const { chat, mockSocket } = GenerateLocalToolKit_ChatSession_FromIndividual();
+
+  const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
+  const msging: Promise<void> = new Promise<void>((resolve) => {
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualMsg, MsgType.Text, SenderType.Individual);
+    resolve();
+  });
+
+  let res: WhatsappMessage | null = null;
+  expect(async (): Promise<void> => {
+    res = await Promise.all([main, msging]).then(([msg, _void]) => msg);
+  }).not.toThrow();
+
+  expect(res).toBeDefined();
+  expect(res).not.toBeNull();
+  expect(res!).toMatchObject(IndividualMsg);
+});
+
+//When getting bad msg type
+it("WaitMsg_WhenGettingIncorrectMsgType_FROMGROUP_ShouldIgnoreItUntilGetExpected", async (): Promise<void> => {
+  const { chat, mockSocket } = GenerateLocalToolKit_ChatSession_FromGroup();
+  //Temp attaching prop for testing-only purposes
+  const incorrectMsg: WhatsappMessage & { INCORRECT: boolean } = { ...GroupMsg, INCORRECT: true };
+  const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Video);
+  const msgs: Promise<void> = new Promise<void>((resolve) => {
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Image, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Sticker, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Poll, SenderType.Group);
+
+    //This should be fetched from waiting process
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupMsg, MsgType.Video, SenderType.Group);
+    resolve();
+  });
+
+  let res: WhatsappMessage | null = null;
+  expect(async (): Promise<void> => {
+    res = await Promise.all([main, msgs]).then(([msg, _void]) => msg);
+  }).not.toThrow();
+
+  expect(res).toBeDefined();
+  expect(res).not.toBeNull();
+  expect((res as any).INCORRECT).toBe(undefined);
+  expect(res).toMatchObject(GroupMsg);
+});
+
+it("WaitMsg_WhenGettingIncorrectMsgType_FROMINDIVIDUAL_ShouldIgnoreItUntilGetExpected", async (): Promise<void> => {
+  const { chat, mockSocket } = GenerateLocalToolKit_ChatSession_FromIndividual();
+  //Temp attaching prop for testing-only purposes
+  const incorrectMsg: WhatsappMessage & { INCORRECT: boolean } = { ...IndividualMsg, INCORRECT: true };
+  const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Video);
+  const msgs: Promise<void> = new Promise<void>((resolve) => {
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Image, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Sticker, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Poll, SenderType.Group);
+
+    //This should be fetched from waiting process
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualMsg, MsgType.Video, SenderType.Group);
+    resolve();
+  });
+
+  let res: WhatsappMessage | null = null;
+  expect(async (): Promise<void> => {
+    res = await Promise.all([main, msgs]).then(([msg, _void]) => msg);
+  }).not.toThrow();
+
+  expect(res).toBeDefined();
+  expect(res).not.toBeNull();
+  expect((res as any).INCORRECT).toBeUndefined();
+  expect(res).toMatchObject(IndividualMsg);
+});
+
+//When getting unknown error
+it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMGROUP_ShouldRejectCompletely", async (): Promise<void> => {});
+
+it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMINDIVIDUAL_ShouldRejectCompletely", async (): Promise<void> => {});
+
+//When getting wait error (rejected by user)
+it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMGROUP_ShouldIdentifyAndReturnNull", async (): Promise<void> => {});
+
+it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMINDIVIDUAL_ShouldIdentifyAndReturnNull", async (): Promise<void> => {});
+
+//When getting wait error (not rejected by user)
+it("WaitMsg_GettingKnownWaitingError_NotRejectedByUser_FROMGROUP_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {});
+
+it("WaitMsg_GettingKnownWaitingError_NotRejectedByUser_FROMINDIVIDUAL_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {});
+
+//When using without local config params
+it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigInstead", async (): Promise<void> => {});
+
+it("WhatMsg_WhenNotUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseChatContextConfigInstead", async (): Promise<void> => {});
+
+//When using with local config params
+it("WaitMsg_WhenUsingLocalConfigParams_FROMGROUP_ShouldUseMixChatContextConfigAndLocalConfig", async (): Promise<void> => {});
+
+it("WaitMsg_WhenUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseMixChatContextConfigAndLocalConfig", async (): Promise<void> => {});

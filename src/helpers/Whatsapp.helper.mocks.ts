@@ -14,4 +14,8 @@ if (!Array.isArray(contents)) {
 }
 
 export const IndividualMsg: WAMessage = contents[0]!;
+export const IndividualMsg_CHATID = IndividualMsg.key.remoteJid!;
+
 export const GroupMsg: WAMessage = contents[1]!;
+export const GroupMsg_SENDERID: string = GroupMsg.key.participant!;
+export const GroupMsg_CHATID: string = GroupMsg.key.remoteJid!;

@@ -367,7 +367,6 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
-    //TODO: Do something in case its undefined from this._socket.sendMessage
     const toReturn: proto.WebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;
   }
