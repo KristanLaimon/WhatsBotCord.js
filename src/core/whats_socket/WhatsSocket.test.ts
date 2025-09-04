@@ -133,7 +133,7 @@ describe("Messages Sending", () => {
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
     });
     await ws.Start();
-    const result: WAMessage | null = await ws.SendSafe("123" + WhatsappGroupIdentifier, { text: "Hello" });
+    const result: WAMessage | null = await ws._SendSafe("123" + WhatsappGroupIdentifier, { text: "Hello" });
     expect(result?.message).toMatchObject({ text: "Hello" });
     expect(internalMockSocket.sendMessage as Mock<typeof internalMockSocket.sendMessage>).toHaveBeenCalledTimes(1);
   });
@@ -145,7 +145,7 @@ describe("Messages Sending", () => {
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
     });
     await ws.Start();
-    const result: WAMessage | null = await ws.SendRaw("123@" + WhatsappGroupIdentifier, { text: "Raw text content" });
+    const result: WAMessage | null = await ws._SendRaw("123@" + WhatsappGroupIdentifier, { text: "Raw text content" });
 
     expect(result!.message!).toMatchObject({ text: "Raw text content" });
     expect(internalMockSocket.sendMessage as Mock<typeof internalMockSocket.sendMessage>).toHaveBeenCalledTimes(1);

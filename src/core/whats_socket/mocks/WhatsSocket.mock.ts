@@ -34,8 +34,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
 
     //Thanks js, this is never needed on another languages... ☠️
-    this.SendRaw = this.SendRaw.bind(this);
-    this.SendSafe = this.SendSafe.bind(this);
+    this._SendRaw = this._SendRaw.bind(this);
+    this._SendSafe = this._SendSafe.bind(this);
     this.Start = this.Start.bind(this);
     this.Shutdown = this.Shutdown.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
@@ -55,7 +55,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   public async Shutdown(): Promise<void> {
     this.IsOn = false;
   }
-  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async _SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
     this.SentMessagesThroughQueue.push({
       chatId: chatId_JID,
       content: content,
@@ -64,7 +64,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
     this.SentMessagesThroughRaw.push({
       chatId: chatId_JID,
       content,

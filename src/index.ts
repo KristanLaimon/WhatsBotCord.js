@@ -12,12 +12,15 @@ import {
 import type { ChatContext } from "./core/bot/internals/ChatSession";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types";
 import type { RawMsgAPI } from "./core/bot/internals/IBotCommand";
-export type { ChatContext, CommandArgs, RawMsgAPI };
+import type { WhatsappMessage } from "./core/whats_socket/types";
+export type { ChatContext, CommandArgs, RawMsgAPI, WhatsappMessage };
 
 // == Runtime deps exporting ==
 import { MsgType, SenderType } from "./Msg.types";
 import { CommandType } from "./core/bot/internals/CommandsSearcher";
-export { CommandType, MsgType, SenderType };
+import WhatsSocket from "./core/whats_socket/WhatsSocket";
+import Delegate from "./libs/Delegate";
+export { CommandType, Delegate, MsgType, SenderType, WhatsSocket };
 
 // === Helpers ===
 /**

@@ -21,7 +21,7 @@ interface IWhatsSocket_SendingMsgsOnly_Module {
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
-  SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
+  _SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
 
   /**
    * Sends a message to a specific chat ID with content and optionally with other options.
@@ -38,7 +38,7 @@ interface IWhatsSocket_SendingMsgsOnly_Module {
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
-  SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
+  _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
 }
 
 export interface IWhatsSocketMinimum extends IWhatsSocket_SendingMsgsOnly_Module {

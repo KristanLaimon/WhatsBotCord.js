@@ -1,7 +1,7 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import type { WhatsappMessage } from "../types";
 import Delegate from "../../../libs/Delegate";
 import type { IWhatsSocket } from "../IWhatsSocket";
+import type { WhatsappMessage } from "../types";
 
 type SocketMsgQueueItem = {
   chatId: string;
@@ -105,7 +105,7 @@ export default class WhatsSocketSenderQueue_SubModule {
     while (this.queue.length > 0) {
       const item = this.queue.shift()!;
       try {
-        const sentMsg: WhatsappMessage | null = await this.whatsSocket.SendRaw(item.chatId, item.content, item.misc);
+        const sentMsg: WhatsappMessage | null = await this.whatsSocket._SendRaw(item.chatId, item.content, item.misc);
         this.onSentMessageInsideQueue.CallAll(item.chatId, item.content, item.misc);
         this.whatsSocket.onSentMessage.CallAll(item.chatId, item.content, item.misc);
         item.resolve(sentMsg);

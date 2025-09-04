@@ -1,7 +1,7 @@
-import type { WhatsappMessage } from "baileys";
 import { MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
 import type { MsgType, SenderType } from "../../../Msg.types";
 import type { IWhatsSocket } from "../IWhatsSocket";
+import type { WhatsappMessage } from "../types";
 
 /**
  * Callback type used to determine whether a received message satisfies a success condition.
@@ -32,7 +32,9 @@ export type WhatsSocketReceiverWaitOptions = {
   cancelKeywords: string[];
 
   /** Message sent back to the user if they send a message of the wrong type. */
-  wrongTypeFeedbackMsg: string;
+  wrongTypeFeedbackMsg?: string;
+
+  cancelFeedbackMsg?: string;
 
   /** Whether to ignore messages sent by the bot itself. Default: true */
   ignoreSelfMessages: boolean;
@@ -60,6 +62,17 @@ export type WhatsMsgReceiverError = {
    */
   chatId: string;
 };
+
+export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): anything is WhatsMsgReceiverError {
+  return (
+    typeof anything === "object" &&
+    anything !== null &&
+    "errorMessage" in anything &&
+    "wasAbortedByUser" in anything &&
+    "userId" in anything &&
+    "chatId" in anything
+  );
+}
 
 /**
  * Submodule responsible for listening and waiting for messages through a WhatsSocket instance.
@@ -90,7 +103,7 @@ export class WhatsSocket_Submodule_Receiver {
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
     //Options default values
-    const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg } = options;
+    const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg, cancelFeedbackMsg } = options;
 
     return new Promise((resolve: (WhatsappMessage: WhatsappMessage) => void, reject: (reason: WhatsMsgReceiverError) => void) => {
       let timer: NodeJS.Timeout;
@@ -135,15 +148,20 @@ export class WhatsSocket_Submodule_Receiver {
             if (cancelKeyWordToCheck && expectedTxtMsgContent.includes(cancelKeyWordToCheck)) {
               this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
               clearTimeout(timer);
+              if (cancelFeedbackMsg) {
+                this._whatsSocket.Send.Text(chatId, cancelFeedbackMsg);
+              }
               reject({ wasAbortedByUser: true, errorMessage: "User has canceled the dialog", chatId: chatId, userId: userId });
               return;
             }
           }
         }
 
-        //Priority #4: All good?, User not cancelling, large text, or even text, let's verify if its the type expected
+        //Priority #4: All good?, User not cancelling, or even text, let's verify if its the type expected
         if (msgType !== expectedMsgType) {
-          this._whatsSocket.SendSafe(chatId, { text: wrongTypeFeedbackMsg });
+          if (wrongTypeFeedbackMsg) {
+            this._whatsSocket.Send.Text(chatId, wrongTypeFeedbackMsg);
+          }
           return;
         }
 
@@ -163,11 +181,19 @@ export class WhatsSocket_Submodule_Receiver {
   /**
    * Waits for the next message from a specific user in a group chat.
    *
+   * The returned promise resolves only if the specified participant sends
+   * a message of the expected type.
+   *
+   * If the timeout is reached, or if the wait is explicitly cancelled,
+   * the promise may reject or throw an error depending on configuration.
+   *
+   * @throws error if timeout reached
    * @param userIDToWait - The participant ID to wait for.
    * @param chatToWaitOnID - Group chat ID to monitor.
-   * @param expectedMsgType - Type of message expected.
-   * @param options - Options for timeout, cancel keywords, etc.
-   * @returns The next WhatsappMessage from the specified user.
+   * @param expectedMsgType - The type of message to wait for.
+   * @param options - Options such as timeout duration, cancel keywords, etc.
+   * @returns Resolves with the next `WhatsappMessage` from the specified user,
+   *          or rejects/throws on timeout or cancellation.
    */
   public async WaitUntilNextRawMsgFromUserIDInGroup(
     userIDToWait: string,
@@ -182,12 +208,19 @@ export class WhatsSocket_Submodule_Receiver {
   /**
    * Waits for the next message from a specific user in a private 1:1 conversation.
    *
-   * Fun fact: Whatsapp takes user id as CHAT ID when talking to them in 1:1 conversation.
+   * Fun fact: WhatsApp treats the user ID itself as the chat ID in private conversations.
    *
+   * The returned promise resolves only if the specified user sends a message of
+   * the expected type.
+   *
+   * If the timeout is reached, or if the wait is explicitly cancelled,
+   * the promise may reject or throw an error depending on configuration.
+   * @throws error if timeout reached
    * @param userIdToWait - The user ID to wait for.
-   * @param expectedMsgType - Expected message type.
-   * @param options - Options for timeout, cancel keywords, etc.
-   * @returns The next WhatsappMessage from the specified user.
+   * @param expectedMsgType - The type of message to wait for.
+   * @param options - Options such as timeout duration, cancel keywords, etc.
+   * @returns Resolves with the next `WhatsappMessage` from the specified user,
+   *          or rejects/throws on timeout or cancellation.
    */
   public async WaitUntilNextRawMsgFromUserIdInPrivateConversation(
     userIdToWait: string,

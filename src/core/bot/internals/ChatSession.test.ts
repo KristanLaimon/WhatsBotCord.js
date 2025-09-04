@@ -2,6 +2,7 @@ import { expect, it, spyOn, test, type Mock } from "bun:test";
 import WhatsSocketMock from "../../../core/whats_socket/mocks/WhatsSocket.mock";
 import { GroupMsg as InitialMsg } from "../../../helpers/Whatsapp.helper.mocks";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
+import { WhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/WhatsSocket.receiver";
 import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import { ChatContext } from "./ChatSession";
 
@@ -28,7 +29,13 @@ const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
 function GenerateLocalToolKit_ChatSession_FromGroup(): { mockSocket: WhatsSocketMock; sender: WhatsSocket_Submodule_SugarSender; chat: ChatContext } {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
-  const chatSession = new ChatContext(InitialMsg.key.remoteJid!, InitialMsg, senderDependency);
+  const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
+  const chatSession = new ChatContext(InitialMsg.key.participant ?? null, InitialMsg.key.remoteJid!, InitialMsg, senderDependency, receiverDependency, {
+    cancelKeywords: ["cancel", "cancelar"],
+    ignoreSelfMessages: true,
+    timeoutSeconds: 5,
+    wrongTypeFeedbackMsg: "❌",
+  });
   return { mockSocket, sender: senderDependency, chat: chatSession };
 }
 

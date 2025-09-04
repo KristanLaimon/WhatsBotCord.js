@@ -13,14 +13,14 @@ export default class Delegate<functType extends (...args: any[]) => any> {
   }
 
   public Unsubscribe(funct: functType): boolean {
-    const foundFunctIndex = this.functions.findIndex(f => f === funct);
+    const foundFunctIndex = this.functions.findIndex((f) => f === funct);
     if (foundFunctIndex === -1) return false;
     this.functions.splice(foundFunctIndex, 1);
     return true;
   }
 
   public CallAll(...args: Parameters<functType>) {
-    this.functions.forEach(f => f(...args));
+    this.functions.forEach((f) => f(...args));
   }
 
   public Clear(): void {

@@ -1,6 +1,7 @@
 import { type WAMessage, type proto } from "baileys";
 import { MsgType, SenderType } from "../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types";
+import type { WhatsappMessage } from "../core/whats_socket/types";
 
 /**
  * Extracts the textual content from a raw WhatsApp message.
@@ -46,7 +47,7 @@ export function MsgHelper_GetTextFrom(rawMsg: WAMessage): string | null {
  * @param rawMsg
  * @returns
  */
-export function MsgHelper_GetQuotedMsgTextFrom(rawMsg: WAMessage): string | null {
+export function MsgHelper_GetQuotedMsgTextFrom(rawMsg: WhatsappMessage): string | null {
   if (
     !rawMsg.message ||
     !rawMsg.message.extendedTextMessage ||
@@ -83,13 +84,13 @@ export function MsgHelper_GetQuotedMsgFrom(rawMsg: WAMessage): proto.IMessage | 
  *   console.log("Received a text message!");
  * }
  */
-export function MsgHelper_GetMsgTypeFromRawMsg(rawMsg: WAMessage): MsgType {
+export function MsgHelper_GetMsgTypeFromRawMsg(rawMsg: WhatsappMessage): MsgType {
   if (!rawMsg.message) return MsgType.Unknown;
   const objMsg = rawMsg.message;
   return MsgHelper_GetMsgTypeFromProtoIMessage(objMsg);
 }
 
-export function MsgHelper_GetSenderTypeFromRawMsg(rawMsg: WAMessage): SenderType {
+export function MsgHelper_GetSenderTypeFromRawMsg(rawMsg: WhatsappMessage): SenderType {
   const chatId: string = rawMsg.key.remoteJid!;
   let senderType: SenderType = SenderType.Unknown;
   if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;

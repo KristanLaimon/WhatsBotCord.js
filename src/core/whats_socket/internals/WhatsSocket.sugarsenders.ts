@@ -641,11 +641,11 @@ END:VCARD`;
    * @returns The method to call to send the message.
    */
   private _getSendingMethod(options?: WhatsMsgSenderSendingOptionsMINIMUM) {
-    if (!options) return this.socket.SendSafe;
+    if (!options) return this.socket._SendSafe;
     else if (options.sendRawWithoutEnqueue) {
-      return this.socket.SendRaw;
+      return this.socket._SendRaw;
     } else {
-      return this.socket.SendSafe;
+      return this.socket._SendSafe;
     }
   }
 }

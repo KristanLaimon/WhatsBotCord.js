@@ -3,9 +3,8 @@ import {
   type AnyMessageContent,
   type GroupMetadata,
   type MiscMessageGenerationOptions,
-  type WAMessage,
-  type WAMessageUpdate,
   type proto,
+  type WAMessageUpdate,
   Browsers,
   DisconnectReason,
   makeWASocket,
@@ -25,7 +24,7 @@ import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "./IWhatsSocket";
-import type { BaileysWASocket, WhatsSocketLoggerMode } from "./types";
+import type { BaileysWASocket, WhatsappMessage, WhatsSocketLoggerMode } from "./types";
 
 //TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 export type WhatsSocketOptions = {
@@ -112,9 +111,9 @@ export type WhatsSocketOptions = {
  */
 export default class WhatsSocket implements IWhatsSocket {
   //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events
-  public onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: , msgType: MsgType, senderType: SenderType) => void> =
+  public onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void> =
     new Delegate();
-  public onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: , msgType: MsgType, senderType: SenderType) => void> =
+  public onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void> =
     new Delegate();
   public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
   public onRestart: Delegate<() => Promise<void>> = new Delegate();
@@ -194,8 +193,8 @@ export default class WhatsSocket implements IWhatsSocket {
     this.ConfigureGroupsUpdates();
 
     //Thanks JavaScript ☠️
-    this.SendSafe = this.SendSafe.bind(this);
-    this.SendRaw = this.SendRaw.bind(this);
+    this._SendSafe = this._SendSafe.bind(this);
+    this._SendRaw = this._SendRaw.bind(this);
     this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
     this.InitializeInternalSocket = this.InitializeInternalSocket.bind(this);
     this.Start = this.Start.bind(this);
@@ -314,8 +313,8 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  private ConfigureMessagesUpdates() {
-    this._socket.ev.on("messages.update", (msgsUpdates: Update[]) => {
+  private ConfigureMessagesUpdates(): void {
+    this._socket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
       if (!msgsUpdates || msgsUpdates.length === 0) return;
       for (const msgUpdate of msgsUpdates) {
         if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
@@ -363,11 +362,11 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise< | null> {
+  public async _SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
     return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise< | null> {
+  public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
     //TODO: Do something in case its undefined from this._socket.sendMessage
     const toReturn: proto.WebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;

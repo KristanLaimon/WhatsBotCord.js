@@ -26,7 +26,7 @@ socket.onIncomingMsg.Subscribe(async (senderId, chatId, rawMsg, msgType, senderT
   if (msgType === MsgType.Sticker) {
     console.log("Msg (STICKER)");
     const a: Buffer = await downloadMediaMessage(rawMsg, "buffer", {});
-    await socket.SendSafe(chatId, { sticker: a });
+    await socket.Send.Sticker(chatId, a);
 
     if (!fs.existsSync("./TEST")) {
       fs.mkdirSync("./TEST");
