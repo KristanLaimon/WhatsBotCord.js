@@ -3,9 +3,9 @@ import Delegate from "../../../libs/Delegate";
 import type { SenderType } from "../../../Msg.types";
 import { type MsgType } from "../../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types";
-import { WhatsSocketReceiver_SubModule } from "../internals/WhatsSocket.receiver";
+import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
-import { WhatsSocketSugarSender_Submodule } from "../internals/WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "../IWhatsSocket";
 import type { WhatsSocketMessageSentMock } from "./types";
 
@@ -25,8 +25,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
   ownJID: string = "ownIDMock" + WhatsappIndividualIdentifier;
 
-  Send: WhatsSocketSugarSender_Submodule = new WhatsSocketSugarSender_Submodule(this);
-  Receive: WhatsSocketReceiver_SubModule = new WhatsSocketReceiver_SubModule(this);
+  Send: WhatsSocket_Submodule_SugarSender = new WhatsSocket_Submodule_SugarSender(this);
+  Receive: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver(this);
 
   private _senderQueue: WhatsSocketSenderQueue_SubModule;
 

@@ -1,17 +1,17 @@
-import type { AnyMessageContent, WAMessageUpdate, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage, WAMessageUpdate } from "baileys";
 import type Delegate from "../../libs/Delegate";
 import type { MsgType, SenderType } from "../../Msg.types";
-import type { WhatsSocketSugarSender_Submodule } from "./internals/WhatsSocket.sugarsenders";
-import type { WhatsSocketReceiver_SubModule } from "./internals/WhatsSocket.receiver";
+import type { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
+import type { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 
 interface IWhatsSocket_SendingMsgsOnly_Module {
   /**
    * Send a message to a specific chat ID with content and optionally with other options.
    *
    * _*This is the function you must use to send messages generally.*_
-   * 
+   *
    * _Do not use SendRaw() from this class unless you know what are you doing._
-   * 
+   *
    * This Send() function uses a queue to normalize the quantity of messages to send, to prevent
    * overflow of messages in case this socket has been spammed with msgs from someone.
    *
@@ -25,20 +25,20 @@ interface IWhatsSocket_SendingMsgsOnly_Module {
 
   /**
    * Sends a message to a specific chat ID with content and optionally with other options.
-   * 
+   *
    * _Do not use this unless you know what are you doing._
-   * 
+   *
    * This is the direct interface to most 'low level' interaction with the socket.
    * It doesn't protect you from flooding the socket with messages and causing a ban.
-   * 
+   *
    * Use Send() from this class instead, unless you really need to send messages directly
    * to the socket without any kind of protection.
-   * 
+   *
    * @param chatId_JID Whatsapp chat id of the user you want to send the message to (e.g: "1234567890@c.us")
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
    * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
    */
-  SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>
+  SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
 }
 
 export interface IWhatsSocketMinimum extends IWhatsSocket_SendingMsgsOnly_Module {
@@ -95,11 +95,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onSentMessage: Delegate<(
-    chatId: string,
-    rawContentMsg: AnyMessageContent,
-    optionalMisc?: MiscMessageGenerationOptions
-  ) => void>;
+  onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void>;
 
   /**
    * Triggered when a new raw message arrives.
@@ -111,13 +107,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onIncomingMsg: Delegate<(
-    senderId: string | null,
-    chatId: string,
-    rawMsg: WAMessage,
-    msgType: MsgType,
-    senderType: SenderType
-  ) => void>;
+  onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void>;
 
   /**
    * Triggered when an already sent message receives an update
@@ -130,13 +120,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onUpdateMsg: Delegate<(
-    senderId: string | null,
-    chatId: string,
-    rawMsgUpdate: WAMessageUpdate,
-    msgType: MsgType,
-    senderType: SenderType
-  ) => void>;
+  onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessageUpdate, msgType: MsgType, senderType: SenderType) => void>;
 
   // ================= Group Events =================
 
@@ -179,13 +163,11 @@ export interface IWhatsSocket_EventsOnly_Module {
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
 }
 
-
-
 /**
  * Public interface for the WhatsSocket class.
  *
  * Defines the contract for interacting with the WhatsApp socket client.
- * 
+ *
  * Responsibilities:
  * - Provides modules for sending messages and receiving events.
  * - Manages connection lifecycle (start, shutdown).
@@ -199,22 +181,22 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
 
   /**
    * High-level "sugar" sender module for dispatching all types of messages.
-   * 
+   *
    * Supported types: text, images, videos, polls, documents, etc.
-   * 
+   *
    * Prefer this module over raw sending methods since it handles
    * formatting, throttling, and common WhatsApp-specific quirks.
    */
-  Send: WhatsSocketSugarSender_Submodule;
+  Send: WhatsSocket_Submodule_SugarSender;
 
   /**
    * Receive module for handling incoming messages and events.
-   * 
+   *
    * Normally you won’t call this directly—commands and event listeners
    * should be wired to it under the hood. Use it when you need fine-grained
    * control over incoming raw events.
    */
-  Receive: WhatsSocketReceiver_SubModule;
+  Receive: WhatsSocket_Submodule_Receiver;
 
   /**
    * Establishes the socket connection and starts the client.

@@ -92,7 +92,7 @@ export type WhatsMsgUbicationOptions = {
   addressText?: string;
 };
 
-export class WhatsSocketSugarSender_Submodule {
+export class WhatsSocket_Submodule_SugarSender {
   private socket: IWhatsSocket;
 
   constructor(socket: IWhatsSocket) {

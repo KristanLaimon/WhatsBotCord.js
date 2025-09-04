@@ -1,11 +1,16 @@
 import type { WAMessage } from "baileys";
+import type { WhatsSocket_Submodule_Receiver, WhatsSocketReceiverWaitOptions } from "../../../core/whats_socket/internals/WhatsSocket.receiver";
 import type {
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
-  WhatsSocketSugarSender_Submodule,
+  WhatsSocket_Submodule_SugarSender,
 } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
-import { MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
+import { autobind } from "../../../helpers/Decorators.helper";
+import { MsgHelper_GetSenderTypeFromRawMsg, MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
+import { MsgType, SenderType } from "../../../Msg.types";
+
+export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
 
 /**
  * A sugar-layer abstraction for sending/receiving msgs bound to the actual chat.
@@ -17,35 +22,31 @@ import { MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
  */
 export class ChatContext {
   /** Low-level sender dependency used to actually send messages */
-  private _internalSend: WhatsSocketSugarSender_Submodule;
+  private _internalSend: WhatsSocket_Submodule_SugarSender;
+  private _internalReceive: WhatsSocket_Submodule_Receiver;
 
   /** The chat ID this session is permanently bound to */
+  private _fixedOriginalSenderId: string | null;
   private _fixedChatId: string;
 
   /** The initial message that triggered the command/session */
   private _initialMsg: WAMessage;
 
-  /**
-   * Retrieves the text from the initial message that triggered this session.
-   * Returns `null` if the initial message is not a text message.
-   */
-  public get InitialText(): string | null {
-    return MsgHelper_GetTextFrom(this._initialMsg);
-  }
+  private _senderType: SenderType;
 
   /**
-   * Retrieves the original WAMessage object that triggered this session.
+   * Retrieves the a copy from the original WAMessage object that triggered this session.
    *
    * Useful if you need to access the message's metadata, such as the sender's ID
    * or the message ID.
    *
-   * *If you only want to get the text (if text msg), use 'InitialText' prop instead*
-   *
    * @returns The raw WAMessage object that triggered this session.
    */
   public get InitialRawMsg(): WAMessage {
-    return this._initialMsg;
+    return structuredClone(this._initialMsg);
   }
+
+  public Config: ChatContextConfig;
 
   /**
    * Creates a new chat session bound to a specific chat and initial message.
@@ -54,10 +55,21 @@ export class ChatContext {
    * @param initialMsg - The original triggering message (used for reactions)
    * @param senderDependency - Low-level sender utility used to dispatch messages
    */
-  constructor(fixedChatId: string, initialMsg: WAMessage, senderDependency: WhatsSocketSugarSender_Submodule) {
+  constructor(
+    originalSenderID: string | null,
+    fixedChatId: string,
+    initialMsg: WAMessage,
+    senderDependency: WhatsSocket_Submodule_SugarSender,
+    receiverDependency: WhatsSocket_Submodule_Receiver,
+    config: ChatContextConfig
+  ) {
+    this.Config = config;
+    this._fixedOriginalSenderId = originalSenderID;
     this._internalSend = senderDependency;
+    this._internalReceive = receiverDependency;
     this._fixedChatId = fixedChatId;
     this._initialMsg = initialMsg;
+    this._senderType = MsgHelper_GetSenderTypeFromRawMsg(this._initialMsg);
   }
 
   /**
@@ -67,6 +79,7 @@ export class ChatContext {
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
+  @autobind
   public SendText(text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     return this._internalSend.Text(this._fixedChatId, text, options);
   }
@@ -82,6 +95,7 @@ export class ChatContext {
    * - Reads the image file from `imagePath` into memory and attaches it.
    * - Mentions are injected if `mentionsIds` is specified.
    */
+  @autobind
   public SendImg(imagePath: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     return this._internalSend.Img(this._fixedChatId, { sourcePath: imagePath, caption: undefined }, options);
   }
@@ -100,6 +114,7 @@ export class ChatContext {
    *  (Can be enabled in options object param with "normalizeMessageText" property)
    * - Mentions are injected if `mentionsIds` is specified.
    */
+  @autobind
   public SendImgWithCaption(imagePath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     return this._internalSend.Img(this._fixedChatId, { sourcePath: imagePath, caption }, options);
   }
@@ -112,6 +127,7 @@ export class ChatContext {
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
+  @autobind
   public SendReactEmojiTo(msgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.ReactEmojiToMsg(this._fixedChatId, msgToReactTo, emojiStr, options);
   }
@@ -127,6 +143,7 @@ export class ChatContext {
    * - If the emoji string is not a single emoji character, throws an error.
    * - If the emoji reaction is valid, sends it to the target chat.
    */
+  @autobind
   public SendReactEmojiToInitialMsg(emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, emojiStr, options);
   }
@@ -139,6 +156,7 @@ export class ChatContext {
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
+  @autobind
   public Ok(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "✅", options);
   }
@@ -151,6 +169,7 @@ export class ChatContext {
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
+  @autobind
   public Fail(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "❌", options);
   }
@@ -181,6 +200,7 @@ export class ChatContext {
    * await bot.Sticker(chatId, 'https://example.com/sticker.webp');
    *
    */
+  @autobind
   public SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.Sticker(this._fixedChatId, stickerUrlSource, options);
   }
@@ -213,6 +233,7 @@ export class ChatContext {
    * // Forward a received WhatsApp audio message
    * await bot.Audio(chatId, receivedMessage);
    */
+  @autobind
   public SendAudio(audioSource: string | Buffer | WAMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.Audio(this._fixedChatId, audioSource, options);
   }
@@ -246,6 +267,7 @@ export class ChatContext {
    * // Send a raw Buffer without queuing
    * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
    */
+  @autobind
   public SendVideo(sourcePath: string | Buffer, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: undefined }, options);
   }
@@ -280,6 +302,7 @@ export class ChatContext {
    * // Send a raw Buffer without queuing
    * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
    */
+  @autobind
   public SendVideoWithCaption(sourcePath: string | Buffer, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: caption }, options);
   }
@@ -324,6 +347,7 @@ export class ChatContext {
    *
    */
 
+  @autobind
   public SendPoll(
     pollTitle: string,
     selections: string[],
@@ -341,6 +365,7 @@ export class ChatContext {
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
+  @autobind
   public SendUbication(degreesLatitude: number, degreesLongitude: number, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     return this._internalSend.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
   }
@@ -355,6 +380,7 @@ export class ChatContext {
    * @param options - Optional send configuration
    * @returns The WhatsApp message object, or `null` if sending failed
    */
+  @autobind
   public SendUbicationWithDescription(
     degreesLatitude: number,
     degreesLongitude: number,
@@ -396,11 +422,60 @@ export class ChatContext {
    * @note Number follows "countrycode" + "1" + "10 digits number" for latin-american countries like "5216239389304" for example in mexico. Check
    * how your country number displays in international format to prevent any errors.
    */
+  @autobind
   public SendContact(
     contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WAMessage | null> {
     return this._internalSend.Contact(this._fixedChatId, contacts, options);
+  }
+
+  /**
+   * Waits for the next text message from the original user who initiated this chat.
+   *
+   * Messages from other participants (in groups) or from different users will be ignored
+   * without resolving this promise.
+   *
+   * @param localOptions - Optional waiting configuration (e.g., timeout)
+   * @returns The plain text content of the next message, or `null` if none is received
+   */
+  public async WaitMsgText(localOptions?: ChatContextConfig): Promise<string | null> {
+    const found: WAMessage | null = await this.WaitMsg(MsgType.Text, localOptions);
+    if (!found) return null;
+    const extractedTxtToReturn: string | null = MsgHelper_GetTextFrom(found);
+    return extractedTxtToReturn;
+  }
+
+  /**
+   * Waits for the next message with expected type from the original user who initiated this chat.
+   *
+   * Messages from other participants (in groups) or from different users will be ignored
+   * without resolving this promise.
+   *
+   * @param localOptions - Optional waiting configuration (e.g., timeout)
+   * @returns The plain text content of the next message, or `null` if none is received
+   */
+  @autobind
+  public WaitMsg(expectedType: MsgType, localOptions?: ChatContextConfig): Promise<WAMessage | null> {
+    switch (this._senderType) {
+      case SenderType.Unknown:
+        return Promise.resolve(null);
+      case SenderType.Group:
+        if (!this._fixedOriginalSenderId) {
+          throw new Error(
+            "[FATAL ERROR]: This shouldn't happen at all. Couldn't find group participant from group msg!... Report this bug as a github issue please."
+          );
+        }
+        return this._internalReceive.WaitUntilNextRawMsgFromUserIDInGroup(this._fixedOriginalSenderId, this._fixedChatId, expectedType, {
+          ...this.Config,
+          ...localOptions,
+        });
+      case SenderType.Individual:
+        return this._internalReceive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(this._fixedChatId, expectedType, {
+          ...this.Config,
+          ...localOptions,
+        });
+    }
   }
 }
 

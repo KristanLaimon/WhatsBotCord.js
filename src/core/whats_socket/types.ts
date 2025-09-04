@@ -1,4 +1,4 @@
-import type { makeWASocket } from "baileys";
+import type { makeWASocket, WAMessage } from "baileys";
 export type BaileysWASocket = ReturnType<typeof makeWASocket>;
 
 /**
@@ -6,3 +6,5 @@ export type BaileysWASocket = ReturnType<typeof makeWASocket>;
  * They are based on the 'pino' library/dependency logger levels. Just extracted them here for convenience.
  */
 export type WhatsSocketLoggerMode = "debug" | "error" | "fatal" | "info" | "silent" | "trace" | "warn";
+
+export type WhatsappMessage = WAMessage;

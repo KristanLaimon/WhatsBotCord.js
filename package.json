@@ -29,7 +29,8 @@
     "lint": "eslint",
     "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
     "fastest": "cross-env SKIP_LONG_TESTS=true bun test",
-    "prerelease_upgrade": "npm version prerelease --preid=beta"
+    "prerelease_upgrade": "npm version prerelease --preid=beta",
+    "try": "bun ./src/index.test.ts"
   },
   "peerDependencies": {
     "typescript": "^5.9.2"

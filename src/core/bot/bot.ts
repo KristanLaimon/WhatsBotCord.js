@@ -1,28 +1,30 @@
 import type { WAMessage, proto } from "baileys";
 import { MsgHelper_GetMsgTypeFromProtoIMessage, MsgHelper_GetQuotedMsgFrom, MsgHelper_GetTextFrom } from "../../helpers/Msg.helper";
 import { MsgType, type SenderType } from "../../Msg.types";
-import type { WhatsSocketReceiver_SubModule } from "../whats_socket/internals/WhatsSocket.receiver";
-import type { WhatsSocketSugarSender_Submodule } from "../whats_socket/internals/WhatsSocket.sugarsenders";
+import type { WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
+import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket";
-import { ChatContext } from "./internals/ChatSession";
+import { ChatContext, type ChatContextConfig } from "./internals/ChatSession";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher";
 import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types";
 import type { IBotCommand } from "./internals/IBotCommand";
 
-export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> & {
-  /**
-   * @default '@'
-   */
-  tagCharPrefix?: string | string[];
-  /**
-   * @default '!'
-   */
-  commandPrefix?: string | string[];
-};
+export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
+  Omit<Partial<ChatContextConfig>, "ignoreSelfMessages"> & {
+    /**
+     * @default '@'
+     */
+    tagCharPrefix?: string | string[];
+    /**
+     * @default '!'
+     */
+    commandPrefix?: string | string[];
+  };
+
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module;
-export type WhatsBotSender = WhatsSocketSugarSender_Submodule;
-export type WhatsBotReceiver = WhatsSocketReceiver_SubModule;
+export type WhatsBotSender = WhatsSocket_Submodule_SugarSender;
+export type WhatsBotReceiver = WhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
 
 /**
@@ -202,7 +204,12 @@ export default class Bot {
       try {
         await commandFound.run(
           /** Chat Context */
-          new ChatContext(chatId, rawMsg, this._socket.Send),
+          new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
+            cancelKeywords: this._options.cancelKeywords ?? ["cancel", "cancelar", "para", "stop"],
+            ignoreSelfMessages: this._options.ignoreSelfMessage ?? true,
+            timeoutSeconds: this._options.timeoutSeconds ?? 30,
+            wrongTypeFeedbackMsg: this._options.wrongTypeFeedbackMsg ?? "❌",
+          }),
           /** RawAPI */
           {
             Receive: this._socket.Receive,

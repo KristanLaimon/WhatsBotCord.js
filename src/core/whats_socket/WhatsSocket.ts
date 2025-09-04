@@ -15,18 +15,15 @@ import {
 import moment from "moment";
 import pino from "pino";
 import encodeQr from "qr";
-import { MsgHelper_GetMsgTypeFromRawMsg } from "../../helpers/Msg.helper";
+import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetSenderTypeFromRawMsg } from "../../helpers/Msg.helper";
 import { GetPath } from "../../libs/BunPath";
 import Delegate from "../../libs/Delegate";
 import type { MsgType } from "../../Msg.types";
 import { SenderType } from "../../Msg.types";
-import {
-  WhatsappGroupIdentifier,
-  WhatsappIndividualIdentifier,
-} from "../../Whatsapp.types";
-import { WhatsSocketReceiver_SubModule } from "./internals/WhatsSocket.receiver";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
+import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import { WhatsSocketSugarSender_Submodule } from "./internals/WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "./IWhatsSocket";
 import type { BaileysWASocket, WhatsSocketLoggerMode } from "./types";
 
@@ -115,39 +112,15 @@ export type WhatsSocketOptions = {
  */
 export default class WhatsSocket implements IWhatsSocket {
   //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events
-  public onIncomingMsg: Delegate<
-    (
-      senderId: string | null,
-      chatId: string,
-      rawMsg: WAMessage,
-      msgType: MsgType,
-      senderType: SenderType
-    ) => void
-  > = new Delegate();
-  public onUpdateMsg: Delegate<
-    (
-      senderId: string | null,
-      chatId: string,
-      rawMsgUpdate: WAMessage,
-      msgType: MsgType,
-      senderType: SenderType
-    ) => void
-  > = new Delegate();
-  public onSentMessage: Delegate<
-    (
-      chatId: string,
-      rawContentMsg: AnyMessageContent,
-      optionalMisc?: MiscMessageGenerationOptions
-    ) => void
-  > = new Delegate();
+  public onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void> =
+    new Delegate();
+  public onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> =
+    new Delegate();
+  public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
   public onRestart: Delegate<() => Promise<void>> = new Delegate();
-  public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> =
-    new Delegate();
-  public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> =
-    new Delegate();
-  public onStartupAllGroupsIn: Delegate<
-    (allGroupsIn: GroupMetadata[]) => void
-  > = new Delegate();
+  public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
+  public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
+  public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
 
   public get ownJID(): string {
     return this._socket.user!.id;
@@ -161,12 +134,12 @@ export default class WhatsSocket implements IWhatsSocket {
    * Sender module and sugar layer for sending all kinds of msgs.
    * Text, Images, Videos, Polls, etc...
    */
-  public Send!: WhatsSocketSugarSender_Submodule;
+  public Send!: WhatsSocket_Submodule_SugarSender;
 
   /**
    * Receive internal module. To wait for someone msg's.
    */
-  public Receive!: WhatsSocketReceiver_SubModule;
+  public Receive!: WhatsSocket_Submodule_Receiver;
 
   // === Normal Public Properties ===
   public ActualReconnectionRetries: number = 0;
@@ -184,10 +157,8 @@ export default class WhatsSocket implements IWhatsSocket {
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
-    this._milisecondsDelayBetweenSentMsgs =
-      options?.delayMilisecondsBetweenMsgs ?? 100;
-    this._customSocketImplementation =
-      options?.ownImplementationSocketAPIWhatsapp;
+    this._milisecondsDelayBetweenSentMsgs = options?.delayMilisecondsBetweenMsgs ?? 100;
+    this._customSocketImplementation = options?.ownImplementationSocketAPIWhatsapp;
     this._maxReconnectionRetries = options?.maxReconnectionRetries ?? 5;
   }
   private _isRestarting: boolean = false;
@@ -254,13 +225,9 @@ export default class WhatsSocket implements IWhatsSocket {
     this._socket.ev.on("creds.update", saveCreds);
 
     //== Initializing internal sub-modules ==
-    this._senderQueue = new WhatsSocketSenderQueue_SubModule(
-      this,
-      this._senderQueueMaxLimit,
-      this._milisecondsDelayBetweenSentMsgs
-    );
-    this.Send = new WhatsSocketSugarSender_Submodule(this);
-    this.Receive = new WhatsSocketReceiver_SubModule(this);
+    this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
+    this.Send = new WhatsSocket_Submodule_SugarSender(this);
+    this.Receive = new WhatsSocket_Submodule_Receiver(this);
   }
 
   public async Shutdown() {
@@ -280,9 +247,7 @@ export default class WhatsSocket implements IWhatsSocket {
       if (connection === "open") {
         this.ActualReconnectionRetries = 0; // reset retries
         try {
-          const groups = Object.values(
-            await this._socket.groupFetchAllParticipating()
-          );
+          const groups = Object.values(await this._socket.groupFetchAllParticipating());
           this.onStartupAllGroupsIn.CallAll(groups);
           console.log("INFO: All groups data fetched successfully");
         } catch (err) {
@@ -296,10 +261,7 @@ export default class WhatsSocket implements IWhatsSocket {
 
         // Only attempt to reconnect if not logged out
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-        console.warn(
-          "Socket closed",
-          statusCode ? `(code: ${statusCode})` : ""
-        );
+        console.warn("Socket closed", statusCode ? `(code: ${statusCode})` : "");
 
         if (!shouldReconnect) {
           console.error("ERROR: Socket logged out. Not reconnecting.");
@@ -312,9 +274,7 @@ export default class WhatsSocket implements IWhatsSocket {
 
         // Check max retries
         if (this.ActualReconnectionRetries > this._maxReconnectionRetries) {
-          console.error(
-            `ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`
-          );
+          console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
           await this.Shutdown();
           return;
         }
@@ -323,9 +283,7 @@ export default class WhatsSocket implements IWhatsSocket {
         if (this._isRestarting) return;
 
         this._isRestarting = true;
-        console.log(
-          `INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`
-        );
+        console.log(`INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
 
         try {
           await this.Restart();
@@ -344,23 +302,14 @@ export default class WhatsSocket implements IWhatsSocket {
     this._socket.ev.on("messages.upsert", async (messageUpdate) => {
       if (!messageUpdate.messages) return;
       for (const msg of messageUpdate.messages) {
-        if (this._ignoreSelfMessages)
-          if (!msg.message || msg.key.fromMe) continue;
+        if (this._ignoreSelfMessages) if (!msg.message || msg.key.fromMe) continue;
 
         const chatId = msg.key.remoteJid!;
         const senderId = msg.key.participant ?? null;
         let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith(WhatsappGroupIdentifier))
-          senderType = SenderType.Group;
-        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier))
-          senderType = SenderType.Individual;
-        this.onIncomingMsg.CallAll(
-          senderId,
-          chatId,
-          msg,
-          MsgHelper_GetMsgTypeFromRawMsg(msg),
-          senderType
-        );
+        if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
+        this.onIncomingMsg.CallAll(senderId, chatId, msg, MsgHelper_GetMsgTypeFromRawMsg(msg), senderType);
       }
     });
   }
@@ -373,18 +322,8 @@ export default class WhatsSocket implements IWhatsSocket {
 
         const chatId: string = msgUpdate.key.remoteJid!;
         const senderId: string | null = msgUpdate.key.participant ?? null;
-        let senderType: SenderType = SenderType.Unknown;
-        if (chatId && chatId.endsWith(WhatsappGroupIdentifier))
-          senderType = SenderType.Group;
-        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier))
-          senderType = SenderType.Individual;
-        this.onUpdateMsg.CallAll(
-          senderId,
-          chatId,
-          msgUpdate,
-          MsgHelper_GetMsgTypeFromRawMsg(msgUpdate),
-          senderType
-        );
+        const senderType: SenderType = MsgHelper_GetSenderTypeFromRawMsg(msgUpdate);
+        this.onUpdateMsg.CallAll(senderId, chatId, msgUpdate, MsgHelper_GetMsgTypeFromRawMsg(msgUpdate), senderType);
       }
     });
   }
@@ -396,25 +335,17 @@ export default class WhatsSocket implements IWhatsSocket {
    * @returns A promise that resolves to the group metadata.
    */
   public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
-    if (!chatId.endsWith(WhatsappGroupIdentifier))
-      throw new Error("Provided chatId is not a group chat ID. => " + chatId);
+    if (!chatId.endsWith(WhatsappGroupIdentifier)) throw new Error("Provided chatId is not a group chat ID. => " + chatId);
     return await this._socket.groupMetadata(chatId);
   }
 
   private ConfigureGroupsEnter(): void {
-    this._socket.ev.on(
-      "groups.upsert",
-      async (groupsUpserted: GroupMetadata[]) => {
-        for (const group of groupsUpserted) {
-          this.onGroupEnter.CallAll(group);
-          console.info(
-            `INFO: Joined to a new group ${group.subject} at ${moment().format(
-              "YYYY-MM-DD HH:mm:ss"
-            )}`
-          );
-        }
+    this._socket.ev.on("groups.upsert", async (groupsUpserted: GroupMetadata[]) => {
+      for (const group of groupsUpserted) {
+        this.onGroupEnter.CallAll(group);
+        console.info(`INFO: Joined to a new group ${group.subject} at ${moment().format("YYYY-MM-DD HH:mm:ss")}`);
       }
-    );
+    });
   }
 
   private ConfigureGroupsUpdates(): void {
@@ -432,22 +363,13 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  public async SendSafe(
-    chatId_JID: string,
-    content: AnyMessageContent,
-    options?: MiscMessageGenerationOptions
-  ): Promise<WAMessage | null> {
+  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
     return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  public async SendRaw(
-    chatId_JID: string,
-    content: AnyMessageContent,
-    options?: MiscMessageGenerationOptions
-  ): Promise<WAMessage | null> {
+  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
     //TODO: Do something in case its undefined from this._socket.sendMessage
-    const toReturn: proto.WebMessageInfo | null =
-      (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
+    const toReturn: proto.WebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;
   }
 }

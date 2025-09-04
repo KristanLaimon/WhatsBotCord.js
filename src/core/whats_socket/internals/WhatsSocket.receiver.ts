@@ -64,7 +64,7 @@ export type WhatsMsgReceiverError = {
 /**
  * Submodule responsible for listening and waiting for messages through a WhatsSocket instance.
  */
-export class WhatsSocketReceiver_SubModule {
+export class WhatsSocket_Submodule_Receiver {
   private _whatsSocket: IWhatsSocket;
 
   /**

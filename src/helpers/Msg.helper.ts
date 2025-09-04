@@ -1,5 +1,6 @@
 import { type WAMessage, type proto } from "baileys";
-import { MsgType } from "../Msg.types";
+import { MsgType, SenderType } from "../Msg.types";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types";
 
 /**
  * Extracts the textual content from a raw WhatsApp message.
@@ -86,6 +87,14 @@ export function MsgHelper_GetMsgTypeFromRawMsg(rawMsg: WAMessage): MsgType {
   if (!rawMsg.message) return MsgType.Unknown;
   const objMsg = rawMsg.message;
   return MsgHelper_GetMsgTypeFromProtoIMessage(objMsg);
+}
+
+export function MsgHelper_GetSenderTypeFromRawMsg(rawMsg: WAMessage): SenderType {
+  const chatId: string = rawMsg.key.remoteJid!;
+  let senderType: SenderType = SenderType.Unknown;
+  if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
+  if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
+  return senderType;
 }
 
 /**

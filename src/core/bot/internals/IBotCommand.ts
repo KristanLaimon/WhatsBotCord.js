@@ -1,5 +1,5 @@
-import type { WhatsSocketReceiver_SubModule } from "../../../core/whats_socket/internals/WhatsSocket.receiver";
-import type { WhatsSocketSugarSender_Submodule } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
+import type { WhatsSocket_Submodule_Receiver } from "../../../core/whats_socket/internals/WhatsSocket.receiver";
+import type { WhatsSocket_Submodule_SugarSender } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
 import type { ChatContext } from "./ChatSession";
 import type { CommandArgs } from "./CommandsSearcher.types";
 
@@ -57,12 +57,12 @@ export type RawMsgAPI = {
    * Provides low-level methods to send messages, media, reactions, etc.
    * Requires explicit chat IDs and parameters.
    */
-  Send: WhatsSocketSugarSender_Submodule;
+  Send: WhatsSocket_Submodule_SugarSender;
 
   /**
    * Incoming message receiver submodule.
    *
    * Provides low-level access to incoming message events and raw data.
    */
-  Receive: WhatsSocketReceiver_SubModule;
+  Receive: WhatsSocket_Submodule_Receiver;
 };
