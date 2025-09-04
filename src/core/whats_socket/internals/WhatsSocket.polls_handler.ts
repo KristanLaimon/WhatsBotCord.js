@@ -1,8 +1,9 @@
-import type { proto, WAMessage } from "baileys";
+import type { proto } from "baileys";
 import { getAggregateVotesInPollMessage } from "baileys";
 import Delegate from "../../../libs/Delegate";
 import type { MsgType, SenderType } from "../../../Msg.types";
 import type { IWhatsSocket } from "../IWhatsSocket";
+import type { WhatsappMessage } from "../types";
 
 type WhatsPollResult = {
   Option: string;
@@ -17,7 +18,7 @@ interface IWhatsPoll {
 }
 
 type WhatsPollParamsInfo = {
-  pollRawMsg: WAMessage;
+  pollRawMsg: WhatsappMessage;
   titleHeader: string;
   pollOptions: string[];
   withMultiSelect: boolean;
@@ -88,7 +89,13 @@ export default class WhatsPoll implements IWhatsPoll {
     }
   }
 
-  private async _onMessageUpsertSubcriber(_senderId: string | null, _chatId: string, rawUpdateMsg: WAMessage, _msgType: MsgType, _senderType: SenderType) {
+  private async _onMessageUpsertSubcriber(
+    _senderId: string | null,
+    _chatId: string,
+    rawUpdateMsg: WhatsappMessage,
+    _msgType: MsgType,
+    _senderType: SenderType
+  ) {
     if (!rawUpdateMsg.message?.pollUpdateMessage) return;
     if ((rawUpdateMsg.key.remoteJid ?? "") !== (this._pollInfo.pollRawMsg.key.remoteJid ?? "")) return;
     if (!rawUpdateMsg.message.pollUpdateMessage.pollCreationMessageKey) return;
@@ -102,7 +109,7 @@ export default class WhatsPoll implements IWhatsPoll {
     }
   }
 
-  private async _thisPollUpdate(pollMsg: WAMessage): Promise<void> {
+  private async _thisPollUpdate(pollMsg: WhatsappMessage): Promise<void> {
     try {
       const pollVotes = await getAggregateVotesInPollMessage(
         {

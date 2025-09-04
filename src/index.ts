@@ -24,7 +24,7 @@ export { CommandType, MsgType, SenderType };
  * Collection of helper functions for working with WhatsApp messages.
  *
  * Provides convenience methods to extract text or determine message types
- * from raw Baileys `WAMessage` objects.
+ * from raw WhatsappMessages
  */
 export const MsgHelpers = {
   GetTextFromQuotedMsg: MsgHelper_GetQuotedMsgTextFrom,

@@ -112,9 +112,9 @@ export type WhatsSocketOptions = {
  */
 export default class WhatsSocket implements IWhatsSocket {
   //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events
-  public onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void> =
+  public onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: , msgType: MsgType, senderType: SenderType) => void> =
     new Delegate();
-  public onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> =
+  public onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: , msgType: MsgType, senderType: SenderType) => void> =
     new Delegate();
   public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
   public onRestart: Delegate<() => Promise<void>> = new Delegate();
@@ -315,7 +315,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureMessagesUpdates() {
-    this._socket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
+    this._socket.ev.on("messages.update", (msgsUpdates: Update[]) => {
       if (!msgsUpdates || msgsUpdates.length === 0) return;
       for (const msgUpdate of msgsUpdates) {
         if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
@@ -363,11 +363,11 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise< | null> {
     return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise< | null> {
     //TODO: Do something in case its undefined from this._socket.sendMessage
     const toReturn: proto.WebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;

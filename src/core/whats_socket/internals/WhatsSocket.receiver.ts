@@ -1,4 +1,4 @@
-import type { WAMessage } from "baileys";
+import type { WhatsappMessage } from "baileys";
 import { MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
 import type { MsgType, SenderType } from "../../../Msg.types";
 import type { IWhatsSocket } from "../IWhatsSocket";
@@ -16,7 +16,7 @@ import type { IWhatsSocket } from "../IWhatsSocket";
 type SuccessConditionCallback = (
   userId: string | null,
   chatId: string,
-  incomingRawMsg: WAMessage,
+  incomingRawMsg: WhatsappMessage,
   incomingMsgType: MsgType,
   incomingSenderType: SenderType
 ) => boolean;
@@ -81,18 +81,18 @@ export class WhatsSocket_Submodule_Receiver {
    * @param chatIdToLookFor - Chat ID where the message should arrive.
    * @param expectedMsgType - Expected type of the message.
    * @param options - Configuration options for timeout, cancel keywords, etc.
-   * @returns Promise that resolves with the WAMessage that met the condition or rejects with an error.
+   * @returns Promise that resolves with the WhatsappMessage that met the condition or rejects with an error.
    */
   private _waitNextMsg(
     successConditionCallback: SuccessConditionCallback,
     chatIdToLookFor: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
-  ): Promise<WAMessage> {
+  ): Promise<WhatsappMessage> {
     //Options default values
     const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg } = options;
 
-    return new Promise((resolve: (waMessage: WAMessage) => void, reject: (reason: WhatsMsgReceiverError) => void) => {
+    return new Promise((resolve: (WhatsappMessage: WhatsappMessage) => void, reject: (reason: WhatsMsgReceiverError) => void) => {
       let timer: NodeJS.Timeout;
       const resetTimeout = () => {
         if (timer) clearTimeout(timer);
@@ -102,7 +102,7 @@ export class WhatsSocket_Submodule_Receiver {
         }, timeoutSeconds * 1000);
       };
 
-      const listener = (userId: string | null, chatId: string, msg: WAMessage, msgType: MsgType, senderType: SenderType) => {
+      const listener = (userId: string | null, chatId: string, msg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => {
         if (msg.key.remoteJid !== chatIdToLookFor) return;
 
         if (ignoreSelfMessages) {
@@ -167,14 +167,14 @@ export class WhatsSocket_Submodule_Receiver {
    * @param chatToWaitOnID - Group chat ID to monitor.
    * @param expectedMsgType - Type of message expected.
    * @param options - Options for timeout, cancel keywords, etc.
-   * @returns The next WAMessage from the specified user.
+   * @returns The next WhatsappMessage from the specified user.
    */
   public async WaitUntilNextRawMsgFromUserIDInGroup(
     userIDToWait: string,
     chatToWaitOnID: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
-  ): Promise<WAMessage> {
+  ): Promise<WhatsappMessage> {
     const conditionCallback: SuccessConditionCallback = (_senderID, _chatId, msg, _msgType, _senderType) => msg.key.participant === userIDToWait;
     return await this._waitNextMsg(conditionCallback, chatToWaitOnID, expectedMsgType, options);
   }
@@ -187,13 +187,13 @@ export class WhatsSocket_Submodule_Receiver {
    * @param userIdToWait - The user ID to wait for.
    * @param expectedMsgType - Expected message type.
    * @param options - Options for timeout, cancel keywords, etc.
-   * @returns The next WAMessage from the specified user.
+   * @returns The next WhatsappMessage from the specified user.
    */
   public async WaitUntilNextRawMsgFromUserIdInPrivateConversation(
     userIdToWait: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
-  ): Promise<WAMessage> {
+  ): Promise<WhatsappMessage> {
     const conditionCallback: SuccessConditionCallback = (__userId, chatId, __incomingRawMsg, __incomingMsgType, __incomindSenderType) =>
       chatId === userIdToWait;
     return await this._waitNextMsg(conditionCallback, userIdToWait, expectedMsgType, options);

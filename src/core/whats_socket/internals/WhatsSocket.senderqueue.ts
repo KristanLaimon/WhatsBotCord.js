@@ -1,4 +1,5 @@
-import type { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import type { AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
+import type { WhatsappMessage } from "../types";
 import Delegate from "../../../libs/Delegate";
 import type { IWhatsSocket } from "../IWhatsSocket";
 
@@ -60,7 +61,7 @@ export default class WhatsSocketSenderQueue_SubModule {
    * @param content The content of the message.
    * @param misc Miscellaneous options.
    */
-  public Enqueue(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public Enqueue(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
     return new Promise((resolve, reject) => {
       if (this.queue.length >= this.maxQueueLimit) {
         console.log(`WhatsSocketSenderQueue: Queue limit of ${this.maxQueueLimit} reached. Ignoring extra img...`);
@@ -104,7 +105,7 @@ export default class WhatsSocketSenderQueue_SubModule {
     while (this.queue.length > 0) {
       const item = this.queue.shift()!;
       try {
-        const sentMsg: WAMessage | null = await this.whatsSocket.SendRaw(item.chatId, item.content, item.misc);
+        const sentMsg: WhatsappMessage | null = await this.whatsSocket.SendRaw(item.chatId, item.content, item.misc);
         this.onSentMessageInsideQueue.CallAll(item.chatId, item.content, item.misc);
         this.whatsSocket.onSentMessage.CallAll(item.chatId, item.content, item.misc);
         item.resolve(sentMsg);
