@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ChatContext } from "./ChatSession";
+import type { ChatContext } from "./ChatContext";
 import CommandsSearcher, { CommandType } from "./CommandsSearcher";
 import type { CommandArgs } from "./CommandsSearcher.types";
 import type { IBotCommand, RawMsgAPI } from "./IBotCommand";

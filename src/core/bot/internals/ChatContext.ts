@@ -1,17 +1,17 @@
+import { autobind } from "../../../helpers/Decorators.helper";
+import { MsgHelper_GetSenderTypeFromRawMsg, MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
+import { MsgType, SenderType } from "../../../Msg.types";
 import {
   WhatsSocketReceiverHelper_isReceiverError,
   type WhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
-} from "../../../core/whats_socket/internals/WhatsSocket.receiver";
+} from "../../whats_socket/internals/WhatsSocket.receiver";
 import type {
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
   WhatsSocket_Submodule_SugarSender,
-} from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders";
-import { autobind } from "../../../helpers/Decorators.helper";
-import { MsgHelper_GetSenderTypeFromRawMsg, MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
-import { MsgType, SenderType } from "../../../Msg.types";
+} from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { WhatsappMessage } from "../../whats_socket/types";
 
 export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
@@ -480,19 +480,23 @@ export class ChatContext {
           });
         } catch (e) {
           if (WhatsSocketReceiverHelper_isReceiverError(e)) {
-            return null;
+            if (!e.wasAbortedByUser) {
+              return null;
+            }
           }
           throw e;
         }
       case SenderType.Individual:
         try {
-          return this._internalReceive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(this._fixedChatId, expectedType, {
+          return await this._internalReceive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(this._fixedChatId, expectedType, {
             ...this.Config,
             ...localOptions,
           });
         } catch (e) {
           if (WhatsSocketReceiverHelper_isReceiverError(e)) {
-            return null;
+            if (!e.wasAbortedByUser) {
+              return null;
+            }
           }
           throw e;
         }

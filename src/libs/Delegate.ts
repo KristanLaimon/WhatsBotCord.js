@@ -1,6 +1,9 @@
 /**
  * Simple delegate C#-like for Observer pattern and events.
  */
+
+export type DelegateConsumer<fnType extends (...args: any[]) => any> = Omit<Delegate<fnType>, "CallAll">;
+
 export default class Delegate<functType extends (...args: any[]) => any> {
   private functions: functType[] = [];
 

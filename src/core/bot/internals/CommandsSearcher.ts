@@ -56,18 +56,18 @@ export default class CommandsSearcher {
     return this._tagCommands.get(tagName.toLowerCase()) ?? null;
   }
 
-  public GetWhateverWithAlias(possibleAlias: string): { command: IBotCommand; type: CommandType } | null {
+  public GetWhateverWithAlias(possibleAlias: string, commandTypeToLookFor: CommandType): IBotCommand | null {
     const aliasLower = possibleAlias.toLowerCase();
 
-    const findInMap = (map: Map<string, IBotCommand>, type: CommandType) => {
+    const findInMap = (map: Map<string, IBotCommand>) => {
       for (const [, commandObj] of map) {
         if (commandObj.aliases?.some((alias) => alias.toLowerCase() === aliasLower)) {
-          return { command: commandObj, type };
+          return commandObj;
         }
       }
       return null;
     };
 
-    return findInMap(this._normalCommands, CommandType.Normal) ?? findInMap(this._tagCommands, CommandType.Tag);
+    return commandTypeToLookFor === CommandType.Normal ? findInMap(this._normalCommands) : findInMap(this._tagCommands);
   }
 }

@@ -1,10 +1,10 @@
 import { expect, it, spyOn, test, type Mock } from "bun:test";
-import WhatsSocketMock from "../../../core/whats_socket/mocks/WhatsSocket.mock";
+import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
 import { GroupMsg as InitialMsg } from "../../../helpers/Whatsapp.helper.mocks";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import { WhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/WhatsSocket.receiver";
 import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
-import { ChatContext } from "./ChatSession";
+import { ChatContext } from "./ChatContext";
 
 /**
  * ChatSession Testing Suite

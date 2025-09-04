@@ -9,11 +9,11 @@ import {
 } from "./helpers/Whatsapp.helper";
 
 // === Types deps exporting ===
-import type { ChatContext } from "./core/bot/internals/ChatSession";
+import type { ChatContext } from "./core/bot/internals/ChatContext";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types";
-import type { RawMsgAPI } from "./core/bot/internals/IBotCommand";
+import type { IBotCommand, RawMsgAPI } from "./core/bot/internals/IBotCommand";
 import type { WhatsappMessage } from "./core/whats_socket/types";
-export type { ChatContext, CommandArgs, RawMsgAPI, WhatsappMessage };
+export type { ChatContext, CommandArgs, IBotCommand, RawMsgAPI, WhatsappMessage };
 
 // == Runtime deps exporting ==
 import { MsgType, SenderType } from "./Msg.types";
