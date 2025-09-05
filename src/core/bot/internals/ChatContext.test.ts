@@ -2,11 +2,11 @@ import { expect, it, spyOn, test, type Mock } from "bun:test";
 import { GroupMsg, GroupMsg_CHATID, GroupMsg_SENDERID, IndividualMsg, IndividualMsg_CHATID } from "../../../helpers/Whatsapp.helper.mocks";
 import { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
-import { WhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/WhatsSocket.receiver";
+import { WhatsSocket_Submodule_Receiver, type WhatsMsgReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";
 import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../../whats_socket/types";
-import { ChatContext } from "./ChatContext";
+import { ChatContext, type ChatContextConfig } from "./ChatContext";
 
 /**
  * ChatSession Testing Suite
@@ -437,21 +437,179 @@ it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMINDIVIDUAL_ShouldRe
 });
 
 //When getting wait error (rejected by user)
-it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMGROUP_ShouldIdentifyAndReturnNull", async (): Promise<void> => {});
+it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMGROUP_ShouldIdentifyAndRejectImmediatelyWithError", async (): Promise<void> => {
+  const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromGroup();
 
-it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMINDIVIDUAL_ShouldIdentifyAndReturnNull", async (): Promise<void> => {});
+  const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
+  const abortedWaitError: Partial<WhatsMsgReceiverError> = {
+    chatId: GroupMsg_CHATID,
+    userId: GroupMsg_SENDERID,
+    wasAbortedByUser: true,
+  };
+  internalWaitSpy.mockRejectedValueOnce(abortedWaitError);
 
-//When getting wait error (not rejected by user)
-it("WaitMsg_GettingKnownWaitingError_NotRejectedByUser_FROMGROUP_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {});
+  const main = chat.WaitMsg(MsgType.Text);
+  let res: WhatsappMessage | null = null;
+  try {
+    res = await main;
+    throw new Error("It's not throwing an error!");
+  } catch (e) {
+    expect(e).toMatchObject(abortedWaitError);
+  }
+  expect(res).toBeNull();
+  expect(internalWaitSpy).toHaveBeenCalledTimes(1);
+});
 
-it("WaitMsg_GettingKnownWaitingError_NotRejectedByUser_FROMINDIVIDUAL_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {});
+it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMINDIVIDUAL_ShouldIdentifyAndRejectImmediatelyWithError", async (): Promise<void> => {
+  const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
+
+  const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
+  const abortedWaitError: Partial<WhatsMsgReceiverError> = {
+    chatId: IndividualMsg_CHATID,
+    userId: null,
+    wasAbortedByUser: true,
+    errorMessage: "mock message timeout error",
+  };
+  internalWaitSpy.mockRejectedValueOnce(abortedWaitError);
+
+  const main = chat.WaitMsg(MsgType.Text);
+  let res: WhatsappMessage | null = null;
+  try {
+    res = await main;
+    throw new Error("It's not throwing an error!");
+  } catch (e) {
+    expect(e).toMatchObject(abortedWaitError);
+  }
+  expect(res).toBeNull();
+  expect(internalWaitSpy).toHaveBeenCalledTimes(1);
+});
+
+//When getting wait error by timeout (not rejected by user)
+it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMGROUP_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {
+  const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromGroup();
+
+  const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
+  const abortedWaitError: WhatsMsgReceiverError = {
+    chatId: GroupMsg_CHATID,
+    userId: GroupMsg_SENDERID,
+    wasAbortedByUser: false,
+    errorMessage: "mock message",
+  };
+  //Simulating timeout error from receiver internal submodule!
+  internalWaitSpy.mockRejectedValueOnce(abortedWaitError);
+  const main = chat.WaitMsg(MsgType.Text);
+  let res: WhatsappMessage | null = null;
+  expect(async () => {
+    res = await main;
+  }).not.toThrow();
+  expect(res).toBeNull();
+  expect(internalWaitSpy).toHaveBeenCalledTimes(1);
+});
+
+it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMINDIVIDUAL_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {
+  const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
+
+  const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
+  const abortedWaitError: WhatsMsgReceiverError = {
+    chatId: IndividualMsg_CHATID,
+    userId: null,
+    wasAbortedByUser: false,
+    errorMessage: "mock message timeout error",
+  };
+  //Simulating timeout error from receiver internal submodule!
+  internalWaitSpy.mockRejectedValueOnce(abortedWaitError);
+  const main = chat.WaitMsg(MsgType.Text);
+  let res: WhatsappMessage | null = null;
+  expect(async () => {
+    res = await main;
+  }).not.toThrow();
+  expect(res).toBeNull();
+  expect(internalWaitSpy).toHaveBeenCalledTimes(1);
+});
 
 //When using without local config params
-it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigInstead", async (): Promise<void> => {});
+it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigInstead", async (): Promise<void> => {
+  //Im checking its being called with correct params, if its using (Global Config + Local Config) overlap
+  const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
+  //Doesn't matter if it returns correctly (already tested)
+  internalWaitSpy.mockResolvedValue({} as any);
+  const expectedType = MsgType.Text;
 
-it("WhatMsg_WhenNotUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseChatContextConfigInstead", async (): Promise<void> => {});
+  // 1st local calling
+  const firstChatConfig: ChatContextConfig = {
+    cancelKeywords: ["mock", "cancel"],
+    ignoreSelfMessages: false,
+    timeoutSeconds: 100,
+    cancelFeedbackMsg: "cancel feedback mock",
+    wrongTypeFeedbackMsg: "wrong type feedback mock",
+  };
+  await chat.WaitMsg(expectedType, /** local options for this msg only */ firstChatConfig);
+  expect(internalWaitSpy).toHaveBeenCalledTimes(1);
+  expect(internalWaitSpy).toHaveBeenCalledWith(GroupMsg_SENDERID, GroupMsg_CHATID, expectedType, { ...chat.Config, ...firstChatConfig });
 
-//When using with local config params
-it("WaitMsg_WhenUsingLocalConfigParams_FROMGROUP_ShouldUseMixChatContextConfigAndLocalConfig", async (): Promise<void> => {});
+  /// 2nd local calling
+  const secondLocalConfig: Partial<ChatContextConfig> = {
+    timeoutSeconds: 100000,
+  };
+  await chat.WaitMsg(expectedType, /** local options for this msg only*/ secondLocalConfig);
+  expect(internalWaitSpy).toHaveBeenCalledTimes(2);
+  let paramsCalled: ChatContextConfig = internalWaitSpy.mock.lastCall![3];
+  expect(paramsCalled).toBeDefined();
+  //Should not be the same like last local call
+  expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
+  //Should be using only secondLocalConfig overwrites
+  expect(paramsCalled).toMatchObject({ ...chat.Config, ...secondLocalConfig });
 
-it("WaitMsg_WhenUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseMixChatContextConfigAndLocalConfig", async (): Promise<void> => {});
+  // Local calling without any
+  await chat.WaitMsg(expectedType /**no local config*/);
+  expect(internalWaitSpy).toHaveBeenCalledTimes(3);
+  paramsCalled = internalWaitSpy.mock.lastCall![3];
+  expect(paramsCalled).toBeDefined();
+  expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
+  expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...secondLocalConfig });
+  expect(paramsCalled).toMatchObject(chat.Config);
+});
+
+it("WhatMsg_WhenNotUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseChatContextConfigInstead", async (): Promise<void> => {
+  //Im checking its being called with correct params, if its using (Global Config + Local Config) overlap
+  const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
+  const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
+  //Doesn't matter if it returns correctly (already tested)
+  internalWaitSpy.mockResolvedValue({} as any);
+  const expectedType = MsgType.Text;
+
+  // 1st local calling
+  const firstChatConfig: ChatContextConfig = {
+    cancelKeywords: ["mock", "cancel"],
+    ignoreSelfMessages: false,
+    timeoutSeconds: 100,
+    cancelFeedbackMsg: "cancel feedback mock",
+    wrongTypeFeedbackMsg: "wrong type feedback mock",
+  };
+  await chat.WaitMsg(expectedType, /** local options for this msg only */ firstChatConfig);
+  expect(internalWaitSpy).toHaveBeenCalledTimes(1);
+  expect(internalWaitSpy).toHaveBeenCalledWith(IndividualMsg_CHATID, expectedType, { ...chat.Config, ...firstChatConfig });
+
+  /// 2nd local calling
+  const secondLocalConfig: Partial<ChatContextConfig> = {
+    timeoutSeconds: 100000,
+  };
+  await chat.WaitMsg(expectedType, /** local options for this msg only*/ secondLocalConfig);
+  expect(internalWaitSpy).toHaveBeenCalledTimes(2);
+  let paramsCalled: ChatContextConfig = internalWaitSpy.mock.lastCall![2];
+  expect(paramsCalled).toBeDefined();
+  //Should not be the same like last local call
+  expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
+  //Should be using only secondLocalConfig overwrites
+  expect(paramsCalled).toMatchObject({ ...chat.Config, ...secondLocalConfig });
+
+  // Local calling without any
+  await chat.WaitMsg(expectedType /**no local config*/);
+  expect(internalWaitSpy).toHaveBeenCalledTimes(3);
+  paramsCalled = internalWaitSpy.mock.lastCall![2];
+  expect(paramsCalled).toBeDefined();
+  expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
+  expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...secondLocalConfig });
+  expect(paramsCalled).toMatchObject(chat.Config);
+});

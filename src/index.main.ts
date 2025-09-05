@@ -82,7 +82,7 @@ bot.Start();
 
 //TODO: Testing
 /** TODO TESTING:
- * 1. + ChatContext => Test receive methods (WaitMsgText, WaitMsg)
+ * 1. CHECKED ✅ | + ChatContext => Test receive methods (WaitMsgText, WaitMsg)
  * 2. + Bot.ts => Test whole functionality as bot obj (not its internals)
  *                && Middleware internal system
  *                && Tests for handling command errors (known errors | unknown ones | abortedByUser with 'cancel')

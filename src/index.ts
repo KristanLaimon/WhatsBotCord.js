@@ -9,19 +9,20 @@ import {
 } from "./helpers/Whatsapp.helper";
 
 // === Types deps exporting ===
-import type { ChatContext } from "./core/bot/internals/ChatContext";
+import type { ChatContextConfig } from "./core/bot/internals/ChatContext";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types";
 import type { IBotCommand, RawMsgAPI } from "./core/bot/internals/IBotCommand";
 import type { WhatsappMessage } from "./core/whats_socket/types";
-export type { ChatContext, CommandArgs, IBotCommand, RawMsgAPI, WhatsappMessage };
+export type { ChatContextConfig, CommandArgs, IBotCommand, RawMsgAPI, WhatsappMessage };
 
 // == Runtime deps exporting ==
+import { ChatContext } from "./core/bot/internals/ChatContext";
 import { CommandType } from "./core/bot/internals/CommandsSearcher";
 import WhatsSocket from "./core/whats_socket/WhatsSocket";
 import Delegate from "./libs/Delegate";
 import { MsgType, SenderType } from "./Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types";
-export { CommandType, Delegate, MsgType, SenderType, WhatsSocket };
+export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsSocket };
 
 // === Helpers ===
 /**
