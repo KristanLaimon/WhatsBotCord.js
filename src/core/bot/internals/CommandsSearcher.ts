@@ -1,4 +1,4 @@
-import type { IBotCommand } from "./IBotCommand";
+import type { ICommand } from "./IBotCommand";
 
 export enum CommandType {
   Normal = "Normal",
@@ -7,13 +7,13 @@ export enum CommandType {
 
 export type CommandEntry = {
   commandName: string;
-  commandObj: IBotCommand;
+  commandObj: ICommand;
 };
 
 //TODO: Create a SUITE TEST
 export default class CommandsSearcher {
-  private _normalCommands: Map<string, IBotCommand> = new Map();
-  private _tagCommands: Map<string, IBotCommand> = new Map();
+  private _normalCommands: Map<string, ICommand> = new Map();
+  private _tagCommands: Map<string, ICommand> = new Map();
 
   public get NormalCommands(): CommandEntry[] {
     const toReturn: CommandEntry[] = [];
@@ -27,11 +27,38 @@ export default class CommandsSearcher {
     return toReturn;
   }
 
-  public Add(commandInstance: IBotCommand, addCommandAsType: CommandType): void {
-    const commandNameLowercase = commandInstance.name.toLowerCase();
-    const mapToStoreInto: Map<string, IBotCommand> = addCommandAsType === CommandType.Normal ? this._normalCommands : this._tagCommands;
-    //If already exists, it'll be overwritten
-    mapToStoreInto.set(commandNameLowercase, commandInstance);
+  public Add(commandToAdd: ICommand, addCommandAsType: CommandType): void {
+    const commandNameLowercase = commandToAdd.name.toLowerCase();
+    const mapToStoreInto: Map<string, ICommand> = addCommandAsType === CommandType.Normal ? this._normalCommands : this._tagCommands;
+
+    // Check if a command with the same name already exists
+    if (mapToStoreInto.has(commandNameLowercase)) {
+      throw new Error(`Command of type "${CommandType[addCommandAsType]}" with name '${commandNameLowercase}' already exists!`);
+    }
+
+    // Normalize metadata
+    commandToAdd.name = commandNameLowercase;
+    if (commandToAdd.aliases) {
+      commandToAdd.aliases = commandToAdd.aliases.map((alias) => alias.toLowerCase());
+    }
+
+    // Check for alias conflicts
+    if (commandToAdd.aliases?.length) {
+      mapToStoreInto.forEach((com) => {
+        if (!com.aliases?.length) return;
+
+        for (const alias of commandToAdd.aliases!) {
+          if (com.aliases!.includes(alias)) {
+            throw new Error(
+              `Alias '${alias}' for command '${commandNameLowercase}' conflicts with existing command '${com.name}' of type "${CommandType[addCommandAsType]}".`
+            );
+          }
+        }
+      });
+    }
+
+    // Store the command
+    mapToStoreInto.set(commandNameLowercase, commandToAdd);
   }
 
   public Exists(commandName: string) {
@@ -48,18 +75,18 @@ export default class CommandsSearcher {
     return null;
   }
 
-  public GetCommand(commandName: string): IBotCommand | null {
+  public GetCommand(commandName: string): ICommand | null {
     return this._normalCommands.get(commandName.toLowerCase()) ?? null;
   }
 
-  public GetTag(tagName: string): IBotCommand | null {
+  public GetTag(tagName: string): ICommand | null {
     return this._tagCommands.get(tagName.toLowerCase()) ?? null;
   }
 
-  public GetWhateverWithAlias(possibleAlias: string, commandTypeToLookFor: CommandType): IBotCommand | null {
+  public GetWhateverWithAlias(possibleAlias: string, commandTypeToLookFor: CommandType): ICommand | null {
     const aliasLower = possibleAlias.toLowerCase();
 
-    const findInMap = (map: Map<string, IBotCommand>) => {
+    const findInMap = (map: Map<string, ICommand>) => {
       for (const [, commandObj] of map) {
         if (commandObj.aliases?.some((alias) => alias.toLowerCase() === aliasLower)) {
           return commandObj;

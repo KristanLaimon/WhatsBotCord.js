@@ -13,7 +13,7 @@ import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocke
 import { ChatContext, type ChatContextConfig } from "./internals/ChatContext";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher";
 import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types";
-import type { IBotCommand } from "./internals/IBotCommand";
+import type { ICommand } from "./internals/IBotCommand";
 
 export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
   Omit<Partial<ChatContextConfig>, "ignoreSelfMessages"> & {
@@ -25,6 +25,12 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
      * @default '!'
      */
     commandPrefix?: string | string[];
+
+    /**
+     * For very advanced and testing purposes.
+     * Use at your own risk
+     */
+    ownWhatsSocketImplementation?: IWhatsSocket;
   };
 
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
@@ -64,9 +70,8 @@ export type BotMiddleWareFunct = (
 export default class Bot {
   private _socket: IWhatsSocket;
   private _commandSearcher: CommandsSearcher;
-  private _options: WhatsBotOptions;
-
   private _internalMiddleware: BotMiddleWareFunct[] = [];
+  public Settings: WhatsBotOptions;
 
   /**
    * Direct access to the underlying send messaging module.
@@ -126,7 +131,7 @@ export default class Bot {
    * - `senderQueueMaxLimit`: `20`
    */
   constructor(options?: WhatsBotOptions) {
-    this._options = {
+    this.Settings = {
       credentialsFolder: options?.credentialsFolder ?? "./auth",
       delayMilisecondsBetweenMsgs: options?.delayMilisecondsBetweenMsgs ?? 100,
       ignoreSelfMessage: options?.ignoreSelfMessage ?? true,
@@ -135,12 +140,17 @@ export default class Bot {
       senderQueueMaxLimit: options?.senderQueueMaxLimit ?? 20,
       commandPrefix: typeof options?.commandPrefix === "string" ? [options.commandPrefix] : options?.commandPrefix ?? ["!"],
       tagCharPrefix: typeof options?.tagCharPrefix === "string" ? [options.tagCharPrefix] : options?.tagCharPrefix ?? ["@"],
+      cancelFeedbackMsg: options?.cancelFeedbackMsg ?? "canceled ❌ (Default Message: Change me using Bot constructor params options)",
+      cancelKeywords: options?.cancelKeywords ?? ["cancel", "cancelar", "para", "stop"],
+      timeoutSeconds: options?.timeoutSeconds ?? 30,
+      wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
+      ownWhatsSocketImplementation: options?.ownWhatsSocketImplementation,
     };
 
     this.Start = this.Start.bind(this);
 
     this._commandSearcher = new CommandsSearcher();
-    this._socket = new WhatsSocket(this._options);
+    this._socket = this.Settings.ownWhatsSocketImplementation ?? new WhatsSocket(this.Settings);
 
     this.EVENT_OnMessageIncoming = this.EVENT_OnMessageIncoming.bind(this);
     this._socket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
@@ -192,14 +202,14 @@ export default class Bot {
 
       // === Check if command, then what type ===
       const prefix: string = txtFromMsgHealthy[0]!;
-      let commandFound: IBotCommand | null = null;
+      let commandFound: ICommand | null = null;
       let commandTypeFound: CommandType | null = null;
       // 1. Check if its normal command
-      if ((this._options.commandPrefix as string[]).includes(prefix)) {
+      if ((this.Settings.commandPrefix as string[]).includes(prefix)) {
         commandTypeFound = CommandType.Normal;
         commandFound = this.Commands.GetCommand(commandOrAliasNameLowerCased);
         // 2. Check if is tag command
-      } else if ((this._options.tagCharPrefix as string[]).includes(prefix)) {
+      } else if ((this.Settings.tagCharPrefix as string[]).includes(prefix)) {
         commandTypeFound = CommandType.Tag;
         commandFound = this.Commands.GetTag(commandOrAliasNameLowerCased);
       }
@@ -231,12 +241,11 @@ export default class Bot {
         await commandFound.run(
           /** Chat Context */
           new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
-            cancelKeywords: this._options.cancelKeywords ?? ["cancel", "cancelar", "para", "stop"],
-            ignoreSelfMessages: this._options.ignoreSelfMessage ?? true,
-            timeoutSeconds: this._options.timeoutSeconds ?? 30,
-            wrongTypeFeedbackMsg:
-              this._options.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
-            cancelFeedbackMsg: this._options.cancelFeedbackMsg ?? "canceled ❌ (Default Message: Change me using Bot constructor params options)",
+            cancelKeywords: this.Settings.cancelKeywords!,
+            timeoutSeconds: this.Settings.timeoutSeconds!,
+            ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+            wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+            cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
           }),
           /** RawAPI */
           {
@@ -256,14 +265,14 @@ export default class Bot {
         );
       } catch (e) {
         if (WhatsSocketReceiverHelper_isReceiverError(e)) {
-          if (e.wasAbortedByUser && this._options.loggerMode !== "silent") {
+          if (e.wasAbortedByUser && this.Settings.loggerMode !== "silent") {
             console.log(`[Command Canceled]: Name ${commandOrAliasNameLowerCased}`);
           }
-          if (e.errorMessage === WhatsSocketReceiverMsgError.Timeout && this._options.loggerMode !== "silent") {
+          if (e.errorMessage === WhatsSocketReceiverMsgError.Timeout && this.Settings.loggerMode !== "silent") {
             console.log(`[Command Timeout]: Name ${commandOrAliasNameLowerCased}`);
           }
         } else {
-          if (this._options.loggerMode !== "silent")
+          if (this.Settings.loggerMode !== "silent")
             console.log(
               `[COMMAND EXECUTION ERROR]: Error when trying to execute '${commandOrAliasNameLowerCased}'\n\n`,
               `Error Info: ${JSON.stringify(e, null, 2)}`

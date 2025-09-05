@@ -10,7 +10,7 @@ import type { CommandArgs } from "./CommandsSearcher.types";
  * and a `run` method which contains the logic to execute when the command
  * is invoked.
  */
-export interface IBotCommand {
+export interface ICommand {
   /** Unique name of the command (used to trigger it) */
   name: string;
 

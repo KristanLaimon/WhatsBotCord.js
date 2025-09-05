@@ -11,9 +11,9 @@ import {
 // === Types deps exporting ===
 import type { ChatContextConfig } from "./core/bot/internals/ChatContext";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types";
-import type { IBotCommand, RawMsgAPI } from "./core/bot/internals/IBotCommand";
+import type { ICommand, RawMsgAPI } from "./core/bot/internals/IBotCommand";
 import type { WhatsappMessage } from "./core/whats_socket/types";
-export type { ChatContextConfig, CommandArgs, IBotCommand, RawMsgAPI, WhatsappMessage };
+export type { ChatContextConfig, CommandArgs, ICommand as IBotCommand, RawMsgAPI, WhatsappMessage };
 
 // == Runtime deps exporting ==
 import { ChatContext } from "./core/bot/internals/ChatContext";
