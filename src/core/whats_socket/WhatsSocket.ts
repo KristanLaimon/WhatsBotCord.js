@@ -152,7 +152,7 @@ export default class WhatsSocket implements IWhatsSocket {
   private _milisecondsDelayBetweenSentMsgs: number;
   private _customSocketImplementation?: BaileysWASocket;
   constructor(options?: WhatsSocketOptions) {
-    this._loggerMode = options?.loggerMode ?? "silent";
+    this._loggerMode = options?.loggerMode === "recommended" ? "silent" : options?.loggerMode ?? "silent";
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
@@ -248,9 +248,13 @@ export default class WhatsSocket implements IWhatsSocket {
         try {
           const groups = Object.values(await this._socket.groupFetchAllParticipating());
           this.onStartupAllGroupsIn.CallAll(groups);
-          console.log("INFO: All groups data fetched successfully");
+          if (this._loggerMode !== "silent") {
+            console.log("INFO: All groups data fetched successfully");
+          }
         } catch (err) {
-          console.error("ERROR: Couldn't fetch groups", err);
+          if (this._loggerMode !== "silent") {
+            console.error("ERROR: Couldn't fetch groups", err);
+          }
         }
       }
 
@@ -260,10 +264,14 @@ export default class WhatsSocket implements IWhatsSocket {
 
         // Only attempt to reconnect if not logged out
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-        console.warn("Socket closed", statusCode ? `(code: ${statusCode})` : "");
+        if (this._loggerMode !== "silent") {
+          console.warn("Socket closed", statusCode ? `(code: ${statusCode})` : "");
+        }
 
         if (!shouldReconnect) {
-          console.error("ERROR: Socket logged out. Not reconnecting.");
+          if (this._loggerMode !== "silent") {
+            console.error("ERROR: Socket logged out. Not reconnecting.");
+          }
           await this.Shutdown();
           return;
         }
@@ -273,7 +281,9 @@ export default class WhatsSocket implements IWhatsSocket {
 
         // Check max retries
         if (this.ActualReconnectionRetries > this._maxReconnectionRetries) {
-          console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
+          if (this._loggerMode !== "silent") {
+            console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
+          }
           await this.Shutdown();
           return;
         }
@@ -282,14 +292,20 @@ export default class WhatsSocket implements IWhatsSocket {
         if (this._isRestarting) return;
 
         this._isRestarting = true;
-        console.log(`INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
+        if (this._loggerMode !== "silent") {
+          console.log(`INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
+        }
 
         try {
           await this.Restart();
           this.onRestart.CallAll();
-          console.log("INFO: Socket restarted successfully!");
+          if (this._loggerMode !== "silent") {
+            console.log("INFO: Socket restarted successfully!");
+          }
         } catch (err) {
-          console.error("ERROR: Socket restart failed", err);
+          if (this._loggerMode !== "silent") {
+            console.error("ERROR: Socket restart failed", err);
+          }
         } finally {
           this._isRestarting = false;
         }
@@ -342,7 +358,9 @@ export default class WhatsSocket implements IWhatsSocket {
     this._socket.ev.on("groups.upsert", async (groupsUpserted: GroupMetadata[]) => {
       for (const group of groupsUpserted) {
         this.onGroupEnter.CallAll(group);
-        console.info(`INFO: Joined to a new group ${group.subject} at ${moment().format("YYYY-MM-DD HH:mm:ss")}`);
+        if (this._loggerMode !== "silent") {
+          console.info(`INFO: Joined to a new group ${group.subject} at ${moment().format("YYYY-MM-DD HH:mm:ss")}`);
+        }
       }
     });
   }
@@ -350,7 +368,9 @@ export default class WhatsSocket implements IWhatsSocket {
   private ConfigureGroupsUpdates(): void {
     this._socket.ev.on("groups.update", (args) => {
       if (args.length === 0) {
-        console.log("INFO: No group updates received.");
+        if (this._loggerMode !== "silent") {
+          console.log("INFO: No group updates received.");
+        }
         return;
       }
       for (let i = 0; i < args.length; i++) {

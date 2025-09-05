@@ -2,7 +2,11 @@ import type { WAMessage, proto } from "baileys";
 import { MsgHelper_GetMsgTypeFromProtoIMessage, MsgHelper_GetQuotedMsgFrom, MsgHelper_GetTextFrom } from "../../helpers/Msg.helper";
 import Delegate from "../../libs/Delegate";
 import { MsgType, type SenderType } from "../../Msg.types";
-import { WhatsSocketReceiverHelper_isReceiverError, type WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
+import {
+  WhatsSocketReceiverHelper_isReceiverError,
+  WhatsSocketReceiverMsgError,
+  type WhatsSocket_Submodule_Receiver,
+} from "../whats_socket/internals/WhatsSocket.receiver";
 import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket";
@@ -126,7 +130,7 @@ export default class Bot {
       credentialsFolder: options?.credentialsFolder ?? "./auth",
       delayMilisecondsBetweenMsgs: options?.delayMilisecondsBetweenMsgs ?? 100,
       ignoreSelfMessage: options?.ignoreSelfMessage ?? true,
-      loggerMode: options?.loggerMode ?? "debug",
+      loggerMode: options?.loggerMode ?? "recommended",
       maxReconnectionRetries: options?.maxReconnectionRetries ?? 5,
       senderQueueMaxLimit: options?.senderQueueMaxLimit ?? 20,
       commandPrefix: typeof options?.commandPrefix === "string" ? [options.commandPrefix] : options?.commandPrefix ?? ["!"],
@@ -251,16 +255,19 @@ export default class Bot {
           }
         );
       } catch (e) {
-        //TODO: Make tests for this
         if (WhatsSocketReceiverHelper_isReceiverError(e)) {
-          if (e.wasAbortedByUser) {
+          if (e.wasAbortedByUser && this._options.loggerMode !== "silent") {
             console.log(`[Command Canceled]: Name ${commandOrAliasNameLowerCased}`);
           }
+          if (e.errorMessage === WhatsSocketReceiverMsgError.Timeout && this._options.loggerMode !== "silent") {
+            console.log(`[Command Timeout]: Name ${commandOrAliasNameLowerCased}`);
+          }
         } else {
-          console.log(
-            `[COMMAND EXECUTION ERROR]: Error when trying to execute '${commandOrAliasNameLowerCased}'\n\n`,
-            `Error Info: ${JSON.stringify(e, null, 2)}`
-          );
+          if (this._options.loggerMode !== "silent")
+            console.log(
+              `[COMMAND EXECUTION ERROR]: Error when trying to execute '${commandOrAliasNameLowerCased}'\n\n`,
+              `Error Info: ${JSON.stringify(e, null, 2)}`
+            );
         }
       }
     }

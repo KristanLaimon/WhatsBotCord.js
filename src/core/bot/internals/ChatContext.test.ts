@@ -2,7 +2,7 @@ import { expect, it, spyOn, test, type Mock } from "bun:test";
 import { GroupMsg, GroupMsg_CHATID, GroupMsg_SENDERID, IndividualMsg, IndividualMsg_CHATID } from "../../../helpers/Whatsapp.helper.mocks";
 import { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
-import { WhatsSocket_Submodule_Receiver, type WhatsMsgReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";
+import { WhatsSocketReceiverMsgError, WhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";
 import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../../whats_socket/types";
@@ -441,7 +441,7 @@ it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMGROUP_ShouldIdentifyAndR
   const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromGroup();
 
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
-  const abortedWaitError: Partial<WhatsMsgReceiverError> = {
+  const abortedWaitError: Partial<WhatsSocketReceiverError> = {
     chatId: GroupMsg_CHATID,
     userId: GroupMsg_SENDERID,
     wasAbortedByUser: true,
@@ -464,11 +464,11 @@ it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMINDIVIDUAL_ShouldIdentif
   const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
 
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
-  const abortedWaitError: Partial<WhatsMsgReceiverError> = {
+  const abortedWaitError: Partial<WhatsSocketReceiverError> = {
     chatId: IndividualMsg_CHATID,
     userId: null,
     wasAbortedByUser: true,
-    errorMessage: "mock message timeout error",
+    errorMessage: WhatsSocketReceiverMsgError.Timeout,
   };
   internalWaitSpy.mockRejectedValueOnce(abortedWaitError);
 
@@ -489,11 +489,11 @@ it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMGROUP_ShouldIdentifyAndR
   const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromGroup();
 
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
-  const abortedWaitError: WhatsMsgReceiverError = {
+  const abortedWaitError: WhatsSocketReceiverError = {
     chatId: GroupMsg_CHATID,
     userId: GroupMsg_SENDERID,
     wasAbortedByUser: false,
-    errorMessage: "mock message",
+    errorMessage: WhatsSocketReceiverMsgError.Timeout,
   };
   //Simulating timeout error from receiver internal submodule!
   internalWaitSpy.mockRejectedValueOnce(abortedWaitError);
@@ -510,11 +510,11 @@ it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMINDIVIDUAL_ShouldIdentif
   const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
 
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
-  const abortedWaitError: WhatsMsgReceiverError = {
+  const abortedWaitError: WhatsSocketReceiverError = {
     chatId: IndividualMsg_CHATID,
     userId: null,
     wasAbortedByUser: false,
-    errorMessage: "mock message timeout error",
+    errorMessage: WhatsSocketReceiverMsgError.Timeout,
   };
   //Simulating timeout error from receiver internal submodule!
   internalWaitSpy.mockRejectedValueOnce(abortedWaitError);

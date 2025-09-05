@@ -156,18 +156,17 @@ test("GetWhateverWithAlias_WithMixedCommands_ShouldFetchOnlyCommandWithAlias", (
   const idealNormalCommand = new CommandIdeal();
   searcher.Add(idealNormalCommand, CommandType.Normal);
 
-  const found = searcher.GetWhateverWithAlias(CommandIdealAliases.at(0)!);
+  const found = searcher.GetWhateverWithAlias(CommandIdealAliases.at(0)!, CommandType.Normal);
   expect(found).toBeDefined();
-  expect(found!.command).toMatchObject(idealNormalCommand);
-  expect(found!.type).toBe(CommandType.Normal);
+  expect(found).toMatchObject(idealNormalCommand);
 
   const desnormalizedTagCommand: IBotCommand = new CommandDesnormalized();
   searcher.Add(desnormalizedTagCommand, CommandType.Tag);
-  const found2 = searcher.GetWhateverWithAlias(CommandDesnormalizedAliases.at(0)!);
+  const found2 = searcher.GetWhateverWithAlias(CommandDesnormalizedAliases.at(0)!, CommandType.Tag);
   expect(found2).toBeDefined();
-  expect(found2!.command).toMatchObject(desnormalizedTagCommand);
-  expect(found2!.type).toBe(CommandType.Tag);
+  expect(found2).toMatchObject(desnormalizedTagCommand);
 
-  const notFound = searcher.GetWhateverWithAlias("not-existing-alias");
+  let notFound = searcher.GetWhateverWithAlias("not-existing-alias", CommandType.Normal);
   expect(notFound).toBe(null);
+  notFound = searcher.GetWhateverWithAlias("not-existing-alias", CommandType.Tag);
 });

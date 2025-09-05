@@ -43,9 +43,9 @@ export type WhatsSocketReceiverWaitOptions = {
 /**
  * Represents an error that occurs during message reception.
  */
-export type WhatsMsgReceiverError = {
+export type WhatsSocketReceiverError = {
   /** Human-readable error message. */
-  errorMessage: string;
+  errorMessage: WhatsSocketReceiverMsgError;
 
   /** Whether the wait was aborted because the user sent a cancel keyword. */
   wasAbortedByUser: boolean;
@@ -63,7 +63,20 @@ export type WhatsMsgReceiverError = {
   chatId: string;
 };
 
-export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): anything is WhatsMsgReceiverError {
+export enum WhatsSocketReceiverMsgError {
+  Timeout = "User didn't responded in time",
+  UserCanceledWaiting = "User has canceled the dialog",
+}
+
+/**
+ * Checks if an object is a `WhatsMsgReceiverError`, this error comes from ChatContext if using "Wait" methods,
+ * or directly from WhatsMsgReceiver Submodule.
+ *
+ * @param anything The thing to check.
+ * @returns Whether `anything` is a `WhatsMsgReceiverError`.
+ * @category Internal
+ */
+export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): anything is WhatsSocketReceiverError {
   return (
     typeof anything === "object" &&
     anything !== null &&
@@ -105,13 +118,13 @@ export class WhatsSocket_Submodule_Receiver {
     //Options default values
     const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg, cancelFeedbackMsg } = options;
 
-    return new Promise((resolve: (WhatsappMessage: WhatsappMessage) => void, reject: (reason: WhatsMsgReceiverError) => void) => {
+    return new Promise((resolve: (WhatsappMessage: WhatsappMessage) => void, reject: (reason: WhatsSocketReceiverError) => void) => {
       let timer: NodeJS.Timeout;
       const resetTimeout = () => {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
-          reject({ wasAbortedByUser: false, errorMessage: "User didn't responded in time", chatId: chatIdToLookFor, userId: null });
+          reject({ wasAbortedByUser: false, errorMessage: WhatsSocketReceiverMsgError.Timeout, chatId: chatIdToLookFor, userId: null });
         }, timeoutSeconds * 1000);
       };
 
@@ -151,7 +164,7 @@ export class WhatsSocket_Submodule_Receiver {
               if (cancelFeedbackMsg) {
                 this._whatsSocket.Send.Text(chatId, cancelFeedbackMsg);
               }
-              reject({ wasAbortedByUser: true, errorMessage: "User has canceled the dialog", chatId: chatId, userId: userId });
+              reject({ wasAbortedByUser: true, errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting, chatId: chatId, userId: userId });
               return;
             }
           }
