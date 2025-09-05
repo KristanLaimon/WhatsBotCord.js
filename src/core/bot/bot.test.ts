@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
+import { GroupTxtMsg } from "../../helpers/Whatsapp.helper.mocks";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock";
 import Bot from "./bot";
 import type { ChatContext } from "./internals/ChatContext";
@@ -40,7 +41,7 @@ import type { ICommand, RawMsgAPI } from "./internals/IBotCommand";
  *        TESTEABLE [] onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
  */
 //============= MOCK DATA ================
-const CommandIdealName = "commandMock";
+const CommandIdealName = "ideal";
 const CommandIdealAliases: string[] = ["mocky"];
 class CommandIdeal implements ICommand {
   name: string = CommandIdealName;
@@ -92,6 +93,7 @@ test("Creation_WhenInstatiatingWithoutBotParams_ShouldSetAllConfig_NotUndefinedC
   }
 });
 
+//All command testing related can be found in CommandSearcher.test.ts
 test("Commands_WhenAddingNewCommands_ShouldAddThemToInternalCommandSubmodule", () => {
   const { bot } = generateToolkit();
 
@@ -103,21 +105,28 @@ test("Commands_WhenAddingNewCommands_ShouldAddThemToInternalCommandSubmodule", (
   expect(bot.Commands.TagCommands).toHaveLength(1);
 });
 
-// test("Commands_WhenAddingDuplicatedCommandsOfSameType_ShouldThrowError", () => {
-//   const { bot } = generateToolkit();
+test("Running_WhenRunningSimple_NORMALCOMMAND_ShouldSuccessfully", async () => {
+  const { bot, socket } = generateToolkit();
+  const command: ICommand = {
+    name: "hello",
+    description: "mock hello description",
+    aliases: [],
+    async run(_chat, _api, _args) {
+      throw new Error("bruh");
+      console.log(" ==== I'm code running inside a command! ====");
+    },
+  };
 
-//   bot.Commands.Add(idealCommand, CommandType.Normal);
-//   expect(() => {
-//     bot.Commands.Add(idealCommand, CommandType.Normal);
-//   }).toThrow();
+  const commandRunSpy = spyOn(command, "run");
+  bot.Commands.Add(command, CommandType.Normal);
+  bot.Start();
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!hello firstarg secondarg" });
 
-//   bot.Commands.Add(minimalCommand, CommandType.Tag);
-//   expect(() => {
-//     bot.Commands.Add(minimalCommand, CommandType.Tag);
-//   }).toThrow();
+  expect(commandRunSpy).toHaveBeenCalledTimes(1);
+  const [chat, api, args] = commandRunSpy.mock.lastCall!;
+  expect(chat).not.toBeNull();
+  expect(api).not.toBeNull();
+  expect(args).not.toBeNull();
+});
 
-//   bot.Commands.Add(desnormalizedCommand, CommandType.Normal);
-//   expect(() => {
-//     bot.Commands.Add(desnormalizedCommand, CommandType.Normal);
-//   }).toThrow();
-// });
+//TODO: Verify command names can't have " " spaces, only 1 word long

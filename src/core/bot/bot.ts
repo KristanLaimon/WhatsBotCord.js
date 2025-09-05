@@ -18,19 +18,32 @@ import type { ICommand } from "./internals/IBotCommand";
 export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
   Omit<Partial<ChatContextConfig>, "ignoreSelfMessages"> & {
     /**
+     * Character(s) used to tag the bot.
      * @default '@'
      */
     tagCharPrefix?: string | string[];
+
     /**
+     * Character(s) used to prefix commands.
      * @default '!'
      */
     commandPrefix?: string | string[];
 
     /**
-     * For very advanced and testing purposes.
-     * Use at your own risk
+     * For advanced users: replace the internal WhatsApp socket implementation.
+     * Use at your own risk.
      */
     ownWhatsSocketImplementation?: IWhatsSocket;
+
+    /**
+     * Disables the "safe net" for command execution.
+     * When `false`, all command errors are caught internally and logged.
+     * When `true`, (default) errors thrown by commands will bubble up instead of being swallowed.
+     *
+     * In case of advanced scenarios where you want to handle errors externally
+     * or you want to include bot inside your tests and recognize the error
+     */
+    enableCommandSafeNet?: boolean;
   };
 
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
@@ -145,6 +158,7 @@ export default class Bot {
       timeoutSeconds: options?.timeoutSeconds ?? 30,
       wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
       ownWhatsSocketImplementation: options?.ownWhatsSocketImplementation,
+      enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
     };
 
     this.Start = this.Start.bind(this);
@@ -277,6 +291,9 @@ export default class Bot {
               `[COMMAND EXECUTION ERROR]: Error when trying to execute '${commandOrAliasNameLowerCased}'\n\n`,
               `Error Info: ${JSON.stringify(e, null, 2)}`
             );
+        }
+        if (!this.Settings.enableCommandSafeNet) {
+          throw e;
         }
       }
     }

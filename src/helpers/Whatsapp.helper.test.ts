@@ -1,23 +1,27 @@
-import { describe, it, expect } from "bun:test";
-import { IndividualMsg, GroupMsg } from "./Whatsapp.helper.mocks";
-import { WhatsappHelper_ExtractWhatsappIdFromMention, WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg, WhatsappHelper_isLIDIdentifier, WhatsappHelper_isMentionId, type WhatsappIDInfo } from "./Whatsapp.helper";
-
+import { describe, expect, it } from "bun:test";
+import {
+  WhatsappHelper_ExtractWhatsappIdFromMention,
+  WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
+  WhatsappHelper_isLIDIdentifier,
+  WhatsappHelper_isMentionId,
+  type WhatsappIDInfo,
+} from "./Whatsapp.helper";
+import { GroupTxtMsg, IndividualTxtMsg } from "./Whatsapp.helper.mocks";
 
 describe("WhatsappHelper_ExtractWhatsappIdFromSender", () => {
   it("WhenMsgFromGroup_ShouldExtractWhatsappLID_id_Correctly", () => {
-    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupMsg);
+    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupTxtMsg);
     expect(res.WhatsappIdType).toBe("lid");
     expect(res.asMentionFormatted).toBe("@999888777666");
     expect(res.rawId).toBe("999888777666@lid");
   });
   it("WhenIndividualGroup_ShouldExtractWhatsappFull_idinfo_Correctly", () => {
-    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(IndividualMsg);
+    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(IndividualTxtMsg);
     expect(res.WhatsappIdType).toBe("full");
     expect(res.asMentionFormatted).toBe("@555123456789");
     expect(res.rawId).toBe("555123456789@s.whatsapp.net");
   });
 });
-
 
 describe("WhatsappHelper Auxiliary Functions", () => {
   it("WhatsappHelper_isLIDIdentifier should return true for valid LID IDs", () => {
@@ -50,8 +54,8 @@ describe("WhatsappHelper Auxiliary Functions", () => {
 
   it("WhatsappHelper_isFullWhatsappIdUser should identify full WhatsApp IDs correctly", () => {
     // Indirect test via regex
-    expect(WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(IndividualMsg).WhatsappIdType).toBe("full");
+    expect(WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(IndividualTxtMsg).WhatsappIdType).toBe("full");
     // false cases
-    expect(() => WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupMsg)).not.toThrow();
+    expect(() => WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupTxtMsg)).not.toThrow();
   });
 });

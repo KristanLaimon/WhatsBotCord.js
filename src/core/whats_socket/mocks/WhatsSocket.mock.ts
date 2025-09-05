@@ -1,17 +1,26 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetSenderTypeFromRawMsg } from "../../../helpers/Msg.helper";
 import Delegate from "../../../libs/Delegate";
-import type { SenderType } from "../../../Msg.types";
-import { type MsgType } from "../../../Msg.types";
+import type { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types";
 import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
 import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "../IWhatsSocket";
+import type { WhatsappMessage } from "../types";
 import type { WhatsSocketMessageSentMock } from "./types";
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
   minimumMilisecondsDelayBetweenMsgs: number;
+};
+
+export type WhatsSocketMockSendingMsgOptions = {
+  replaceTextWith?: string;
+  replaceParticipantIdWith?: string;
+  replaceChatIdWith?: string;
+  customMsgType?: MsgType;
+  changeSenderType?: SenderType;
 };
 
 export default class WhatsSocketMock implements IWhatsSocket {
@@ -110,5 +119,65 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.onUpdateMsg.Clear();
     this.SentMessagesThroughRaw = [];
     this.SentMessagesThroughQueue = [];
+  }
+
+  /**
+   * Simulates the reception of a message from whatsapp asynchronously!
+   * @param rawMsg The message to be sent.
+   * @param options Optional options to modify the message before sending it.
+   *                Currently only supports replacing the text of the message.
+   * @returns Resolves to void.
+   */
+  public async MockSendMsgAsync(rawMsg: WhatsappMessage, options?: WhatsSocketMockSendingMsgOptions): Promise<void> {
+    const info = this._extractInfoFromWhatsMsg(rawMsg, options);
+    await this.onIncomingMsg.CallAllAsync(
+      info.rawMsg.key.participant ?? null,
+      info.rawMsg.key.remoteJid!,
+      info.rawMsg,
+      options?.customMsgType ?? info.msgType,
+      options?.changeSenderType ?? info.senderType
+    );
+  }
+
+  /**
+   * Simulates the reception of a message from whatsapp synchronously!
+   * @param rawMsg The message to be sent.
+   * @param options Optional options to modify the message before sending it.
+   *                Currently only supports replacing the text of the message.
+   * @returns Resolves to void.
+   */
+  public MockSendMsg(rawMsg: WhatsappMessage, options?: WhatsSocketMockSendingMsgOptions): void {
+    const info = this._extractInfoFromWhatsMsg(rawMsg, options);
+    this.onIncomingMsg.CallAll(
+      info.rawMsg.key.participant ?? null,
+      info.rawMsg.key.remoteJid!,
+      info.rawMsg,
+      options?.customMsgType ?? info.msgType,
+      options?.changeSenderType ?? info.senderType
+    );
+  }
+
+  private _extractInfoFromWhatsMsg(rawMsg: WhatsappMessage, options?: WhatsSocketMockSendingMsgOptions) {
+    const msgType: MsgType = MsgHelper_GetMsgTypeFromRawMsg(rawMsg);
+    const senderType: SenderType = MsgHelper_GetSenderTypeFromRawMsg(rawMsg);
+
+    if (!rawMsg.message) {
+      rawMsg.message = {};
+    }
+
+    //=== Options handling ====
+    if (options?.replaceTextWith) {
+      rawMsg.message.conversation = options.replaceTextWith;
+    }
+
+    if (options?.replaceParticipantIdWith) {
+      rawMsg.key.participant = options.replaceParticipantIdWith;
+    }
+
+    if (options?.replaceChatIdWith) {
+      rawMsg.key.remoteJid = options.replaceChatIdWith;
+    }
+
+    return { rawMsg, msgType, senderType };
   }
 }

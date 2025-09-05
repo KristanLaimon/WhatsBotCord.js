@@ -1,7 +1,7 @@
 import { expect, it } from "bun:test";
 import { performance } from "node:perf_hooks";
 import { skipLongTests } from "../../../Envs";
-import { GroupMsg, IndividualMsg } from "../../../helpers/Whatsapp.helper.mocks";
+import { GroupMsg_CHATID, GroupMsg_SENDERID, GroupTxtMsg, IndividualTxtMsg } from "../../../helpers/Whatsapp.helper.mocks";
 import { MsgType, SenderType } from "../../../Msg.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../types";
@@ -39,12 +39,12 @@ it("WhenGettingBasicMsg_FROMINDIVIDUAL_ShouldReceiveItAtTheMomentBeingSent (Expe
   const senderId: string = "555123456789@s.whatsapp.net";
   const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(senderId, MsgType.Text, WAITOPTIONS);
   const userSendingMsgPromise: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(null, senderId, IndividualMsg, MsgType.Text, SenderType.Individual);
+    mockSocket.onIncomingMsg.CallAll(null, senderId, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
     resolve();
   });
   const waitedMsg: WhatsappMessage = await Promise.all([msgWaitingPromise, userSendingMsgPromise]).then(([waitedMsg, _void]) => waitedMsg);
   expect(waitedMsg).toBeDefined();
-  expect(waitedMsg).toMatchObject(IndividualMsg);
+  expect(waitedMsg).toMatchObject(IndividualTxtMsg);
 });
 
 it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected Minimum Features)", async () => {
@@ -54,61 +54,36 @@ it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected 
   const chatId: string = "123456789012345@g.us";
   const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(senderId, chatId, MsgType.Text, WAITOPTIONS);
   const userFromGroupSendingMsgPromise: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(senderId, chatId, GroupMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(senderId, chatId, GroupTxtMsg, MsgType.Text, SenderType.Group);
     resolve();
   });
   const waitedMsg: WhatsappMessage = await Promise.all([msgWaitingPromise, userFromGroupSendingMsgPromise]).then(([waitedMsg, _void]) => waitedMsg);
   expect(waitedMsg).toBeDefined();
-  expect(waitedMsg).toMatchObject(GroupMsg);
+  expect(waitedMsg).toMatchObject(GroupTxtMsg);
 });
 
 it("Only original sender can cancel waiting msg", async (): Promise<void> => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
   const receive = new WhatsSocket_Submodule_Receiver(mockSocket);
 
-  const chatId = "123456789012345@g.us";
-  const originalSenderId = "999888777666@lid";
-  const notRelatedSenderId = "123456789012@lid";
-
-  const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(originalSenderId, chatId, MsgType.Image, {
+  const originalSenderId = GroupMsg_SENDERID;
+  const notRelatedSenderId = "123123XDDDDD1@lid";
+  const main: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(originalSenderId, GroupMsg_CHATID, MsgType.Image, {
     ...WAITOPTIONS,
     cancelKeywords: ["cancel", "cancelar"],
   });
-
-  //At least should reject once and only once
-  const sendingMsgsPromise: Promise<void> = new Promise<void>((resolve) => {
+  const msg: Promise<void> = new Promise<void>((resolve) => {
     // Non waiting-related msg with "cancel" text. Should be ignored
-    mockSocket.onIncomingMsg.CallAll(
-      notRelatedSenderId,
-      chatId,
-      {
-        ...GroupMsg,
-        key: { ...GroupMsg.key, participant: notRelatedSenderId },
-        message: { ...GroupMsg.message, extendedTextMessage: { text: "cancel" } },
-      },
-      MsgType.Text,
-      SenderType.Group
-    );
-
-    // Related waiting msg with "cancel" text. Should reject waiting code with this one
-    mockSocket.onIncomingMsg.CallAll(
-      originalSenderId,
-      chatId,
-      {
-        ...GroupMsg,
-        key: { ...GroupMsg.key, participant: originalSenderId },
-        message: { ...GroupMsg.message, extendedTextMessage: { text: "cancel" } },
-      },
-      MsgType.Text,
-      SenderType.Group
-    );
+    mockSocket.MockSendMsg(GroupTxtMsg, { replaceParticipantIdWith: notRelatedSenderId, replaceTextWith: "cancel", customMsgType: MsgType.Text });
+    // Expected user!
+    mockSocket.MockSendMsg(GroupTxtMsg, { replaceParticipantIdWith: originalSenderId, replaceTextWith: "cancel", customMsgType: MsgType.Text });
     resolve();
   });
 
   let error: WhatsSocketReceiverError | null = null;
   let waitedMsg: WhatsappMessage | undefined;
   try {
-    waitedMsg = await Promise.all([msgWaitingPromise, sendingMsgsPromise]).then(([waitedMessage, _void]) => waitedMessage);
+    waitedMsg = await Promise.all([main, msg]).then(([waitedMessage, _void]) => waitedMessage);
     throw new Error("Should be rejected!");
   } catch (e) {
     error = e as WhatsSocketReceiverError;
@@ -120,7 +95,7 @@ it("Only original sender can cancel waiting msg", async (): Promise<void> => {
     wasAbortedByUser: true,
     errorMessage: "User has canceled the dialog",
   });
-  expect(error?.chatId).toBe(chatId);
+  expect(error?.chatId).toBe(GroupMsg_CHATID);
   expect(error?.userId).toBe(originalSenderId); //Should be cancelled by expecting "waitedMsg" promise to be rejected
 });
 
@@ -142,7 +117,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMINDIVIDUAL_ShouldRece
   });
   const userActuallySendsTheMsgPromise = new Promise<void>((resolve) => {
     setTimeout(() => {
-      mockSocket.onIncomingMsg.CallAll(null, senderId, IndividualMsg, MsgType.Text, SenderType.Individual);
+      mockSocket.onIncomingMsg.CallAll(null, senderId, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
       resolve();
     }, secondsFromUserToSendMsgDelay * 1000);
   });
@@ -151,7 +126,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMINDIVIDUAL_ShouldRece
   const endTime: number = performance.now();
   const totalTimeMiliseconds: number = endTime - startTime;
   console.log(`WhatsSocketReceiver: Getting msg with delay from private chat: Took ${totalTimeMiliseconds} miliseconds to receive the message`);
-  expect(messageReceived).toMatchObject(IndividualMsg);
+  expect(messageReceived).toMatchObject(IndividualTxtMsg);
 
   // Checking if inside margin error sending time
   expect(totalTimeMiliseconds).toBeGreaterThan(secondsFromUserToSendMsgDelay * 1000 - marginErrorMiliseconds);
@@ -176,7 +151,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMGROUP_ShouldReceiveIt
   });
   const userActuallySendsMsgWithDelayPromise: Promise<void> = new Promise((resolve) => {
     setTimeout(() => {
-      mockSocket.onIncomingMsg.CallAll(senderId, chatId, GroupMsg, MsgType.Text, SenderType.Group);
+      mockSocket.onIncomingMsg.CallAll(senderId, chatId, GroupTxtMsg, MsgType.Text, SenderType.Group);
       resolve();
     }, secondsFromUserToSendMsgDelay * 1000);
   });
@@ -187,7 +162,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMGROUP_ShouldReceiveIt
   console.log(`WhatsSocketReceiver: Getting msg with delay from group chat: Took ${totalTimeMiliseconds} miliseconds to receive the message`);
 
   expect(messageReceived).toBeDefined();
-  expect(messageReceived).toMatchObject(GroupMsg);
+  expect(messageReceived).toMatchObject(GroupTxtMsg);
 
   // Checking if inside margin error sending time
   expect(totalTimeMiliseconds).toBeGreaterThan(secondsFromUserToSendMsgDelay * 1000 - marginErrorMiliseconds);
@@ -211,11 +186,11 @@ it.skipIf(skipLongTests)("WhenGettingIncorrectMsgType_FROMGROUP_ShouldIgnoreItAn
 
   //Act
   //Should not expect any of these messages (types)                                       //No. of messages sent (incorrect)
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Image, SenderType.Group); //1
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Contact, SenderType.Group); //2
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Sticker, SenderType.Group); //3
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Video, SenderType.Group); //4
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Audio, SenderType.Group); //5
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Image, SenderType.Group); //1
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Contact, SenderType.Group); //2
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Sticker, SenderType.Group); //3
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Video, SenderType.Group); //4
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Audio, SenderType.Group); //5
 
   let error: WhatsSocketReceiverError | undefined;
   try {
@@ -256,8 +231,8 @@ it.skipIf(skipLongTests)("WhenExpectingMsgAndUserSendsACancelWord_FROMGROUP_Shou
     cancelKeywords: cancelWords,
   });
   const msgsPromise: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Text, SenderType.Group); //Wrong msg
-    mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Text, SenderType.Group); //Wrong msg
+    mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group); //Wrong msg
+    mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group); //Wrong msg
     const cancelKeywordMockMsg: WhatsappMessage = {
       key: {
         fromMe: false,
@@ -317,10 +292,10 @@ it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP
   });
 
   //Sending many wrong msgs (to simulate bad interaction from user) None of these are Images
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Text, SenderType.Group);
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Sticker, SenderType.Group);
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Video, SenderType.Group);
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Location, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Sticker, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Video, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Location, SenderType.Group);
 
   let awaitedMsg: WhatsappMessage | undefined;
   let error: WhatsSocketReceiverError | undefined;
@@ -341,7 +316,7 @@ it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP
   }
 
   //No user sends a correct image message (should be ignored, not waited at all)
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupMsg, MsgType.Image, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Image, SenderType.Group);
   //Should continue being undefined
   expect(awaitedMsg).toBeUndefined();
   //Should not send any other msg (like feedback or any other thing)

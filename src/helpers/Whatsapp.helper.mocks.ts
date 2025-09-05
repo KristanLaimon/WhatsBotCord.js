@@ -13,9 +13,9 @@ if (!Array.isArray(contents)) {
   throw new Error("DEVELOPMENT ERROR: Json file with whatsapp mock msgs FOUND, but it's not an array of expected msgs for some reason... check that");
 }
 
-export const IndividualMsg: WAMessage = contents[0]!;
-export const IndividualMsg_CHATID = IndividualMsg.key.remoteJid!;
+export const IndividualTxtMsg: WAMessage = contents[0]!;
+export const IndividualMsg_CHATID = IndividualTxtMsg.key.remoteJid!;
 
-export const GroupMsg: WAMessage = contents[1]!;
-export const GroupMsg_SENDERID: string = GroupMsg.key.participant!;
-export const GroupMsg_CHATID: string = GroupMsg.key.remoteJid!;
+export const GroupTxtMsg: WAMessage = contents[1]!;
+export const GroupMsg_SENDERID: string = GroupTxtMsg.key.participant!;
+export const GroupMsg_CHATID: string = GroupTxtMsg.key.remoteJid!;
