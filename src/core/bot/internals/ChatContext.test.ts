@@ -385,9 +385,56 @@ it("WaitMsg_WhenGettingIncorrectMsgType_FROMINDIVIDUAL_ShouldIgnoreItUntilGetExp
 });
 
 //When getting unknown error
-it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMGROUP_ShouldRejectCompletely", async (): Promise<void> => {});
+it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMGROUP_ShouldRejectCompletely", async (): Promise<void> => {
+  const { chat, mockSocket, receiver } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const individualWaitingInternal: Mock<typeof receiver.WaitUntilNextRawMsgFromUserIdInPrivateConversation> = spyOn(
+    receiver,
+    "WaitUntilNextRawMsgFromUserIdInPrivateConversation"
+  );
+  const groupWaitingInternal: Mock<typeof receiver.WaitUntilNextRawMsgFromUserIDInGroup> = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
+  groupWaitingInternal.mockRejectedValueOnce("weird mock error");
 
-it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMINDIVIDUAL_ShouldRejectCompletely", async (): Promise<void> => {});
+  const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
+  const msg: Promise<void> = new Promise<void>((resolve) => {
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupMsg, MsgType.Image, SenderType.Group);
+    //Correct type expected!
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupMsg, MsgType.Text, SenderType.Group);
+    resolve();
+  });
+  let res: WhatsappMessage | null = null;
+  expect(async (): Promise<void> => {
+    //Should not catch it normally and return null, instead, it must throw error directly (not a controlled error)
+    res = await Promise.all([main, msg]).then(([expectedMsg, _void]) => expectedMsg);
+  }).toThrowError("weird mock error");
+  expect(res).toBeNull();
+  expect(individualWaitingInternal).not.toHaveBeenCalled();
+});
+
+it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMINDIVIDUAL_ShouldRejectCompletely", async (): Promise<void> => {
+  const { chat, mockSocket, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
+
+  const groupWaitingInternal: Mock<typeof receiver.WaitUntilNextRawMsgFromUserIDInGroup> = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
+  const individualWaitingInternal: Mock<typeof receiver.WaitUntilNextRawMsgFromUserIdInPrivateConversation> = spyOn(
+    receiver,
+    "WaitUntilNextRawMsgFromUserIdInPrivateConversation"
+  );
+  individualWaitingInternal.mockRejectedValueOnce("weird mock error");
+
+  const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
+  const msg: Promise<void> = new Promise<void>((resolve) => {
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualMsg, MsgType.Image, SenderType.Individual);
+    //Correct type expected!
+    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualMsg, MsgType.Text, SenderType.Individual);
+    resolve();
+  });
+  let res: WhatsappMessage | null = null;
+  expect(async (): Promise<void> => {
+    //Should not catch it normally and return null, instead, it must throw error directly (not a controlled error)
+    res = await Promise.all([main, msg]).then(([expectedMsg, _void]) => expectedMsg);
+  }).toThrowError("weird mock error");
+  expect(res).toBeNull();
+  expect(groupWaitingInternal).not.toHaveBeenCalled();
+});
 
 //When getting wait error (rejected by user)
 it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMGROUP_ShouldIdentifyAndReturnNull", async (): Promise<void> => {});
