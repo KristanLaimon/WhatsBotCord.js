@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { MockGroupTxtMsg as GroupTxtMsg, MockIndividualTxtMsg as IndividualTxtMsg } from "../mocks/MockIndividualGroup";
 import {
   WhatsappHelper_ExtractWhatsappIdFromMention,
   WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
@@ -6,7 +7,6 @@ import {
   WhatsappHelper_isMentionId,
   type WhatsappIDInfo,
 } from "./Whatsapp.helper";
-import { GroupTxtMsg, IndividualTxtMsg } from "./Whatsapp.helper.mocks";
 
 describe("WhatsappHelper_ExtractWhatsappIdFromSender", () => {
   it("WhenMsgFromGroup_ShouldExtractWhatsappLID_id_Correctly", () => {

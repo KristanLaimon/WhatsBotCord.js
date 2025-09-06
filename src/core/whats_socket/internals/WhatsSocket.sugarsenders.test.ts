@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from "bun:test";
 import fs from "fs";
 import path from "node:path";
-import { allMockMsgs } from "../../../helpers/Msg.helper.mocks";
 import { GetPath } from "../../../libs/BunPath";
+import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs";
 import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
 import { WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";

@@ -1,7 +1,12 @@
 import { expect, it } from "bun:test";
 import { performance } from "node:perf_hooks";
 import { skipLongTests } from "../../../Envs";
-import { GroupMsg_CHATID, GroupMsg_SENDERID, GroupTxtMsg, IndividualTxtMsg } from "../../../helpers/Whatsapp.helper.mocks";
+import {
+  MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
+  MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
+  MockGroupTxtMsg as GroupTxtMsg,
+  MockIndividualTxtMsg as IndividualTxtMsg,
+} from "../../../mocks/MockIndividualGroup";
 import { MsgType, SenderType } from "../../../Msg.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../types";

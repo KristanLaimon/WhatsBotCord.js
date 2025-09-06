@@ -1,5 +1,11 @@
 import { expect, it, spyOn, test, type Mock } from "bun:test";
-import { GroupMsg_CHATID, GroupMsg_SENDERID, GroupTxtMsg, IndividualMsg_CHATID, IndividualTxtMsg } from "../../../helpers/Whatsapp.helper.mocks";
+import {
+  MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
+  MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
+  MockGroupTxtMsg as GroupTxtMsg,
+  MockIndividualTxtMsg_CHATID as IndividualMsg_CHATID,
+  MockIndividualTxtMsg as IndividualTxtMsg,
+} from "../../../mocks/MockIndividualGroup";
 import { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import { WhatsSocketReceiverMsgError, WhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";

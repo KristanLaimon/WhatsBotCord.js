@@ -161,23 +161,25 @@ export default class WhatsSocketMock implements IWhatsSocket {
     const msgType: MsgType = MsgHelper_GetMsgTypeFromRawMsg(rawMsg);
     const senderType: SenderType = MsgHelper_GetSenderTypeFromRawMsg(rawMsg);
 
+    const rawMsgCopy = structuredClone(rawMsg);
+
     if (!rawMsg.message) {
-      rawMsg.message = {};
+      rawMsgCopy.message = {};
     }
 
     //=== Options handling ====
     if (options?.replaceTextWith) {
-      rawMsg.message.conversation = options.replaceTextWith;
+      rawMsgCopy.message!.conversation = options.replaceTextWith;
     }
 
     if (options?.replaceParticipantIdWith) {
-      rawMsg.key.participant = options.replaceParticipantIdWith;
+      rawMsgCopy.key.participant = options.replaceParticipantIdWith;
     }
 
     if (options?.replaceChatIdWith) {
-      rawMsg.key.remoteJid = options.replaceChatIdWith;
+      rawMsgCopy.key.remoteJid = options.replaceChatIdWith;
     }
 
-    return { rawMsg, msgType, senderType };
+    return { rawMsg: rawMsgCopy, msgType, senderType };
   }
 }

@@ -1,5 +1,11 @@
 import { expect, spyOn, test } from "bun:test";
-import { GroupMsg_CHATID, GroupMsg_SENDERID, GroupTxtMsg, IndividualMsg_CHATID, IndividualTxtMsg } from "../../helpers/Whatsapp.helper.mocks";
+import {
+  MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
+  MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
+  MockGroupTxtMsg as GroupTxtMsg,
+  MockIndividualTxtMsg_CHATID as IndividualMsg_CHATID,
+  MockIndividualTxtMsg as IndividualTxtMsg,
+} from "../../mocks/MockIndividualGroup";
 import { MsgType, SenderType } from "../../Msg.types";
 import { WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
 import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
@@ -128,7 +134,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
       expect(args.chatId).toBe(GroupMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
-      expect(args.originalRawMsg).toBe(GroupTxtMsg);
+      expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
       expect(args.quotedMsg).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
       expect(args.userId).toBe(GroupMsg_SENDERID);
@@ -160,7 +166,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
       expect(args.chatId).toBe(GroupMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
-      expect(args.originalRawMsg).toBe(GroupTxtMsg);
+      expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
       expect(args.quotedMsg).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
       expect(args.userId).toBe(GroupMsg_SENDERID);
@@ -192,7 +198,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
       expect(args.chatId).toBe(IndividualMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
-      expect(args.originalRawMsg).toBe(IndividualTxtMsg);
+      expect(args.originalRawMsg).toMatchObject(IndividualTxtMsg);
       expect(args.quotedMsg).toBe(null);
 
       //Comes from private msg
@@ -226,7 +232,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
       expect(args.chatId).toBe(IndividualMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
-      expect(args.originalRawMsg).toBe(IndividualTxtMsg);
+      expect(args.originalRawMsg).toMatchObject(IndividualTxtMsg);
       expect(args.quotedMsg).toBe(null);
 
       //Comes from private msg

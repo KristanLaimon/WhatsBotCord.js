@@ -1,34 +1,31 @@
-import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from "./Msg.helper";
-import { it, test, expect, describe } from "bun:test";
 import { type WAMessage } from "baileys";
-import { GetPath } from "../libs/BunPath";
-import { MsgType } from "../Msg.types";
+import { describe, expect, it, test } from "bun:test";
 import fs from "fs";
+import { GetPath } from "../libs/BunPath";
 import {
-  txtMessage,
-  quotedMsg,
-  noTxtMsgs,
-  imageWithCaptionMsg,
-  imageNoCaptionMsg,
-  videoWithCaptionMsg,
-  videoNoCaptionMsg,
-  stickerMsg,
   audioMsg,
+  contactMsg,
+  imageNoCaptionMsg,
+  imageWithCaptionMsg,
+  locationMsg,
+  noTxtMsgs,
   pollMultipleAnswerMsg,
   pollSingleAnswerMsg,
-  locationMsg,
-  contactMsg
-} from "./Msg.helper.mocks";
-
-
+  quotedMsg,
+  stickerMsg,
+  txtMessage,
+  videoNoCaptionMsg,
+  videoWithCaptionMsg,
+} from "../mocks/MockManyTypesMsgs";
+import { MsgType } from "../Msg.types";
+import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from "./Msg.helper";
 
 test("Mockdata from .json can be imported", () => {
-  const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "helpers", "./Msg.helper.mocks.json"), "utf-8"));
+  const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "mocks", "./Msg.helper.mocks.json"), "utf-8"));
   expect(mockMsgs).toBeDefined();
   expect(mockMsgs.length).toBeGreaterThan(0);
   expect(Array.isArray(mockMsgs)).toBe(true);
 });
-
 
 describe("MsgHelper_GetTextFrom", () => {
   it("WhenGivenAValidTxtMessage_ShouldExtractTextMsg", () => {
@@ -134,5 +131,3 @@ test("MsgHelper_GetMsgTypeFromRawMsg", () => {
 });
 
 // console.log(mockMsgs);
-
-

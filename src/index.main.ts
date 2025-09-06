@@ -11,6 +11,7 @@ import Whatsbotcord, {
   type RawMsgAPI,
   type WhatsappMessage,
 } from "src";
+import { Debugging_StoreWhatsappMsgInJsonFile } from "./Debugging.helper";
 const bot = new Whatsbotcord({ commandPrefix: "!", credentialsFolder: "./auth", loggerMode: "silent" });
 
 class PingCommand implements IBotCommand {
@@ -67,14 +68,19 @@ class EveryoneTag implements IBotCommand {
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
 bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
 
-bot.Use((_senderId, chatId, rawMsg, msgType, _senderType, next) => {
+bot.Use(async (_senderId, chatId, rawMsg, msgType, _senderType, next) => {
   if (msgType === MsgType.Text) {
     const txt: string | null = MsgHelpers.GetTextFromMsg(rawMsg);
-    if (txt && txt?.length > 10) {
+    if (txt && txt?.length > 1000) {
       bot.SendMsg.Text(chatId, "To muuch text!!!");
       return;
     }
   }
+  next();
+});
+
+bot.Use(async (_senderId, _chatId, rawMsg, _msgType, _senderType, next) => {
+  Debugging_StoreWhatsappMsgInJsonFile("./quotedmsg.json", rawMsg);
   next();
 });
 

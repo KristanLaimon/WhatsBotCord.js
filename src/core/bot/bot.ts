@@ -60,7 +60,7 @@ export type BotMiddleWareFunct = (
   msgType: MsgType,
   senderType: SenderType,
   next: () => void
-) => void;
+) => Promise<void>;
 
 /**
  * Represents the main WhatsApp Bot instance.
@@ -322,14 +322,14 @@ export default class Bot {
    *
    * @example
    * // Log every incoming message and continue to the next middleware
-   * bot.Use((senderId, chatId, rawMsg, msgType, senderType, next) => {
+   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
    *   console.log(`Message from ${senderId} in chat ${chatId}:`, rawMsg);
    *   next();
    * });
    *
    * @example
    * // Block messages from a specific user (do not call next)
-   * bot.Use((senderId, chatId, rawMsg, msgType, senderType, next) => {
+   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
    *   if (senderId === "blockedUserId") return;
    *   next();
    * });
