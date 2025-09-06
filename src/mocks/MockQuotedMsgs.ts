@@ -3,19 +3,19 @@ import type { WhatsappMessage } from "../core/whats_socket/types";
 // Message from private chat
 export const MockQuotedMsg_Individual: WhatsappMessage = {
   key: {
-    remoteJid: "5216121407908@s.whatsapp.net",
+    remoteJid: "5210001112223@s.whatsapp.net",
     fromMe: false,
-    id: "3F47BAE95491574AB145",
+    id: "AAA111BBB222CCC333",
   },
   messageTimestamp: 1757127773,
-  pushName: "Kristan Ruiz",
+  pushName: "Test User",
   broadcast: false,
   message: {
     extendedTextMessage: {
       text: "This is msg referencing a msg with !ping from private chat",
       contextInfo: {
-        stanzaId: "3F989B85F9849B9597B2",
-        participant: "5216121407908@s.whatsapp.net",
+        stanzaId: "STANZA123456789",
+        participant: "5210001112223@s.whatsapp.net",
         quotedMessage: {
           extendedTextMessage: {
             text: "!ping",
@@ -37,37 +37,38 @@ export const MockQuotedMsg_Individual: WhatsappMessage = {
     },
     messageContextInfo: {
       deviceListMetadata: {
-        //@ts-expect-error shouldbe numbers but string
-        senderKeyHash: "zkr6pV5fV58MkA==",
-        //@ts-expect-error shouldbe numbers but string
+        //@ts-expect-error should be numbers but string
+        senderKeyHash: "fakeSenderHash==",
+        //@ts-expect-error should be numbers but string
         senderTimestamp: "1756692691",
-        //@ts-expect-error shouldbe numbers but string
-        recipientKeyHash: "pQVf5hor9RHmLg==",
-        //@ts-expect-error shouldbe numbers but string
+        //@ts-expect-error should be numbers but string
+        recipientKeyHash: "fakeRecipientHash==",
+        //@ts-expect-error should be numbers but string
         recipientTimestamp: "1755726002",
       },
       deviceListMetadataVersion: 2,
     },
   },
 };
+export const MockQuotedMsg_Individual_CHATID: string = MockQuotedMsg_Individual.key.remoteJid!;
 
 // Message from group chat
 export const MockQuotedMsg_Group: WhatsappMessage = {
   key: {
-    remoteJid: "120363419336657555@g.us",
+    remoteJid: "120363400000000000@g.us",
     fromMe: false,
-    id: "3F6077C582E889C879BC",
-    participant: "136777696288768@lid",
+    id: "DDD444EEE555FFF666",
+    participant: "111222333444555@lid",
   },
   messageTimestamp: 1757127802,
-  pushName: "Kristan Ruiz",
+  pushName: "Group Tester",
   broadcast: false,
   message: {
     extendedTextMessage: {
       text: "This is msg referencing a msg with !ping from GROUP",
       contextInfo: {
-        stanzaId: "3F528791D9A103C23618",
-        participant: "136777696288768@lid",
+        stanzaId: "STANZA987654321",
+        participant: "111222333444555@lid",
         quotedMessage: {
           extendedTextMessage: {
             text: "!ping",
@@ -81,3 +82,5 @@ export const MockQuotedMsg_Group: WhatsappMessage = {
     },
   },
 };
+export const MockQuotedMsg_Group_CHATID = MockQuotedMsg_Group.key.remoteJid!;
+export const MockQuotedMsg_Group_SENDERID: string = MockQuotedMsg_Group.key.participant!;

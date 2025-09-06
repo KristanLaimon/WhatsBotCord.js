@@ -28,7 +28,6 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    // "rootDir": "src",
     //== Opinionated Options ==
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,

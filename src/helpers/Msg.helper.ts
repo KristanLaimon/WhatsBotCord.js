@@ -31,7 +31,7 @@ import type { WhatsappMessage } from "../core/whats_socket/types";
  *   console.log("This message has no text content.");
  * }
  */
-export function MsgHelper_GetTextFrom(rawMsg: WAMessage): string | null {
+export function MsgHelper_FullMsg_GetText(rawMsg: WAMessage): string | null {
   if (!rawMsg.message) return null;
   return (
     rawMsg.message.conversation ||
@@ -47,7 +47,7 @@ export function MsgHelper_GetTextFrom(rawMsg: WAMessage): string | null {
  * @param rawMsg
  * @returns
  */
-export function MsgHelper_GetQuotedMsgTextFrom(rawMsg: WhatsappMessage): string | null {
+export function MsgHelper_FullMsg_GetQuotedMsgText(rawMsg: WhatsappMessage): string | null {
   if (
     !rawMsg.message ||
     !rawMsg.message.extendedTextMessage ||
@@ -60,11 +60,15 @@ export function MsgHelper_GetQuotedMsgTextFrom(rawMsg: WhatsappMessage): string 
   return text;
 }
 
+export function MsgHelper_QuotedMsg_GetText(quotedMsgOnly: proto.IMessage): string | null {
+  return quotedMsgOnly.extendedTextMessage?.text ?? null;
+}
+
 // export function MsgHelper_HasQuotedMsg(rawMsg: WAMessage): boolean {
 //   return !!rawMsg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 // }
 
-export function MsgHelper_GetQuotedMsgFrom(rawMsg: WAMessage): proto.IMessage | null {
+export function MsgHelper_FullMsg_GetQuotedMsg(rawMsg: WAMessage): proto.IMessage | null {
   return rawMsg.message?.extendedTextMessage?.contextInfo?.quotedMessage ?? null;
 }
 
@@ -84,13 +88,13 @@ export function MsgHelper_GetQuotedMsgFrom(rawMsg: WAMessage): proto.IMessage | 
  *   console.log("Received a text message!");
  * }
  */
-export function MsgHelper_GetMsgTypeFromRawMsg(rawMsg: WhatsappMessage): MsgType {
+export function MsgHelper_FullMsg_GetMsgType(rawMsg: WhatsappMessage): MsgType {
   if (!rawMsg.message) return MsgType.Unknown;
   const objMsg = rawMsg.message;
-  return MsgHelper_GetMsgTypeFromProtoIMessage(objMsg);
+  return MsgHelper_ProtoMsg_GetMsgType(objMsg);
 }
 
-export function MsgHelper_GetSenderTypeFromRawMsg(rawMsg: WhatsappMessage): SenderType {
+export function MsgHelper_FullMsg_GetSenderType(rawMsg: WhatsappMessage): SenderType {
   const chatId: string = rawMsg.key.remoteJid!;
   let senderType: SenderType = SenderType.Unknown;
   if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
@@ -104,7 +108,7 @@ export function MsgHelper_GetSenderTypeFromRawMsg(rawMsg: WhatsappMessage): Send
  * @returns The type of the message as MsgType enum
  * @private
  */
-export function MsgHelper_GetMsgTypeFromProtoIMessage(generic: proto.IMessage): MsgType {
+export function MsgHelper_ProtoMsg_GetMsgType(generic: proto.IMessage): MsgType {
   if (generic.imageMessage) return MsgType.Image;
   if (generic.videoMessage) return MsgType.Video;
   if (generic.audioMessage) return MsgType.Audio;

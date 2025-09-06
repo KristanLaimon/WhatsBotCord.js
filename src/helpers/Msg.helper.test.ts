@@ -18,7 +18,7 @@ import {
   videoWithCaptionMsg,
 } from "../mocks/MockManyTypesMsgs";
 import { MsgType } from "../Msg.types";
-import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from "./Msg.helper";
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetQuotedMsgText, MsgHelper_FullMsg_GetText } from "./Msg.helper";
 
 test("Mockdata from .json can be imported", () => {
   const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "mocks", "./Msg.helper.mocks.json"), "utf-8"));
@@ -29,62 +29,62 @@ test("Mockdata from .json can be imported", () => {
 
 describe("MsgHelper_GetTextFrom", () => {
   it("WhenGivenAValidTxtMessage_ShouldExtractTextMsg", () => {
-    const txt = MsgHelper_GetTextFrom(txtMessage);
+    const txt = MsgHelper_FullMsg_GetText(txtMessage);
     expect(txt).not.toBeNull();
     expect(txt).toBe("Este es un mensaje de texto");
   });
 
   it("WhenGivenAValidTxtMessageQuoted_ShouldExtractTextMsg", () => {
-    const txt = MsgHelper_GetTextFrom(quotedMsg);
+    const txt = MsgHelper_FullMsg_GetText(quotedMsg);
     expect(txt).not.toBeNull();
     expect(txt).toBe("Este es un mensaje citando otro mensaje");
   });
 
   it("WhenGivenANonTextMsg_ShouldReturnNull", () => {
     for (const msg of noTxtMsgs) {
-      const txt = MsgHelper_GetTextFrom(msg);
+      const txt = MsgHelper_FullMsg_GetText(msg);
       expect(txt).toBeNull();
     }
   });
 
   it("WhenGivenImageWithCaption_ShouldExtractCaptionText", () => {
-    const txt = MsgHelper_GetTextFrom(imageWithCaptionMsg);
+    const txt = MsgHelper_FullMsg_GetText(imageWithCaptionMsg);
     expect(txt).not.toBeNull();
     expect(txt).toBe("Este es una foto con un caption y emojis 🦊☝🏼");
   });
 
   it("WhenGivenImageWithoutCaption_ShouldReturnNull", () => {
-    const expectedNull = MsgHelper_GetTextFrom(imageNoCaptionMsg);
+    const expectedNull = MsgHelper_FullMsg_GetText(imageNoCaptionMsg);
     expect(expectedNull).toBeNull();
   });
 
   it("WhenGivenVideoWithCaption_ShouldExtractCaptionText", () => {
-    const txt = MsgHelper_GetTextFrom(videoWithCaptionMsg);
+    const txt = MsgHelper_FullMsg_GetText(videoWithCaptionMsg);
     expect(txt).not.toBeNull();
     expect(txt).toBe("Este es un mensaje con video y un caption añadido");
   });
 
   it("WhenGivenVideoWithoutCaption_ShouldReturnNull", () => {
-    const expectedNull = MsgHelper_GetTextFrom(videoNoCaptionMsg);
+    const expectedNull = MsgHelper_FullMsg_GetText(videoNoCaptionMsg);
     expect(expectedNull).toBeNull();
   });
 });
 
 describe("MsgHelper_GetTextFromQuotedMsg", () => {
   it("WhenGivenAValidMessageWithQuote_ShouldExtractQuotedMsgTextOnly", () => {
-    const quotedTxt = MsgHelper_GetQuotedMsgTextFrom(quotedMsg);
+    const quotedTxt = MsgHelper_FullMsg_GetQuotedMsgText(quotedMsg);
     expect(quotedTxt).not.toBeNull();
     expect(quotedTxt).toBe("Mensaje de la cita, soy otro mensaje!");
   });
 
   it("WhenGivenATxtMsgWithoutQuote_ShouldReturnNull", () => {
-    const txt = MsgHelper_GetQuotedMsgTextFrom(txtMessage);
+    const txt = MsgHelper_FullMsg_GetQuotedMsgText(txtMessage);
     expect(txt).toBeNull();
   });
 
   it("WhenGivenANonTextMessage_ShouldReturnNull", () => {
     for (const msg of noTxtMsgs) {
-      const txt = MsgHelper_GetQuotedMsgTextFrom(msg);
+      const txt = MsgHelper_FullMsg_GetQuotedMsgText(msg);
       expect(txt).toBeNull();
     }
   });
@@ -93,40 +93,40 @@ describe("MsgHelper_GetTextFromQuotedMsg", () => {
 test("MsgHelper_GetMsgTypeFromRawMsg", () => {
   let msgType: MsgType;
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(txtMessage);
+  msgType = MsgHelper_FullMsg_GetMsgType(txtMessage);
   expect(msgType).toBe(MsgType.Text);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(quotedMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(quotedMsg);
   expect(msgType).toBe(MsgType.Text);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(stickerMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(stickerMsg);
   expect(msgType).toBe(MsgType.Sticker);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(imageWithCaptionMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(imageWithCaptionMsg);
   expect(msgType).toBe(MsgType.Image);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(imageNoCaptionMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(imageNoCaptionMsg);
   expect(msgType).toBe(MsgType.Image);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(audioMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(audioMsg);
   expect(msgType).toBe(MsgType.Audio);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(videoNoCaptionMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(videoNoCaptionMsg);
   expect(msgType).toBe(MsgType.Video);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(videoWithCaptionMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(videoWithCaptionMsg);
   expect(msgType).toBe(MsgType.Video);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(pollMultipleAnswerMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(pollMultipleAnswerMsg);
   expect(msgType).toBe(MsgType.Poll);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(pollSingleAnswerMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(pollSingleAnswerMsg);
   expect(msgType).toBe(MsgType.Poll);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(locationMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(locationMsg);
   expect(msgType).toBe(MsgType.Location);
 
-  msgType = MsgHelper_GetMsgTypeFromRawMsg(contactMsg);
+  msgType = MsgHelper_FullMsg_GetMsgType(contactMsg);
   expect(msgType).toBe(MsgType.Contact);
 });
 

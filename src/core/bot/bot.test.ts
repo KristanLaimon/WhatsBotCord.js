@@ -1,4 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
+import { MsgHelpers } from "../..";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
@@ -6,6 +7,7 @@ import {
   MockIndividualTxtMsg_CHATID as IndividualMsg_CHATID,
   MockIndividualTxtMsg as IndividualTxtMsg,
 } from "../../mocks/MockIndividualGroup";
+import { MockQuotedMsg_Group, MockQuotedMsg_Individual, MockQuotedMsg_Individual_CHATID } from "../../mocks/MockQuotedMsgs";
 import { MsgType, SenderType } from "../../Msg.types";
 import { WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
 import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
@@ -25,14 +27,14 @@ import type { ICommand, RawMsgAPI } from "./internals/IBotCommand";
  *    3.1. [X] What happens if 2 commands have the same name? (should throw error unless, they're from different type (tag != normal))
  *    3.2. [X] What happens if 2 commands have same alias? (should throw error) (not if differnet type)
  * 
- * 6. [] Can run commands and tags
+ * 6. [X] Can run commands and tags
  *      [X] Can run a normal command
  *      [X] CAn run a tag command
  *      [X] Can differentiate tags and commands (if having a tag with same name like a command)
  *      [X] Can run a command with their ALIAS ONLY
  *      [X] Commands receives correct arguments from the bot
- *          [] For incoming quoted msg, should send argument successfully to command
- *      [] When running only @ or ! (common prefixes) shouldn't do anything
+ *          [X] For incoming quoted msg, should send argument successfully to command
+ *      [X] When running only @ or ! (common prefixes) shouldn't do anything
  * 7. [] Unexpected exception: Should not break bot and console.log error instead serialized as json text
  * 8. [] Expected Error "Command rejection": Should not break and console log like info
  * 9. [] Expected Error "command not rejection" (by timeout): Should console.log gracefully
@@ -135,7 +137,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
       expect(args.chatId).toBe(GroupMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
       expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
-      expect(args.quotedMsg).toBe(null);
+      expect(args.quotedMsgInfo).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
       expect(args.userId).toBe(GroupMsg_SENDERID);
 
@@ -167,7 +169,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
       expect(args.chatId).toBe(GroupMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
       expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
-      expect(args.quotedMsg).toBe(null);
+      expect(args.quotedMsgInfo).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
       expect(args.userId).toBe(GroupMsg_SENDERID);
 
@@ -199,7 +201,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
       expect(args.chatId).toBe(IndividualMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
       expect(args.originalRawMsg).toMatchObject(IndividualTxtMsg);
-      expect(args.quotedMsg).toBe(null);
+      expect(args.quotedMsgInfo).toBe(null);
 
       //Comes from private msg
       expect(args.senderType).toBe(SenderType.Individual);
@@ -233,7 +235,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
       expect(args.chatId).toBe(IndividualMsg_CHATID);
       expect(args.msgType).toBe(MsgType.Text);
       expect(args.originalRawMsg).toMatchObject(IndividualTxtMsg);
-      expect(args.quotedMsg).toBe(null);
+      expect(args.quotedMsgInfo).toBe(null);
 
       //Comes from private msg
       expect(args.senderType).toBe(SenderType.Individual);
@@ -321,6 +323,92 @@ test("Running_WhenHavingTwoDifferentTypeCommandsWithSameName_ShouldRecognizeThem
   expect(tagCommandCalled).toBe(true);
 });
 
-// test("");
+test("Running_WhenReceivingCommandFromQuotedMsg_FROMGROUP_ShouldRecognizeQuotedMsg", async () => {
+  const { bot, socket } = generateToolkit();
+  const com: ICommand = {
+    name: "replyto",
+    description: "mock replyto description",
+    async run(_ctx, _rawMsgApi, args) {
+      expect(args.quotedMsgInfo).toBeDefined();
+
+      expect(args.quotedMsgInfo?.type).toBe(MsgType.Text);
+      expect(args.quotedMsgInfo?.userIdItComesFrom).toBe("111222333444555@lid");
+      const txt = MsgHelpers.QuotedMsg_GetText(args.quotedMsgInfo!.msg);
+      expect(txt).toBe("!ping");
+      console.log(args.quotedMsgInfo?.msg.extendedTextMessage?.text ?? "___");
+    },
+  };
+  bot.Commands.Add(com, CommandType.Normal);
+  const runSpy = spyOn(com, "run");
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "!replyto" });
+  expect(runSpy).toHaveBeenCalledTimes(1);
+});
+
+test("Running_WhenReceivingCommandFromQuotedMsg_FROMINDIVIDUAL_ShouldRecognizeQuotedMsg", async () => {
+  const { bot, socket } = generateToolkit();
+  const com: ICommand = {
+    name: "replyto",
+    description: "mock replyto description",
+    async run(_ctx, _rawMsgApi, args) {
+      expect(args.quotedMsgInfo).toBeDefined();
+
+      expect(args.quotedMsgInfo?.type).toBe(MsgType.Text);
+      expect(args.quotedMsgInfo?.userIdItComesFrom).toBe(MockQuotedMsg_Individual_CHATID);
+      const txt = MsgHelpers.QuotedMsg_GetText(args.quotedMsgInfo!.msg);
+      expect(txt).toBe("!ping");
+      console.log(args.quotedMsgInfo?.msg.extendedTextMessage?.text ?? "___");
+    },
+  };
+  bot.Commands.Add(com, CommandType.Normal);
+  const runSpy = spyOn(com, "run");
+  await socket.MockSendMsgAsync(MockQuotedMsg_Individual, { replaceTextWith: "!replyto" });
+  expect(runSpy).toHaveBeenCalledTimes(1);
+});
+
+test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_NORMALCOMMAND_ShouldIgnoreItAndNotExecuteAnyCommand", async () => {
+  const { bot, socket } = generateToolkit();
+  const com: ICommand = {
+    name: "commy",
+    description: "mock commy description",
+    async run(_ctx, _rawMsgApi, _args) {},
+  };
+  //This works as well with tags, same logic
+  bot.Commands.Add(com, CommandType.Normal);
+  const runSpy = spyOn(com, "run");
+  //Taking into account initial bot config with "!" inside generateToolKit logic.
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "@" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "!" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "!badcommand" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "!commy" });
+  expect(runSpy).toHaveBeenCalledTimes(1);
+});
+
+test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_TAGCOMMAND_ShouldIgnoreItAndNotExecuteAnyCommand", async () => {
+  const { bot, socket } = generateToolkit();
+  const com: ICommand = {
+    name: "commy",
+    description: "mock commy description",
+    async run(_ctx, _rawMsgApi, _args) {},
+  };
+  //This works as well with tags, same logic
+  bot.Commands.Add(com, CommandType.Tag);
+  const runSpy = spyOn(com, "run");
+  //Taking into account initial bot config with "!" inside generateToolKit logic.
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "@" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "!" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "@badcommand" });
+  expect(runSpy).not.toHaveBeenCalled();
+  await socket.MockSendMsgAsync(MockQuotedMsg_Group, { replaceTextWith: "@commy" });
+  expect(runSpy).toHaveBeenCalledTimes(1);
+});
 
 //TODO: Verify command names can't have " " spaces, only 1 word long

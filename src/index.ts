@@ -1,5 +1,13 @@
 import Whatsbotcord from "./core/bot/bot";
-import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetQuotedMsgTextFrom, MsgHelper_GetTextFrom } from "./helpers/Msg.helper";
+import {
+  MsgHelper_FullMsg_GetMsgType,
+  MsgHelper_FullMsg_GetQuotedMsg,
+  MsgHelper_FullMsg_GetQuotedMsgText,
+  MsgHelper_FullMsg_GetSenderType,
+  MsgHelper_FullMsg_GetText,
+  MsgHelper_ProtoMsg_GetMsgType,
+  MsgHelper_QuotedMsg_GetText,
+} from "./helpers/Msg.helper";
 import {
   WhatsappHelper_ExtractWhatsappIdFromMention,
   WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
@@ -32,9 +40,13 @@ export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsSocket };
  * from raw WhatsappMessages
  */
 export const MsgHelpers = {
-  GetTextFromQuotedMsg: MsgHelper_GetQuotedMsgTextFrom,
-  GetMsgTypeFrom: MsgHelper_GetMsgTypeFromRawMsg,
-  GetTextFromMsg: MsgHelper_GetTextFrom,
+  FullMsg_GetQuotedMsgText: MsgHelper_FullMsg_GetQuotedMsgText,
+  FullMsg_GetMsgType: MsgHelper_FullMsg_GetMsgType,
+  FullMsg_GetText: MsgHelper_FullMsg_GetText,
+  QuotedMsg_GetText: MsgHelper_QuotedMsg_GetText,
+  FullMsg_GetQuotedMsgObj: MsgHelper_FullMsg_GetQuotedMsg,
+  FullMsg_GetSenderType: MsgHelper_FullMsg_GetSenderType,
+  AnyMsg_GetMsgType: MsgHelper_ProtoMsg_GetMsgType,
 };
 
 /**

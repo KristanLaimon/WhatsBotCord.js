@@ -14,7 +14,7 @@ import {
 import moment from "moment";
 import pino from "pino";
 import encodeQr from "qr";
-import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetSenderTypeFromRawMsg } from "../../helpers/Msg.helper";
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../helpers/Msg.helper";
 import { GetPath } from "../../libs/BunPath";
 import Delegate from "../../libs/Delegate";
 import type { MsgType } from "../../Msg.types";
@@ -324,7 +324,7 @@ export default class WhatsSocket implements IWhatsSocket {
         let senderType: SenderType = SenderType.Unknown;
         if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
         if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
-        this.onIncomingMsg.CallAll(senderId, chatId, msg, MsgHelper_GetMsgTypeFromRawMsg(msg), senderType);
+        this.onIncomingMsg.CallAll(senderId, chatId, msg, MsgHelper_FullMsg_GetMsgType(msg), senderType);
       }
     });
   }
@@ -337,8 +337,8 @@ export default class WhatsSocket implements IWhatsSocket {
 
         const chatId: string = msgUpdate.key.remoteJid!;
         const senderId: string | null = msgUpdate.key.participant ?? null;
-        const senderType: SenderType = MsgHelper_GetSenderTypeFromRawMsg(msgUpdate);
-        this.onUpdateMsg.CallAll(senderId, chatId, msgUpdate, MsgHelper_GetMsgTypeFromRawMsg(msgUpdate), senderType);
+        const senderType: SenderType = MsgHelper_FullMsg_GetSenderType(msgUpdate);
+        this.onUpdateMsg.CallAll(senderId, chatId, msgUpdate, MsgHelper_FullMsg_GetMsgType(msgUpdate), senderType);
       }
     });
   }

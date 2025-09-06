@@ -96,6 +96,7 @@ bot.Start();
  * 4. + Receiver.test.ts => Check if sending an incorrect type msg resets the timeout timer!
  *                       => Check that local config on method overrides global config but when
  *                          not using local config, uses global config instead
+ * 5. + CommandSearcher => validate assertion for "oneword" comands and preventing "" command names!
  */
 
 //TODO : Features

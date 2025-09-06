@@ -28,6 +28,16 @@ export default class CommandsSearcher {
   }
 
   public Add(commandToAdd: ICommand, addCommandAsType: CommandType): void {
+    //TODO: Test this validation
+    if (commandToAdd.name.trim() === "") {
+      throw new Error("You can't add a command without name!");
+    }
+    //TODO: Test this validation
+    if (commandToAdd.name.split(" ").length > 1) {
+      throw new Error(
+        "You can not add a command with spaces or vary words length!. E.g: !hola mundo, 'hola mundo' is not a valid name, must be one word only like 'holamundo' or 'hola_mundo'"
+      );
+    }
     const commandNameLowercase = commandToAdd.name.toLowerCase();
     const mapToStoreInto: Map<string, ICommand> = addCommandAsType === CommandType.Normal ? this._normalCommands : this._tagCommands;
 

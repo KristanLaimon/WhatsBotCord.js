@@ -49,7 +49,7 @@ export type CommandArgs = {
    * Information about a quoted (replied-to) message, if present.
    * Useful for commands that operate on a specific previous message.
    */
-  quotedMsg: FoundQuotedMsg | null;
+  quotedMsgInfo: FoundQuotedMsg | null;
 };
 
 /**

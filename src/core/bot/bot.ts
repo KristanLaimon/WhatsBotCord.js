@@ -1,5 +1,5 @@
 import type { WAMessage, proto } from "baileys";
-import { MsgHelper_GetMsgTypeFromProtoIMessage, MsgHelper_GetQuotedMsgFrom, MsgHelper_GetTextFrom } from "../../helpers/Msg.helper";
+import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper";
 import Delegate from "../../libs/Delegate";
 import { MsgType, type SenderType } from "../../Msg.types";
 import {
@@ -201,7 +201,7 @@ export default class Bot {
 
     // ==== Main Logic =====
     if (msgType === MsgType.Text) {
-      const txtFromMsg: string | null = MsgHelper_GetTextFrom(rawMsg);
+      const txtFromMsg: string | null = MsgHelper_FullMsg_GetText(rawMsg);
       if (!txtFromMsg || txtFromMsg.length === 0) return;
       const txtFromMsgHealthy: string = txtFromMsg.trim();
 
@@ -240,10 +240,10 @@ export default class Bot {
         return;
       }
 
-      const existsQuotedMsg: proto.IMessage | null = MsgHelper_GetQuotedMsgFrom(rawMsg);
+      const existsQuotedMsg: proto.IMessage | null = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
       let quotedMsgAsArgument: FoundQuotedMsg | null = null;
       if (existsQuotedMsg) {
-        const quotedMsgType: MsgType = MsgHelper_GetMsgTypeFromProtoIMessage(existsQuotedMsg);
+        const quotedMsgType: MsgType = MsgHelper_ProtoMsg_GetMsgType(existsQuotedMsg);
         quotedMsgAsArgument = {
           userIdItComesFrom: rawMsg.message?.extendedTextMessage?.contextInfo?.participant ?? senderId! ?? "ID_NOT_IDENTIFIED",
           msg: existsQuotedMsg,
@@ -274,7 +274,7 @@ export default class Bot {
             originalRawMsg: rawMsg,
             senderType: senderType,
             userId: senderId,
-            quotedMsg: quotedMsgAsArgument,
+            quotedMsgInfo: quotedMsgAsArgument,
           }
         );
       } catch (e) {

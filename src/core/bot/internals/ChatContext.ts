@@ -1,5 +1,5 @@
 import { autobind } from "../../../helpers/Decorators.helper";
-import { MsgHelper_GetSenderTypeFromRawMsg, MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
+import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper";
 import { MsgType, SenderType } from "../../../Msg.types";
 import {
   WhatsSocketReceiverHelper_isReceiverError,
@@ -73,7 +73,7 @@ export class ChatContext {
     this._internalReceive = receiverDependency;
     this._fixedChatId = fixedChatId;
     this._initialMsg = initialMsg;
-    this._senderType = MsgHelper_GetSenderTypeFromRawMsg(this._initialMsg);
+    this._senderType = MsgHelper_FullMsg_GetSenderType(this._initialMsg);
   }
 
   /**
@@ -447,7 +447,7 @@ export class ChatContext {
   public async WaitMsgText(localOptions?: Partial<ChatContextConfig>): Promise<string | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Text, localOptions);
     if (!found) return null;
-    const extractedTxtToReturn: string | null = MsgHelper_GetTextFrom(found);
+    const extractedTxtToReturn: string | null = MsgHelper_FullMsg_GetText(found);
     return extractedTxtToReturn;
   }
 

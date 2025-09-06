@@ -1,5 +1,5 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
-import { MsgHelper_GetMsgTypeFromRawMsg, MsgHelper_GetSenderTypeFromRawMsg } from "../../../helpers/Msg.helper";
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper";
 import Delegate from "../../../libs/Delegate";
 import type { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types";
@@ -158,28 +158,31 @@ export default class WhatsSocketMock implements IWhatsSocket {
   }
 
   private _extractInfoFromWhatsMsg(rawMsg: WhatsappMessage, options?: WhatsSocketMockSendingMsgOptions) {
-    const msgType: MsgType = MsgHelper_GetMsgTypeFromRawMsg(rawMsg);
-    const senderType: SenderType = MsgHelper_GetSenderTypeFromRawMsg(rawMsg);
+    const msgType: MsgType = MsgHelper_FullMsg_GetMsgType(rawMsg);
+    const senderType: SenderType = MsgHelper_FullMsg_GetSenderType(rawMsg);
 
-    const rawMsgCopy = structuredClone(rawMsg);
+    let msgToReturn: WhatsappMessage;
+    if (options) {
+      msgToReturn = structuredClone(rawMsg);
+      if (!rawMsg.message) {
+        msgToReturn.message = {};
+      }
+      //=== Options handling ====
+      if (options?.replaceTextWith) {
+        msgToReturn.message!.conversation = options.replaceTextWith;
+      }
 
-    if (!rawMsg.message) {
-      rawMsgCopy.message = {};
+      if (options?.replaceParticipantIdWith) {
+        msgToReturn.key.participant = options.replaceParticipantIdWith;
+      }
+
+      if (options?.replaceChatIdWith) {
+        msgToReturn.key.remoteJid = options.replaceChatIdWith;
+      }
+    } else {
+      msgToReturn = rawMsg;
     }
 
-    //=== Options handling ====
-    if (options?.replaceTextWith) {
-      rawMsgCopy.message!.conversation = options.replaceTextWith;
-    }
-
-    if (options?.replaceParticipantIdWith) {
-      rawMsgCopy.key.participant = options.replaceParticipantIdWith;
-    }
-
-    if (options?.replaceChatIdWith) {
-      rawMsgCopy.key.remoteJid = options.replaceChatIdWith;
-    }
-
-    return { rawMsg: rawMsgCopy, msgType, senderType };
+    return { rawMsg: msgToReturn, msgType, senderType };
   }
 }

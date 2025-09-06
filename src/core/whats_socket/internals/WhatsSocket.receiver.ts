@@ -1,4 +1,4 @@
-import { MsgHelper_GetTextFrom } from "../../../helpers/Msg.helper";
+import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper";
 import type { MsgType, SenderType } from "../../../Msg.types";
 import type { IWhatsSocket } from "../IWhatsSocket";
 import type { WhatsappMessage } from "../types";
@@ -138,7 +138,7 @@ export class WhatsSocket_Submodule_Receiver {
         resetTimeout();
 
         //If not null, means it is a valid text message with readable content as plain text;
-        const expectedTxtMsgContent: string | null = MsgHelper_GetTextFrom(msg);
+        const expectedTxtMsgContent: string | null = MsgHelper_FullMsg_GetText(msg);
 
         //Priority #1: Check if its a suspicious msg (very large)
         // @deprecated!
