@@ -207,7 +207,6 @@ it("Audio_WhenUsingSendAudio_ShouldCorrectlyUseSugarSenderAudio", async (): Prom
   expect(sendAudioSenderSpy).toHaveBeenCalledWith(CHATID, "./mockAudio.mp3", WHATSMSGOPTIONSPARAM);
 });
 
-//TODO: Continue with => Video, Video With Caption, Poll, Ubication, Ubication With Description, Contact!
 it("Video_WhenUsingSendVideoWithoutCaption_ShouldCorrectlyUseSugarSenderVideo", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
   const sendVideoSenderSpy: Mock<typeof sender.Video> = spyOn(sender, "Video");

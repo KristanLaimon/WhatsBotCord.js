@@ -399,5 +399,3 @@ export default class Bot {
     }
   } //EVENT_...() Method
 } //Class
-
-//TODO: Add a simple middleware system when OnMessageIncoming

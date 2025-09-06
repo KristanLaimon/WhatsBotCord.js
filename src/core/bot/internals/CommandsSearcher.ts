@@ -10,7 +10,6 @@ export type CommandEntry = {
   commandObj: ICommand;
 };
 
-//TODO: Create a SUITE TEST
 export default class CommandsSearcher {
   private _normalCommands: Map<string, ICommand> = new Map();
   private _tagCommands: Map<string, ICommand> = new Map();

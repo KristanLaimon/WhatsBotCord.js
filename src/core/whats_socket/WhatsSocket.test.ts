@@ -104,8 +104,30 @@ describe("Messages Sending", () => {
   });
 });
 
+//TODO: Append these to actual test suite
+/**
+ * Out of scope but: (WhatsSocket improve suite testing)
+ * 1. [] Test if all whatssocket EVENTS works as expected (needs manual testing... ofc)
+ *        (Already know it works by the whole +100 tests that uses it!)
+ *        TESTEABLE     [X] onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void>; *        [] onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void>;
+ *        TESTEABLE     [] onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void>;
+ *        TESTEABLE     [] onRestart: Delegate<() => Promise<void>>;
+ *        MANUAL TEST (forcing emitting event)  [] onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
+ *        MANUAL TEST  (forcing emitting event ) [X] onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
+ *        TESTEABLE [] onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
+ */
+/**
+ * Events/Delegates Tested:
+ * [X] => onSentMessage
+ * [X] => onIncomingMsg
+ * [X] => onUpdateMsg
+ * [X] => onGroupUpdate
+ * [ ] => onGroupEnter
+ * [ ] => onRestart
+ * [ ] => onStartupAllGroupsIn
+ */
 describe("Events/Delegates", () => {
-  it("WhenSendingAMsg_ShouldInvokeWS_onSentMessageDelegate", async () => {
+  it("onSentMessage_Delegate_WhenSendingAMsg_ShouldInvokeWS", async () => {
     const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
@@ -120,7 +142,7 @@ describe("Events/Delegates", () => {
     expect(onSentMessageSpySubscriber).toHaveBeenCalledTimes(1);
   });
 
-  it("WhenReceivingAMsg_ShouldInvokeWS_onMessageUpsertDelegate", async () => {
+  it("onIncomingMsg_Delegate_WhenReceivingAMsg_ShouldInvokeWS", async () => {
     //========== Using onMessageUpsert ================
     // Arrange
     const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
@@ -159,7 +181,7 @@ describe("Events/Delegates", () => {
     expect(senderType).toBe(SenderType.Group); // group detection tested
   });
 
-  it("WhenReceivingMsgUpdate_ShouldInvokeWS_onMessageUpdateDelegate", async () => {
+  it("onUpdateMsg_Delegate_WhenReceivingMsgUpdate_ShouldInvokeWS", async () => {
     // =================== Using onMessageUpdate =====================
     const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
@@ -187,7 +209,7 @@ describe("Events/Delegates", () => {
     expect(subscriberSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("WhenGettingGroupsUPdate_ShouldInvokeWS_onGroupUpdateDelegate", async () => {
+  it("onGroupUpdate_Delegate_WhenGettingGroupsUPdate_ShouldInvokeWS", async () => {
     const mockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: mockSocket,

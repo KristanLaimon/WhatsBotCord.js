@@ -89,14 +89,16 @@ bot.Start();
 //TODO: Testing
 /** TODO TESTING:
  * 1. CHECKED ✅ | + ChatContext => Test receive methods (WaitMsgText, WaitMsg)
- * 2. + Bot.ts => Test whole functionality as bot obj (not its internals)
- *                && Middleware internal system
- *                && Tests for handling command errors (known errors | unknown ones | abortedByUser with 'cancel')
- * 3. + Decorators.helper.ts => Test it works as decorator
- * 4. + Receiver.test.ts => Check if sending an incorrect type msg resets the timeout timer!
- *                       => Check that local config on method overrides global config but when
- *                          not using local config, uses global config instead
- * 5. + CommandSearcher => validate assertion for "oneword" comands and preventing "" command names! && Verify command names can't have " " spaces, only 1 word long
+ * 2. CHECKED ✅ | + Bot.ts   => Test whole functionality as bot obj (not its internals)
+ *                ✅ && Middleware internal system
+ *                ✅ && Tests for handling command errors (known errors | unknown ones | abortedByUser with 'cancel')
+ * 3. + Decorators.helper.ts  => ✅ Test if works as decorator
+ * 4. + Receiver.test.ts      =>     Check if sending an incorrect type msg resets the timeout timer!
+ * 4.1+ ChatContext.test.ts   => ✅  Check that local config on method overrides global config but when
+ *                                    not using local config, uses global config instead
+ * 5. + CommandSearcher       => Validate assertion for "oneword" comands and preventing "" command names! && Verify command names can't have " " spaces, only 1 word long
+ * 6. Check all TODO's around the project
+ * 7. WhatsSocket.test.ts     => Test all on* events (4/7 already done!);
  */
 
 //TODO : Features

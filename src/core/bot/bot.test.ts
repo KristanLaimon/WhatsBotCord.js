@@ -22,13 +22,12 @@ import {
 import { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock";
 import Bot, { type BotMiddleWareFunct } from "./bot";
-import { ChatContext } from "./internals/ChatContext";
+import type { ChatContext } from "./internals/ChatContext";
 import { CommandType } from "./internals/CommandsSearcher";
 import type { CommandArgs } from "./internals/CommandsSearcher.types";
 import type { ICommand, RawMsgAPI } from "./internals/IBotCommand";
-//TODO: Make test suite
 
-/** WOW = Al finished
+/** WOW = All finished!
  * Bot.ts Suite testing
  * 1. [X] Can be instantiable
  * 2. [X] Are all options setted by default (non-undefined internal options check)
