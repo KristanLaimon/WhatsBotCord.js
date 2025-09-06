@@ -1,65 +1,17 @@
 import { Boom } from "@hapi/boom";
-import type { AnyMessageContent, GroupMetadata, WAMessage, WAMessageUpdate } from "baileys";
+import type { GroupMetadata, WAMessage, WAMessageUpdate } from "baileys";
 
 import { type Mock, describe, expect, mock as fn, it, spyOn } from "bun:test";
 import { MsgType, SenderType } from "../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
-import type { BaileysWASocket } from "./types";
+import { IWhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 import WhatsSocket from "./WhatsSocket";
-
-export function CreateBaileysWhatsappMockSocket(): BaileysWASocket {
-  const evOn_Mock: Mock<BaileysWASocket["ev"]["on"]> = fn();
-  const storedEvents: Map<string, Array<(...args: any[]) => void>> = new Map();
-  evOn_Mock.mockImplementation((eventName, callBack) => {
-    if (!storedEvents.has(eventName)) {
-      storedEvents.set(eventName, [callBack]);
-    } else {
-      storedEvents.get(eventName)!.push(callBack);
-    }
-  });
-
-  const evOn_Emit_Mock: Mock<BaileysWASocket["ev"]["emit"]> = fn();
-  evOn_Emit_Mock.mockImplementation((eventName, ...args: any[]) => {
-    const foundSubscribers = storedEvents.get(eventName);
-    if (foundSubscribers) {
-      for (const subscriberFunct of foundSubscribers) {
-        subscriberFunct(...args);
-      }
-      return true;
-    }
-    return false;
-  });
-  return {
-    user: { id: "mock-jid" },
-    sendMessage: fn(async (jid: string, content: AnyMessageContent) => {
-      return {
-        key: { remoteJid: jid, fromMe: false },
-        message: content,
-      } as WAMessage;
-    }),
-    groupMetadata: fn(
-      async (chatId: string) =>
-        ({
-          id: chatId,
-          subject: "Mock Group",
-          creation: Date.now(),
-          creator: "mock-user",
-        } as unknown as GroupMetadata)
-    ),
-    ev: {
-      on: evOn_Mock,
-      emit: evOn_Emit_Mock,
-    },
-    groupFetchAllParticipating: fn(),
-    ws: { close: fn(async () => Promise.resolve()) },
-  } as unknown as BaileysWASocket;
-}
+import { BaileysSocketServiceAdapter_Mock } from "./WhatsSocket.baileys.mock";
 
 describe("Initialization", () => {
   it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 1,
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
@@ -70,7 +22,7 @@ describe("Initialization", () => {
   });
 
   it("Instatiation_WhenUsingStartMethod_ShouldSubscribeToCredsUpdateSocket", async () => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
       delayMilisecondsBetweenMsgs: 1,
@@ -86,7 +38,7 @@ describe("Initialization", () => {
   });
 
   it("WhenInstatiating_ShouldCreateQueueSocketAndSocketSugarSender", async () => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
       delayMilisecondsBetweenMsgs: 1,
@@ -99,11 +51,11 @@ describe("Initialization", () => {
     //@ts-expect-error We're checking that private _senderQueue exists
     expect(ws._senderQueue).toBeInstanceOf(WhatsSocketSenderQueue_SubModule);
     expect(ws.Send).toBeDefined();
-    expect(ws.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
+    expect(ws.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
   });
 
   it("WhenInstatiatin_ShouldConfigure;ConfigureConnection();CorrectlyOnSocket", async () => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
       delayMilisecondsBetweenMsgs: 1,
@@ -127,7 +79,7 @@ describe("Initialization", () => {
 
 describe("Messages Sending", () => {
   it("WhenSendingMsgsThroughSendSafe_ShouldSendThemThroughSocket", async (): Promise<void> => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 1,
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
@@ -139,7 +91,7 @@ describe("Messages Sending", () => {
   });
 
   it("WhenSendingMsgsThroughRaw_ShouldSendThemThroughSocket", async (): Promise<void> => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 1,
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
@@ -154,7 +106,7 @@ describe("Messages Sending", () => {
 
 describe("Events/Delegates", () => {
   it("WhenSendingAMsg_ShouldInvokeWS_onSentMessageDelegate", async () => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
@@ -171,7 +123,7 @@ describe("Events/Delegates", () => {
   it("WhenReceivingAMsg_ShouldInvokeWS_onMessageUpsertDelegate", async () => {
     //========== Using onMessageUpsert ================
     // Arrange
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
@@ -209,7 +161,7 @@ describe("Events/Delegates", () => {
 
   it("WhenReceivingMsgUpdate_ShouldInvokeWS_onMessageUpdateDelegate", async () => {
     // =================== Using onMessageUpdate =====================
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
@@ -236,7 +188,7 @@ describe("Events/Delegates", () => {
   });
 
   it("WhenGettingGroupsUPdate_ShouldInvokeWS_onGroupUpdateDelegate", async () => {
-    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const mockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: mockSocket,
       delayMilisecondsBetweenMsgs: 1,
@@ -267,7 +219,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
     "WhenStartingNormalWhatsSocket_ShouldBeAbleToStartOnly",
     async () => {
       //Should last at most, 1 second
-      const mockSocket = CreateBaileysWhatsappMockSocket();
+      const mockSocket = new BaileysSocketServiceAdapter_Mock();
       const ws = new WhatsSocket({
         ownImplementationSocketAPIWhatsapp: mockSocket,
         delayMilisecondsBetweenMsgs: 1,
@@ -281,7 +233,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
     "WhenStartingNormalWhatsSocket_ShouldBeAbleToStartAndShutdownCompletely",
     async () => {
       //Should be fast, and avoid leaving any residual promises or unresolved code!.
-      const mockSocket = CreateBaileysWhatsappMockSocket();
+      const mockSocket = new BaileysSocketServiceAdapter_Mock();
       const ws = new WhatsSocket({
         ownImplementationSocketAPIWhatsapp: mockSocket,
         delayMilisecondsBetweenMsgs: 1,
@@ -294,7 +246,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
   );
 
   it("WhenStartingNormalWhatsSocket_ShouldBeAbleToStartAndRestart", async () => {
-    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const mockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: mockSocket,
       delayMilisecondsBetweenMsgs: 1,
@@ -311,7 +263,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
   });
 
   it("WhenRestarting_ShouldNotReinstantiateDelegates", async () => {
-    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const mockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: mockSocket,
       delayMilisecondsBetweenMsgs: 1,
@@ -342,7 +294,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
 describe("Reconnecting", () => {
   it("WhenSuccessfullyConnected;Ideal;_ShouldFetchGroupMetadataOnce", async () => {
     // ====== Arrange
-    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const mockSocket = new BaileysSocketServiceAdapter_Mock();
     const groupFetchAllParticipantsMock = mockSocket.groupFetchAllParticipating as Mock<typeof mockSocket.groupFetchAllParticipating>;
 
     const groupFetchMockData = {
@@ -380,7 +332,7 @@ describe("Reconnecting", () => {
   });
 
   it("WhenNotConnected_ShouldCloseItselfAndRestart", async () => {
-    const mockSocket = CreateBaileysWhatsappMockSocket();
+    const mockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       ownImplementationSocketAPIWhatsapp: mockSocket,
       delayMilisecondsBetweenMsgs: 1,
@@ -420,7 +372,7 @@ describe("Reconnecting", () => {
     async () => {
       const MAX_RECONNECTION_RETRIES = 2;
 
-      const mockSocket = CreateBaileysWhatsappMockSocket();
+      const mockSocket = new BaileysSocketServiceAdapter_Mock();
       const ws = new WhatsSocket({
         ownImplementationSocketAPIWhatsapp: mockSocket,
         maxReconnectionRetries: MAX_RECONNECTION_RETRIES,
@@ -466,7 +418,7 @@ describe("Reconnecting", () => {
 
 describe("Info fetching", () => {
   it("WhenTryingToFetchGroupsData_ShouldFetchThemCorrectlyFromSocket", async () => {
-    const internalMockSocket = CreateBaileysWhatsappMockSocket();
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownImplementationSocketAPIWhatsapp: internalMockSocket,

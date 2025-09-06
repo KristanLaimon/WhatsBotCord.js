@@ -2,12 +2,8 @@ import type { WAMessage, proto } from "baileys";
 import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper";
 import Delegate from "../../libs/Delegate";
 import { MsgType, type SenderType } from "../../Msg.types";
-import {
-  WhatsSocketReceiverHelper_isReceiverError,
-  WhatsSocketReceiverMsgError,
-  type WhatsSocket_Submodule_Receiver,
-} from "../whats_socket/internals/WhatsSocket.receiver";
-import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
+import { WhatsSocketReceiverHelper_isReceiverError, type IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
+import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket";
 import { ChatContext, type ChatContextConfig } from "./internals/ChatContext";
@@ -48,9 +44,10 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
 
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
   onCommandNotFound: Delegate<(commandNameThatCouldntBeFound: string) => void | Promise<void>>;
+  onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
 };
-export type WhatsBotSender = WhatsSocket_Submodule_SugarSender;
-export type WhatsBotReceiver = WhatsSocket_Submodule_Receiver;
+export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
+export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
 
 export type BotMiddleWareFunct = (
@@ -59,8 +56,8 @@ export type BotMiddleWareFunct = (
   rawMsg: WAMessage,
   msgType: MsgType,
   senderType: SenderType,
-  next: () => void
-) => Promise<void>;
+  next: () => Promise<void>
+) => Promise<void> | void;
 
 /**
  * Represents the main WhatsApp Bot instance.
@@ -84,6 +81,53 @@ export default class Bot {
   private _socket: IWhatsSocket;
   private _commandSearcher: CommandsSearcher;
   private _internalMiddleware: BotMiddleWareFunct[] = [];
+
+  /** Bot Specific Events */
+  /**
+   * Event triggered when the bot receives a message that looks like a command,
+   * but no registered command or alias matches it.
+   *
+   * Example usage:
+   * ```ts
+   * bot.Events.onCommandNotFound.Subscribe((name) => {
+   *   console.log(`User tried unknown command: ${name}`);
+   * });
+   * ```
+   */
+  private _onCommandNotFound: Delegate<(commandNameThatCouldntBeFound: string) => void> = new Delegate();
+
+  /**
+   * Event triggered **after the middleware chain finishes running**.
+   *
+   * - The argument is `true` if the chain executed successfully to the end.
+   * - The argument is `false` if some middleware stopped the chain by not calling `next()`.
+   *
+   * Example usage:
+   * ```ts
+   * bot.Events.onMiddlewareEnd.Subscribe((success) => {
+   *   if (success) console.log("All middleware finished");
+   *   else console.log("Middleware chain was interrupted early");
+   * });
+   * ```
+   */
+  private _onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>> = new Delegate();
+  /**
+   * Current bot configuration settings.
+   *
+   * These settings are derived from the constructor options, with defaults applied
+   * where values were not provided.
+   *
+   * ⚠️ Changing properties on this object **after the bot has started** can affect its actual functionality.
+   *
+   * Typical use cases:
+   * - Reading the active command or tag prefix
+   * - Inspecting runtime limits (timeouts, queue limits, etc.)
+   *
+   * Example:
+   * ```ts
+   * console.log(bot.Settings.commandPrefix); // ["!"]
+   * ```
+   */
   public Settings: WhatsBotOptions;
 
   /**
@@ -113,6 +157,26 @@ export default class Bot {
     return this._socket.Receive;
   }
 
+  /** Exposes all bot-related events that consumers can subscribe to.
+   *
+   * These events are implemented using `Delegate`, which provides `Subscribe` and
+   * `Unsubscribe` methods to attach or detach handlers.
+   *
+   * Example usage:
+   * ```ts
+   * bot.Events.onIncomingMsg.Subscribe((msg) => {
+   *   console.log("Raw incoming message:", msg);
+   * });
+   *
+   * bot.Events.onCommandNotFound.Subscribe((name) => {
+   *   console.warn(`Unknown command: ${name}`);
+   * });
+   *
+   * bot.Events.onMiddlewareEnd.Subscribe((success) => {
+   *   console.log(success ? "Middleware chain finished" : "Middleware interrupted");
+   * });
+   * ```
+   */
   public get Events(): WhatsBotEvents {
     return {
       onGroupEnter: this._socket.onGroupEnter,
@@ -122,7 +186,8 @@ export default class Bot {
       onSentMessage: this._socket.onSentMessage,
       onStartupAllGroupsIn: this._socket.onStartupAllGroupsIn,
       onUpdateMsg: this._socket.onUpdateMsg,
-      onCommandNotFound: new Delegate<(commandNameThatCouldntBeFound: string) => void>(),
+      onCommandNotFound: this._onCommandNotFound,
+      onMiddlewareEnd: this._onMiddlewareEnd,
     };
   }
 
@@ -162,10 +227,8 @@ export default class Bot {
     };
 
     this.Start = this.Start.bind(this);
-
     this._commandSearcher = new CommandsSearcher();
     this._socket = this.Settings.ownWhatsSocketImplementation ?? new WhatsSocket(this.Settings);
-
     this.EVENT_OnMessageIncoming = this.EVENT_OnMessageIncoming.bind(this);
     this._socket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
   }
@@ -185,19 +248,59 @@ export default class Bot {
     return this._socket.Start();
   }
 
+  /**
+   * Registers a middleware function to be executed on every incoming message.
+   *
+   * Middleware functions are executed **before any command processing** occurs.
+   * They allow you to inspect, modify, or react to incoming messages globally.
+   *
+   * Middleware execution:
+   * - Middleware is executed in the order it was added.
+   * - Each middleware receives the full context of the message, including sender ID,
+   *   chat ID, the raw WhatsApp message, message type, and sender type.
+   * - Middleware can optionally call the `next()` callback to pass control to the next middleware.
+   *   If `next()` is not called, subsequent middleware and command processing are skipped.
+   *
+   * @param middleware - A function to handle incoming messages. The function receives:
+   *   - `senderId` - The ID of the user who sent the message, or `null` if unknown.
+   *   - `chatId` - The ID of the chat where the message was sent.
+   *   - `rawMsg` - The full WhatsApp message object.
+   *   - `msgType` - The type of the message (e.g., text, image, video).
+   *   - `senderType` - Whether the message comes from an individual or a group participant.
+   *   - `next` - A function to call to continue to the next middleware in the chain.
+   *
+   * @example
+   * // Log every incoming message and continue to the next middleware
+   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
+   *   console.log(`Message from ${senderId} in chat ${chatId}:`, rawMsg);
+   *   next();
+   * });
+   *
+   * @example
+   * // Block messages from a specific user (do not call next)
+   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
+   *   if (senderId === "blockedUserId") return;
+   *   next();
+   * });
+   */
+  public Use(middleware: BotMiddleWareFunct): void {
+    this._internalMiddleware.push(middleware);
+  }
+
   private async EVENT_OnMessageIncoming(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType): Promise<void> {
     // ======== Middleware chain section ========
-    let continueWithEvent: boolean = false;
+    let middlewareChainSuccess: boolean = false;
     const callMiddleware = async (index: number): Promise<void> => {
       if (index >= this._internalMiddleware.length) {
-        continueWithEvent = true;
+        middlewareChainSuccess = true;
         return; // end of chain
       }
       const middleware = this._internalMiddleware[index]!;
-      await middleware(senderId, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1));
+      await Promise.resolve(middleware(senderId, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
     };
     await callMiddleware(0);
-    if (!continueWithEvent) return;
+    this.Events.onMiddlewareEnd.CallAll(middlewareChainSuccess);
+    if (!middlewareChainSuccess) return;
 
     // ==== Main Logic =====
     if (msgType === MsgType.Text) {
@@ -219,11 +322,11 @@ export default class Bot {
       let commandFound: ICommand | null = null;
       let commandTypeFound: CommandType | null = null;
       // 1. Check if its normal command
-      if ((this.Settings.commandPrefix as string[]).includes(prefix)) {
+      if (typeof this.Settings.commandPrefix === "string" ? this.Settings.commandPrefix === prefix : this.Settings.commandPrefix?.includes(prefix)) {
         commandTypeFound = CommandType.Normal;
         commandFound = this.Commands.GetCommand(commandOrAliasNameLowerCased);
         // 2. Check if is tag command
-      } else if ((this.Settings.tagCharPrefix as string[]).includes(prefix)) {
+      } else if (typeof this.Settings.tagCharPrefix === "string" ? this.Settings.tagCharPrefix === prefix : this.Settings.tagCharPrefix?.includes(prefix)) {
         commandTypeFound = CommandType.Tag;
         commandFound = this.Commands.GetTag(commandOrAliasNameLowerCased);
       }
@@ -282,9 +385,6 @@ export default class Bot {
           if (e.wasAbortedByUser && this.Settings.loggerMode !== "silent") {
             console.log(`[Command Canceled]: Name ${commandOrAliasNameLowerCased}`);
           }
-          if (e.errorMessage === WhatsSocketReceiverMsgError.Timeout && this.Settings.loggerMode !== "silent") {
-            console.log(`[Command Timeout]: Name ${commandOrAliasNameLowerCased}`);
-          }
         } else {
           if (this.Settings.loggerMode !== "silent")
             console.log(
@@ -298,45 +398,6 @@ export default class Bot {
       }
     }
   } //EVENT_...() Method
-
-  /**
-   * Registers a middleware function to be executed on every incoming message.
-   *
-   * Middleware functions are executed **before any command processing** occurs.
-   * They allow you to inspect, modify, or react to incoming messages globally.
-   *
-   * Middleware execution:
-   * - Middleware is executed in the order it was added.
-   * - Each middleware receives the full context of the message, including sender ID,
-   *   chat ID, the raw WhatsApp message, message type, and sender type.
-   * - Middleware can optionally call the `next()` callback to pass control to the next middleware.
-   *   If `next()` is not called, subsequent middleware and command processing are skipped.
-   *
-   * @param middleware - A function to handle incoming messages. The function receives:
-   *   - `senderId` - The ID of the user who sent the message, or `null` if unknown.
-   *   - `chatId` - The ID of the chat where the message was sent.
-   *   - `rawMsg` - The full WhatsApp message object.
-   *   - `msgType` - The type of the message (e.g., text, image, video).
-   *   - `senderType` - Whether the message comes from an individual or a group participant.
-   *   - `next` - A function to call to continue to the next middleware in the chain.
-   *
-   * @example
-   * // Log every incoming message and continue to the next middleware
-   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
-   *   console.log(`Message from ${senderId} in chat ${chatId}:`, rawMsg);
-   *   next();
-   * });
-   *
-   * @example
-   * // Block messages from a specific user (do not call next)
-   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
-   *   if (senderId === "blockedUserId") return;
-   *   next();
-   * });
-   */
-  public Use(middleware: BotMiddleWareFunct): void {
-    this._internalMiddleware.push(middleware);
-  }
 } //Class
 
 //TODO: Add a simple middleware system when OnMessageIncoming

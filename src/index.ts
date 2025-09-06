@@ -17,20 +17,23 @@ import {
 } from "./helpers/Whatsapp.helper";
 
 // === Types deps exporting ===
+import type { BotMiddleWareFunct } from "./core/bot/bot";
 import type { ChatContextConfig } from "./core/bot/internals/ChatContext";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types";
 import type { ICommand, RawMsgAPI } from "./core/bot/internals/IBotCommand";
+import type { WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver";
 import type { WhatsappMessage } from "./core/whats_socket/types";
-export type { ChatContextConfig, CommandArgs, ICommand as IBotCommand, RawMsgAPI, WhatsappMessage };
+export type { BotMiddleWareFunct, ChatContextConfig, CommandArgs, ICommand as IBotCommand, RawMsgAPI, WhatsappMessage, WhatsSocketReceiverError };
 
 // == Runtime deps exporting ==
 import { ChatContext } from "./core/bot/internals/ChatContext";
 import { CommandType } from "./core/bot/internals/CommandsSearcher";
+import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver";
 import WhatsSocket from "./core/whats_socket/WhatsSocket";
 import Delegate from "./libs/Delegate";
 import { MsgType, SenderType } from "./Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types";
-export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsSocket };
+export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsSocket, WhatsSocketReceiverMsgError };
 
 // === Helpers ===
 /**

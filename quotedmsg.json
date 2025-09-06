@@ -72,5 +72,67 @@
         }
       }
     }
+  },
+  {
+    "key": {
+      "remoteJid": "5216121407908@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3F484DEDA8FB06CA4E8D"
+    },
+    "messageTimestamp": 1757184891,
+    "pushName": "Kristan Ruiz",
+    "broadcast": false,
+    "message": {
+      "extendedTextMessage": {
+        "text": "!ping",
+        "contextInfo": {
+          "expiration": 0,
+          "ephemeralSettingTimestamp": "0",
+          "disappearingMode": {
+            "initiator": "CHANGED_IN_CHAT"
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "zkr6pV5fV58MkA==",
+          "senderTimestamp": "1756692691",
+          "recipientKeyHash": "pQVf5hor9RHmLg==",
+          "recipientTimestamp": "1755726002"
+        },
+        "deviceListMetadataVersion": 2
+      }
+    }
+  },
+  {
+    "key": {
+      "remoteJid": "5216121407908@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3F3E822EED4D257F7746"
+    },
+    "messageTimestamp": 1757184893,
+    "pushName": "Kristan Ruiz",
+    "broadcast": false,
+    "message": {
+      "extendedTextMessage": {
+        "text": "cancel",
+        "contextInfo": {
+          "expiration": 0,
+          "ephemeralSettingTimestamp": "0",
+          "disappearingMode": {
+            "initiator": "CHANGED_IN_CHAT"
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "zkr6pV5fV58MkA==",
+          "senderTimestamp": "1756692691",
+          "recipientKeyHash": "pQVf5hor9RHmLg==",
+          "recipientTimestamp": "1755726002"
+        },
+        "deviceListMetadataVersion": 2
+      }
+    }
   }
 ]

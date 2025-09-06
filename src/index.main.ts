@@ -70,7 +70,7 @@ bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
 
 bot.Use(async (_senderId, chatId, rawMsg, msgType, _senderType, next) => {
   if (msgType === MsgType.Text) {
-    const txt: string | null = MsgHelpers.GetTextFromMsg(rawMsg);
+    const txt: string | null = MsgHelpers.FullMsg_GetText(rawMsg);
     if (txt && txt?.length > 1000) {
       bot.SendMsg.Text(chatId, "To muuch text!!!");
       return;
@@ -96,8 +96,9 @@ bot.Start();
  * 4. + Receiver.test.ts => Check if sending an incorrect type msg resets the timeout timer!
  *                       => Check that local config on method overrides global config but when
  *                          not using local config, uses global config instead
- * 5. + CommandSearcher => validate assertion for "oneword" comands and preventing "" command names!
+ * 5. + CommandSearcher => validate assertion for "oneword" comands and preventing "" command names! && Verify command names can't have " " spaces, only 1 word long
  */
 
 //TODO : Features
 // Give group utilites (fetch all members for example) => Bot should expose GetGroupMetadata and group handling and ChatContext should provide facilities for group info (and group handling?)
+// ChatContext must have a WaitMsg_# (per message type) dedicated.

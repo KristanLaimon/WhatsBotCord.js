@@ -3,14 +3,14 @@ import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../.
 import { MsgType, SenderType } from "../../../Msg.types";
 import {
   WhatsSocketReceiverHelper_isReceiverError,
-  type WhatsSocket_Submodule_Receiver,
+  type IWhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
 } from "../../whats_socket/internals/WhatsSocket.receiver";
 import type {
+  IWhatsSocket_Submodule_SugarSender,
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
-  WhatsSocket_Submodule_SugarSender,
 } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { WhatsappMessage } from "../../whats_socket/types";
 
@@ -26,8 +26,8 @@ export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
  */
 export class ChatContext {
   /** Low-level sender dependency used to actually send messages */
-  private _internalSend: WhatsSocket_Submodule_SugarSender;
-  private _internalReceive: WhatsSocket_Submodule_Receiver;
+  private _internalSend: IWhatsSocket_Submodule_SugarSender;
+  private _internalReceive: IWhatsSocket_Submodule_Receiver;
 
   /** The chat ID this session is permanently bound to */
   private _fixedOriginalSenderId: string | null;
@@ -63,8 +63,8 @@ export class ChatContext {
     originalSenderID: string | null,
     fixedChatId: string,
     initialMsg: WhatsappMessage,
-    senderDependency: WhatsSocket_Submodule_SugarSender,
-    receiverDependency: WhatsSocket_Submodule_Receiver,
+    senderDependency: IWhatsSocket_Submodule_SugarSender,
+    receiverDependency: IWhatsSocket_Submodule_Receiver,
     config: ChatContextConfig
   ) {
     this.Config = config;
@@ -451,14 +451,27 @@ export class ChatContext {
     return extractedTxtToReturn;
   }
 
+  //TODO: Create a WaitMsg, WaitVideo, Wait (all other options)
+
   /**
-   * Waits for the next message with expected type from the original user who initiated this chat.
+   * Waits for the next incoming message of the given `expectedType`, restricted to the
+   * original user who initiated this chat context.
    *
-   * Messages from other participants (in groups) or from different users will be ignored
-   * without resolving this promise.
+   * - In **group chats**, only messages from the fixed original sender will be considered.
+   *   Messages from other participants are ignored without resolving the promise.
+   * - In **private chats**, only the initiating user’s replies are considered.
    *
-   * @param localOptions - Optional waiting configuration (e.g., timeout)
-   * @returns The plain text content of the next message, or `null` if none is received
+   * Behavior:
+   * - If the user sends the configured **cancel keyword**, the ongoing command is aborted
+   *   immediately (the bot stays alive, but this flow stops).
+   * - If the wait times out (no message arrives within the configured window),
+   *   the method resolves with `null`.
+   * - If a valid message arrives in time, the full `WhatsappMessage` object is returned.
+   *
+   * @param expectedType - Type of message to wait for (e.g., text, media).
+   * @param localOptions - Optional overrides for waiting configuration (e.g., timeout).
+   * @returns The next matching `WhatsappMessage`, or `null` if none is received.
+   * @throws If an invalid sender type is detected or if unexpected receiver errors occur.
    */
   @autobind
   public async WaitMsg(expectedType: MsgType, localOptions?: Partial<ChatContextConfig>): Promise<WhatsappMessage | null> {

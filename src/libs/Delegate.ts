@@ -63,9 +63,7 @@ export default class Delegate<functType extends (...args: any[]) => any> {
    * @returns A promise that resolves when all functions have been called.
    */
   public async CallAllAsync(...args: Parameters<functType>): Promise<void> {
-    for (let i = 0; i < this.functions.length; i++) {
-      await this.functions[i]!(...args);
-    }
+    await Promise.all(this.functions.map((f) => f(...args)));
   }
 
   /**

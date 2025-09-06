@@ -8,8 +8,8 @@ import {
 } from "../../../mocks/MockIndividualGroup";
 import { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
-import { WhatsSocketReceiverMsgError, WhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";
-import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
+import { IWhatsSocket_Submodule_Receiver, WhatsSocketReceiverMsgError, type WhatsSocketReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";
+import { IWhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../../whats_socket/types";
 import { ChatContext, type ChatContextConfig } from "./ChatContext";
@@ -36,8 +36,8 @@ const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
 
 function GenerateLocalToolKit_ChatSession_FromGroup() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
-  const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
+  const senderDependency = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+  const receiverDependency = new IWhatsSocket_Submodule_Receiver(mockSocket);
   const chatSession = new ChatContext(GroupTxtMsg.key.participant ?? null, GroupTxtMsg.key.remoteJid!, GroupTxtMsg, senderDependency, receiverDependency, {
     cancelKeywords: ["cancel", "cancelar"],
     ignoreSelfMessages: true,
@@ -54,8 +54,8 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
 
 function GenerateLocalToolKit_ChatSession_FromIndividual() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
-  const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
+  const senderDependency = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+  const receiverDependency = new IWhatsSocket_Submodule_Receiver(mockSocket);
   const chatSession = new ChatContext(null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, {
     cancelKeywords: ["cancel", "cancelar"],
     ignoreSelfMessages: true,

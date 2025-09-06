@@ -5,13 +5,13 @@ import { GetPath } from "../../../libs/BunPath";
 import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs";
 import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
-import { WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
+import { IWhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
 
 const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
 
 describe("Text", () => {
   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSocket);
 
   beforeEach(() => {
     mockWhatsSocket.ClearMock();
@@ -66,7 +66,7 @@ describe("Text", () => {
 
 describe("Images", () => {
   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
   let FS_readFileSync: Mock<typeof fs.readFileSync>;
@@ -174,7 +174,7 @@ describe("Images", () => {
 
 describe("ReactEmojiToMsg", () => {
   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSender);
 
   it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
     const emoji = "✨";
@@ -231,7 +231,7 @@ describe("ReactEmojiToMsg", () => {
 const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
 describe("Sticker", () => {
   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSender);
 
   //Getting all real stickers examples in webp from mocks folder
   const stickerFilesPaths = fs
@@ -266,7 +266,7 @@ describe("Sticker", () => {
 
 describe("Audio", () => {
   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
   let FS_readFileSync: Mock<typeof fs.readFileSync>;
@@ -380,7 +380,7 @@ describe("Audio", () => {
 
 describe("Video", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
 
   let FS_existsSync: Mock<typeof fs.existsSync>;
   let FS_readFileSync: Mock<typeof fs.readFileSync>;
@@ -467,7 +467,7 @@ describe("Video", async () => {
 
 describe("Poll", () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
 
   beforeEach(() => {
     mockSocket.ClearMock();
@@ -495,7 +495,7 @@ describe("Poll", () => {
 
 describe("Ubication", () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
 
   beforeEach(() => {
     mockSocket.ClearMock();
@@ -541,7 +541,7 @@ describe("Ubication", () => {
 
 describe("Contacts", () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
 
   beforeEach(() => {
     mockSocket.ClearMock();

@@ -3,12 +3,12 @@ import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from ".
 import Delegate from "../../../libs/Delegate";
 import type { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types";
-import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver";
+import { IWhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
-import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders";
+import { IWhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "../IWhatsSocket";
 import type { WhatsappMessage } from "../types";
-import type { WhatsSocketMessageSentMock } from "./types";
+import type { MsgServiceSocketMessageSentMock } from "./types";
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
@@ -34,8 +34,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
   ownJID: string = "ownIDMock" + WhatsappIndividualIdentifier;
 
-  Send: WhatsSocket_Submodule_SugarSender = new WhatsSocket_Submodule_SugarSender(this);
-  Receive: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver(this);
+  Send: IWhatsSocket_Submodule_SugarSender = new IWhatsSocket_Submodule_SugarSender(this);
+  Receive: IWhatsSocket_Submodule_Receiver = new IWhatsSocket_Submodule_Receiver(this);
 
   private _senderQueue: WhatsSocketSenderQueue_SubModule;
 
@@ -51,8 +51,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.ClearMock = this.ClearMock.bind(this);
   }
 
-  public SentMessagesThroughQueue: WhatsSocketMessageSentMock[] = [];
-  public SentMessagesThroughRaw: WhatsSocketMessageSentMock[] = [];
+  public SentMessagesThroughQueue: MsgServiceSocketMessageSentMock[] = [];
+  public SentMessagesThroughRaw: MsgServiceSocketMessageSentMock[] = [];
 
   public GroupsIDTriedToFetch: string[] = [];
 

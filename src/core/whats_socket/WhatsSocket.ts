@@ -20,11 +20,12 @@ import Delegate from "../../libs/Delegate";
 import type { MsgType } from "../../Msg.types";
 import { SenderType } from "../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
-import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
+import { IWhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
+import { IWhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "./IWhatsSocket";
-import type { BaileysWASocket, WhatsappMessage, WhatsSocketLoggerMode } from "./types";
+import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types";
+import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock";
 
 //TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 export type WhatsSocketOptions = {
@@ -83,7 +84,7 @@ export type WhatsSocketOptions = {
    *
    * @note Primarily intended for testing. Use at your own risk if you override.
    */
-  ownImplementationSocketAPIWhatsapp?: BaileysWASocket;
+  ownImplementationSocketAPIWhatsapp?: IWhatsSocketServiceAdapter;
 };
 
 /**
@@ -127,18 +128,18 @@ export default class WhatsSocket implements IWhatsSocket {
 
   //=== Subcomponents ===
   //They're initialized/instantiated in "Start()"
-  private _socket!: BaileysWASocket;
+  private _socket!: IWhatsSocketServiceAdapter;
   private _senderQueue!: WhatsSocketSenderQueue_SubModule;
   /**
    * Sender module and sugar layer for sending all kinds of msgs.
    * Text, Images, Videos, Polls, etc...
    */
-  public Send!: WhatsSocket_Submodule_SugarSender;
+  public Send!: IWhatsSocket_Submodule_SugarSender;
 
   /**
    * Receive internal module. To wait for someone msg's.
    */
-  public Receive!: WhatsSocket_Submodule_Receiver;
+  public Receive!: IWhatsSocket_Submodule_Receiver;
 
   // === Normal Public Properties ===
   public ActualReconnectionRetries: number = 0;
@@ -150,7 +151,8 @@ export default class WhatsSocket implements IWhatsSocket {
   private _maxReconnectionRetries: number;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
-  private _customSocketImplementation?: BaileysWASocket;
+  private _customSocketImplementation?: IWhatsSocketServiceAdapter;
+
   constructor(options?: WhatsSocketOptions) {
     this._loggerMode = options?.loggerMode === "recommended" ? "silent" : options?.loggerMode ?? "silent";
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
@@ -225,8 +227,8 @@ export default class WhatsSocket implements IWhatsSocket {
 
     //== Initializing internal sub-modules ==
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
-    this.Send = new WhatsSocket_Submodule_SugarSender(this);
-    this.Receive = new WhatsSocket_Submodule_Receiver(this);
+    this.Send = new IWhatsSocket_Submodule_SugarSender(this);
+    this.Receive = new IWhatsSocket_Submodule_Receiver(this);
   }
 
   public async Shutdown() {
@@ -387,7 +389,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
-    const toReturn: proto.WebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
+    const toReturn: proto.IWebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;
   }
 }

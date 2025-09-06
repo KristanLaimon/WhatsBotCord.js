@@ -90,7 +90,7 @@ export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): an
 /**
  * Submodule responsible for listening and waiting for messages through a WhatsSocket instance.
  */
-export class WhatsSocket_Submodule_Receiver {
+export class IWhatsSocket_Submodule_Receiver {
   private _whatsSocket: IWhatsSocket;
 
   /**

@@ -1,24 +1,34 @@
-import { expect, spyOn, test } from "bun:test";
-import { MsgHelpers } from "../..";
+import { expect, mock as fn, spyOn, test } from "bun:test";
+import { MsgHelpers, type WhatsappMessage } from "../..";
+import { skipLongTests } from "../../Envs";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
   MockGroupTxtMsg as GroupTxtMsg,
   MockIndividualTxtMsg_CHATID as IndividualMsg_CHATID,
   MockIndividualTxtMsg as IndividualTxtMsg,
+  MockGroupTxtMsg,
+  MockGroupTxtMsg_CHATID,
+  MockGroupTxtMsg_SENDERID,
 } from "../../mocks/MockIndividualGroup";
 import { MockQuotedMsg_Group, MockQuotedMsg_Individual, MockQuotedMsg_Individual_CHATID } from "../../mocks/MockQuotedMsgs";
 import { MsgType, SenderType } from "../../Msg.types";
-import { WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
-import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
+import {
+  IWhatsSocket_Submodule_Receiver,
+  WhatsSocketReceiverHelper_isReceiverError,
+  WhatsSocketReceiverMsgError,
+  type WhatsSocketReceiverError,
+} from "../whats_socket/internals/WhatsSocket.receiver";
+import { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock";
-import Bot from "./bot";
-import type { ChatContext } from "./internals/ChatContext";
+import Bot, { type BotMiddleWareFunct } from "./bot";
+import { ChatContext } from "./internals/ChatContext";
 import { CommandType } from "./internals/CommandsSearcher";
 import type { CommandArgs } from "./internals/CommandsSearcher.types";
 import type { ICommand, RawMsgAPI } from "./internals/IBotCommand";
 //TODO: Make test suite
-/**
+
+/** WOW = Al finished
  * Bot.ts Suite testing
  * 1. [X] Can be instantiable
  * 2. [X] Are all options setted by default (non-undefined internal options check)
@@ -35,25 +45,14 @@ import type { ICommand, RawMsgAPI } from "./internals/IBotCommand";
  *      [X] Commands receives correct arguments from the bot
  *          [X] For incoming quoted msg, should send argument successfully to command
  *      [X] When running only @ or ! (common prefixes) shouldn't do anything
- * 7. [] Unexpected exception: Should not break bot and console.log error instead serialized as json text
- * 8. [] Expected Error "Command rejection": Should not break and console log like info
- * 9. [] Expected Error "command not rejection" (by timeout): Should console.log gracefully
- * 10. [] Middlware system add correctly new middlewares
- *        [] If all middleware are success, should continue with internal command processing
- *        [] If middleware chain stopped, should NOT continue with internal command processing
+ * 7. [X] Unexpected exception: Should not break bot and console.log error instead serialized as json text
+ * 8. [X] Expected Error "Command rejection": Should not break and console log like info
+ * 9. [X] Expected Error "command not rejection" (by timeout): Shouldn't console anything, and return null on waitMsg who triggered it
+ * 10. [X] Middlware system add correctly new middlewares
+ *        [X] If all middleware are success, should continue with internal command processing
+ *        [X] If middleware chain stopped, should NOT continue with internal command processing
  *  */
 
-/**
- * Out of scope but: (WhatsSocket improve suite testing)
- * 1. [] Test if all whatssocket EVENTS works as expected (needs manual testing... ofc)
- *        (Already know it works by the whole +100 tests that uses it!)
- *        TESTEABLE     [X] onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void>; *        [] onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void>;
- *        TESTEABLE     [] onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void>;
- *        TESTEABLE     [] onRestart: Delegate<() => Promise<void>>;
- *        MANUAL TEST   [] onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
- *        MANUAL TEST[] onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
- *        TESTEABLE [] onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
- */
 //============= MOCK DATA ================
 const CommandIdealName = "ideal";
 const CommandIdealAliases: string[] = ["mocky"];
@@ -81,20 +80,31 @@ class CommandDesnormalized implements ICommand {
   async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
 }
 
-const generateToolkit = () => {
+/**
+ * Internal toolkit (dependeny injection creator) for easy mock creation in this bot.test.ts file
+ * @returns all mock items needed for each test
+ */
+const toolkit = () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
   const bot = new Bot({ ownWhatsSocketImplementation: mockSocket, commandPrefix: "!", loggerMode: "recommended", enableCommandSafeNet: false });
   return { socket: mockSocket, bot };
 };
+
 const idealCommand = new CommandIdeal();
 const minimalCommand = new CommandMinimum();
 const desnormalizedCommand = new CommandDesnormalized();
 
-//================== TESTS =================
+class VerySimpleCommand implements ICommand {
+  name: string = "simple";
+  aliases?: string[] | undefined = ["s"];
+  description: string = "Simple command description";
+  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+}
 
+// ========================== CREATION ============================
 test("Creation_WhenInstatiatingSimple_ShouldNotThrow", () => {
   expect(() => {
-    generateToolkit();
+    toolkit();
   }).not.toThrow();
 });
 
@@ -107,9 +117,11 @@ test("Creation_WhenInstatiatingWithoutBotParams_ShouldSetAllConfig_NotUndefinedC
   }
 });
 
+// ========================== COMMANDS ============================
+
 //All command testing related can be found in CommandSearcher.test.ts
 test("Commands_WhenAddingNewCommands_ShouldAddThemToInternalCommandSubmodule", () => {
-  const { bot } = generateToolkit();
+  const { bot } = toolkit();
 
   bot.Commands.Add(idealCommand, CommandType.Normal);
   bot.Commands.Add(minimalCommand, CommandType.Tag);
@@ -119,8 +131,10 @@ test("Commands_WhenAddingNewCommands_ShouldAddThemToInternalCommandSubmodule", (
   expect(bot.Commands.TagCommands).toHaveLength(1);
 });
 
+// ========================= RUNNING ============================
+
 test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hello",
     description: "mock hello description",
@@ -129,8 +143,8 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
+      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
@@ -152,7 +166,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
 });
 
 test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hellotag",
     description: "mock hello tag description",
@@ -161,8 +175,8 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
+      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
@@ -184,7 +198,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
 });
 
 test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hello",
     description: "mock hello description",
@@ -193,8 +207,8 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
+      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
@@ -218,7 +232,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
 });
 
 test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hellotag",
     description: "mock hello tag description",
@@ -227,8 +241,8 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
+      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
@@ -252,7 +266,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
 });
 
 test("Running_MsgTagWithCommandNormal_ShouldNotReceiveIt", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "mycommand_normal",
     description: "mock mycommand_normal description",
@@ -267,7 +281,7 @@ test("Running_MsgTagWithCommandNormal_ShouldNotReceiveIt", async () => {
 });
 
 test("Running_MsgNormalCommandWithTag_ShouldNotReceiveIt", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "mycommand_tag",
     description: "mock mycommand_tag description",
@@ -282,7 +296,7 @@ test("Running_MsgNormalCommandWithTag_ShouldNotReceiveIt", async () => {
 });
 
 test("Running_WhenHavingTwoDifferentTypeCommandsWithSameName_ShouldRecognizeThemAsDifferent", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
 
   let normalCommandCalled: boolean = false;
   const commandNormal: ICommand = {
@@ -324,7 +338,7 @@ test("Running_WhenHavingTwoDifferentTypeCommandsWithSameName_ShouldRecognizeThem
 });
 
 test("Running_WhenReceivingCommandFromQuotedMsg_FROMGROUP_ShouldRecognizeQuotedMsg", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "replyto",
     description: "mock replyto description",
@@ -345,7 +359,7 @@ test("Running_WhenReceivingCommandFromQuotedMsg_FROMGROUP_ShouldRecognizeQuotedM
 });
 
 test("Running_WhenReceivingCommandFromQuotedMsg_FROMINDIVIDUAL_ShouldRecognizeQuotedMsg", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "replyto",
     description: "mock replyto description",
@@ -366,7 +380,7 @@ test("Running_WhenReceivingCommandFromQuotedMsg_FROMINDIVIDUAL_ShouldRecognizeQu
 });
 
 test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_NORMALCOMMAND_ShouldIgnoreItAndNotExecuteAnyCommand", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "commy",
     description: "mock commy description",
@@ -389,7 +403,7 @@ test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_NORMALCOMMAND_ShouldIgnoreItA
 });
 
 test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_TAGCOMMAND_ShouldIgnoreItAndNotExecuteAnyCommand", async () => {
-  const { bot, socket } = generateToolkit();
+  const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "commy",
     description: "mock commy description",
@@ -411,4 +425,284 @@ test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_TAGCOMMAND_ShouldIgnoreItAndN
   expect(runSpy).toHaveBeenCalledTimes(1);
 });
 
-//TODO: Verify command names can't have " " spaces, only 1 word long
+// ======================= ERRORS HANDLING =============================
+
+test("ErrorsHandling_WhenExecutingCommandAndGottenUnexpectedError_ShouldRespectSafeNetOptionAndConsoleLogItJsonSerialized", async () => {
+  const { bot, socket } = toolkit();
+  const com = new VerySimpleCommand();
+  com.run = async function (): Promise<void> {
+    throw new Error("Mocking unexpected error");
+  };
+  // =====
+  bot.Settings.enableCommandSafeNet = false;
+  // =====
+  bot.Commands.Add(com, CommandType.Normal);
+  const consoleLogSpy = spyOn(console, "log");
+  expect(async () => {
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: `!${com.name}` });
+  }).toThrow();
+  expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+  expect(consoleLogSpy).toHaveBeenLastCalledWith(`[COMMAND EXECUTION ERROR]: Error when trying to execute '${com.name.toLowerCase()}'\n\n`, expect.anything());
+
+  // =====
+  bot.Settings.enableCommandSafeNet = true;
+  // =====
+  expect(async () => {
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: `!${com.name}` });
+  }).not.toThrow();
+  expect(consoleLogSpy).toHaveBeenCalledTimes(2);
+  expect(consoleLogSpy).toHaveBeenLastCalledWith(`[COMMAND EXECUTION ERROR]: Error when trying to execute '${com.name.toLowerCase()}'\n\n`, expect.anything());
+  consoleLogSpy.mockReset();
+  consoleLogSpy.mockRestore();
+});
+
+test.skipIf(skipLongTests)(
+  "ErrorsHandling_WhenExecutingCommandAndGottenExpected_WhenRejectingByCancelKewWords_ShouldRespectSafeNetOptionAndThrowAccordingToIt",
+  async () => {
+    //1. Setting up
+
+    const { bot, socket } = toolkit();
+
+    //1.1 Setting up mock comand
+    const com = new VerySimpleCommand();
+    com.run = async function (ctx): Promise<void> {
+      //Simulates it waits for user a txt msg, but user will send "cancel"
+      await ctx.WaitMsg(MsgType.Text, { timeoutSeconds: 2, cancelKeywords: ["cancel"] });
+    };
+    bot.Commands.Add(com, CommandType.Normal);
+
+    //1.2 Setting up spyListeners
+    const consoleLogSpy = spyOn(console, "log");
+
+    //# ============ Testing when safe net DISABLED =================
+    bot.Settings.enableCommandSafeNet = false; //Should throw
+    //===============================================================
+    try {
+      const prom1 = socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: `!${com.name.toLowerCase()}` });
+      //Wait a little to let comamnd to reach "WaitMsg" image line inside command
+      await new Promise((r) => setTimeout(r, 1000));
+      const prom2 = socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "cancel" });
+      await Promise.all([prom1, prom2]);
+      throw new Error("Should throw error!!!, this line must not be executed!");
+    } catch (e) {
+      if (WhatsSocketReceiverHelper_isReceiverError(e)) {
+        expect(e).toMatchObject({
+          chatId: MockGroupTxtMsg_CHATID,
+          errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting,
+          userId: MockGroupTxtMsg_SENDERID,
+          wasAbortedByUser: true,
+        } satisfies WhatsSocketReceiverError);
+      } else {
+        console.log(Error);
+        expect(e).not.toBeDefined();
+      }
+    }
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    expect(consoleLogSpy).toHaveBeenLastCalledWith(`[Command Canceled]: Name ${com.name.toLowerCase()}`);
+
+    //# ============ Testing when safe net ENABLED =================
+    bot.Settings.enableCommandSafeNet = true; //Should not throw anything
+    //===============================================================
+    expect(async () => {
+      const prom1 = socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: `!${com.name.toLowerCase()}` });
+      //Wait a little to let comamnd to reach "WaitMsg" image line inside command
+      await new Promise((r) => setTimeout(r, 1000));
+      const prom2 = socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "cancel" });
+      await Promise.all([prom1, prom2]);
+    }).not.toThrow();
+    expect(consoleLogSpy).toHaveBeenCalledTimes(2);
+    expect(consoleLogSpy).toHaveBeenLastCalledWith(`[Command Canceled]: Name ${com.name.toLowerCase()}`);
+
+    //2. Cleaning
+    consoleLogSpy.mockReset();
+    consoleLogSpy.mockRestore();
+  }
+);
+
+test.skipIf(skipLongTests)(
+  "ErrorsHandling_WhenExecutingCommandAndGottenExpected_NotRejectedByUser;ByTimeoutError_ShouldRespectSafeNetOptionAndThrowAccordingToIt",
+  async () => {
+    const { bot, socket } = toolkit();
+    const com = new VerySimpleCommand();
+    let expectedNullMsg: WhatsappMessage | null | undefined;
+    com.run = async function (ctx): Promise<void> {
+      //Simulates it waits for user a txt msg, but user wont send it in the following 3 seconds, so, it will return "null"!
+      console.warn("Waiting 2 seconds for a 'timeout' test...");
+      const expectedMsg: WhatsappMessage | null = await ctx.WaitMsg(MsgType.Text, { timeoutSeconds: 2 });
+      expectedNullMsg = expectedMsg;
+      expect(expectedMsg).toBeNull();
+    };
+
+    // =====
+    bot.Settings.enableCommandSafeNet = false;
+    // =====
+    bot.Commands.Add(com, CommandType.Normal);
+    const consoleLogSpy = spyOn(console, "log");
+    expect(async () => {
+      await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: `!${com.name.toLowerCase()}` });
+    }).not.toThrow();
+    expect(consoleLogSpy).toHaveBeenCalledTimes(0);
+    expect(expectedNullMsg).toBeNull();
+
+    // =====
+    bot.Settings.enableCommandSafeNet = true;
+    // =====
+    expect(async () => {
+      await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: `!${com.name.toLowerCase()}` });
+    }).not.toThrow();
+    expect(consoleLogSpy).toHaveBeenCalledTimes(0);
+    expect(expectedNullMsg).toBeNull();
+    consoleLogSpy.mockReset();
+    consoleLogSpy.mockRestore();
+  }
+);
+
+// ================= MIDDLEWARE ==================
+test("Middleware_WhenAddingMiddleware_ShouldAddItInternally", async () => {
+  const { bot, socket } = toolkit();
+  const firstLayer = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+    next();
+  });
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+    await next();
+  });
+  bot.Use(firstLayer);
+  bot.Use(secondLayerAsync);
+  bot.Start();
+  await socket.MockSendMsgAsync(MockGroupTxtMsg /**doesn't matter what says or type, just send something*/);
+  expect(firstLayer).toHaveBeenCalledTimes(1);
+  expect(secondLayerAsync).toHaveBeenCalledTimes(1);
+});
+
+test("Middleware_WhenAddingMixedSyncAsyncMiddleWare_ShouldExecuteThemInOrder", async () => {
+  const { bot, socket } = toolkit();
+  const orderExecution: Array<"first" | "second" | "third" | "fourth"> = [];
+  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+    console.log("[1/4]: Running middleware layer successfully, SYNC");
+    orderExecution.push("first");
+    next();
+  });
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+    console.log("[2/4]: Running middleware layer successfully, ASYNC");
+    orderExecution.push("second");
+    await next();
+  });
+  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+    console.log("[3/4]: Running middleware layer successfully, SYNC");
+    orderExecution.push("third");
+    next();
+  });
+  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+    console.log("[4/4]: Running middleware layer successfully, ASYNC");
+    orderExecution.push("fourth");
+    await next();
+  });
+  bot.Use(firstLayerSync);
+  bot.Use(secondLayerAsync);
+  bot.Use(thirdLayerSync);
+  bot.Use(fourthLayerAsync);
+  bot.Start();
+  const sub = fn((success) => {
+    expect(success).toBe(true);
+  });
+  bot.Events.onMiddlewareEnd.Subscribe(sub);
+  await socket.MockSendMsgAsync(MockGroupTxtMsg /**doesn't matter what says or type, just send something*/);
+  expect(firstLayerSync).toHaveBeenCalledTimes(1);
+  expect(secondLayerAsync).toHaveBeenCalledTimes(1);
+  expect(thirdLayerSync).toHaveBeenCalledTimes(1);
+  expect(fourthLayerAsync).toHaveBeenCalledTimes(1);
+  expect(orderExecution).toEqual(["first", "second", "third", "fourth"]);
+  expect(sub).toHaveBeenCalledTimes(1);
+});
+
+test("Middleware_WhenBreakingChain_ShouldNotExecuteCommandHandling", async () => {
+  //1. Seting up
+  const { bot, socket } = toolkit();
+
+  //1.1 Setting Middleware
+  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+    next();
+  });
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+    await next();
+  });
+  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, _next) => {
+    //No next()
+  });
+  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+    await next();
+  });
+  bot.Use(firstLayerSync);
+  bot.Use(secondLayerAsync);
+  bot.Use(thirdLayerSync);
+  bot.Use(fourthLayerAsync);
+
+  //1.2 Setting simple mock command
+  const com = new VerySimpleCommand();
+  com.run = async function () {
+    throw new Error("This command shouldn't be executed!");
+  };
+  const comRunSpy = spyOn(com, "run");
+  bot.Commands.Add(com, CommandType.Normal);
+
+  //1.3 Setting event on ending middleware
+  const sub = fn((success: boolean) => {
+    expect(success).toBe(false);
+  });
+  bot.Events.onMiddlewareEnd.Subscribe(sub);
+
+  //Action
+  bot.Start();
+  await socket.MockSendMsgAsync(MockGroupTxtMsg, { replaceTextWith: "!" + com.name.toLowerCase() });
+
+  // Check
+  expect(comRunSpy).not.toHaveBeenCalled();
+  expect(sub).toHaveBeenCalledTimes(1);
+});
+
+test("Middleware_WhenNOTBreakingChain_ShouldExecuteCommandHandling", async () => {
+  //1. Setting up
+
+  //1.1 Setting middleware
+  const { bot, socket } = toolkit();
+  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+    next();
+  });
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+    await next();
+  });
+  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+    next();
+  });
+  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+    await next();
+  });
+  bot.Use(firstLayerSync);
+  bot.Use(secondLayerAsync);
+  bot.Use(thirdLayerSync);
+  bot.Use(fourthLayerAsync);
+
+  //1.2 Setting simple Command mock
+  const com = new VerySimpleCommand();
+  com.run = async function () {
+    console.log("Im being executed!");
+  };
+  const comRunSpy = spyOn(com, "run");
+  bot.Commands.Add(com, CommandType.Normal);
+
+  //1.3 Setting on ending middleware event
+  const sub = fn((success: boolean) => {
+    expect(success).toBe(true);
+  });
+  bot.Events.onMiddlewareEnd.Subscribe(sub);
+
+  //2. Execute
+  bot.Start();
+  await socket.MockSendMsgAsync(MockGroupTxtMsg, { replaceTextWith: "!" + com.name.toLowerCase() });
+
+  //3. Assert
+  expect(comRunSpy).toHaveBeenCalledTimes(1);
+  expect(sub).toHaveBeenCalledTimes(1);
+});
+
+// test("MIddlware_WhenBreaking")
