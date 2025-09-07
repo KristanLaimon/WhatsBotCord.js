@@ -603,7 +603,7 @@ describe("Contacts", () => {
 //     FS_existsSync.mockReturnValue(true);
 //     FS_readFileSync.mockReturnValue(docContent);
 
-//     await sender.Document(fakeChatId, docPath);
+//     await sender.Document(fakeChatId, { displayNameFile: "document.pdf", source: docPath });
 
 //     expect(FS_existsSync).toBeCalledTimes(1);
 //     expect(FS_readFileSync).toBeCalledTimes(1);
@@ -622,7 +622,7 @@ describe("Contacts", () => {
 //   it("WhenSendingDocumentFromBuffer_ShouldSendIt", async () => {
 //     const docAsBuffer = Buffer.from("BinaryMockContentForDocument");
 
-//     await sender.Document(fakeChatId, docAsBuffer);
+//     await sender.Document(fakeChatId, { source: docAsBuffer, displayNameFile: "genericcontent" });
 
 //     expect(FS_existsSync).not.toHaveBeenCalled();
 //     expect(FS_readFileSync).not.toHaveBeenCalled();

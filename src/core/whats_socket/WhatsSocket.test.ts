@@ -104,7 +104,6 @@ describe("Messages Sending", () => {
   });
 });
 
-//TODO: Append these to actual test suite
 /**
  * Out of scope but: (WhatsSocket improve suite testing)
  * 1. [] Test if all whatssocket EVENTS works as expected (needs manual testing... ofc)
@@ -124,7 +123,7 @@ describe("Messages Sending", () => {
  * [X] => onGroupUpdate
  * [X] => onGroupEnter
  * [~] => onRestart
- * [ ] => onStartupAllGroupsIn
+ * [~] => onStartupAllGroupsIn
  */
 describe("Events/Delegates", () => {
   it("onGroupEnter_Delegate_SendSendingMsg_ShouldInvokeWS", async () => {

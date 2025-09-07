@@ -27,7 +27,6 @@ import type { IWhatsSocket } from "./IWhatsSocket";
 import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types";
 import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock";
 
-//TODO: Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 export type WhatsSocketOptions = {
   /**
    * Determines the logging level of the WhatsSocket instance.

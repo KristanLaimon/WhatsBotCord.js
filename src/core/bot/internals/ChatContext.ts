@@ -229,6 +229,7 @@ export class ChatContext {
    *   - `string`: Either a local file path or a public URL, it will be converted to absolute path if relative given.
    *   - `Buffer`: Raw audio data.
    *   - `WAMessage`: A WhatsApp message object containing an audioMessage.
+   * @param audioFormat The audio format should be treated for. (e.g "mp3", "ogg", "flac")
    * @param options - Optional sending options:
    *   - `sendRawWithoutEnqueue`: If true, bypasses the safe queue system and sends immediately.
    *   - Any other Baileys `MiscMessageGenerationOptions` like `quoted`, `contextInfo`, etc.
@@ -246,8 +247,8 @@ export class ChatContext {
    * await bot.Audio(chatId, receivedMessage);
    */
   @autobind
-  public SendAudio(audioSource: string | Buffer | WhatsappMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Audio(this._fixedChatId, audioSource, options);
+  public SendAudio(audioSource: string | Buffer, audioFormat: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    return this._internalSend.Audio(this._fixedChatId, audioSource, audioFormat, options);
   }
 
   /**
@@ -443,8 +444,6 @@ export class ChatContext {
   }
 
   //============================ RECEIVING ==============================
-  //TODO: Create a WaitMsg, WaitVideo, Wait (all other options)
-
   /**
    * Waits for the next incoming message of the given `expectedType`, restricted to the
    * original user who initiated this chat context.
@@ -536,6 +535,5 @@ export class ChatContext {
     return buffer;
   }
 }
-//TODO: Give support to documents
 export type MsgTypeMultimediaOnly = MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document;
 // amongus zorro bruh skibidi beatbox - N.

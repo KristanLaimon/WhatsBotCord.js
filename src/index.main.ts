@@ -20,7 +20,7 @@ class PingCommand implements IBotCommand {
   async run(ctx: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
     // ============= ESTE ====================
     // Qué te devuelve un buffer (de data), null if user didn't respond in 5 seconds timeout
-    const buffer: Buffer | null = await ctx.WaitMultimedia({ timeoutSeconds: 5 });
+    const buffer: Buffer | null = await ctx.WaitMultimedia(MsgType.Video, { timeoutSeconds: 5 });
     if (buffer) {
       fs.writeFileSync("mysticker.webp", buffer);
     }
@@ -30,6 +30,7 @@ class PingCommand implements IBotCommand {
     const success: boolean = await ctx.WaitMultimedia("./stickername", { timeoutSeconds: 5 });
   }
 }
+
 class EveryoneTag implements IBotCommand {
   name: string = "everyone";
   aliases?: string[] | undefined = ["all", "a"];
@@ -81,8 +82,14 @@ bot.Start();
  * 7. WhatsSocket.test.ts  ✅~ (Depends too much on baileys lib)   => Test all on* events (4/7 already done!);
  */
 
-//TODO : Features
-// Give group utilites (fetch all members for example) => Bot should expose GetGroupMetadata and group handling and ChatContext should provide facilities for group info (and group handling?)
-// ChatContext must have a WaitMsg_# (per message type) dedicated.
-// 8. Document Update => Should be capable to RECEIVE and SEND documents!
-//       So far, it can recognize and get documents, but not sending (not tested at all) ❌ (TODO:)
+// TODO : Features
+// [ ] GROUP UTILITES (ICommand, Bot): Give group utilites (fetch all members for example) => Bot should expose GetGroupMetadata and group handling and ChatContext should provide facilities for group info (and group handling?)
+// [ ] CHATCONTEXT:  must have a WaitMsg_# (per message type) dedicated.
+// [ ] GENERAL: Document Update => Should be capable to RECEIVE and SEND documents!
+//        [ ]: Send documents
+//              [ ]: Test..
+//        [ ]: Receive documents
+//              [ ]: Test..
+//      @Note: So far, it can recognize and get documents, but not sending (not tested at all) ❌
+// [ ]: WhatsSocket.SugarSender: Test MIME types being inferred correctly from WhatsSocket.SugarSender (TESTS) on all MULTIMEDIA SENDING!
+// [ ]: WhatsSocket.Start : If internal baileys socket crashes at first run, should reset itself, or console.log user should reset the program. => Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
