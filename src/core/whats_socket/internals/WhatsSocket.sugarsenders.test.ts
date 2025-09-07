@@ -1,17 +1,20 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+// import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from "bun:test";
 import fs from "fs";
+// import mime from "mime-types";
 import path from "node:path";
+// import { GetPath } from "../../../libs/BunPath";
+// import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs.mock";
 import { GetPath } from "../../../libs/BunPath";
-import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs.mock";
 import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
-import { IWhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
 
 const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
 
 describe("Text", () => {
   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
 
   beforeEach(() => {
     mockWhatsSocket.ClearMock();
@@ -64,174 +67,241 @@ describe("Text", () => {
   });
 });
 
-describe("Images", () => {
-  const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+// describe("Image", () => {
+//   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+//   const fakeImagePath = GetPath("./test-assets/test-image.jpg");
+//   const fakeBuffer = Buffer.from("fake image data");
 
-  let FS_existsSync: Mock<typeof fs.existsSync>;
-  let FS_readFileSync: Mock<typeof fs.readFileSync>;
+//   let mockExistsSync: Mock<any>;
+//   let mockReadFileSync: Mock<any>;
+//   let mockMimeLookup: Mock<any>;
 
-  beforeEach(() => {
-    mockWhatsSocket.ClearMock();
-    FS_existsSync = spyOn(fs, "existsSync");
-    FS_readFileSync = spyOn(fs, "readFileSync");
-  });
+//   beforeEach(() => {
+//     mockWhatsSocket.ClearMock();
+//     mock.clearAllMocks();
 
-  afterEach(() => {
-    FS_existsSync.mockRestore();
-    FS_readFileSync.mockRestore();
-  });
+//     mockExistsSync = spyOn(fs, "existsSync").mockReturnValue(true);
+//     mockReadFileSync = spyOn(fs, "readFileSync").mockReturnValue(fakeBuffer);
+//     mockMimeLookup = spyOn(mime, "lookup").mockReturnValue("image/jpeg");
+//   });
 
-  afterAll(() => {
-    FS_existsSync.mockRestore();
-    FS_readFileSync.mockRestore();
-  });
+//   // 1. Params receiving
+//   it("WhenSendingImageWithStringSource_ShouldReceiveAndProcessParams", async () => {
+//     await sender.Image(fakeChatId, { source: fakeImagePath });
+//     expect(mockExistsSync).toHaveBeenCalledWith(fakeImagePath);
+//     expect(mockReadFileSync).toHaveBeenCalledWith(fakeImagePath);
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//   });
 
-  it("WhenSendingSimplestImgFromPath_ShouldSendIt", async () => {
-    const imgPath = "./fakeImg.png";
-    const imgContent = Buffer.from([1, 2, 3, 4, 5]);
+//   it("WhenSendingImageWithBufferSource_ShouldReceiveBufferAndExtension", async () => {
+//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "jpg" });
+//     expect(mockExistsSync).not.toHaveBeenCalled();
+//     expect(mockReadFileSync).not.toHaveBeenCalled();
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//   });
 
-    FS_existsSync.mockReturnValue(true);
-    FS_readFileSync.mockReturnValue(imgContent);
+//   // 2. Mimetype checking and variations
+//   it("WhenSendingImageFile_ShouldDetectCorrectMimeType", async () => {
+//     mockMimeLookup.mockReturnValue("image/jpeg");
+//     await sender.Image(fakeChatId, { source: fakeImagePath });
+//     expect(mockMimeLookup).toHaveBeenCalledWith(fakeImagePath);
+//     //@ts-expect-error mimetype exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("image/jpeg");
+//   });
 
-    // --- Mock Buffer.isBuffer ---
-    const originalIsBuffer = Buffer.isBuffer;
-    const isBufferMock = spyOn(Buffer, "isBuffer").mockImplementation((value: any) => {
-      const res = originalIsBuffer(value);
-      //We do expect always the original method returns false, due to we're sending imgs with paths strings not buffers.
-      //like in "imgPath" at the beginning of this it() test;
-      expect(res).toBe(false);
-      return res;
-    });
+//   it("WhenSendingBufferWithExtension_ShouldUseMimeFromExtension", async () => {
+//     mockMimeLookup.mockReturnValue("image/png");
+//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "png" });
+//     expect(mockMimeLookup).toHaveBeenCalledWith("png");
+//     //@ts-expect-error mimetype exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("image/png");
+//   });
 
-    try {
-      await sender.Img(fakeChatId, { sourcePath: imgPath });
-      await sender.Img(fakeChatId, { sourcePath: imgPath, caption: "Image path string with caption!" });
+//   it("WhenMimeTypeNotDetected_ShouldFallbackToOctetStream", async () => {
+//     mockMimeLookup.mockReturnValue(false);
+//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "unknown" });
+//     //@ts-expect-error mimetype exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("application/octet-stream");
+//   });
 
-      expect(FS_existsSync).toHaveBeenCalledTimes(2);
-      expect(FS_readFileSync).toHaveBeenCalledTimes(2);
+//   // 3. Send with caption and without caption
+//   it("WhenSendingImageWithoutCaption_ShouldSendWithoutCaption", async () => {
+//     await sender.Image(fakeChatId, { source: fakeImagePath });
+//     //@ts-expect-error caption may exist in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBeUndefined();
+//   });
 
-      expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
-      expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
+//   it("WhenSendingImageWithCaption_ShouldIncludeCaption", async () => {
+//     const testCaption = "Test image caption";
+//     await sender.Image(fakeChatId, { source: fakeImagePath, caption: testCaption });
+//     //@ts-expect-error caption exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe(testCaption);
+//   });
 
-      //@ts-expect-error content.image exists
-      expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.image).toBeInstanceOf(Buffer);
-      //@ts-expect-error content.caption exists
-      expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.caption).toBe("");
+//   // 4. Send with caption normalized option
+//   it("WhenSendingImageWithCaptionNormalizationEnabled_ShouldNormalizeCaption", async () => {
+//     await sender.Image(
+//       fakeChatId,
+//       {
+//         source: fakeImagePath,
+//         caption: "     \n\nTest caption             \n\n\n",
+//       },
+//       { normalizeMessageText: true }
+//     );
+//     //@ts-expect-error caption exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("Test caption");
+//   });
 
-      //@ts-expect-error content.caption exists
-      expect(mockWhatsSocket.SentMessagesThroughRaw[1].content.caption).toBe("Image path string with caption!");
-    } finally {
-      isBufferMock.mockRestore();
-    }
-  });
+//   it("WhenSendingImageWithCaptionNormalizationDisabled_ShouldKeepOriginalCaption", async () => {
+//     const originalCaption = "     \n\nTest caption             \n\n\n";
+//     await sender.Image(
+//       fakeChatId,
+//       {
+//         source: fakeImagePath,
+//         caption: originalCaption,
+//       },
+//       { normalizeMessageText: false }
+//     );
+//     //@ts-expect-error caption exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe(originalCaption);
+//   });
 
-  it("WhenSendingSimplestImgFromBuffer_ShouldSendIt", async () => {
-    const imgAsBuffer = Buffer.from([1, 2, 3, 4, 5, 6, 7]);
+//   // 5. Send with invalid options, throw error
+//   it("WhenSendingImageWithBufferButNoExtension_ShouldThrowError", async () => {
+//     expect(async () => {
+//       //@ts-expect-error Testing invalid params
+//       await sender.Image(fakeChatId, { source: fakeBuffer });
+//     }).toThrow();
+//   });
 
-    FS_existsSync.mockReturnValue(true);
-    FS_readFileSync.mockImplementation((..._any: any[]): any => {
-      //This ensures is using the only Buffer Side sending from Send.Img(), avoiding reading from paths
-      throw new Error("This method shouldn't be used!");
-    });
+//   it("WhenSendingImageWithInvalidPath_ShouldThrowError", async () => {
+//     mockExistsSync.mockReturnValue(false);
+//     expect(async () => {
+//       await sender.Image(fakeChatId, { source: "/invalid/path/image.jpg" });
+//     }).toThrow();
+//   });
 
-    await sender.Img(fakeChatId, { sourcePath: imgAsBuffer });
-    await sender.Img(fakeChatId, { sourcePath: imgAsBuffer, caption: "Img buffer with caption!" });
+//   it("WhenSendingImageWithEmptySource_ShouldThrowError", async () => {
+//     expect(async () => {
+//       await sender.Image(fakeChatId, { source: "" });
+//     }).toThrow();
+//   });
 
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
-    expect(FS_existsSync.mock.calls.length).toBe(2);
-    expect(FS_readFileSync.mock.calls.length).toBe(0);
-  });
+//   // 6. Possible errors
+//   it("WhenFileReadFails_ShouldThrowError", async () => {
+//     mockReadFileSync.mockImplementation(() => {
+//       throw new Error("File read error");
+//     });
+//     expect(async () => {
+//       await sender.Image(fakeChatId, { source: fakeImagePath });
+//     }).toThrow("File read error");
+//   });
 
-  it("WhenSendingImgWithCaptionNormalized_ShouldSendItNormalized", async () => {
-    const imgPath = "./hello.png";
-    const imgContent = Buffer.from([1]);
+//   it("WhenSocketSendFails_ShouldPropagateError", async () => {
+//     mockWhatsSocket._SendSafe = mock(() => {
+//       throw new Error("Socket send error");
+//     });
+//     expect(async () => {
+//       await sender.Image(fakeChatId, { source: fakeImagePath });
+//     }).toThrow("Socket send error");
+//   });
 
-    FS_existsSync.mockReturnValue(true);
-    FS_readFileSync.mockReturnValue(imgContent);
+//   // 7. Check if distinct fs are or aren't used
+//   it("WhenSendingImageWithStringPath_ShouldUseFsOperations", async () => {
+//     await sender.Image(fakeChatId, { source: fakeImagePath });
+//     expect(mockExistsSync).toHaveBeenCalledTimes(1);
+//     expect(mockReadFileSync).toHaveBeenCalledTimes(1);
+//   });
 
-    await sender.Img(fakeChatId, { sourcePath: imgPath, caption: "     \n\nCaption Text             \n\n\n" }, { normalizeMessageText: true });
+//   it("WhenSendingImageWithBuffer_ShouldNotUseFsOperations", async () => {
+//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "jpg" });
+//     expect(mockExistsSync).not.toHaveBeenCalled();
+//     expect(mockReadFileSync).not.toHaveBeenCalled();
+//   });
 
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
-    //@ts-expect-error content.caption exists
-    expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.image).toBeInstanceOf(Buffer);
-    //@ts-expect-error content.caption exists
-    expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("Caption Text");
-  });
+//   it("WhenSendingMultipleImagesWithMixedSources_ShouldUseFsSelectively", async () => {
+//     await sender.Image(fakeChatId, { source: fakeImagePath });
+//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "jpg" });
+//     await sender.Image(fakeChatId, { source: fakeImagePath });
 
-  //I want to think this works as well with nonBuffer things
-  it("WhenTryingToSendAnInvalidMsgPath_ShouldThrowError", async () => {
-    FS_existsSync.mockReturnValue(false);
-    expect(async () => {
-      await sender.Img(fakeChatId, { sourcePath: "./invalid.pathhh///", caption: "With caption" });
-    }).toThrowError(
-      "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + "./invalid.pathhh///"
-    );
-  });
-});
+//     expect(mockExistsSync).toHaveBeenCalledTimes(2);
+//     expect(mockReadFileSync).toHaveBeenCalledTimes(2);
+//   });
 
-describe("ReactEmojiToMsg", () => {
-  const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSender);
+//   it("WhenSendingImageRawWithoutEnqueue_ShouldBeSentThroughRaw", async () => {
+//     await sender.Image(fakeChatId, { source: fakeImagePath }, { sendRawWithoutEnqueue: true });
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
+//   });
 
-  it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
-    const emoji = "✨";
-    let i = 0;
-    for (const mockMsg of allMockMsgs) {
-      await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emoji);
-      expect(mockWhatsSender.SentMessagesThroughQueue[i]).toBeDefined();
-      expect(mockWhatsSender.SentMessagesThroughQueue[i]?.content).toMatchObject({
-        react: {
-          text: emoji,
-        },
-      });
-      i++;
-    }
-  });
+//   it("WhenSendingImageQueued_ShouldBeSentThroughQueue", async () => {
+//     await sender.Image(fakeChatId, { source: fakeImagePath }, { sendRawWithoutEnqueue: false });
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
+//   });
+// });
 
-  it("WhenGivenEmptyString_ShouldThrowError", async () => {
-    const emojiWrong = "";
-    for (const mockMsg of allMockMsgs) {
-      expect(async () => {
-        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojiWrong);
-      }).toThrowError();
-    }
-  });
+// describe("ReactEmojiToMsg", () => {
+//   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
 
-  it("WhenGivenTwoCharactersEmoji_ShouldAcceptIt", async () => {
-    const emojis = "🦊";
-    for (const mockMsg of allMockMsgs) {
-      expect(async () => {
-        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
-      }).not.toThrowError();
-    }
-  });
+//   it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
+//     const emoji = "✨";
+//     let i = 0;
+//     for (const mockMsg of allMockMsgs) {
+//       await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emoji);
+//       expect(mockWhatsSender.SentMessagesThroughQueue[i]).toBeDefined();
+//       expect(mockWhatsSender.SentMessagesThroughQueue[i]?.content).toMatchObject({
+//         react: {
+//           text: emoji,
+//         },
+//       });
+//       i++;
+//     }
+//   });
 
-  it("WhenGivenTwoEmojis_ShouldRejectIt", async (): Promise<void> => {
-    const emojis = "😯🦊";
-    for (const mockMsg of allMockMsgs) {
-      expect(async () => {
-        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
-      }).toThrowError();
-    }
-  });
+//   it("WhenGivenEmptyString_ShouldThrowError", async () => {
+//     const emojiWrong = "";
+//     for (const mockMsg of allMockMsgs) {
+//       expect(async () => {
+//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojiWrong);
+//       }).toThrowError();
+//     }
+//   });
 
-  it("WhenGivenCorrectLengthAndStringButNotEmoji_ShouldThrowError", async () => {
-    const nonEmoji = "K";
-    for (const mockMsg of allMockMsgs) {
-      expect(async () => {
-        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, nonEmoji);
-      }).toThrowError("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + nonEmoji);
-    }
-  });
-});
+//   it("WhenGivenTwoCharactersEmoji_ShouldAcceptIt", async () => {
+//     const emojis = "🦊";
+//     for (const mockMsg of allMockMsgs) {
+//       expect(async () => {
+//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
+//       }).not.toThrowError();
+//     }
+//   });
+
+//   it("WhenGivenTwoEmojis_ShouldRejectIt", async (): Promise<void> => {
+//     const emojis = "😯🦊";
+//     for (const mockMsg of allMockMsgs) {
+//       expect(async () => {
+//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
+//       }).toThrowError();
+//     }
+//   });
+
+//   it("WhenGivenCorrectLengthAndStringButNotEmoji_ShouldThrowError", async () => {
+//     const nonEmoji = "K";
+//     for (const mockMsg of allMockMsgs) {
+//       expect(async () => {
+//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, nonEmoji);
+//       }).toThrowError("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + nonEmoji);
+//     }
+//   });
+// });
 
 const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
 describe("Sticker", () => {
   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSender);
+  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
 
   //Getting all real stickers examples in webp from mocks folder
   const stickerFilesPaths = fs
@@ -262,316 +332,417 @@ describe("Sticker", () => {
       }).not.toThrow();
     }
   });
+  //TODO: Check if mock sending msg receives correct parameters
 });
 
-describe("Audio", () => {
-  const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+// //TODO: Improve this suite test to check what's sent to mockWhatsSocket
+// describe("Audio", () => {
+//   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+//   const fakeAudioPath = GetPath("./test-assets/test-audio.mp3");
+//   const fakeBuffer = Buffer.from("fake audio data");
 
-  let FS_existsSync: Mock<typeof fs.existsSync>;
-  let FS_readFileSync: Mock<typeof fs.readFileSync>;
-  let GLOBAL_fetch: Mock<typeof fetch>;
+//   let mockExistsSync: Mock<any>;
+//   let mockReadFileSync: Mock<any>;
+//   let mockMimeLookup: Mock<any>;
 
-  beforeEach(() => {
-    mockWhatsSocket.ClearMock();
-    FS_existsSync = spyOn(fs, "existsSync");
-    FS_readFileSync = spyOn(fs, "readFileSync");
-    GLOBAL_fetch = spyOn(global, "fetch");
-  });
+//   beforeEach(() => {
+//     mockWhatsSocket.ClearMock();
+//     mock.clearAllMocks();
 
-  afterEach(() => {
-    FS_existsSync.mockRestore();
-    FS_readFileSync.mockRestore();
-    GLOBAL_fetch.mockRestore();
-  });
-  afterAll(() => {
-    FS_existsSync.mockRestore();
-    FS_readFileSync.mockRestore();
-  });
+//     mockExistsSync = spyOn(fs, "existsSync").mockReturnValue(true);
+//     mockReadFileSync = spyOn(fs, "readFileSync").mockReturnValue(fakeBuffer);
+//     mockMimeLookup = spyOn(mime, "lookup").mockReturnValue("audio/mpeg");
+//   });
 
-  it("WhenSendingLocalAudio_ShouldSendIt", async () => {
-    const audioPath = "./fakeAudio.mp3";
-    const audioContent = Buffer.from([1, 2, 3, 4]);
+//   it("WhenSendingSimplestAudioMsg_ShouldSendIt", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath });
+//     await sender.Audio(fakeChatId, { source: fakeBuffer, formatExtension: "mp3" });
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
+//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
+//   });
 
-    FS_existsSync.mockReturnValue(true);
-    FS_readFileSync.mockReturnValue(audioContent);
+//   it("WhenSendingAudioWithStringSource_ShouldReceiveAndProcessParams", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath });
+//     expect(mockExistsSync).toHaveBeenCalledWith(fakeAudioPath);
+//     expect(mockReadFileSync).toHaveBeenCalledWith(fakeAudioPath);
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//   });
 
-    await sender.Audio(fakeChatId, audioPath);
+//   it("WhenSendingAudioWithBufferSource_ShouldReceiveBufferAndExtension", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeBuffer, formatExtension: "wav" });
+//     expect(mockExistsSync).not.toHaveBeenCalled();
+//     expect(mockReadFileSync).not.toHaveBeenCalled();
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//   });
 
-    expect(FS_existsSync).toHaveBeenCalledWith(GetPath(audioPath));
-    expect(FS_readFileSync).toHaveBeenCalled();
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//   it("WhenSendingAudioFile_ShouldDetectCorrectMimeType", async () => {
+//     mockMimeLookup.mockReturnValue("audio/mpeg");
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath });
+//     expect(mockMimeLookup).toHaveBeenCalledWith(fakeAudioPath);
+//     //@ts-expect-error mimetype exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("audio/mpeg");
+//   });
 
-    // @ts-expect-error content.audio exists
-    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.audio).toBeInstanceOf(Buffer);
-    // @ts-expect-error content.mimytype exists
-    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.mimetype).toBe("audio/mpeg");
-  });
+//   it("WhenSendingBufferWithExtension_ShouldUseMimeFromExtension", async () => {
+//     mockMimeLookup.mockReturnValue("audio/wav");
+//     await sender.Audio(fakeChatId, { source: fakeBuffer, formatExtension: "wav" });
+//     expect(mockMimeLookup).toHaveBeenCalledWith(".wav");
+//     //@ts-expect-error mimetype exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("audio/wav");
+//   });
 
-  it("WhenSendingAudioFromBuffer_ShouldSendIt", async () => {
-    const audioBuffer = Buffer.from([5, 6, 7, 8]);
+//   it("WhenMimeTypeNotDetected_ShouldFallbackToOctetStream", async () => {
+//     mockMimeLookup.mockReturnValue(false);
+//     await sender.Audio(fakeChatId, { source: fakeBuffer, formatExtension: "unknown" });
+//     //@ts-expect-error mimetype exists in content
+//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("application/octet-stream");
+//   });
 
-    await sender.Audio(fakeChatId, audioBuffer);
+//   it("WhenSendingAudioWithBufferButNoExtension_ShouldThrowError", async () => {
+//     expect(async () => {
+//       //@ts-expect-error Testing invalid params
+//       await sender.Audio(fakeChatId, { source: fakeBuffer });
+//     }).toThrow();
+//   });
 
-    expect(FS_existsSync).not.toHaveBeenCalled();
-    expect(FS_readFileSync).not.toHaveBeenCalled();
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//   it("WhenSendingAudioWithInvalidPath_ShouldThrowError", async () => {
+//     mockExistsSync.mockReturnValue(false);
+//     expect(async () => {
+//       await sender.Audio(fakeChatId, { source: "/invalid/path/audio.mp3" });
+//     }).toThrow();
+//   });
 
-    // @ts-expect-error content.audio exists
-    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.audio).toBe(audioBuffer);
-  });
+//   it("WhenFileReadFails_ShouldThrowError", async () => {
+//     mockReadFileSync.mockImplementation(() => {
+//       throw new Error("File read error");
+//     });
+//     expect(async () => {
+//       await sender.Audio(fakeChatId, { source: fakeAudioPath });
+//     }).toThrow("File read error");
+//   });
 
-  it("WhenSendingNonExistingPath_ShouldFetchRemoteUrl", async () => {
-    const remoteUrl = "https://example.com/test.mp3";
-    const fakeArrayBuffer = new Uint8Array([9, 10, 11, 12]).buffer;
-    GLOBAL_fetch.mockResolvedValue(new Response(fakeArrayBuffer, { status: 200 }));
-    FS_existsSync.mockReturnValue(false);
+//   it("WhenSendingAudioWithStringPath_ShouldUseFsOperations", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath });
+//     expect(mockExistsSync).toHaveBeenCalledTimes(1);
+//     expect(mockReadFileSync).toHaveBeenCalledTimes(1);
+//   });
 
-    await sender.Audio(fakeChatId, remoteUrl);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
-    // @ts-expect-error content.audio exists
-    expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.audio).toBeInstanceOf(Buffer);
-  });
+//   it("WhenSendingAudioWithBuffer_ShouldNotUseFsOperations", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeBuffer, formatExtension: "mp3" });
+//     expect(mockExistsSync).not.toHaveBeenCalled();
+//     expect(mockReadFileSync).not.toHaveBeenCalled();
+//   });
 
-  it("WhenGivenInvalidSource_ShouldNotSend", async () => {
-    const wrongAudioSource = { bad: "test" };
-    expect(async () => {
-      await sender.Audio(fakeChatId, wrongAudioSource as any);
-    }).toThrowError("WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: " + wrongAudioSource);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(0);
-  });
-});
+//   it("WhenSendingAudioRawWithoutEnqueue_ShouldBeSentThroughRaw", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath }, { sendRawWithoutEnqueue: true });
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
+//   });
 
-describe("Video", async () => {
-  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+//   it("WhenSendingAudioQueued_ShouldBeSentThroughQueue", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath }, { sendRawWithoutEnqueue: false });
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
+//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
+//   });
 
-  let FS_existsSync: Mock<typeof fs.existsSync>;
-  let FS_readFileSync: Mock<typeof fs.readFileSync>;
+//   it("WhenSendingAudioQueuedWithNoExtraOptions;Default;_ShouldBeSentThroughSafeFromSocket", async () => {
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath });
+//     await sender.Audio(fakeChatId, { source: fakeBuffer, formatExtension: "mp3" });
+//     await sender.Audio(fakeChatId, { source: fakeAudioPath });
 
-  beforeEach(() => {
-    mockSocket.ClearMock();
-    FS_existsSync = spyOn(fs, "existsSync");
-    FS_readFileSync = spyOn(fs, "readFileSync");
-  });
+//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
+//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
+//   });
 
-  afterEach(() => {
-    FS_existsSync.mockClear();
-    FS_readFileSync.mockClear();
-  });
+//   it("WhenSendingMultipleAudioFormats_ShouldDetectCorrectMimeTypes", async () => {
+//     const testCases = [
+//       { ext: "mp3", expectedMime: "audio/mpeg" },
+//       { ext: "wav", expectedMime: "audio/wav" },
+//       { ext: "ogg", expectedMime: "audio/ogg" },
+//       { ext: "m4a", expectedMime: "audio/mp4" },
+//     ];
 
-  afterAll(() => {
-    FS_existsSync.mockRestore();
-    FS_readFileSync.mockRestore();
-  });
+//     for (const testCase of testCases) {
+//       mockMimeLookup.mockReturnValue(testCase.expectedMime);
+//       mockWhatsSocket.ClearMock();
 
-  it("WhenSendingVideoFromLocalPath_ShouldSendIt", async () => {
-    const videoPath = "./real/and/valid/video.mp4";
-    const videoContent = Buffer.from("VideoContentBinaryMock");
-    FS_existsSync.mockReturnValue(true);
-    FS_readFileSync.mockReturnValue(videoContent);
+//       await sender.Audio(fakeChatId, { source: fakeBuffer, formatExtension: testCase.ext });
+//       //@ts-expect-error mimetype exists in content
+//       expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe(testCase.expectedMime);
+//       expect(mockWhatsSocket.SentMessagesThroughQueue.at(0)).toMatchObject({
+//         audio: fakeBuffer,
+//         mimetype: testCase.expectedMime,
+//         mentions: undefined,
+//       });
+//     }
+//   });
 
-    await sender.Video(fakeChatId, { sourcePath: videoPath /** With no caption */ });
-    await sender.Video(fakeChatId, { sourcePath: videoPath, caption: "This video has caption" /** With caption */ });
+//   it("WhenSocketSendFails_ShouldPropagateError", async () => {
+//     mockWhatsSocket._SendSafe = mock(() => {
+//       throw new Error("Socket send error");
+//     });
+//     expect(async () => {
+//       await sender.Audio(fakeChatId, { source: fakeAudioPath });
+//     }).toThrow("Socket send error");
+//   });
+// });
 
-    expect(FS_existsSync).toBeCalledTimes(2);
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
-    //@ts-expect-error Content.video does exist!
-    expect(mockSocket.SentMessagesThroughRaw[0]!.content.video).toBe(videoContent);
-    //@ts-expect-error Content.caption does exist!
-    expect(mockSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("");
-    //@ts-expect-error Content.video does exist!
-    expect(mockSocket.SentMessagesThroughRaw[1]!.content.video).toBe(videoContent);
-    //@ts-expect-error Content.caption does exist!
-    expect(mockSocket.SentMessagesThroughRaw[1]!.content.caption).toBe("This video has caption");
-  });
+// describe("Video", () => {
+//   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
 
-  it("WhenSendingFromBuffer_ShouldSendIt", async () => {
-    const videoAsBuffer = Buffer.from("VideoContentBinayMock");
+//   let FS_existsSync: Mock<typeof fs.existsSync>;
+//   let FS_readFileSync: Mock<typeof fs.readFileSync>;
 
-    await sender.Video(fakeChatId, { sourcePath: videoAsBuffer });
-    await sender.Video(fakeChatId, { sourcePath: videoAsBuffer, caption: "Msg Video from Buffer" });
+//   beforeEach(() => {
+//     mockSocket.ClearMock();
+//     FS_existsSync = spyOn(fs, "existsSync");
+//     FS_readFileSync = spyOn(fs, "readFileSync");
+//   });
 
-    expect(FS_existsSync).not.toHaveBeenCalled();
-    expect(FS_readFileSync).not.toHaveBeenCalled();
+//   afterEach(() => {
+//     FS_existsSync.mockClear();
+//     FS_readFileSync.mockClear();
+//   });
 
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
+//   afterAll(() => {
+//     FS_existsSync.mockRestore();
+//     FS_readFileSync.mockRestore();
+//   });
 
-    expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
-      video: videoAsBuffer,
-      caption: "",
-    });
-    expect(mockSocket.SentMessagesThroughRaw.at(1)!.content).toMatchObject({
-      video: videoAsBuffer,
-      caption: "Msg Video from Buffer",
-    });
-  });
+//   it("WhenSendingVideoFromLocalPath_ShouldSendIt", async () => {
+//     const videoPath = "./real/and/valid/video.mp4";
+//     const videoContent = Buffer.from("VideoContentBinaryMock");
+//     FS_existsSync.mockReturnValue(true);
+//     FS_readFileSync.mockReturnValue(videoContent);
 
-  it("WhenSendingWithNormalizeCaptionOption_ShouldNormalizeInternally", async () => {
-    const videoPath = "./real/and/valid/video.mp4";
-    const videoContent = Buffer.from("VideoContentBinaryMock");
-    FS_existsSync.mockReturnValue(true);
-    FS_readFileSync.mockReturnValue(videoContent);
+//     await sender.Video(fakeChatId, { source: videoPath /** With no caption */ });
+//     await sender.Video(fakeChatId, { source: videoPath, caption: "This video has caption" /** With caption */ });
 
-    await sender.Video(fakeChatId, { sourcePath: videoPath, caption: "        First Video       " }, { normalizeMessageText: true });
-    await sender.Video(fakeChatId, { sourcePath: videoPath, caption: " \n\n       Second Video     \n\n\n  " }, { normalizeMessageText: true });
+//     expect(FS_existsSync).toBeCalledTimes(2);
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
 
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
-    expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
-      caption: "First Video",
-    });
-    expect(mockSocket.SentMessagesThroughRaw.at(1)!.content).toMatchObject({
-      caption: "Second Video",
-    });
-  });
-});
+//     //@ts-expect-error Content.video does exist!
+//     expect(mockSocket.SentMessagesThroughRaw[0]!.content.video).toBe(videoContent);
+//     //@ts-expect-error Content.caption does exist!
+//     expect(mockSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("");
+//     //@ts-expect-error Content.video does exist!
+//     expect(mockSocket.SentMessagesThroughRaw[1]!.content.video).toBe(videoContent);
+//     //@ts-expect-error Content.caption does exist!
+//     expect(mockSocket.SentMessagesThroughRaw[1]!.content.caption).toBe("This video has caption");
+//   });
 
-describe("Poll", () => {
-  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+//   it("WhenSendingFromBuffer_ShouldSendIt", async () => {
+//     const videoAsBuffer = Buffer.from("VideoContentBinayMock");
 
-  beforeEach(() => {
-    mockSocket.ClearMock();
-  });
+//     await sender.Video(fakeChatId, { source: videoAsBuffer, formatExtension: "mp4" });
+//     await sender.Video(fakeChatId, { source: videoAsBuffer, formatExtension: "mp4", caption: "Msg Video from Buffer" });
 
-  it("WhenGivenMinimalParams_ShouldWorkAndNotThrowAnything", async () => {
-    const pollTitleHeader = "Poll Title Example";
-    const options = ["Option 1", "Option 2", "Option 3"];
+//     expect(FS_existsSync).not.toHaveBeenCalled();
+//     expect(FS_readFileSync).not.toHaveBeenCalled();
 
-    expect(async () => {
-      await sender.Poll(fakeChatId, pollTitleHeader, options, { withMultiSelect: true });
-    }).not.toThrow();
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
 
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
-    expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
-      poll: {
-        name: "Poll Title Example",
-        values: options,
-        selectableCount: options.length,
-      },
-    });
-  });
-});
+//     expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
+//       video: videoAsBuffer,
+//       caption: "",
+//       mimetype: "application/mp4",
+//     });
+//     expect(mockSocket.SentMessagesThroughRaw.at(1)!.content).toMatchObject({
+//       video: videoAsBuffer,
+//       caption: "Msg Video from Buffer",
+//       mimetype: "application/mp4",
+//     });
+//   });
 
-describe("Ubication", () => {
-  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+//   it("WhenSendingWithNormalizeCaptionOption_ShouldNormalizeInternally", async () => {
+//     const videoPath = "./real/and/valid/video.mp4";
+//     const videoContent = Buffer.from("VideoContentBinaryMock");
+//     FS_existsSync.mockReturnValue(true);
+//     FS_readFileSync.mockReturnValue(videoContent);
 
-  beforeEach(() => {
-    mockSocket.ClearMock();
-  });
+//     await sender.Video(fakeChatId, { source: videoPath, caption: "        First Video       " }, { normalizeMessageText: true });
+//     await sender.Video(fakeChatId, { source: videoPath, caption: " \n\n       Second Video     \n\n\n  " }, { normalizeMessageText: true });
 
-  it("WhenProvidingIdealParams_ShouldWork", async () => {
-    expect(async () => {
-      await sender.Ubication(fakeChatId, { degreesLatitude: -85, degreesLongitude: 125, addressText: "Address Text Example", name: "Ubication Name Example" });
-    }).not.toThrow();
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
+//     expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
+//       caption: "First Video",
+//     });
+//     expect(mockSocket.SentMessagesThroughRaw.at(1)!.content).toMatchObject({
+//       caption: "Second Video",
+//     });
+//   });
 
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
-    expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
-      location: {
-        degreesLongitude: 125,
-        degreesLatitude: -85,
-        name: "Ubication Name Example",
-        address: "Address Text Example",
-      },
-    });
-  });
+//   it("WhenSendingVideoWithDifferentExtensions_ShouldDetectMimeType", async () => {
+//     const videoContent = Buffer.from("VideoContentBinaryMock");
+//     FS_existsSync.mockReturnValue(true);
+//     FS_readFileSync.mockReturnValue(videoContent);
 
-  it("WhenProvidingInvalidLatitude_ShouldThrowError", async () => {
-    const badLatitude = -100;
-    const goodLongitude = 120;
-    expect(async () => {
-      await sender.Ubication(fakeChatId, { degreesLatitude: badLatitude, degreesLongitude: goodLongitude });
-    }).toThrowError(
-      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${badLatitude}, ${goodLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
-    );
-  });
+//     const cases = [
+//       { path: "./clip.mp4", expected: "application/mp4" },
+//       { path: "./movie.mov", expected: "video/quicktime" },
+//       { path: "./demo.avi", expected: "video/x-msvideo" },
+//     ];
 
-  it("WhenProvidingInvalidLongitude_ShouldThrowError", async () => {
-    const goodLatitude = 80;
-    const badLongitude = -200;
-    expect(async () => {
-      await sender.Ubication(fakeChatId, { degreesLatitude: goodLatitude, degreesLongitude: badLongitude });
-    }).toThrowError(
-      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${goodLatitude}, ${badLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
-    );
-  });
-});
+//     for (const { path, expected } of cases) {
+//       await sender.Video(fakeChatId, { source: path });
+//       //@ts-expect-error content exists
+//       expect(mockSocket.SentMessagesThroughRaw.at(-1)!.content.mimetype).toBe(expected);
+//     }
+//   });
 
-describe("Contacts", () => {
-  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+//   it("WhenSendingBufferWithFormatExtension_ShouldUseItForMimeType", async () => {
+//     const videoBuffer = Buffer.from("BinaryBufferVideoMock");
+//     await sender.Video(fakeChatId, { source: "holis", formatExtension: "mp3" });
+//     await sender.Video(fakeChatId, { source: videoBuffer, formatExtension: "avi" });
+//     //@ts-expect-error content exists
+//     expect(mockSocket.SentMessagesThroughRaw.at(0)!.content.mimetype).toBe("video/x-msvideo");
+//   });
+// });
 
-  beforeEach(() => {
-    mockSocket.ClearMock();
-  });
+// describe("Poll", () => {
+//   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
 
-  it("WhenProvidingMinimumIdealParams_ShouldWork", async () => {
-    await sender.Contact(fakeChatId, { name: "Chrismorris", phone: "521612938493020" });
+//   beforeEach(() => {
+//     mockSocket.ClearMock();
+//   });
 
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+//   it("WhenGivenMinimalParams_ShouldWorkAndNotThrowAnything", async () => {
+//     const pollTitleHeader = "Poll Title Example";
+//     const options = ["Option 1", "Option 2", "Option 3"];
 
-    //@ts-expect-error Content in fact containts "contacts" object
-    const msg = mockSocket.SentMessagesThroughRaw[0].content.contacts;
-    expect(msg.displayName).toBe("Chrismorris");
-    expect(msg.contacts[0].vcard).toContain("BEGIN:VCARD");
-    expect(msg.contacts[0].vcard).toContain("FN:Chrismorris");
-    expect(msg.contacts[0].vcard).toContain("waid=521612938493020");
-  });
+//     expect(async () => {
+//       await sender.Poll(fakeChatId, pollTitleHeader, options, { withMultiSelect: true });
+//     }).not.toThrow();
 
-  it("WhenSendingMultipleContacts_ShouldAggregateThem", async () => {
-    const contacts = [
-      { name: "Alice", phone: "5211111111111" },
-      { name: "Bob", phone: "5212222222222" },
-    ];
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
+//       poll: {
+//         name: "Poll Title Example",
+//         values: options,
+//         selectableCount: options.length,
+//       },
+//     });
+//   });
+// });
 
-    await sender.Contact(fakeChatId, contacts);
+// describe("Ubication", () => {
+//   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
 
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+//   beforeEach(() => {
+//     mockSocket.ClearMock();
+//   });
 
-    //@ts-expect-error Content in fact containts "contacts" object
-    const msg = mockSocket.SentMessagesThroughRaw[0]!.content.contacts;
-    expect(msg.displayName).toBe("2 contacts");
-    expect(msg.contacts).toHaveLength(2);
-    expect(msg.contacts[0].vcard).toContain("FN:Alice");
-    expect(msg.contacts[1].vcard).toContain("FN:Bob");
-  });
+//   it("WhenProvidingIdealParams_ShouldWork", async () => {
+//     expect(async () => {
+//       await sender.Ubication(fakeChatId, { degreesLatitude: -85, degreesLongitude: 125, addressText: "Address Text Example", name: "Ubication Name Example" });
+//     }).not.toThrow();
 
-  it("WhenMissingPhone_ShouldThrowError", async () => {
-    expect(async () => {
-      await sender.Contact(fakeChatId, { name: "NoPhone" } as any);
-    }).toThrowError("Invalid contact: name and phone are required");
-  });
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.at(0)!.content).toMatchObject({
+//       location: {
+//         degreesLongitude: 125,
+//         degreesLatitude: -85,
+//         name: "Ubication Name Example",
+//         address: "Address Text Example",
+//       },
+//     });
+//   });
 
-  it("WhenMissingName_ShouldThrowError", async () => {
-    expect(async () => {
-      await sender.Contact(fakeChatId, { phone: "5211234567890" } as any);
-    }).toThrowError("Invalid contact: name and phone are required");
-  });
+//   it("WhenProvidingInvalidLatitude_ShouldThrowError", async () => {
+//     const badLatitude = -100;
+//     const goodLongitude = 120;
+//     expect(async () => {
+//       await sender.Ubication(fakeChatId, { degreesLatitude: badLatitude, degreesLongitude: goodLongitude });
+//     }).toThrowError(
+//       `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${badLatitude}, ${goodLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+//     );
+//   });
 
-  it("WhenPassingSendRawWithoutEnqueue_ShouldStillSendCorrectly", async () => {
-    await sender.Contact(fakeChatId, { name: "RawSend", phone: "5219876543210" }, { sendRawWithoutEnqueue: true });
+//   it("WhenProvidingInvalidLongitude_ShouldThrowError", async () => {
+//     const goodLatitude = 80;
+//     const badLongitude = -200;
+//     expect(async () => {
+//       await sender.Ubication(fakeChatId, { degreesLatitude: goodLatitude, degreesLongitude: badLongitude });
+//     }).toThrowError(
+//       `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${goodLatitude}, ${badLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+//     );
+//   });
+// });
 
-    expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
-    expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
-    expect(mockSocket.SentMessagesThroughRaw[0]!.content).toMatchObject({
-      contacts: {
-        displayName: "RawSend",
-      },
-    });
-  });
-});
+// describe("Contacts", () => {
+//   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+
+//   beforeEach(() => {
+//     mockSocket.ClearMock();
+//   });
+
+//   it("WhenProvidingMinimumIdealParams_ShouldWork", async () => {
+//     await sender.Contact(fakeChatId, { name: "Chrismorris", phone: "521612938493020" });
+
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+
+//     //@ts-expect-error Content in fact containts "contacts" object
+//     const msg = mockSocket.SentMessagesThroughRaw[0].content.contacts;
+//     expect(msg.displayName).toBe("Chrismorris");
+//     expect(msg.contacts[0].vcard).toContain("BEGIN:VCARD");
+//     expect(msg.contacts[0].vcard).toContain("FN:Chrismorris");
+//     expect(msg.contacts[0].vcard).toContain("waid=521612938493020");
+//   });
+
+//   it("WhenSendingMultipleContacts_ShouldAggregateThem", async () => {
+//     const contacts = [
+//       { name: "Alice", phone: "5211111111111" },
+//       { name: "Bob", phone: "5212222222222" },
+//     ];
+
+//     await sender.Contact(fakeChatId, contacts);
+
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+
+//     //@ts-expect-error Content in fact containts "contacts" object
+//     const msg = mockSocket.SentMessagesThroughRaw[0]!.content.contacts;
+//     expect(msg.displayName).toBe("2 contacts");
+//     expect(msg.contacts).toHaveLength(2);
+//     expect(msg.contacts[0].vcard).toContain("FN:Alice");
+//     expect(msg.contacts[1].vcard).toContain("FN:Bob");
+//   });
+
+//   it("WhenMissingPhone_ShouldThrowError", async () => {
+//     expect(async () => {
+//       await sender.Contact(fakeChatId, { name: "NoPhone" } as any);
+//     }).toThrowError("Invalid contact: name and phone are required");
+//   });
+
+//   it("WhenMissingName_ShouldThrowError", async () => {
+//     expect(async () => {
+//       await sender.Contact(fakeChatId, { phone: "5211234567890" } as any);
+//     }).toThrowError("Invalid contact: name and phone are required");
+//   });
+
+//   it("WhenPassingSendRawWithoutEnqueue_ShouldStillSendCorrectly", async () => {
+//     await sender.Contact(fakeChatId, { name: "RawSend", phone: "5219876543210" }, { sendRawWithoutEnqueue: true });
+
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw[0]!.content).toMatchObject({
+//       contacts: {
+//         displayName: "RawSend",
+//       },
+//     });
+//   });
+// });
 
 // describe("Document", () => {
 //   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });

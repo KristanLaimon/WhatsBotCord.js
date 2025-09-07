@@ -22,7 +22,7 @@ import { SenderType } from "../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
 import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import { IWhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "./IWhatsSocket";
 import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types";
 import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock";
@@ -133,7 +133,7 @@ export default class WhatsSocket implements IWhatsSocket {
    * Sender module and sugar layer for sending all kinds of msgs.
    * Text, Images, Videos, Polls, etc...
    */
-  public Send!: IWhatsSocket_Submodule_SugarSender;
+  public Send!: WhatsSocket_Submodule_SugarSender;
 
   /**
    * Receive internal module. To wait for someone msg's.
@@ -226,7 +226,7 @@ export default class WhatsSocket implements IWhatsSocket {
 
     //== Initializing internal sub-modules ==
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
-    this.Send = new IWhatsSocket_Submodule_SugarSender(this);
+    this.Send = new WhatsSocket_Submodule_SugarSender(this);
     this.Receive = new WhatsSocket_Submodule_Receiver(this);
   }
 

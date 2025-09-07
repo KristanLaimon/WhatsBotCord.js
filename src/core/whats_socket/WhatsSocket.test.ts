@@ -5,7 +5,7 @@ import { type Mock, describe, expect, mock as fn, it, spyOn } from "bun:test";
 import { MsgType, SenderType } from "../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import { IWhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 import WhatsSocket from "./WhatsSocket";
 import { BaileysSocketServiceAdapter_Mock } from "./WhatsSocket.baileys.mock";
 
@@ -51,7 +51,7 @@ describe("Initialization", () => {
     //@ts-expect-error We're checking that private _senderQueue exists
     expect(ws._senderQueue).toBeInstanceOf(WhatsSocketSenderQueue_SubModule);
     expect(ws.Send).toBeDefined();
-    expect(ws.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
+    expect(ws.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
   });
 
   it("WhenInstatiatin_ShouldConfigure;ConfigureConnection();CorrectlyOnSocket", async () => {

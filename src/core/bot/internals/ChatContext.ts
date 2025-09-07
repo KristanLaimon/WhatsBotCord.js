@@ -8,10 +8,10 @@ import {
   type WhatsSocketReceiverWaitOptions,
 } from "../../whats_socket/internals/WhatsSocket.receiver";
 import type {
-  IWhatsSocket_Submodule_SugarSender,
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
+  WhatsSocket_Submodule_SugarSender,
 } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { WhatsappMessage } from "../../whats_socket/types";
 
@@ -27,7 +27,7 @@ export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
  */
 export class ChatContext {
   /** Low-level sender dependency used to actually send messages */
-  private _internalSend: IWhatsSocket_Submodule_SugarSender;
+  private _internalSend: WhatsSocket_Submodule_SugarSender;
   private _internalReceive: WhatsSocket_Submodule_Receiver;
 
   /** The chat ID this session is permanently bound to */
@@ -64,7 +64,7 @@ export class ChatContext {
     originalSenderID: string | null,
     fixedChatId: string,
     initialMsg: WhatsappMessage,
-    senderDependency: IWhatsSocket_Submodule_SugarSender,
+    senderDependency: WhatsSocket_Submodule_SugarSender,
     receiverDependency: WhatsSocket_Submodule_Receiver,
     config: ChatContextConfig
   ) {
@@ -102,7 +102,7 @@ export class ChatContext {
    */
   @autobind
   public SendImg(imagePath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Img(this._fixedChatId, { sourcePath: imagePath, caption: undefined }, options);
+    return this._internalSend.Image(this._fixedChatId, { source: imagePath, caption: undefined }, options);
   }
 
   /**
@@ -121,7 +121,7 @@ export class ChatContext {
    */
   @autobind
   public SendImgWithCaption(imagePath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Img(this._fixedChatId, { sourcePath: imagePath, caption }, options);
+    return this._internalSend.Image(this._fixedChatId, { source: imagePath, caption }, options);
   }
 
   /**
@@ -164,6 +164,19 @@ export class ChatContext {
   @autobind
   public Ok(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "✅", options);
+  }
+
+  /**
+   * Reacts with a ⌛ emoji to the initial message.
+   *
+   * Typically used to indicate that the command is loading.
+   *
+   * @param options - Optional send configuration
+   * @returns The WhatsApp message object, or `null` if sending failed
+   */
+  @autobind
+  public Loading(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "⌛", options);
   }
 
   /**
@@ -282,7 +295,7 @@ export class ChatContext {
    */
   @autobind
   public SendVideo(sourcePath: string | Buffer, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: undefined }, options);
+    return this._internalSend.Video(this._fixedChatId, { source: sourcePath, caption: undefined }, options);
   }
 
   /**
@@ -317,7 +330,7 @@ export class ChatContext {
    */
   @autobind
   public SendVideoWithCaption(sourcePath: string | Buffer, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { sourcePath: sourcePath, caption: caption }, options);
+    return this._internalSend.Video(this._fixedChatId, { source: sourcePath, caption: caption }, options);
   }
 
   /**
@@ -443,6 +456,33 @@ export class ChatContext {
     return this._internalSend.Contact(this._fixedChatId, contacts, options);
   }
 
+  @autobind
+  public SendDocument(docPath: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    return this._internalSend.Document(this._fixedChatId, { source: docPath }, options);
+  }
+
+  @autobind
+  public SendDocumentWithCustomName(
+    docPath: string,
+    fileNameToDisplay: string,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    return this._internalSend.Document(this._fixedChatId, { source: docPath, fileNameToDisplay: fileNameToDisplay }, options);
+  }
+
+  @autobind
+  public SendDocumentFromBuffer(
+    docBuffer: Buffer,
+    fileNameToDisplayWithoutExt: string,
+    extensionFileTypeOnly: string,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    return this._internalSend.Document(
+      this._fixedChatId,
+      { source: docBuffer, fileNameWithoutExtension: fileNameToDisplayWithoutExt, formatExtension: extensionFileTypeOnly },
+      options
+    );
+  }
   //============================ RECEIVING ==============================
   /**
    * Waits for the next incoming message of the given `expectedType`, restricted to the
@@ -526,6 +566,7 @@ export class ChatContext {
 
   /**
    * recommended to store them im .webp file!
+   * @nottested
    */
   @autobind
   public async WaitMultimedia(msgTypeToWaitFor: MsgTypeMultimediaOnly, localOptions?: Partial<ChatContextConfig>): Promise<Buffer | null> {
@@ -534,6 +575,13 @@ export class ChatContext {
     const buffer = await downloadMediaMessage(found, "buffer", {});
     return buffer;
   }
+
+  //TODO: It needs:
+  // [ ]: WaitReactionEmoji
+  // [ ]: WaitUbication
+  // [ ]: WaitPoll
+  // [X]: WaitText
+  // [ ]: WaitContact
 }
-export type MsgTypeMultimediaOnly = MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document;
+export type MsgTypeMultimediaOnly = MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio;
 // amongus zorro bruh skibidi beatbox - N.

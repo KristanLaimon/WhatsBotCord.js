@@ -19,7 +19,7 @@ import {
   WhatsSocketReceiverMsgError,
   type WhatsSocketReceiverError,
 } from "../whats_socket/internals/WhatsSocket.receiver";
-import { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock";
 import Bot, { type BotMiddleWareFunct } from "./bot";
 import type { ChatContext } from "./internals/ChatContext";
@@ -143,7 +143,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
 
       expect(api).toBeDefined();
       expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
+      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
@@ -175,7 +175,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
 
       expect(api).toBeDefined();
       expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
+      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
@@ -207,7 +207,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
 
       expect(api).toBeDefined();
       expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
+      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);
@@ -241,7 +241,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
 
       expect(api).toBeDefined();
       expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
-      expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
+      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);

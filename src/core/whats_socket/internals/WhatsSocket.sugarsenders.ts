@@ -24,6 +24,23 @@ export type WhatsMsgSenderSendingOptionsMINIMUM = {
    * Use at your own risk!
    */
   sendRawWithoutEnqueue?: boolean;
+  /**
+   * An array of WhatsApp user IDs to mention in the message.
+   *
+   * In WhatsApp, to mention someone you:
+   *   1. Include their phone number + WhatsApp ID (e.g., "234234567890@s.whatsapp.net") in this array.
+   *   2. Use the same mention placeholder in the message content (e.g., "@234234567890").
+   *
+   * The socket library will replace the placeholders with proper mentions and notify the users.
+   *
+   * Example:
+   * ```ts
+   * socket.SendTxt("12345@g.us", "Hello '@234567890!'", { mentionsIds: ["234567890@s.whatsapp.net"] });
+   * ```
+   *
+   * Default: undefined (no users mentioned)
+   */
+  mentionsIds?: string[];
 } & MiscMessageGenerationOptions;
 
 export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM & {
@@ -60,7 +77,16 @@ export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM &
   mentionsIds?: string[];
 } & MiscMessageGenerationOptions;
 
-export type WhatsMsgMediaOptions = {
+type WhatsMsgMediaWithCaption = {
+  /**
+   * Optional text to include along with the image.
+   *
+   * - Appears as a caption below the image in WhatsApp
+   * - Can be used for descriptions, notes, or additional context
+   */
+  caption?: string;
+};
+type WhatsMsgMediaStringSource = {
   /**
    * Path to the source file to send.
    *
@@ -69,18 +95,20 @@ export type WhatsMsgMediaOptions = {
    *   using absolute paths is recommended to avoid issues
    *   with build environments or working directories
    */
-  sourcePath: string | Buffer;
-
+  source: string;
+};
+type WhatsMsgMediaBufferSource = {
   /**
-   * Optional text to include along with the image.
+   * Path to the source file to send.
    *
-   * - Appears as a caption below the image in WhatsApp
-   * - Can be used for descriptions, notes, or additional context
+   * - Supports both relative and absolute paths
+   * - For projects where this library is compiled/bundled,
+   *   using absolute paths is recommended to avoid issues
+   *   with build environments or working directories
    */
-  caption?: string;
-
+  source: Buffer;
   /**
-   * Optional file extension (without the leading ".") such as `"mp4"`, `"ogv"`, or `"avi"`.
+   * Mandatory file extension if using sourcePath buffer (without the leading ".") such as `"mp4"`, `"ogv"`, or `"avi"`.
    *
    * This value is used as a hint when inferring the document's MIME type.
    * While the MIME type is primarily detected from the file buffer,
@@ -88,8 +116,16 @@ export type WhatsMsgMediaOptions = {
    * correctly. If omitted, detection may fall back to
    * `"application/octet-stream"`.
    */
-  formatExtension?: string;
+  formatExtension: string;
 };
+//TODO: Export from lib
+export type WhatsMsgMediaOptions = WhatsMsgMediaWithCaption & (WhatsMsgMediaStringSource | WhatsMsgMediaBufferSource);
+//TODO: Export from lib
+export type WhatsMsgAudioOptions = WhatsMsgMediaStringSource | WhatsMsgMediaBufferSource;
+//TODO: Export from lib
+export type WhatsMsgDocumentOptions =
+  | (WhatsMsgMediaStringSource & { fileNameToDisplay?: string })
+  | (WhatsMsgMediaBufferSource & { fileNameWithoutExtension: string });
 
 export type WhatsMsgPollOptions = {
   withMultiSelect: boolean;
@@ -104,7 +140,7 @@ export type WhatsMsgUbicationOptions = {
   addressText?: string;
 };
 
-export class IWhatsSocket_Submodule_SugarSender {
+export class WhatsSocket_Submodule_SugarSender {
   private socket: IWhatsSocket;
 
   constructor(socket: IWhatsSocket) {
@@ -159,27 +195,45 @@ export class IWhatsSocket_Submodule_SugarSender {
    * });
    * ```
    */
-  public async Img(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    if (typeof imageOptions.sourcePath === "string") {
-      if (!fs.existsSync(GetPath(imageOptions.sourcePath))) {
+  public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+    let imgBuffer: Buffer;
+    let mimeType: string;
+    //1. First overload: {sourcePath: string, caption?:string}
+    if (typeof imageOptions.source === "string") {
+      if (!fs.existsSync(GetPath(imageOptions.source)) || !imageOptions.source || imageOptions.source.trim() === "") {
         throw new Error(
-          "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.sourcePath
+          "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.source
         );
       }
+      imgBuffer = fs.readFileSync(imageOptions.source);
+      //@ts-expect-error Can be usable with formatExtension as well
+      mimeType = imageOptions.formatExtension ?? Internal_GetMimeType({ source: imageOptions.source });
     }
-    let captionToSend: string | null = imageOptions.caption ?? null;
+    //2. Second overload: {sourcePath: Buffer, caption?:string, formatExtension: string}
+    else if ("formatExtension" in imageOptions) {
+      imgBuffer = imageOptions.source;
+      mimeType = Internal_GetMimeType({ source: imageOptions.source, extensionType: imageOptions.formatExtension });
+    } else {
+      throw new Error(
+        "SugarSender.Img() bad args!, expected source in buffer or string with formatExtension prop if buffer... got instead: " +
+          JSON.stringify(imageOptions, null, 2)
+      );
+    }
+    //Common overload logic
+    let captionToSend: string | undefined = imageOptions.caption;
     if (captionToSend) {
       if (options?.normalizeMessageText) {
         captionToSend = Str_NormalizeLiteralString(captionToSend);
       }
     }
+    //Ends
     return await this._getSendingMethod(options)(
       chatId,
       {
-        image: Buffer.isBuffer(imageOptions.sourcePath) ? imageOptions.sourcePath : fs.readFileSync(GetPath(imageOptions.sourcePath)),
-        caption: captionToSend ?? "",
+        image: imgBuffer,
+        caption: captionToSend,
         mentions: options?.mentionsIds,
-        mimetype: Internal_GetMimeType(imageOptions.sourcePath, imageOptions.formatExtension),
+        mimetype: mimeType,
       },
       options as MiscMessageGenerationOptions
     );
@@ -227,6 +281,7 @@ export class IWhatsSocket_Submodule_SugarSender {
           text: emojiStr,
           key: rawMsgToReactTo.key,
         },
+        mentions: options?.mentionsIds,
       },
       options as MiscMessageGenerationOptions
     );
@@ -273,76 +328,75 @@ export class IWhatsSocket_Submodule_SugarSender {
           : {
               url: stickerUrlSource,
             },
+        mentions: options?.mentionsIds,
       },
       options as MiscMessageGenerationOptions
     );
   }
 
   /**
-   * Sends an audio message to a specific chat.
+   * Sends an **audio message** to the specified chat.
    *
-   * This method supports sending audio from:
-   * 1. A **local file path** (MP3, OGG, M4A, etc.).
-   * 2. A **remote URL** (publicly accessible audio file).
-   * 3. A **WhatsApp audio message object** (voice note or audio message) via `downloadMediaMessage`.
+   * ### Supported sources
+   * 1. **Local file path** (`string`):
+   *    - Absolute or relative path to an audio file (e.g., MP3, OGG, M4A).
+   *    - The path is validated; an error is thrown if the file does not exist.
+   * 2. **Raw buffer** (`Buffer`):
+   *    - Must include a `formatExtension` (e.g., `"mp3"`, `"ogg"`, `"flac"`)
+   *      so the correct MIME type can be resolved.
    *
-   * @param chatId - The target chat JID (WhatsApp ID), e.g., '5216121407908@s.whatsapp.net'.
-   * @param audioSource - The audio content to send:
-   *   - `string`: Either a local file path or a public URL, it will be converted to absolute path if relative given.
-   *   - `Buffer`: Raw audio data.
-   *   - `WAMessage`: A WhatsApp message object containing an audioMessage.
-   * @param formatExtension is "mp3"?, "ogg"?, "flac"?
-   * @param options - Optional sending options:
-   *   - `sendRawWithoutEnqueue`: If true, bypasses the safe queue system and sends immediately.
+   * @param chatId - Target chat JID (WhatsApp ID), e.g., `"5216121407908@s.whatsapp.net"`.
+   * @param audioParams - The audio content to send:
+   *   - `{ source: string, caption?: string }` → A local file path.
+   *   - `{ source: Buffer, formatExtension: string }` → Raw buffer + extension hint.
+   * @param options - Additional sending options:
+   *   - `sendRawWithoutEnqueue?` → If true, bypasses the safe queue system and sends immediately.
+   *   - `mentionsIds?` → JIDs of users to mention in the message.
    *   - Any other Baileys `MiscMessageGenerationOptions` like `quoted`, `contextInfo`, etc.
    *
+   * @throws
+   * - If a string path is provided but the file does not exist.
+   * - If a buffer source is provided without `formatExtension`.
+   *
+   * ---
    * @example
-   * // Send a local MP3
-   * await bot.Audio(chatId, './audios/voice.mp3');
+   * // Send an MP3 file from local disk
+   * await bot.Audio(chatId, { source: "./audios/voice.mp3" });
    *
    * @example
-   * // Send a remote URL audio
-   * await bot.Audio(chatId, 'https://example.com/audio.mp3');
+   * // Send an OGG audio buffer (e.g., downloaded from somewhere else)
+   * import fs from "fs";
    *
-   * @example
-   * // Forward a received WhatsApp audio message
-   * await bot.Audio(chatId, receivedMessage);
+   * const buffer = fs.readFileSync("./downloads/sample.ogg");
+   * await bot.Audio(chatId, { source: buffer, formatExtension: "ogg" });
    */
-  public async Audio(
-    chatId: string,
-    audioParams: Omit<WhatsMsgMediaOptions, "caption">,
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
-  ): Promise<WAMessage | null> {
+  public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     let buffer: Buffer;
-    if (Buffer.isBuffer(audioParams.sourcePath)) {
-      buffer = audioParams.sourcePath;
-    } else if (typeof audioParams.sourcePath === "string") {
-      // Check if local file exists
-      if (fs.existsSync(GetPath(audioParams.sourcePath))) {
-        buffer = fs.readFileSync(GetPath(audioParams.sourcePath));
-      } else {
-        if (!audioParams.sourcePath.startsWith("http")) {
-          throw new Error(
-            "It's not an existing file in your system or even a url!, check your audioSource. Audio source given to send: " + audioParams.sourcePath
-          );
-        }
-        // Fetch remote URL
-        const res = await fetch(audioParams.sourcePath);
-        if (!res.ok) {
-          console.error(`Failed to fetch audio: ${res.statusText}`);
-          return null;
-        }
-        const arrayBuffer = await res.arrayBuffer();
-        buffer = Buffer.from(arrayBuffer);
+    let mimeType: string;
+    //1. First overload: {source: string, caption?:string}
+    if (typeof audioParams.source === "string") {
+      if (!fs.existsSync(GetPath(audioParams.source))) {
+        throw new Error(
+          "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" +
+            " AudioSourcePath: " +
+            audioParams.source
+        );
       }
+      buffer = fs.readFileSync(audioParams.source);
+      //@ts-expect-error Can be usable with format extension as well
+      mimeType = audioParams.formatExtension ?? Internal_GetMimeType({ source: audioParams.source });
+    } else if ("formatExtension" in audioParams) {
+      buffer = audioParams.source;
+      mimeType = Internal_GetMimeType({ source: audioParams.source, extensionType: audioParams.formatExtension as string });
     } else {
-      throw new Error("WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: " + audioParams.sourcePath);
+      throw new Error("SugarSender.Audio bad args, expected audio source in buffer or stringpath format. Got Instead: " + JSON.stringify(audioParams, null, 2));
     }
     return await this._getSendingMethod(options)(
       chatId,
       {
         audio: buffer,
-        mimetype: Internal_GetMimeType(audioParams.sourcePath, audioParams.formatExtension),
+        mimetype: mimeType,
+        mentions: options?.mentionsIds,
       },
       options as MiscMessageGenerationOptions
     );
@@ -365,7 +419,7 @@ export class IWhatsSocket_Submodule_SugarSender {
    * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set.
    *
    * @param chatId - The target chat JID (WhatsApp ID), e.g. `5216121407908@s.whatsapp.net`.
-   * @param videoSourceParams - The video to send:
+   * @param videoParams - The video to send:
    *   - `sourcePath`: Absolute/relative path to video file OR a `Buffer`.
    *   - `caption` (optional): Text shown below the video in WhatsApp.
    * @param options - Additional sending options:
@@ -382,22 +436,28 @@ export class IWhatsSocket_Submodule_SugarSender {
    * // Send a raw Buffer without queuing
    * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
    */
-  public async Video(chatId: string, videoSourceParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    const videoSource = videoSourceParams.sourcePath;
-    if (typeof videoSource === "string" && !Buffer.isBuffer(videoSource)) {
-      //It's a local video file path
-      if (!fs.existsSync(videoSource)) {
-        throw new Error("WhatsSocketSugarSender.Video() recognized video source as simple string path but doesn't exist or corrupted. Given: " + videoSource);
+  public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+    let buffer: Buffer;
+    let mimeType: string;
+
+    //1. First overload: {source:string, caption?:string}
+    if (typeof videoParams.source === "string") {
+      if (!fs.existsSync(GetPath(videoParams.source))) {
+        throw new Error("SugarSender.Video expected a valid video path!, doesn't exist...  Got instead: " + videoParams.source);
       }
-    } else if (Buffer.isBuffer(videoSource)) {
-      //Ok, do nothing, continue.
+      buffer = fs.readFileSync(videoParams.source);
+      //@ts-expect-error formatExtension can be usable with this as well
+      mimeType = videoParams.formatExtension ?? Internal_GetMimeType({ source: videoParams.source });
+      //2. Second overload: {source:Buffer, caption?: string, formatExtension: string}
+    } else if ("formatExtension" in videoParams) {
+      buffer = videoParams.source;
+      mimeType = Internal_GetMimeType({ source: videoParams.source, extensionType: videoParams.formatExtension });
     } else {
-      throw new Error(
-        "WhatsSocketSugarSender.Video() couldn't recognize video source, its neither a path nor a buffer. Given: " + videoSourceParams.sourcePath
-      );
+      throw new Error("SugarSender.Video bad args, expected video source in buffer or stringpath format. Got Instead: " + JSON.stringify(videoParams, null, 2));
     }
 
-    let caption: string | undefined = videoSourceParams.caption;
+    //Common overload logic code
+    let caption: string | undefined = videoParams.caption;
     if (caption) {
       if (options?.normalizeMessageText) {
         caption = Str_NormalizeLiteralString(caption);
@@ -405,9 +465,10 @@ export class IWhatsSocket_Submodule_SugarSender {
     }
     //Default
     return await this._getSendingMethod(options)(chatId, {
-      video: Buffer.isBuffer(videoSourceParams.sourcePath) ? videoSourceParams.sourcePath : fs.readFileSync(GetPath(videoSourceParams.sourcePath)),
+      video: buffer,
       caption: caption ?? "",
-      mimetype: Internal_GetMimeType(videoSourceParams.sourcePath, videoSourceParams.formatExtension),
+      mimetype: mimeType,
+      mentions: options?.mentionsIds,
     });
   }
 
@@ -427,7 +488,7 @@ export class IWhatsSocket_Submodule_SugarSender {
    * `"application/octet-stream"`.
    *
    * @param chatId - WhatsApp chat JID (e.g. `"1234567890@s.whatsapp.net"`).
-   * @param documentSourceParams - An object containing:
+   * @param docParams - An object containing:
    *   - `source`: The file path or a Buffer with the document data.
    *   - `displayNameFile`: The name shown in WhatsApp for the document.
    *   - `fileExtension`: File extension (e.g. `"pdf"`, `"zip"`) to assist MIME detection.
@@ -453,31 +514,39 @@ export class IWhatsSocket_Submodule_SugarSender {
    *   fileExtension: "zip"
    * });
    */
-  public async Document(
-    chatId: string,
-    documentSourceParams: { source: Buffer | string; displayNameFile: string; fileExtension?: string },
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
-  ): Promise<WAMessage | null> {
+  public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     let buffer: Buffer;
-    let fileName: string;
+    let mimeType: string;
+    let fileNameToDisplay: string;
 
-    if (typeof documentSourceParams.source === "string") {
-      if (!fs.existsSync(documentSourceParams.source)) {
-        throw new Error(`SugarSender.Document(), received path document '${documentSourceParams.source}' doesn't exist!. Check again...`);
+    //1. First overload {source:string, caption?:string}
+    if (typeof docParams.source === "string") {
+      if (!fs.existsSync(GetPath(docParams.source))) {
+        throw new Error(`SugarSender.Document(), received path document '${docParams.source}' doesn't exist!. Check again...`);
       }
-      buffer = fs.readFileSync(documentSourceParams.source);
-      fileName = documentSourceParams.displayNameFile ?? path.basename(documentSourceParams.source);
-    } else if (Buffer.isBuffer(documentSourceParams.source)) {
-      buffer = documentSourceParams.source;
-      fileName = documentSourceParams.displayNameFile;
+      buffer = fs.readFileSync(docParams.source);
+      mimeType = Internal_GetMimeType({ source: docParams.source });
+      if ("fileNameToDisplay" in docParams) {
+        fileNameToDisplay = docParams.fileNameToDisplay ?? path.basename(docParams.source); //Gets file name WITH extension
+      } else {
+        fileNameToDisplay = path.basename(docParams.source); //Gets file name WITH extension
+      }
+      //2. Second overload {source:Buffer, caption?: string, formatExtension:string}
+    } else if ("formatExtension" in docParams) {
+      buffer = docParams.source;
+      mimeType = Internal_GetMimeType({ source: docParams.source, extensionType: docParams.formatExtension });
+      fileNameToDisplay = docParams.fileNameWithoutExtension + "." + docParams.formatExtension.toLowerCase().replace(".", "");
     } else {
-      throw new Error("Bad args");
+      throw new Error(
+        "SugarSender.Document bad args, expected document source in buffer or stringpath format. Got Instead: " + JSON.stringify(docParams, null, 2)
+      );
     }
 
     return await this._getSendingMethod(options)(chatId, {
       document: buffer,
-      mimetype: Internal_GetMimeType(buffer, documentSourceParams.fileExtension),
-      fileName,
+      mimetype: mimeType,
+      fileName: fileNameToDisplay,
+      mentions: options?.mentionsIds,
     });
   }
 
@@ -554,6 +623,7 @@ export class IWhatsSocket_Submodule_SugarSender {
           // selectableCount: pollParams.withMultiSelect ? 0 : 1
           selectableCount: selections.length,
         },
+        mentions: moreOptions?.mentionsIds,
       },
       moreOptions as MiscMessageGenerationOptions
     );
@@ -629,6 +699,7 @@ export class IWhatsSocket_Submodule_SugarSender {
           name: ubicationParams.name,
           address: ubicationParams.addressText,
         },
+        mentions: options?.mentionsIds,
       },
       options as MiscMessageGenerationOptions
     );
@@ -697,6 +768,7 @@ END:VCARD`;
           displayName: arr.length === 1 ? arr[0]!.name : `${arr.length} contacts`,
           contacts: vCards.map((vc) => ({ vcard: vc })),
         },
+        mentions: options?.mentionsIds,
       },
       options as MiscMessageGenerationOptions
     );
@@ -728,20 +800,26 @@ function areValidCoordinates(lat: number, lon: number): boolean {
   return typeof lat === "number" && typeof lon === "number" && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }
 
-export function Internal_GetMimeType(source: string | Buffer, extensionFileNameOnly?: string): string {
-  let found: boolean | string;
-  if (extensionFileNameOnly) {
-    found = mime.lookup(extensionFileNameOnly.replace(".", ""));
-    if (typeof found === "string") {
-      return found;
+//Buffer is only used to differentiate type params, still needed for intelissense!
+export function Internal_GetMimeType(params: { source: string } | { source: Buffer; extensionType: string }): string {
+  //1. First overload
+  if (typeof params.source === "string") {
+    //Can return false if not found. Bad library API in my opinion tbh
+    const res: string | boolean = mime.lookup(params.source);
+    if (typeof res === "string") {
+      return res;
     }
   }
-  if (Buffer.isBuffer(source)) return "application/octet-stream";
-  else {
-    found = mime.lookup(source);
-    if (found) {
-      return found;
+
+  //2. Second overload
+  if ("extensionType" in params) {
+    //Can return false if not found. Bad library API in my opinion tbh
+    const res: string | boolean = mime.lookup(params.extensionType.toLocaleLowerCase());
+    if (typeof res === "string") {
+      return res;
     }
-    return "application/octet-stream";
   }
+
+  //Default
+  return "application/octet-stream";
 }

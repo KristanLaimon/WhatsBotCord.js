@@ -2,7 +2,7 @@ import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WA
 import type Delegate from "../../libs/Delegate";
 import type { MsgType, SenderType } from "../../Msg.types";
 import type { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
-import type { IWhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
+import type { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 
 interface IWhatsSocket_SendingMsgsOnly_Module {
   /**
@@ -187,7 +187,7 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * Prefer this module over raw sending methods since it handles
    * formatting, throttling, and common WhatsApp-specific quirks.
    */
-  Send: IWhatsSocket_Submodule_SugarSender;
+  Send: WhatsSocket_Submodule_SugarSender;
 
   /**
    * Receive module for handling incoming messages and events.

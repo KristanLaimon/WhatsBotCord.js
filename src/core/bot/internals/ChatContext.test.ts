@@ -9,7 +9,7 @@ import {
 import { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import { WhatsSocket_Submodule_Receiver, WhatsSocketReceiverMsgError, type WhatsSocketReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";
-import { IWhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../../whats_socket/types";
 import { ChatContext, type ChatContextConfig } from "./ChatContext";
@@ -36,7 +36,7 @@ const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
 
 function GenerateLocalToolKit_ChatSession_FromGroup() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const senderDependency = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+  const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
   const chatSession = new ChatContext(GroupTxtMsg.key.participant ?? null, GroupTxtMsg.key.remoteJid!, GroupTxtMsg, senderDependency, receiverDependency, {
     cancelKeywords: ["cancel", "cancelar"],
@@ -54,7 +54,7 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
 
 function GenerateLocalToolKit_ChatSession_FromIndividual() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const senderDependency = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+  const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
   const chatSession = new ChatContext(null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, {
     cancelKeywords: ["cancel", "cancelar"],
@@ -87,7 +87,7 @@ it("Text_WhenUsingSendText_ShouldUseCorrectlySugarSender", async () => {
 
 it("Image_WhenUsingSendImg_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const senderImgSpy: Mock<typeof sender.Img> = spyOn(sender, "Img");
+  const senderImgSpy: Mock<typeof sender.Image> = spyOn(sender, "Img");
   senderImgSpy.mockResolvedValueOnce({} as any);
   await chat.SendImg("./test_img", WHATSMSGOPTIONSPARAM);
 
@@ -97,7 +97,7 @@ it("Image_WhenUsingSendImg_ShouldUseCorrectlySugarSender", async (): Promise<voi
 
 it("Image_WhenUsingSendImgWithCaption_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const senderImgSpy: Mock<typeof sender.Img> = spyOn(sender, "Img");
+  const senderImgSpy: Mock<typeof sender.Image> = spyOn(sender, "Img");
   senderImgSpy.mockResolvedValueOnce({} as any);
   await chat.SendImgWithCaption("./test_img", "img caption", WHATSMSGOPTIONSPARAM);
 

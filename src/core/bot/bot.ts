@@ -3,7 +3,7 @@ import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_Pr
 import Delegate from "../../libs/Delegate";
 import { MsgType, type SenderType } from "../../Msg.types";
 import { WhatsSocketReceiverHelper_isReceiverError, type WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
-import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
+import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket";
 import { ChatContext, type ChatContextConfig } from "./internals/ChatContext";
@@ -46,7 +46,7 @@ export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
   onCommandNotFound: Delegate<(commandNameThatCouldntBeFound: string) => void | Promise<void>>;
   onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
 };
-export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
+export type WhatsBotSender = WhatsSocket_Submodule_SugarSender;
 export type WhatsBotReceiver = WhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
 
