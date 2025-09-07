@@ -16,7 +16,7 @@ import {
   txtMessage,
   videoNoCaptionMsg,
   videoWithCaptionMsg,
-} from "../mocks/MockManyTypesMsgs";
+} from "../mocks/MockManyTypesMsgs.mock";
 import { MsgType } from "../Msg.types";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetQuotedMsgText, MsgHelper_FullMsg_GetText } from "./Msg.helper";
 

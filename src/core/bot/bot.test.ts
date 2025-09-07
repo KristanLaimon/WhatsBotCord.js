@@ -10,11 +10,11 @@ import {
   MockGroupTxtMsg,
   MockGroupTxtMsg_CHATID,
   MockGroupTxtMsg_SENDERID,
-} from "../../mocks/MockIndividualGroup";
-import { MockQuotedMsg_Group, MockQuotedMsg_Individual, MockQuotedMsg_Individual_CHATID } from "../../mocks/MockQuotedMsgs";
+} from "../../mocks/MockIndividualGroup.mock";
+import { MockQuotedMsg_Group, MockQuotedMsg_Individual, MockQuotedMsg_Individual_CHATID } from "../../mocks/MockQuotedMsgs.mock";
 import { MsgType, SenderType } from "../../Msg.types";
 import {
-  IWhatsSocket_Submodule_Receiver,
+  WhatsSocket_Submodule_Receiver,
   WhatsSocketReceiverHelper_isReceiverError,
   WhatsSocketReceiverMsgError,
   type WhatsSocketReceiverError,
@@ -142,7 +142,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
       expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
@@ -174,7 +174,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
       expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
@@ -206,7 +206,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
       expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
@@ -240,7 +240,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
       expect(chat).toBeDefined();
 
       expect(api).toBeDefined();
-      expect(api.Receive).toBeInstanceOf(IWhatsSocket_Submodule_Receiver);
+      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
       expect(api.Send).toBeInstanceOf(IWhatsSocket_Submodule_SugarSender);
 
       expect(args).toBeDefined();
@@ -703,5 +703,3 @@ test("Middleware_WhenNOTBreakingChain_ShouldExecuteCommandHandling", async () =>
   expect(comRunSpy).toHaveBeenCalledTimes(1);
   expect(sub).toHaveBeenCalledTimes(1);
 });
-
-// test("MIddlware_WhenBreaking")

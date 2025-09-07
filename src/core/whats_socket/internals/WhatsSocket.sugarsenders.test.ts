@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, typ
 import fs from "fs";
 import path from "node:path";
 import { GetPath } from "../../../libs/BunPath";
-import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs";
+import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs.mock";
 import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
 import { IWhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
@@ -336,38 +336,6 @@ describe("Audio", () => {
     expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.audio).toBeInstanceOf(Buffer);
   });
 
-  it("WhenSendingFromWAMessage_ShouldUseDownloadMediaMessage", async () => {
-    //Mocking simplest audio msg
-    const fakeMsg: any = {
-      message: {
-        audioMessage: {
-          mimetype: "audio/ogg",
-        },
-      },
-    };
-
-    //Mocking required function from baileys lib
-    const downloadMediaMessageMock = mock();
-    mock.module("baileys", () => {
-      return {
-        ...import("baileys"),
-        downloadMediaMessage: downloadMediaMessageMock,
-      };
-    });
-    downloadMediaMessageMock.mockResolvedValue(Buffer.from([13, 14, 15]));
-
-    try {
-      await sender.Audio(fakeChatId, fakeMsg);
-      expect(downloadMediaMessageMock).toHaveBeenCalledWith(fakeMsg, "buffer", {});
-      expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
-      expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
-      // @ts-expect-error Content.mimetype exists!
-      expect(mockWhatsSocket.SentMessagesThroughRaw[0].content.mimetype).toBe("audio/ogg");
-    } finally {
-      mock.restore();
-    }
-  });
-
   it("WhenGivenInvalidSource_ShouldNotSend", async () => {
     const wrongAudioSource = { bad: "test" };
     expect(async () => {
@@ -604,3 +572,90 @@ describe("Contacts", () => {
     });
   });
 });
+
+// describe("Document", () => {
+//   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new IWhatsSocket_Submodule_SugarSender(mockSocket);
+
+//   let FS_existsSync: Mock<(typeof fs)["existsSync"]>;
+//   let FS_readFileSync: Mock<(typeof fs)["readFileSync"]>;
+
+//   beforeEach(() => {
+//     mockSocket.ClearMock();
+//     FS_existsSync = spyOn(fs, "existsSync");
+//     FS_readFileSync = spyOn(fs, "readFileSync");
+//   });
+
+//   afterEach(() => {
+//     FS_existsSync.mockClear();
+//     FS_readFileSync.mockClear();
+//   });
+
+//   afterAll(() => {
+//     FS_existsSync.mockRestore();
+//     FS_readFileSync.mockRestore();
+//   });
+
+//   it("WhenSendingDocumentFromLocalPath_ShouldSendIt", async () => {
+//     const docPath = "./real/and/valid/document.pdf";
+//     const docContent = Buffer.from("DocumentContentBinaryMock");
+
+//     FS_existsSync.mockReturnValue(true);
+//     FS_readFileSync.mockReturnValue(docContent);
+
+//     await sender.Document(fakeChatId, docPath);
+
+//     expect(FS_existsSync).toBeCalledTimes(1);
+//     expect(FS_readFileSync).toBeCalledTimes(1);
+
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+
+//     //@ts-expect-error Content.document does exist!
+//     expect(mockSocket.SentMessagesThroughRaw[0]!.content.document).toBe(docContent);
+//     //@ts-expect-error Content.fileName does exist!
+//     expect(mockSocket.SentMessagesThroughRaw[0]!.content.fileName).toBe("document.pdf");
+//     //@ts-expect-error Content.fileName does exist!
+//     console.log(mockSocket.SentMessagesThroughRaw[0]!.content.mimetype);
+//   });
+
+//   it("WhenSendingDocumentFromBuffer_ShouldSendIt", async () => {
+//     const docAsBuffer = Buffer.from("BinaryMockContentForDocument");
+
+//     await sender.Document(fakeChatId, docAsBuffer);
+
+//     expect(FS_existsSync).not.toHaveBeenCalled();
+//     expect(FS_readFileSync).not.toHaveBeenCalled();
+
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(1);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+
+//     expect(mockSocket.SentMessagesThroughRaw[0]!.content).toMatchObject({
+//       document: docAsBuffer,
+//     });
+//   });
+
+//   it("WhenFilePathDoesNotExist_ShouldThrowError", async () => {
+//     const fakePath = "./not/existing/file.docx";
+//     FS_existsSync.mockReturnValue(false);
+
+//     await expect(sender.Document(fakeChatId, fakePath)).rejects.toThrowError(
+//       "WhatsSocketSugarSender.Document() expected file path but doesn't exist. Given: " + fakePath
+//     );
+
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(0);
+//   });
+
+//   it("WhenPassingSendRawWithoutEnqueue_ShouldStillSendCorrectly", async () => {
+//     const docBuffer = Buffer.from("DocBufferContentForRaw");
+//     await sender.Document(fakeChatId, docBuffer, { sendRawWithoutEnqueue: true });
+
+//     expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
+//     expect(mockSocket.SentMessagesThroughRaw.length).toBe(1);
+
+//     expect(mockSocket.SentMessagesThroughRaw[0]!.content).toMatchObject({
+//       document: docBuffer,
+//     });
+//   });
+// });

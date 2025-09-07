@@ -2,7 +2,7 @@ import type { WAMessage, proto } from "baileys";
 import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper";
 import Delegate from "../../libs/Delegate";
 import { MsgType, type SenderType } from "../../Msg.types";
-import { WhatsSocketReceiverHelper_isReceiverError, type IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
+import { WhatsSocketReceiverHelper_isReceiverError, type WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket";
@@ -47,7 +47,7 @@ export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
   onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
 };
 export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
-export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
+export type WhatsBotReceiver = WhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
 
 export type BotMiddleWareFunct = (
@@ -398,4 +398,77 @@ export default class Bot {
       }
     }
   } //EVENT_...() Method
-} //Class
+}
+
+//TODO: Create testing toolkit for users to simulate chats with these commands!
+// public async RunCommand(command: ICommand, config: BotRunningCommandParams ): Promise<boolean>{
+//     try {
+//       await command.run(
+//         /** Chat Context */
+//         new ChatContext(
+//           config.sender_participant_ID ?? null,
+//           config.chatID,
+//           {
+//             key: {
+//               remoteJid: config.chatID,
+//               participant: config.sender_participant_ID,
+//               fromMe: false,
+//             },
+//           },
+//           this._socket.Send,
+//           this._socket.Receive,
+//           {
+//             cancelKeywords: this.Settings.cancelKeywords!,
+//             timeoutSeconds: this.Settings.timeoutSeconds!,
+//             ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+//             wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+//             cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+//           }
+//         ),
+//         /** RawAPI */
+//         {
+//           Receive: this._socket.Receive,
+//           Send: this._socket.Send,
+//         },
+//         /** Command basic arguments */
+//         {
+//           args: commandArgs,
+//           chatId: config.chatID,
+//           msgType: msgType,
+//           originalRawMsg: rawMsg,
+//           senderType: senderType,
+//           userId: config.sender_participant_ID ?? null,
+//           quotedMsgInfo: quotedMsgAsArgument,
+//         }
+//       );
+//     } catch (e) {
+//       if (WhatsSocketReceiverHelper_isReceiverError(e)) {
+//         if (e.wasAbortedByUser && this.Settings.loggerMode !== "silent") {
+//           console.log(`[Command Canceled]: Name ${commandOrAliasNameLowerCased}`);
+//         }
+//       } else {
+//         if (this.Settings.loggerMode !== "silent")
+//           console.log(
+//             `[COMMAND EXECUTION ERROR]: Error when trying to execute '${commandOrAliasNameLowerCased}'\n\n`,
+//             `Error Info: ${JSON.stringify(e, null, 2)}`
+//           );
+//       }
+//       if (!this.Settings.enableCommandSafeNet) {
+//         throw e;
+//       }
+//     }
+//   }
+// }
+// } //Class
+
+// type CommandArgsMinimum = {
+//   args?: string[];
+//   customIncomingMsgType?: MsgType;
+//   customQuotedMsg?: FoundQuotedMsg;
+// }
+
+// type BotRunningCommandParams = {
+//   chatID: string;
+//   sender_participant_ID?: string;
+//   args: ;
+// }

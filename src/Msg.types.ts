@@ -1,4 +1,3 @@
-
 export enum MsgType {
   Text,
   Image,
@@ -8,12 +7,12 @@ export enum MsgType {
   Contact,
   Poll,
   Location,
-  Unknown
+  Document,
+  Unknown,
 }
 
 export enum SenderType {
   Group,
   Individual,
-  Unknown
+  Unknown,
 }
-

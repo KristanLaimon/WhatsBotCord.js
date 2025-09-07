@@ -1,8 +1,9 @@
-import { type MiscMessageGenerationOptions, type WAMessage, downloadMediaMessage } from "baileys";
+import { type MiscMessageGenerationOptions, type WAMessage } from "baileys";
 import emojiRegexFabric from "emoji-regex";
-import fs from "fs";
 import GraphemeSplitter from "grapheme-splitter";
-import path from "path";
+import mime from "mime-types";
+import fs from "node:fs";
+import path from "node:path";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
 import { GetPath } from "../../../libs/BunPath";
 import type { IWhatsSocket } from "../IWhatsSocket";
@@ -166,6 +167,7 @@ export class IWhatsSocket_Submodule_SugarSender {
         image: Buffer.isBuffer(imageOptions.sourcePath) ? imageOptions.sourcePath : fs.readFileSync(GetPath(imageOptions.sourcePath)),
         caption: captionToSend ?? "",
         mentions: options?.mentionsIds,
+        mimetype: GetMimeType(imageOptions.sourcePath),
       },
       options as MiscMessageGenerationOptions
     );
@@ -293,19 +295,14 @@ export class IWhatsSocket_Submodule_SugarSender {
    * // Forward a received WhatsApp audio message
    * await bot.Audio(chatId, receivedMessage);
    */
-  public async Audio(chatId: string, audioSource: string | Buffer | WAMessage, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Audio(chatId: string, audioSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     let buffer: Buffer;
-    let mimetype = "audio/mpeg";
-
     if (Buffer.isBuffer(audioSource)) {
       buffer = audioSource;
     } else if (typeof audioSource === "string") {
       // Check if local file exists
       if (fs.existsSync(GetPath(audioSource))) {
         buffer = fs.readFileSync(GetPath(audioSource));
-        const ext = path.extname(GetPath(audioSource)).toLowerCase();
-        if (ext === ".ogg") mimetype = "audio/ogg";
-        if (ext === ".m4a") mimetype = "audio/mp4";
       } else {
         if (!audioSource.startsWith("http")) {
           throw new Error("It's not an existing file in your system or even a url!, check your audioSource. Audio source given to send: " + audioSource);
@@ -319,19 +316,14 @@ export class IWhatsSocket_Submodule_SugarSender {
         const arrayBuffer = await res.arrayBuffer();
         buffer = Buffer.from(arrayBuffer);
       }
-    } else if ("message" in audioSource && audioSource.message?.audioMessage) {
-      // WhatsApp message object
-      buffer = await downloadMediaMessage(audioSource, "buffer", {});
-      mimetype = audioSource.message.audioMessage?.mimetype || "audio/mpeg";
     } else {
       throw new Error("WhatsSocketSugarSender: Invalid audio source provided when trying to send audio msg: " + audioSource);
     }
-
     return await this._getSendingMethod(options)(
       chatId,
       {
         audio: buffer,
-        mimetype,
+        mimetype: GetMimeType(audioSource),
       },
       options as MiscMessageGenerationOptions
     );
@@ -393,17 +385,64 @@ export class IWhatsSocket_Submodule_SugarSender {
       }
     }
     //Default
-    let mimeTypeToUse: string = "video/mp4";
-    if (typeof videoSourceParams.sourcePath === "string") {
-      const videoPath: string = videoSourceParams.sourcePath;
-      if (videoPath.endsWith(".mov")) mimeTypeToUse = "video/mov";
-      else if (videoPath.endsWith(".avi")) mimeTypeToUse = "video/avi";
-      //Otherwise, use default "video/mp4"
-    }
     return await this._getSendingMethod(options)(chatId, {
       video: Buffer.isBuffer(videoSourceParams.sourcePath) ? videoSourceParams.sourcePath : fs.readFileSync(GetPath(videoSourceParams.sourcePath)),
       caption: caption ?? "",
-      mimetype: mimeTypeToUse,
+      mimetype: GetMimeType(videoSourceParams.sourcePath),
+    });
+  }
+
+  /**
+   * Sends a document (any file) to the specified chat.
+   *
+   * The source can be either:
+   * - A local file path (`string`)
+   * - A `Buffer` containing the file contents
+   *
+   * Automatically determines the MIME type using `file-type` from either the
+   * buffer or the file path. Falls back to `"application/octet-stream"` if the
+   * type cannot be detected. If the source is a file path, the basename of the
+   * file is used as the document's fileName.
+   *
+   * @param chatId - WhatsApp chat JID (e.g. "1234567890@s.whatsapp.net")
+   * @param documentSourceParams - Path to the local file or a Buffer with its contents
+   * @param options - Additional sending options, e.g. custom sender config
+   * @returns A `WAMessage` object if successfully sent, otherwise `null`
+   *
+   * @throws If the file path does not exist or the source is neither a string nor a Buffer
+   *
+   * @example
+   * // From local file
+   * await sender.Document("1234567890@s.whatsapp.net", "./files/report.pdf");
+   *
+   * @example
+   * // From buffer
+   * const buf = fs.readFileSync("./files/data.zip");
+   * await sender.Document("1234567890@s.whatsapp.net", buf);
+   */
+  public async Document(
+    chatId: string,
+    documentSourceParams: { source: Buffer; fileName: string } | { source: string },
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WAMessage | null> {
+    let buffer: Buffer;
+    let fileName: string;
+
+    if (typeof documentSourceParams.source === "string") {
+      buffer = fs.readFileSync(documentSourceParams.source);
+      fileName = path.basename(documentSourceParams.source);
+    } else if ("fileName" in documentSourceParams && "source" in documentSourceParams) {
+      // TypeScript now knows documentSourceParams is { source: Buffer; fileName: string }
+      buffer = documentSourceParams.source;
+      fileName = documentSourceParams.fileName;
+    } else {
+      throw new Error("Bad args");
+    }
+
+    return await this._getSendingMethod(options)(chatId, {
+      document: buffer,
+      mimetype: GetMimeType(buffer),
+      fileName,
     });
   }
 
@@ -652,4 +691,15 @@ END:VCARD`;
 
 function areValidCoordinates(lat: number, lon: number): boolean {
   return typeof lat === "number" && typeof lon === "number" && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+}
+
+function GetMimeType(source: string | Buffer): string {
+  if (Buffer.isBuffer(source)) return "application/octet-stream";
+  else {
+    const found: boolean | string = mime.lookup(source);
+    if (found) {
+      return found;
+    }
+    return "application/octet-stream";
+  }
 }

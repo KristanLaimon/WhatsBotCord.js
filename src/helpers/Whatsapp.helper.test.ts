@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { MockGroupTxtMsg as GroupTxtMsg, MockIndividualTxtMsg as IndividualTxtMsg } from "../mocks/MockIndividualGroup";
+import { MockGroupTxtMsg as GroupTxtMsg, MockIndividualTxtMsg as IndividualTxtMsg } from "../mocks/MockIndividualGroup.mock";
 import {
   WhatsappHelper_ExtractWhatsappIdFromMention,
   WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,

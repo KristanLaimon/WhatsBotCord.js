@@ -6,11 +6,14 @@ import {
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
   MockGroupTxtMsg as GroupTxtMsg,
   MockIndividualTxtMsg as IndividualTxtMsg,
-} from "../../../mocks/MockIndividualGroup";
+  MockGroupTxtMsg_CHATID,
+  MockGroupTxtMsg_SENDERID,
+} from "../../../mocks/MockIndividualGroup.mock";
+import { imageWithCaptionMsg } from "../../../mocks/MockManyTypesMsgs.mock";
 import { MsgType, SenderType } from "../../../Msg.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../types";
-import { IWhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError, type WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver";
+import { WhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError, type WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver";
 
 /**TODO: List of things to test for receiving messages
  * WhatsSocketReceiver
@@ -40,7 +43,7 @@ const WAITOPTIONS: WhatsSocketReceiverWaitOptions = {
 //========================= ===  MINIMUM FEATURE expected Testing (at least should receive messages without freeze or keep waiting infinitely) =========================
 it("WhenGettingBasicMsg_FROMINDIVIDUAL_ShouldReceiveItAtTheMomentBeingSent (Expected Minimum Features)", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
-  const receive = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receive = new WhatsSocket_Submodule_Receiver(mockSocket);
   const senderId: string = "555123456789@s.whatsapp.net";
   const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(senderId, MsgType.Text, WAITOPTIONS);
   const userSendingMsgPromise: Promise<void> = new Promise<void>((resolve) => {
@@ -54,7 +57,7 @@ it("WhenGettingBasicMsg_FROMINDIVIDUAL_ShouldReceiveItAtTheMomentBeingSent (Expe
 
 it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected Minimum Features)", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
-  const receive = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receive = new WhatsSocket_Submodule_Receiver(mockSocket);
   const senderId: string = "999888777666@lid";
   const chatId: string = "123456789012345@g.us";
   const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(senderId, chatId, MsgType.Text, WAITOPTIONS);
@@ -69,7 +72,7 @@ it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected 
 
 it("Only original sender can cancel waiting msg", async (): Promise<void> => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
-  const receive = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receive = new WhatsSocket_Submodule_Receiver(mockSocket);
 
   const originalSenderId = GroupMsg_SENDERID;
   const notRelatedSenderId = "123123XDDDDD1@lid";
@@ -107,7 +110,7 @@ it("Only original sender can cancel waiting msg", async (): Promise<void> => {
 //=========================  MINIMUM FEATURE (like before) with Delays timers inside timeout time range | LONG TESTS =========================
 it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMINDIVIDUAL_ShouldReceiveItAtTheMomentBeingSent (Expected Minimum Features)", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
-  const receive /**module*/ = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receive /**module*/ = new WhatsSocket_Submodule_Receiver(mockSocket);
 
   const senderId: string = "555123456789@s.whatsapp.net";
   const secondsFromUserToSendMsgDelay: number = 3;
@@ -140,7 +143,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMINDIVIDUAL_ShouldRece
 
 it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected Minimum Features)", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 0 });
-  const receiver = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receiver = new WhatsSocket_Submodule_Receiver(mockSocket);
 
   const senderId: string = "999888777666@lid";
   const chatId: string = "123456789012345@g.us";
@@ -177,7 +180,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMGROUP_ShouldReceiveIt
 it.skipIf(skipLongTests)("WhenGettingIncorrectMsgType_FROMGROUP_ShouldIgnoreItAndKeepWaiting", async () => {
   //Arrange
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
-  const receive /**module*/ = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receive /**module*/ = new WhatsSocket_Submodule_Receiver(mockSocket);
 
   const timeoutSeconds: number = 2;
   const userID = "999888777666@lid";
@@ -225,7 +228,7 @@ it.skipIf(skipLongTests)("WhenGettingIncorrectMsgType_FROMGROUP_ShouldIgnoreItAn
 
 it.skipIf(skipLongTests)("WhenExpectingMsgAndUserSendsACancelWord_FROMGROUP_ShouldRecognizeCancelWorldAndCancelWaiting", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
-  const receiver = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receiver = new WhatsSocket_Submodule_Receiver(mockSocket);
 
   const userID = "999888777666@lid";
   const chatID = "123456789012345@g.us";
@@ -286,7 +289,7 @@ it.skipIf(skipLongTests)("WhenExpectingMsgAndUserSendsACancelWord_FROMGROUP_Shou
 
 it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP_ShouldContinueAsUsualAndIgnoreGoodMsgType", async () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
-  const receiver = new IWhatsSocket_Submodule_Receiver(mockSocket);
+  const receiver = new WhatsSocket_Submodule_Receiver(mockSocket);
 
   const userID = "999888777666@lid";
   const chatID = "123456789012345@g.us";
@@ -327,3 +330,38 @@ it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP
   //Should not send any other msg (like feedback or any other thing)
   expect(mockSocket.SentMessagesThroughQueue.length).toBe(4);
 });
+
+//Long 6Seconds test
+it.skipIf(skipLongTests)(
+  "WhenWaitingForMsgAndRespondendWithNoExcpectedType_FROMGROUP_ShouldResetTimeoutCounter",
+  async () => {
+    const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
+    const receiver = new WhatsSocket_Submodule_Receiver(mockSocket);
+
+    const TIMEOUT_MS: number = 3 * 1000;
+    const waiting = receiver.WaitUntilNextRawMsgFromUserIDInGroup(MockGroupTxtMsg_SENDERID, MockGroupTxtMsg_CHATID, MsgType.Image, {
+      timeoutSeconds: TIMEOUT_MS,
+      cancelKeywords: ["cancel"],
+      ignoreSelfMessages: true,
+      cancelFeedbackMsg: "Cancel feeback msg mock text msg",
+      wrongTypeFeedbackMsg: "I was expecting an image msg!, try again",
+    });
+
+    //All this code should not throw
+    //Should expand more than 3 seconds delay, aprox 6sec  e.g(if TIMEOUTSECS = 3)
+    expect(async () => {
+      await new Promise<void>((r) => setTimeout(r, TIMEOUT_MS - 100));
+      await mockSocket.MockSendMsgAsync(GroupTxtMsg);
+      expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+      expect(mockSocket.SentMessagesThroughQueue[0]!.content).toMatchObject({
+        text: "I was expecting an image msg!, try again",
+      });
+      await new Promise<void>((r) => setTimeout(r, TIMEOUT_MS - 100));
+      await mockSocket.MockSendMsgAsync(imageWithCaptionMsg, { replaceChatIdWith: MockGroupTxtMsg_CHATID, replaceParticipantIdWith: MockGroupTxtMsg_SENDERID });
+      //Should not send any more msg feedback, all correct. Same length as before
+      expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+      await waiting;
+    }).not.toThrow();
+  },
+  8000
+);

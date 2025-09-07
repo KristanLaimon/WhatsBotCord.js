@@ -30,6 +30,7 @@ import { ChatContext } from "./core/bot/internals/ChatContext";
 import { CommandType } from "./core/bot/internals/CommandsSearcher";
 import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver";
 import WhatsSocket from "./core/whats_socket/WhatsSocket";
+import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper";
 import Delegate from "./libs/Delegate";
 import { MsgType, SenderType } from "./Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types";
@@ -65,6 +66,14 @@ export const WhatsappHelpers = {
   IsMentionString: WhatsappHelper_isMentionId,
   IsIDIdentifier: WhatsappHelper_isFullWhatsappIdUser,
 };
+
+/**
+ * Useful collection of functions for debugging whatsapp related stuff. (Optional use)
+ */
+export const DebuggingHelpers = {
+  StoreMsgInHistoryJson: Debug_StoreWhatsMsgHistoryInJson,
+};
+
 /**
  * Object containing all common patterns identifers from whatsapp API and
  * Whatsapp messages.

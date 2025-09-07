@@ -1,7 +1,9 @@
 //============= Testing file simulating user consumption ====================
 //TODO: Add event when entering into a new group.
+import fs from "fs";
 import Whatsbotcord, {
   CommandType,
+  DebuggingHelpers,
   MsgHelpers,
   MsgType,
   SenderType,
@@ -9,48 +11,25 @@ import Whatsbotcord, {
   type CommandArgs,
   type IBotCommand,
   type RawMsgAPI,
-  type WhatsappMessage,
 } from "src";
-import { Debugging_StoreWhatsappMsgInJsonFile } from "./Debugging.helper";
-const bot = new Whatsbotcord({ commandPrefix: "!", credentialsFolder: "./auth", loggerMode: "silent" });
 
 class PingCommand implements IBotCommand {
   name: string = "ping";
   description: string = "replies with pong!";
   aliases: string[] = ["p"];
-
   async run(ctx: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
-    await ctx.SendReactEmojiToInitialMsg("⌛");
-    await ctx.SendText("pong!");
-    await ctx.SendText(`
-        === Sending an img ===
-
-        Now try to send an image pls:
-      `);
-
-    const imageMsg: WhatsappMessage | null = await ctx.WaitMsg(MsgType.Image, {
-      wrongTypeFeedbackMsg: "You are supposed to send an img!",
-      cancelFeedbackMsg: "User has canceled this stuff specifically",
-      timeoutSeconds: 5,
-    });
-
-    if (!imageMsg) {
-      await ctx.SendText("You didn't respond in time!");
-      await ctx.Fail();
-    } else {
-      await ctx.SendText("You responded with image!");
-      await ctx.Ok();
+    // ============= ESTE ====================
+    // Qué te devuelve un buffer (de data), null if user didn't respond in 5 seconds timeout
+    const buffer: Buffer | null = await ctx.WaitMultimedia({ timeoutSeconds: 5 });
+    if (buffer) {
+      fs.writeFileSync("mysticker.webp", buffer);
     }
-    await ctx.SendText("Now send a text pls: ");
-    const secondImg: WhatsappMessage | null = await ctx.WaitMsg(MsgType.Text);
-    if (secondImg) {
-      await ctx.Ok();
-    } else {
-      await ctx.Fail();
-    }
+    //=========  Ó prefieres ==============
+    //@ts-expect-error not implemented yet, will be "false" if user
+    // didn't respond in 5 seconds timeout, it stores the sticker file directly in you files system
+    const success: boolean = await ctx.WaitMultimedia("./stickername", { timeoutSeconds: 5 });
   }
 }
-
 class EveryoneTag implements IBotCommand {
   name: string = "everyone";
   aliases?: string[] | undefined = ["all", "a"];
@@ -64,10 +43,10 @@ class EveryoneTag implements IBotCommand {
     const allMembers = _ctx.GroupInfo!.Participants;
   }
 }
-
+// ========================== MAIN ==============================
+const bot = new Whatsbotcord({ commandPrefix: "!", credentialsFolder: "./auth", loggerMode: "silent" });
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
 bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
-
 bot.Use(async (_senderId, chatId, rawMsg, msgType, _senderType, next) => {
   if (msgType === MsgType.Text) {
     const txt: string | null = MsgHelpers.FullMsg_GetText(rawMsg);
@@ -78,12 +57,13 @@ bot.Use(async (_senderId, chatId, rawMsg, msgType, _senderType, next) => {
   }
   next();
 });
-
 bot.Use(async (_senderId, _chatId, rawMsg, _msgType, _senderType, next) => {
-  Debugging_StoreWhatsappMsgInJsonFile("./quotedmsg.json", rawMsg);
+  DebuggingHelpers.StoreMsgInHistoryJson("./debug.json", rawMsg);
   next();
 });
-
+bot.Events.onStartupAllGroupsIn.Subscribe((groups) => {
+  console.log("Groups: " + groups.map((group) => JSON.stringify(group)));
+});
 bot.Start();
 
 //TODO: Testing
@@ -92,15 +72,17 @@ bot.Start();
  * 2. CHECKED ✅ | + Bot.ts   => Test whole functionality as bot obj (not its internals)
  *                ✅ && Middleware internal system
  *                ✅ && Tests for handling command errors (known errors | unknown ones | abortedByUser with 'cancel')
- * 3. + Decorators.helper.ts  => ✅ Test if works as decorator
- * 4. + Receiver.test.ts      =>     Check if sending an incorrect type msg resets the timeout timer!
- * 4.1+ ChatContext.test.ts   => ✅  Check that local config on method overrides global config but when
- *                                    not using local config, uses global config instead
- * 5. + CommandSearcher       => Validate assertion for "oneword" comands and preventing "" command names! && Verify command names can't have " " spaces, only 1 word long
+ * 3. + Decorators.helper.ts  =>  ✅  Test if works as decorator
+ * 4. + Receiver.test.ts      =>  ✅  Check if sending an incorrect type msg resets the timeout timer!
+ * 4.1+ ChatContext.test.ts   =>  ✅  Check that local config on method overrides global config but when
+ *                                ✅  not using local config, uses global config instead
+ * 5. + CommandSearcher       =>  ✅  Validate assertion for "oneword" comands and preventing "" command names! && Verify command names can't have " " spaces, only 1 word long
  * 6. Check all TODO's around the project
- * 7. WhatsSocket.test.ts     => Test all on* events (4/7 already done!);
+ * 7. WhatsSocket.test.ts  ✅~ (Depends too much on baileys lib)   => Test all on* events (4/7 already done!);
  */
 
 //TODO : Features
 // Give group utilites (fetch all members for example) => Bot should expose GetGroupMetadata and group handling and ChatContext should provide facilities for group info (and group handling?)
 // ChatContext must have a WaitMsg_# (per message type) dedicated.
+// 8. Document Update => Should be capable to RECEIVE and SEND documents!
+//       So far, it can recognize and get documents, but not sending (not tested at all) ❌ (TODO:)

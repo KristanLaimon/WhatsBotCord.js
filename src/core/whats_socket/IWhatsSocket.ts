@@ -1,7 +1,7 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage, WAMessageUpdate } from "baileys";
 import type Delegate from "../../libs/Delegate";
 import type { MsgType, SenderType } from "../../Msg.types";
-import type { IWhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
+import type { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
 import type { IWhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 
 interface IWhatsSocket_SendingMsgsOnly_Module {
@@ -196,7 +196,7 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * should be wired to it under the hood. Use it when you need fine-grained
    * control over incoming raw events.
    */
-  Receive: IWhatsSocket_Submodule_Receiver;
+  Receive: WhatsSocket_Submodule_Receiver;
 
   /**
    * Establishes the socket connection and starts the client.

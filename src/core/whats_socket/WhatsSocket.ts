@@ -20,7 +20,7 @@ import Delegate from "../../libs/Delegate";
 import type { MsgType } from "../../Msg.types";
 import { SenderType } from "../../Msg.types";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
-import { IWhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
+import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
 import { IWhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
 import type { IWhatsSocket } from "./IWhatsSocket";
@@ -139,7 +139,7 @@ export default class WhatsSocket implements IWhatsSocket {
   /**
    * Receive internal module. To wait for someone msg's.
    */
-  public Receive!: IWhatsSocket_Submodule_Receiver;
+  public Receive!: WhatsSocket_Submodule_Receiver;
 
   // === Normal Public Properties ===
   public ActualReconnectionRetries: number = 0;
@@ -228,7 +228,7 @@ export default class WhatsSocket implements IWhatsSocket {
     //== Initializing internal sub-modules ==
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
     this.Send = new IWhatsSocket_Submodule_SugarSender(this);
-    this.Receive = new IWhatsSocket_Submodule_Receiver(this);
+    this.Receive = new WhatsSocket_Submodule_Receiver(this);
   }
 
   public async Shutdown() {

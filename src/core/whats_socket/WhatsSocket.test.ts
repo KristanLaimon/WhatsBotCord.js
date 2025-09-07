@@ -122,11 +122,29 @@ describe("Messages Sending", () => {
  * [X] => onIncomingMsg
  * [X] => onUpdateMsg
  * [X] => onGroupUpdate
- * [ ] => onGroupEnter
- * [ ] => onRestart
+ * [X] => onGroupEnter
+ * [~] => onRestart
  * [ ] => onStartupAllGroupsIn
  */
 describe("Events/Delegates", () => {
+  it("onGroupEnter_Delegate_SendSendingMsg_ShouldInvokeWS", async () => {
+    const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
+    const ws = new WhatsSocket({
+      delayMilisecondsBetweenMsgs: 0,
+      ownImplementationSocketAPIWhatsapp: internalMockSocket,
+    });
+    await ws.Start();
+
+    const spy = fn((groupData: GroupMetadata) => {
+      expect(groupData).toBeDefined();
+      expect(groupData).not.toBeArray();
+    });
+    ws.onGroupEnter.Subscribe(spy);
+
+    internalMockSocket.ev.emit("groups.upsert", [{ group: "group1" }, { group: "group2" }]);
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
   it("onSentMessage_Delegate_WhenSendingAMsg_ShouldInvokeWS", async () => {
     const internalMockSocket = new BaileysSocketServiceAdapter_Mock();
     const ws = new WhatsSocket({

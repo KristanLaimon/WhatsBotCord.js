@@ -1,9 +1,10 @@
+import { downloadMediaMessage } from "baileys";
 import { autobind } from "../../../helpers/Decorators.helper";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper";
 import { MsgType, SenderType } from "../../../Msg.types";
 import {
   WhatsSocketReceiverHelper_isReceiverError,
-  type IWhatsSocket_Submodule_Receiver,
+  type WhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
 } from "../../whats_socket/internals/WhatsSocket.receiver";
 import type {
@@ -27,7 +28,7 @@ export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
 export class ChatContext {
   /** Low-level sender dependency used to actually send messages */
   private _internalSend: IWhatsSocket_Submodule_SugarSender;
-  private _internalReceive: IWhatsSocket_Submodule_Receiver;
+  private _internalReceive: WhatsSocket_Submodule_Receiver;
 
   /** The chat ID this session is permanently bound to */
   private _fixedOriginalSenderId: string | null;
@@ -64,7 +65,7 @@ export class ChatContext {
     fixedChatId: string,
     initialMsg: WhatsappMessage,
     senderDependency: IWhatsSocket_Submodule_SugarSender,
-    receiverDependency: IWhatsSocket_Submodule_Receiver,
+    receiverDependency: WhatsSocket_Submodule_Receiver,
     config: ChatContextConfig
   ) {
     this.Config = config;
@@ -205,6 +206,13 @@ export class ChatContext {
    *
    */
   @autobind
+  /*************  ✨ Windsurf Command ⭐  *************/
+  /**
+   * Sends a sticker message to a specific chat.
+   *
+   * This method supports sending stickers from either:
+
+/*******  397404fb-aa15-44eb-a632-715d654dd013  *******/
   public SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     return this._internalSend.Sticker(this._fixedChatId, stickerUrlSource, options);
   }
@@ -434,23 +442,7 @@ export class ChatContext {
     return this._internalSend.Contact(this._fixedChatId, contacts, options);
   }
 
-  /**
-   * Waits for the next text message from the original user who initiated this chat.
-   *
-   * Messages from other participants (in groups) or from different users will be ignored
-   * without resolving this promise.
-   *
-   * @param localOptions - Optional waiting configuration (e.g., timeout)
-   * @returns The plain text content of the next message, or `null` if none is received
-   */
-  @autobind
-  public async WaitMsgText(localOptions?: Partial<ChatContextConfig>): Promise<string | null> {
-    const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Text, localOptions);
-    if (!found) return null;
-    const extractedTxtToReturn: string | null = MsgHelper_FullMsg_GetText(found);
-    return extractedTxtToReturn;
-  }
-
+  //============================ RECEIVING ==============================
   //TODO: Create a WaitMsg, WaitVideo, Wait (all other options)
 
   /**
@@ -515,6 +507,35 @@ export class ChatContext {
         }
     }
   }
-}
 
+  /**
+   * Waits for the next text message from the original user who initiated this chat.
+   *
+   * Messages from other participants (in groups) or from different users will be ignored
+   * without resolving this promise.
+   *
+   * @param localOptions - Optional waiting configuration (e.g., timeout)
+   * @returns The plain text content of the next message, or `null` if none is received
+   */
+  @autobind
+  public async WaitText(localOptions?: Partial<ChatContextConfig>): Promise<string | null> {
+    const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Text, localOptions);
+    if (!found) return null;
+    const extractedTxtToReturn: string | null = MsgHelper_FullMsg_GetText(found);
+    return extractedTxtToReturn;
+  }
+
+  /**
+   * recommended to store them im .webp file!
+   */
+  @autobind
+  public async WaitMultimedia(msgTypeToWaitFor: MsgTypeMultimediaOnly, localOptions?: Partial<ChatContextConfig>): Promise<Buffer | null> {
+    const found: WhatsappMessage | null = await this.WaitMsg(msgTypeToWaitFor, localOptions);
+    if (!found) return null;
+    const buffer = await downloadMediaMessage(found, "buffer", {});
+    return buffer;
+  }
+}
+//TODO: Give support to documents
+export type MsgTypeMultimediaOnly = MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document;
 // amongus zorro bruh skibidi beatbox - N.

@@ -1,8 +1,8 @@
-import { GetPath } from "./libs/BunPath";
 import fs from "node:fs";
 import type { WhatsappMessage } from "./core/whats_socket/types";
+import { GetPath } from "./libs/BunPath";
 
-export function Debugging_StoreWhatsappMsgInJsonFile(filePath: string, rawMsg: WhatsappMessage) {
+export function Debug_StoreWhatsMsgHistoryInJson(filePath: string, rawMsg: WhatsappMessage) {
   let msgsStored: any[] = [];
   if (fs.existsSync(GetPath(filePath))) {
     const before = fs.readFileSync(GetPath(filePath), "utf-8");
