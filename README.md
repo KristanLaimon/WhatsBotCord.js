@@ -3,9 +3,10 @@
   <img src="https://github.com/KristanLaimon/WhatsBotCord.js/blob/main/.github/media/whatsbotcordjs.png?raw=true" width="50%"/>
 </p>
 
+> Note: WhatsBotCord its on very early beta, not full usable yet, soon will be ready for use.
+
 ***WhatsBotCord*** is a lightweight, TypeScript-based library for building WhatsApp bots with a Discord-inspired command system (e.g., ***!hello***). Built as a wrapper around Baileys, it abstracts complex Baileys internals, providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Compatible with Bun.js (recommended) and Node.js, it’s designed for developers to create custom bots with ease.
 
-> Note: WhatsBotCord its on very early beta, not full usable yet, soon will be ready for use.
 
 # Table of Contents
 

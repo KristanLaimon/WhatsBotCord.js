@@ -11,7 +11,6 @@ import WhatsSocketMock from "../mocks/WhatsSocket.mock";
 import { WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
 
 const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
-
 describe("Text", () => {
   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
