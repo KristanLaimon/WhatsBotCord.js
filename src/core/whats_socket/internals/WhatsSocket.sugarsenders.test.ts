@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 // import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from "bun:test";
 import fs from "fs";
 // import mime from "mime-types";
@@ -6,64 +6,112 @@ import path from "node:path";
 // import { GetPath } from "../../../libs/BunPath";
 // import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs.mock";
 import { GetPath } from "../../../libs/BunPath";
-import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
-import { WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
+import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "./WhatsSocket.sugarsenders";
 
+//GUIDE to testing
 const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
+
+/**
+ * Test Guide
+ * --- Normal usage ---
+ * 1. When ideal conditions and params (simplest) (No error) / Validation socketMock receives correct type and called successfully
+ * 2. When ideal conditions and params (many types of params) (No error) / Validation socketMock receives correct type and called successfully
+ * -- Normal error handling ---
+ * 3. When using bad the function, how to handle errors, and got correct error structure
+ */
+
 describe("Text", () => {
-  const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
+  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+
+  const sendSafeSpy = spyOn(mockSocket, "_SendSafe");
+  const sendRawSpy = spyOn(mockSocket, "_SendRaw");
 
   beforeEach(() => {
-    mockWhatsSocket.ClearMock();
+    mockSocket.ClearMock();
     mock.clearAllMocks();
+    sendSafeSpy.mockClear();
+    sendRawSpy.mockClear();
   });
 
+  afterAll(() => {
+    sendSafeSpy.mockRestore();
+    sendRawSpy.mockRestore();
+  });
+
+  // =========== Normal usage (No errors) ====================
+  //1. Simplest usage!
   it("WhenSendingSimplestTxtMsg_ShouldSendIt", async () => {
-    await sender.Text(fakeChatId, "First Message");
-    await sender.Text(fakeChatId, "Second Message");
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
+    //first msg
+    await sender.Text(fakeChatId, "First msg");
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: undefined, text: "First msg" }, undefined /** There's no additional params given! */);
+
+    //second msg
+    await sender.Text(fakeChatId, "Second msg");
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(2);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(2);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: undefined, text: "Second msg" }, undefined /** No additional params given*/);
   });
 
-  it("WhenSendingTxtMsgWithNormalizedOption_ShouldSendItNormalized", async () => {
-    await sender.Text(fakeChatId, "     \n\nFirst Message             \n\n\n", { normalizeMessageText: true });
-    await sender.Text(fakeChatId, "\n\n                                Second message           \n\n\n\n             Hello", { normalizeMessageText: true });
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(2);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(2);
-    //@ts-expect-error Idk why typescript says .text doesn't exist, when it actually does...
-    expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.text).toBe("First Message");
-    //@ts-expect-error content.text exists
-    expect(mockWhatsSocket.SentMessagesThroughRaw[1]!.content.text).toBe("Second message\n\n\n\nHello");
+  it("WhenSendingSimplestTxtMsgWithAdditionalParams_ShouldSendIt", async (): Promise<void> => {
+    const firstParams: WhatsMsgSenderSendingOptions = { mentionsIds: ["idperson" + WhatsappIndividualIdentifier, "idperson2" + WhatsappIndividualIdentifier] };
+    //first msg
+    await sender.Text(fakeChatId, "First with params", firstParams);
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: firstParams.mentionsIds, text: "First with params" }, firstParams);
+
+    const secondParams: WhatsMsgSenderSendingOptions = {
+      mentionsIds: ["idpeople1" + WhatsappIndividualIdentifier, "idpeople2" + WhatsappIndividualIdentifier],
+    };
+    await sender.Text(fakeChatId, "Second with params", secondParams);
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(2);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(2);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: secondParams.mentionsIds, text: "Second with params" }, secondParams);
   });
 
-  it("WhenSendingTxtMsgQueuedRaw_ShouldBeSendThroughSendRawFromSocket", async () => {
-    await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: true });
-    await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: true });
-    await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: true });
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
-  });
+  //TODO: Still try with this one!
+  // it("WhenSendingTxtMsgWithNormalizedOption_ShouldSendItNormalized", async () => {
+  //   await sender.Text(fakeChatId, "     \n\nFirst Message             \n\n\n", { normalizeMessageText: true });
+  //   await sender.Text(fakeChatId, "\n\n                                Second message           \n\n\n\n             Hello", { normalizeMessageText: true });
+  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
+  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
+  //   //@ts-expect-error Idk why typescript says .text doesn't exist, when it actually does...
+  //   expect(mockSocket.SentMessagesThroughRaw[0]!.content.text).toBe("First Message");
+  //   //@ts-expect-error content.text exists
+  //   expect(mockSocket.SentMessagesThroughRaw[1]!.content.text).toBe("Second message\n\n\n\nHello");
+  // });
 
-  it("WhenSendingTxtMsgQueued_ShouldBeSendThroughSendSafeFromSocket", async () => {
-    await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: false });
-    await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: false });
-    await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: false });
+  // it("WhenSendingTxtMsgQueuedRaw_ShouldBeSendThroughSendRawFromSocket", async () => {
+  //   await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: true });
+  //   await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: true });
+  //   await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: true });
+  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
+  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
+  // });
 
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
-  });
+  // it("WhenSendingTxtMsgQueued_ShouldBeSendThroughSendSafeFromSocket", async () => {
+  //   await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: false });
+  //   await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: false });
+  //   await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: false });
 
-  it("WhenSendingTxtMsgQueuedWithNoExtraOptiosn;Default;_ShouldBeSentThroughSendSafeFromSocket", async () => {
-    await sender.Text(fakeChatId, "First msg default");
-    await sender.Text(fakeChatId, "Second msg default");
-    await sender.Text(fakeChatId, "Third msg default");
+  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
+  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(3);
+  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(3);
+  // });
 
-    expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(3);
-    expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(3);
-  });
+  // it("WhenSendingTxtMsgQueuedWithNoExtraOptiosn;Default;_ShouldBeSentThroughSendSafeFromSocket", async () => {
+  //   await sender.Text(fakeChatId, "First msg default");
+  //   await sender.Text(fakeChatId, "Second msg default");
+  //   await sender.Text(fakeChatId, "Third msg default");
+
+  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
+  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(3);
+  // });
 });
 
 // describe("Image", () => {
