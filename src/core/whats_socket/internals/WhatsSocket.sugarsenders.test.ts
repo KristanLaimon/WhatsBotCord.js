@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "node:path";
 // import { GetPath } from "../../../libs/BunPath";
 // import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs.mock";
+import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
 import { GetPath } from "../../../libs/BunPath";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
@@ -27,18 +28,15 @@ describe("Text", () => {
   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
 
   const sendSafeSpy = spyOn(mockSocket, "_SendSafe");
-  const sendRawSpy = spyOn(mockSocket, "_SendRaw");
 
   beforeEach(() => {
     mockSocket.ClearMock();
     mock.clearAllMocks();
     sendSafeSpy.mockClear();
-    sendRawSpy.mockClear();
   });
 
   afterAll(() => {
     sendSafeSpy.mockRestore();
-    sendRawSpy.mockRestore();
   });
 
   // =========== Normal usage (No errors) ====================
@@ -74,44 +72,55 @@ describe("Text", () => {
     expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: secondParams.mentionsIds, text: "Second with params" }, secondParams);
   });
 
-  //TODO: Still try with this one!
-  // it("WhenSendingTxtMsgWithNormalizedOption_ShouldSendItNormalized", async () => {
-  //   await sender.Text(fakeChatId, "     \n\nFirst Message             \n\n\n", { normalizeMessageText: true });
-  //   await sender.Text(fakeChatId, "\n\n                                Second message           \n\n\n\n             Hello", { normalizeMessageText: true });
-  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(2);
-  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(2);
-  //   //@ts-expect-error Idk why typescript says .text doesn't exist, when it actually does...
-  //   expect(mockSocket.SentMessagesThroughRaw[0]!.content.text).toBe("First Message");
-  //   //@ts-expect-error content.text exists
-  //   expect(mockSocket.SentMessagesThroughRaw[1]!.content.text).toBe("Second message\n\n\n\nHello");
-  // });
+  it("WhenSendingTxtMsgWithNormalizeParams_ShouldNormalizeIt", async (): Promise<void> => {
+    const DESNORMALIZED_MSG: string = "             text   \n             \n\n desnormalized! \n\n    \n";
 
-  // it("WhenSendingTxtMsgQueuedRaw_ShouldBeSendThroughSendRawFromSocket", async () => {
-  //   await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: true });
-  //   await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: true });
-  //   await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: true });
-  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
-  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(0);
-  // });
+    const firstParams: WhatsMsgSenderSendingOptions = { normalizeMessageText: true };
+    await sender.Text(fakeChatId, DESNORMALIZED_MSG, firstParams);
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: undefined, text: Str_NormalizeLiteralString(DESNORMALIZED_MSG) }, firstParams);
 
-  // it("WhenSendingTxtMsgQueued_ShouldBeSendThroughSendSafeFromSocket", async () => {
-  //   await sender.Text(fakeChatId, "First msg", { sendRawWithoutEnqueue: false });
-  //   await sender.Text(fakeChatId, "Second msg", { sendRawWithoutEnqueue: false });
-  //   await sender.Text(fakeChatId, "Third msg", { sendRawWithoutEnqueue: false });
+    const secondParams: WhatsMsgSenderSendingOptions = { normalizeMessageText: false };
+    await sender.Text(fakeChatId, DESNORMALIZED_MSG, secondParams);
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(2);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(2);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: undefined, text: DESNORMALIZED_MSG }, secondParams);
+  });
 
-  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
-  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(3);
-  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(3);
-  // });
+  it("WhenSendingANonStringObjInsteadOfText_ShouldThrowError", async (): Promise<void> => {
+    expect(async (): Promise<void> => {
+      await sender.Text(fakeChatId, { non: "text" } as unknown as string);
+    }).toThrow();
+  });
 
-  // it("WhenSendingTxtMsgQueuedWithNoExtraOptiosn;Default;_ShouldBeSentThroughSendSafeFromSocket", async () => {
-  //   await sender.Text(fakeChatId, "First msg default");
-  //   await sender.Text(fakeChatId, "Second msg default");
-  //   await sender.Text(fakeChatId, "Third msg default");
+  it("WhenSendingAnEmptyString_ShouldThrowError", async (): Promise<void> => {
+    const EMPTY_STRING = "";
+    expect(async (): Promise<void> => {
+      await sender.Text(fakeChatId, EMPTY_STRING);
+    }).toThrow();
+  });
+});
 
-  //   expect(mockSocket.SentMessagesThroughRaw.length).toBe(3);
-  //   expect(mockSocket.SentMessagesThroughQueue.length).toBe(3);
-  // });
+//TODO: Image on 09 september!
+
+describe("Image", () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
+  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+
+  const sendSafeSpy = spyOn(mockSocket, "_SendSafe");
+
+  beforeEach(() => {
+    mockSocket.ClearMock();
+    mock.clearAllMocks();
+    sendSafeSpy.mockClear();
+  });
+
+  afterAll(() => {
+    sendSafeSpy.mockRestore();
+  });
+
+  //HERE START (read test guide at the start of this file!)
 });
 
 // describe("Image", () => {

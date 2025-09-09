@@ -158,6 +158,11 @@ export class WhatsSocket_Submodule_SugarSender {
    * @returns The msg sent, null if it couldn't be send.
    */
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions) {
+    if (typeof text !== "string" || text.trim() === "") {
+      throw new Error(
+        "SugarSender.Text() received a non string text or an empty string to send, check that. Received instead: " + JSON.stringify(text, null, 2)
+      );
+    }
     text = options?.normalizeMessageText ?? true ? Str_NormalizeLiteralString(text) : text;
     //_getSendingMethod() returns a functions, it seems cursed I know, get used to it
     return await this._getSendingMethod(options)(chatId, { text, mentions: options?.mentionsIds }, options as MiscMessageGenerationOptions);
