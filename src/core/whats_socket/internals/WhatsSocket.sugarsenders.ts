@@ -1,9 +1,9 @@
 import { type MiscMessageGenerationOptions, type WAMessage } from "baileys";
 import emojiRegexFabric from "emoji-regex";
 import GraphemeSplitter from "grapheme-splitter";
-import mime from "mime-types";
 import fs from "node:fs";
 import path from "node:path";
+import { MimeTypeHelper_GetMimeTypeOf } from "../../../helpers/Mimetypes.helper";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
 import { GetPath } from "../../../libs/BunPath";
 import type { IWhatsSocket } from "../IWhatsSocket";
@@ -173,8 +173,6 @@ export class WhatsSocket_Submodule_SugarSender {
    * @throws {Error} If image path leads to unexisting content (no valid img path)
    * @param chatId - The target chat JID (WhatsApp ID).
    * @param imageOptions - Options for the image being sent:
-   *   - `imagePath`: Path to the image file (absolute or relative).
-   *   - `caption` (optional): Text caption to send with the image.
    * @param options - Additional sending options:
    *   - `normalizeMessageText`: If true, normalizes the caption
    *      (trims spaces, cleans up multi-line text).
@@ -212,12 +210,12 @@ export class WhatsSocket_Submodule_SugarSender {
       }
       imgBuffer = fs.readFileSync(imageOptions.source);
       //@ts-expect-error Can be usable with formatExtension as well
-      mimeType = imageOptions.formatExtension ?? Internal_GetMimeType({ source: imageOptions.source });
+      mimeType = imageOptions.formatExtension ?? MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source });
     }
     //2. Second overload: {sourcePath: Buffer, caption?:string, formatExtension: string}
     else if ("formatExtension" in imageOptions) {
       imgBuffer = imageOptions.source;
-      mimeType = Internal_GetMimeType({ source: imageOptions.source, extensionType: imageOptions.formatExtension });
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source, extensionType: imageOptions.formatExtension });
     } else {
       throw new Error(
         "SugarSender.Img() bad args!, expected source in buffer or string with formatExtension prop if buffer... got instead: " +
@@ -389,10 +387,10 @@ export class WhatsSocket_Submodule_SugarSender {
       }
       buffer = fs.readFileSync(audioParams.source);
       //@ts-expect-error Can be usable with format extension as well
-      mimeType = audioParams.formatExtension ?? Internal_GetMimeType({ source: audioParams.source });
+      mimeType = audioParams.formatExtension ?? MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source });
     } else if ("formatExtension" in audioParams) {
       buffer = audioParams.source;
-      mimeType = Internal_GetMimeType({ source: audioParams.source, extensionType: audioParams.formatExtension as string });
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source, extensionType: audioParams.formatExtension as string });
     } else {
       throw new Error("SugarSender.Audio bad args, expected audio source in buffer or stringpath format. Got Instead: " + JSON.stringify(audioParams, null, 2));
     }
@@ -452,11 +450,11 @@ export class WhatsSocket_Submodule_SugarSender {
       }
       buffer = fs.readFileSync(videoParams.source);
       //@ts-expect-error formatExtension can be usable with this as well
-      mimeType = videoParams.formatExtension ?? Internal_GetMimeType({ source: videoParams.source });
+      mimeType = videoParams.formatExtension ?? MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source });
       //2. Second overload: {source:Buffer, caption?: string, formatExtension: string}
     } else if ("formatExtension" in videoParams) {
       buffer = videoParams.source;
-      mimeType = Internal_GetMimeType({ source: videoParams.source, extensionType: videoParams.formatExtension });
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source, extensionType: videoParams.formatExtension });
     } else {
       throw new Error("SugarSender.Video bad args, expected video source in buffer or stringpath format. Got Instead: " + JSON.stringify(videoParams, null, 2));
     }
@@ -530,7 +528,7 @@ export class WhatsSocket_Submodule_SugarSender {
         throw new Error(`SugarSender.Document(), received path document '${docParams.source}' doesn't exist!. Check again...`);
       }
       buffer = fs.readFileSync(docParams.source);
-      mimeType = Internal_GetMimeType({ source: docParams.source });
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: docParams.source });
       if ("fileNameToDisplay" in docParams) {
         fileNameToDisplay = docParams.fileNameToDisplay ?? path.basename(docParams.source); //Gets file name WITH extension
       } else {
@@ -539,7 +537,7 @@ export class WhatsSocket_Submodule_SugarSender {
       //2. Second overload {source:Buffer, caption?: string, formatExtension:string}
     } else if ("formatExtension" in docParams) {
       buffer = docParams.source;
-      mimeType = Internal_GetMimeType({ source: docParams.source, extensionType: docParams.formatExtension });
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: docParams.source, extensionType: docParams.formatExtension });
       fileNameToDisplay = docParams.fileNameWithoutExtension + "." + docParams.formatExtension.toLowerCase().replace(".", "");
     } else {
       throw new Error(
@@ -806,25 +804,3 @@ function areValidCoordinates(lat: number, lon: number): boolean {
 }
 
 //Buffer is only used to differentiate type params, still needed for intelissense!
-export function Internal_GetMimeType(params: { source: string } | { source: Buffer; extensionType: string }): string {
-  //1. First overload
-  if (typeof params.source === "string") {
-    //Can return false if not found. Bad library API in my opinion tbh
-    const res: string | boolean = mime.lookup(params.source);
-    if (typeof res === "string") {
-      return res;
-    }
-  }
-
-  //2. Second overload
-  if ("extensionType" in params) {
-    //Can return false if not found. Bad library API in my opinion tbh
-    const res: string | boolean = mime.lookup(params.extensionType.toLocaleLowerCase());
-    if (typeof res === "string") {
-      return res;
-    }
-  }
-
-  //Default
-  return "application/octet-stream";
-}

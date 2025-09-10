@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 // import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from "bun:test";
 import fs from "fs";
+import mime from "mime";
 // import mime from "mime-types";
 import path from "node:path";
 // import { GetPath } from "../../../libs/BunPath";
@@ -103,24 +104,132 @@ describe("Text", () => {
 });
 
 //TODO: Image on 09 september!
+const DEFAULT_MIMETYPE = "application/octet-stream";
 
 describe("Image", () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
 
   const sendSafeSpy = spyOn(mockSocket, "_SendSafe");
+  const fs_readFileSyncSpy = spyOn(fs, "readFileSync");
+  const fs_existsSync = spyOn(fs, "existsSync");
 
   beforeEach(() => {
     mockSocket.ClearMock();
     mock.clearAllMocks();
     sendSafeSpy.mockClear();
+    fs_readFileSyncSpy.mockClear();
+    fs_existsSync.mockClear();
   });
 
   afterAll(() => {
     sendSafeSpy.mockRestore();
+    fs_readFileSyncSpy.mockRestore();
+    fs_existsSync.mockReset();
   });
 
+  //  Sending structure obj
+  //  {
+  //     image: imgBuffer,
+  //     caption: captionToSend,
+  //     mentions: options?.mentionsIds,
+  //     mimetype: mimeType,
+  //  }
+
+  //1. What happens if you send "imagefile" without extension?, should send with default mimetype
+  //2. What happens if you send a non image file type? (can only be validated if extension provided: with img path or optional extension-file-type param provided)
+
   //HERE START (read test guide at the start of this file!)
+  it("WhenSendingFromStringPath_Simplest_ShouldSendItCorrectly", async () => {
+    //Prepare
+    const imagePath: string = "./fakeSource.png";
+    const fakeSourceImgContent: Buffer<ArrayBuffer> = Buffer.from("fakeSourceImgContent");
+    // IMG FROM STRING PATH (relative or absolute)
+    //1. Should verify the file exists with fs_existsSync
+    fs_existsSync.mockReturnValueOnce(true);
+    //2. If exists, read it and extract its content as buffer
+    fs_readFileSyncSpy.mockReturnValueOnce(fakeSourceImgContent);
+
+    //Execute
+    expect(async () => {
+      await sender.Image(fakeChatId, { source: imagePath });
+    }).not.toThrow();
+
+    //Assert
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        image: fakeSourceImgContent,
+        caption: undefined,
+        mentions: undefined,
+        mimetype: mime.getType(imagePath),
+      },
+      undefined /** no aditional obj with params provded */
+    );
+  });
+
+  it("WhenSendingFromBufferImg_WithoutDot_Simplest_ShouldSendItCorrectly", async (): Promise<void> => {
+    //Prepare
+    const imgAsBuffer: Buffer<ArrayBuffer> = Buffer.from("-------img-------");
+    const fileFormatWithoutDot: string = "mp3";
+
+    //Execute
+    expect(async (): Promise<void> => {
+      //Without using .mp3, using mp3 instead (ideal form)
+      await sender.Image(fakeChatId, { source: imgAsBuffer, formatExtension: fileFormatWithoutDot });
+    }).not.toThrow();
+
+    //Assert
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    //Should be sent to internal socket in this form
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        image: imgAsBuffer,
+        caption: undefined,
+        mentions: undefined,
+        mimetype: mime.getType(fileFormatWithoutDot),
+      },
+      undefined
+    );
+
+    // No I/O operations should be executed at all. We're reading from ram only data (thanks to buffer)
+    expect(fs_existsSync).not.toHaveBeenCalled();
+    expect(fs_readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingBfomBufferImg_WithDot_Simplest_ShouldSendItCorrectly", async (): Promise<void> => {
+    //Prepare
+    const imgAsBuffer: Buffer<ArrayBuffer> = Buffer.from("--- img ---");
+    const fileFormatWithDot = ".jpg";
+
+    //Execute
+    expect(async (): Promise<void> => {
+      await sender.Image(fakeChatId, { source: imgAsBuffer, formatExtension: fileFormatWithDot });
+    }).not.toThrow();
+
+    //Assert
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        image: imgAsBuffer,
+        caption: undefined,
+        mentions: undefined,
+        mimetype: mime.getType(fileFormatWithDot),
+      },
+      undefined /** no aditional param obj provided */
+    );
+
+    //There shouldn't be any I/O operations, we're using buffers and only
+    //RAM memory access.
+    expect(fs_existsSync).not.toHaveBeenCalled();
+    expect(fs_readFileSyncSpy).not.toHaveBeenCalled();
+  });
 });
 
 // describe("Image", () => {
