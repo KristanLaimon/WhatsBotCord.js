@@ -1,6 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-import fs from "fs";
 import mime from "mime";
+import fs from "node:fs";
+import path from "node:path";
+import { allMockMsgs } from "src/mocks/MockManyTypesMsgs.mock";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
@@ -100,7 +102,7 @@ describe("Text", () => {
 
 // ================================= IMAGE ===================================
 //TODO: Image on 09 september!
-// const DEFAULT_MIMETYPE = "application/octet-stream";
+const DEFAULT_MIMETYPE = "application/octet-stream";
 describe("Image", () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
@@ -134,7 +136,7 @@ describe("Image", () => {
   //2. What happens if you send a non image file type? (can only be validated if extension provided: with img path or optional extension-file-type param provided)
 
   //HERE START (read test guide at the start of this file!)
-  it("WhenSendingFromStringPath_Simplest_ShouldSendItCorrectly", async () => {
+  it("StringPath_Simple_NoOptionsParams", async () => {
     //Prepare
     const imagePath: string = "./fakeSource.png";
     const fakeSourceImgContent: Buffer<ArrayBuffer> = Buffer.from("fakeSourceImgContent");
@@ -164,7 +166,7 @@ describe("Image", () => {
     );
   });
 
-  it("WhenSendingFromBufferImg_WithoutDot_Simplest_ShouldSendItCorrectly", async (): Promise<void> => {
+  it("Buffer_WithFormatExtension_NODOT_NoOptionsParams", async (): Promise<void> => {
     //Prepare
     const imgAsBuffer: Buffer<ArrayBuffer> = Buffer.from("-------img-------");
     const fileFormatWithoutDot: string = "mp3";
@@ -195,7 +197,7 @@ describe("Image", () => {
     expect(fs_readFileSyncSpy).not.toHaveBeenCalled();
   });
 
-  it("WhenSendingBfomBufferImg_WithDot_Simplest_ShouldSendItCorrectly", async (): Promise<void> => {
+  it("Buffer_WithformatExtension_WITHDOT_NoOptionsParams", async (): Promise<void> => {
     //Prepare
     const imgAsBuffer: Buffer<ArrayBuffer> = Buffer.from("--- img ---");
     const fileFormatWithDot = ".jpg";
@@ -225,7 +227,7 @@ describe("Image", () => {
     expect(fs_readFileSyncSpy).not.toHaveBeenCalled();
   });
 
-  it("WhenSendingFromStringPathWithdefaultFormatParam_ShouldUseParamAsWellAsMimeType", async (): Promise<void> => {
+  it("StringPath_WithFormatExtension_ShouldPrioritizeFormatExtension", async (): Promise<void> => {
     const imgContent: Buffer<ArrayBuffer> = Buffer.from("--- img ---");
     const imgNamePath: string = "./image.jpg";
     const customFormatExtension: string = ".png";
@@ -250,276 +252,226 @@ describe("Image", () => {
       undefined /* no aditional param obj provided */
     );
   });
+
+  it("Buffer_WithoutFormatExtension_ShouldReturnDefaultMimeType", async (): Promise<void> => {
+    const imgBuffer = Buffer.from([1, 2, 3, 4]);
+
+    await sender.Image(fakeChatId, { source: imgBuffer, formatExtension: "" }, undefined);
+
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        image: imgBuffer,
+        caption: undefined,
+        mentions: undefined,
+        mimetype: DEFAULT_MIMETYPE,
+      },
+      undefined /** No additional params obj provided */
+    );
+  });
+
+  it("BufferAndStringPath_IfNormalizeCaptionUsed_ShouldNormalizeItWhenSent", async (): Promise<void> => {
+    const imgBuffer = Buffer.from([1, 2, 3]);
+    const options: WhatsMsgSenderSendingOptions = { mentionsIds: ["helloworld@id"], normalizeMessageText: false };
+    await sender.Image(fakeChatId, { source: imgBuffer, formatExtension: "png", caption: "   hola mundo   " }, options);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        image: imgBuffer,
+        caption: "   hola mundo   ",
+        mentions: ["helloworld@id"],
+        mimetype: mime.getType("png"),
+      },
+      options
+    );
+
+    const imgBuffer2 = Buffer.from("temp");
+    const imgPath2: string = "./path/to/img.png";
+    const options2: WhatsMsgSenderSendingOptions = { normalizeMessageText: true };
+    fs_existsSync.mockReturnValueOnce(true);
+    fs_readFileSyncSpy.mockReturnValueOnce(imgBuffer2);
+    await sender.Image(fakeChatId, { source: imgPath2, caption: "   hola mundo   " }, options2);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(2);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        image: imgBuffer2,
+        caption: "hola mundo",
+        mentions: undefined,
+        mimetype: mime.getType(path.basename(imgPath2)),
+      },
+      options2
+    );
+  });
+
+  it("WhenTryingToSendANonImgFormat_ShouldThrowError", async (): Promise<void> => {
+    const imgToSend: string = "./valid/non/img.pdf";
+    expect(async (): Promise<void> => {
+      await sender.Image(fakeChatId, { source: imgToSend });
+    }).toThrow();
+  });
+
+  it("WhenSendingCorrectImgButWithNONIMAGECustomExtensionType_ShouldThro", async (): Promise<void> => {
+    const imgToSend: string = "./valid/img/type.png";
+    expect(async (): Promise<void> => {
+      await sender.Image(fakeChatId, { source: imgToSend, formatExtension: ".pdf" });
+    }).toThrow();
+  });
 });
 
-// describe("Image", () => {
-//   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-//   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSocket);
-//   const fakeImagePath = GetPath("./test-assets/test-image.jpg");
-//   const fakeBuffer = Buffer.from("fake image data");
+describe("ReactEmojiToMsg", () => {
+  const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
 
-//   let mockExistsSync: Mock<any>;
-//   let mockReadFileSync: Mock<any>;
-//   let mockMimeLookup: Mock<any>;
+  it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
+    const emoji = "✨";
+    let i = 0;
+    for (const mockMsg of allMockMsgs) {
+      await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emoji);
+      expect(mockWhatsSender.SentMessagesThroughQueue[i]).toBeDefined();
+      expect(mockWhatsSender.SentMessagesThroughQueue[i]?.content).toMatchObject({
+        react: {
+          text: emoji,
+        },
+      });
+      i++;
+    }
+  });
 
-//   beforeEach(() => {
-//     mockWhatsSocket.ClearMock();
-//     mock.clearAllMocks();
+  it("WhenGivenEmptyString_ShouldThrowError", async () => {
+    const emojiWrong = "";
+    for (const mockMsg of allMockMsgs) {
+      expect(async () => {
+        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojiWrong);
+      }).toThrowError();
+    }
+  });
 
-//     mockExistsSync = spyOn(fs, "existsSync").mockReturnValue(true);
-//     mockReadFileSync = spyOn(fs, "readFileSync").mockReturnValue(fakeBuffer);
-//     mockMimeLookup = spyOn(mime, "lookup").mockReturnValue("image/jpeg");
-//   });
+  it("WhenGivenTwoCharactersEmoji_ShouldAcceptIt", async () => {
+    const emojis = "🦊";
+    for (const mockMsg of allMockMsgs) {
+      expect(async () => {
+        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
+      }).not.toThrowError();
+    }
+  });
 
-//   // 1. Params receiving
-//   it("WhenSendingImageWithStringSource_ShouldReceiveAndProcessParams", async () => {
-//     await sender.Image(fakeChatId, { source: fakeImagePath });
-//     expect(mockExistsSync).toHaveBeenCalledWith(fakeImagePath);
-//     expect(mockReadFileSync).toHaveBeenCalledWith(fakeImagePath);
-//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
-//   });
+  it("WhenGivenTwoEmojis_ShouldRejectIt", async (): Promise<void> => {
+    const emojis = "😯🦊";
+    for (const mockMsg of allMockMsgs) {
+      expect(async () => {
+        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
+      }).toThrowError();
+    }
+  });
 
-//   it("WhenSendingImageWithBufferSource_ShouldReceiveBufferAndExtension", async () => {
-//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "jpg" });
-//     expect(mockExistsSync).not.toHaveBeenCalled();
-//     expect(mockReadFileSync).not.toHaveBeenCalled();
-//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
-//   });
+  it("WhenGivenCorrectLengthAndStringButNotEmoji_ShouldThrowError", async () => {
+    const nonEmoji = "K";
+    for (const mockMsg of allMockMsgs) {
+      expect(async () => {
+        await sender.ReactEmojiToMsg(fakeChatId, mockMsg, nonEmoji);
+      }).toThrowError("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + nonEmoji);
+    }
+  });
+});
 
-//   // 2. Mimetype checking and variations
-//   it("WhenSendingImageFile_ShouldDetectCorrectMimeType", async () => {
-//     mockMimeLookup.mockReturnValue("image/jpeg");
-//     await sender.Image(fakeChatId, { source: fakeImagePath });
-//     expect(mockMimeLookup).toHaveBeenCalledWith(fakeImagePath);
-//     //@ts-expect-error mimetype exists in content
-//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("image/jpeg");
-//   });
+// const mockDataFolderPath = Get("src", "core", "whats_socket", "internals", "mock_data");
+describe("Sticker", () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
 
-//   it("WhenSendingBufferWithExtension_ShouldUseMimeFromExtension", async () => {
-//     mockMimeLookup.mockReturnValue("image/png");
-//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "png" });
-//     expect(mockMimeLookup).toHaveBeenCalledWith("png");
-//     //@ts-expect-error mimetype exists in content
-//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("image/png");
-//   });
+  const fs_existsSync = spyOn(fs, "existsSync");
+  const sendSafeSpy = spyOn(mockSocket, "_SendSafe");
 
-//   it("WhenMimeTypeNotDetected_ShouldFallbackToOctetStream", async () => {
-//     mockMimeLookup.mockReturnValue(false);
-//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "unknown" });
-//     //@ts-expect-error mimetype exists in content
-//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.mimetype).toBe("application/octet-stream");
-//   });
+  beforeEach(() => {
+    mockSocket.ClearMock();
+    fs_existsSync.mockClear();
+  });
 
-//   // 3. Send with caption and without caption
-//   it("WhenSendingImageWithoutCaption_ShouldSendWithoutCaption", async () => {
-//     await sender.Image(fakeChatId, { source: fakeImagePath });
-//     //@ts-expect-error caption may exist in content
-//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBeUndefined();
-//   });
+  afterAll(() => {
+    fs_existsSync.mockRestore();
+    sendSafeSpy.mockRestore();
+  });
 
-//   it("WhenSendingImageWithCaption_ShouldIncludeCaption", async () => {
-//     const testCaption = "Test image caption";
-//     await sender.Image(fakeChatId, { source: fakeImagePath, caption: testCaption });
-//     //@ts-expect-error caption exists in content
-//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe(testCaption);
-//   });
+  it("WhenSendingFromRealPath_ShouldSendItSimple", async () => {
+    const stickerSource = "./real/mock/path/to/sticker.webp";
+    fs_existsSync.mockReturnValueOnce(true);
 
-//   // 4. Send with caption normalized option
-//   it("WhenSendingImageWithCaptionNormalizationEnabled_ShouldNormalizeCaption", async () => {
-//     await sender.Image(
-//       fakeChatId,
-//       {
-//         source: fakeImagePath,
-//         caption: "     \n\nTest caption             \n\n\n",
-//       },
-//       { normalizeMessageText: true }
-//     );
-//     //@ts-expect-error caption exists in content
-//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe("Test caption");
-//   });
+    await sender.Sticker(fakeChatId, stickerSource);
 
-//   it("WhenSendingImageWithCaptionNormalizationDisabled_ShouldKeepOriginalCaption", async () => {
-//     const originalCaption = "     \n\nTest caption             \n\n\n";
-//     await sender.Image(
-//       fakeChatId,
-//       {
-//         source: fakeImagePath,
-//         caption: originalCaption,
-//       },
-//       { normalizeMessageText: false }
-//     );
-//     //@ts-expect-error caption exists in content
-//     expect(mockWhatsSocket.SentMessagesThroughRaw[0]!.content.caption).toBe(originalCaption);
-//   });
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        sticker: {
+          url: stickerSource,
+        },
+        mentions: undefined,
+      },
+      undefined /** No additional params obj provided */
+    );
+  });
 
-//   // 5. Send with invalid options, throw error
-//   it("WhenSendingImageWithBufferButNoExtension_ShouldThrowError", async () => {
-//     expect(async () => {
-//       //@ts-expect-error Testing invalid params
-//       await sender.Image(fakeChatId, { source: fakeBuffer });
-//     }).toThrow();
-//   });
+  it("WhenSendingInvalidFormat_ShouldThrowError", async () => {
+    expect(async (): Promise<void> => {
+      await sender.Sticker(fakeChatId, "./path/to/sticker/with/wrong/format.png");
+    }).toThrow();
+  });
 
-//   it("WhenSendingImageWithInvalidPath_ShouldThrowError", async () => {
-//     mockExistsSync.mockReturnValue(false);
-//     expect(async () => {
-//       await sender.Image(fakeChatId, { source: "/invalid/path/image.jpg" });
-//     }).toThrow();
-//   });
+  it("WhenSendingFromNonExistentPath_ShouldThrowError", async (): Promise<void> => {
+    fs_existsSync.mockReturnValueOnce(false);
+    expect(async (): Promise<void> => {
+      await sender.Sticker(fakeChatId, "./path/to/non/existing/file.webp");
+    }).toThrow();
+  });
 
-//   it("WhenSendingImageWithEmptySource_ShouldThrowError", async () => {
-//     expect(async () => {
-//       await sender.Image(fakeChatId, { source: "" });
-//     }).toThrow();
-//   });
+  it("WhenSendingFromBuffer_ShouldSendIt", async (): Promise<void> => {
+    const stickerBuffer = Buffer.from([1, 2, 3]);
 
-//   // 6. Possible errors
-//   it("WhenFileReadFails_ShouldThrowError", async () => {
-//     mockReadFileSync.mockImplementation(() => {
-//       throw new Error("File read error");
-//     });
-//     expect(async () => {
-//       await sender.Image(fakeChatId, { source: fakeImagePath });
-//     }).toThrow("File read error");
-//   });
+    await sender.Sticker(fakeChatId, stickerBuffer, undefined);
 
-//   it("WhenSocketSendFails_ShouldPropagateError", async () => {
-//     mockWhatsSocket._SendSafe = mock(() => {
-//       throw new Error("Socket send error");
-//     });
-//     expect(async () => {
-//       await sender.Image(fakeChatId, { source: fakeImagePath });
-//     }).toThrow("Socket send error");
-//   });
+    expect(fs_existsSync).not.toHaveBeenCalled();
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenCalledWith(
+      fakeChatId,
+      {
+        sticker: stickerBuffer,
+        mentions: undefined,
+      },
+      undefined /** No additional options provided */
+    );
+  });
+});
 
-//   // 7. Check if distinct fs are or aren't used
-//   it("WhenSendingImageWithStringPath_ShouldUseFsOperations", async () => {
-//     await sender.Image(fakeChatId, { source: fakeImagePath });
-//     expect(mockExistsSync).toHaveBeenCalledTimes(1);
-//     expect(mockReadFileSync).toHaveBeenCalledTimes(1);
-//   });
-
-//   it("WhenSendingImageWithBuffer_ShouldNotUseFsOperations", async () => {
-//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "jpg" });
-//     expect(mockExistsSync).not.toHaveBeenCalled();
-//     expect(mockReadFileSync).not.toHaveBeenCalled();
-//   });
-
-//   it("WhenSendingMultipleImagesWithMixedSources_ShouldUseFsSelectively", async () => {
-//     await sender.Image(fakeChatId, { source: fakeImagePath });
-//     await sender.Image(fakeChatId, { source: fakeBuffer, formatExtension: "jpg" });
-//     await sender.Image(fakeChatId, { source: fakeImagePath });
-
-//     expect(mockExistsSync).toHaveBeenCalledTimes(2);
-//     expect(mockReadFileSync).toHaveBeenCalledTimes(2);
-//   });
-
-//   it("WhenSendingImageRawWithoutEnqueue_ShouldBeSentThroughRaw", async () => {
-//     await sender.Image(fakeChatId, { source: fakeImagePath }, { sendRawWithoutEnqueue: true });
-//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
-//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(0);
-//   });
-
-//   it("WhenSendingImageQueued_ShouldBeSentThroughQueue", async () => {
-//     await sender.Image(fakeChatId, { source: fakeImagePath }, { sendRawWithoutEnqueue: false });
-//     expect(mockWhatsSocket.SentMessagesThroughRaw.length).toBe(1);
-//     expect(mockWhatsSocket.SentMessagesThroughQueue.length).toBe(1);
-//   });
-// });
-
-// describe("ReactEmojiToMsg", () => {
-//   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-//   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
-
-//   it("WhenGivenIdealParams_ShouldSendItCorrectly", async () => {
-//     const emoji = "✨";
-//     let i = 0;
-//     for (const mockMsg of allMockMsgs) {
-//       await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emoji);
-//       expect(mockWhatsSender.SentMessagesThroughQueue[i]).toBeDefined();
-//       expect(mockWhatsSender.SentMessagesThroughQueue[i]?.content).toMatchObject({
-//         react: {
-//           text: emoji,
-//         },
-//       });
-//       i++;
-//     }
-//   });
-
-//   it("WhenGivenEmptyString_ShouldThrowError", async () => {
-//     const emojiWrong = "";
-//     for (const mockMsg of allMockMsgs) {
-//       expect(async () => {
-//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojiWrong);
-//       }).toThrowError();
-//     }
-//   });
-
-//   it("WhenGivenTwoCharactersEmoji_ShouldAcceptIt", async () => {
-//     const emojis = "🦊";
-//     for (const mockMsg of allMockMsgs) {
-//       expect(async () => {
-//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
-//       }).not.toThrowError();
-//     }
-//   });
-
-//   it("WhenGivenTwoEmojis_ShouldRejectIt", async (): Promise<void> => {
-//     const emojis = "😯🦊";
-//     for (const mockMsg of allMockMsgs) {
-//       expect(async () => {
-//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, emojis);
-//       }).toThrowError();
-//     }
-//   });
-
-//   it("WhenGivenCorrectLengthAndStringButNotEmoji_ShouldThrowError", async () => {
-//     const nonEmoji = "K";
-//     for (const mockMsg of allMockMsgs) {
-//       expect(async () => {
-//         await sender.ReactEmojiToMsg(fakeChatId, mockMsg, nonEmoji);
-//       }).toThrowError("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + nonEmoji);
-//     }
-//   });
-// });
-
-// const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
-// describe("Sticker", () => {
-//   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-//   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
-
-//   //Getting all real stickers examples in webp from mocks folder
-//   const stickerFilesPaths = fs
-//     .readdirSync(mockDataFolderPath)
-//     .filter((fileName) => fileName.endsWith(".webp"))
-//     .map((webpFile) => path.join(mockDataFolderPath, webpFile));
-
-//   it("WhenIdealConditions_ShouldSimpleSendIt", async () => {
-//     for (const realStickerPath of stickerFilesPaths) {
-//       expect(async () => {
-//         await sender.Sticker(fakeChatId, realStickerPath);
-//       }).not.toThrow();
-//     }
-//   });
-
-//   it("WhenProvidingNonExistentSource_ShouldThrowError", async () => {
-//     const invalidStickerPath = "./invalid/path/doesnt/exist";
-//     expect(async () => {
-//       await sender.Sticker(fakeChatId, invalidStickerPath);
-//     }).toThrow("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + invalidStickerPath);
-//   });
-
-//   it("WhenProvidingRealStickersPathsAsBuffer_ShouldSendIt", async () => {
-//     for (const realStickerPath of stickerFilesPaths) {
-//       const stickerBuffer = fs.readFileSync(realStickerPath);
-//       expect(async () => {
-//         await sender.Sticker(fakeChatId, stickerBuffer);
-//       }).not.toThrow();
-//     }
-//   });
-//   //TODO: Check if mock sending msg receives correct parameters
-// });
 // =============================================================================================================================================
+describe("Audio", () => {
+  const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
+  const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+
+  const fs_readFileSyncSpy = spyOn(fs, "readFileSync");
+  const fs_existsSync = spyOn(fs, "existsSync");
+  const sendSafeSpy = spyOn(mockSocket, "_SendSafe");
+
+  beforeEach(() => {
+    mockSocket.ClearMock();
+    fs_readFileSyncSpy.mockClear();
+    fs_existsSync.mockClear();
+    sendSafeSpy.mockClear();
+  });
+
+  afterAll(() => {
+    fs_readFileSyncSpy.mockRestore();
+    fs_existsSync.mockRestore();
+    sendSafeSpy.mockRestore();
+  });
+
+  it("StringPath_Valid_ShouldSend", async () => {
+    const audioPath: string = "./valid/path/to/file.mp3";
+  });
+});
+
 // //TODO: Improve this suite test to check what's sent to mockWhatsSocket
 // describe("Audio", () => {
 //   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
@@ -1013,5 +965,3 @@ describe("Image", () => {
 //     expect(mockSocket.SentMessagesThroughRaw[0]!.content).toMatchObject({
 //       document: docBuffer,
 //     });
-//   });
-// });

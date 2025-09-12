@@ -3,7 +3,7 @@ import emojiRegexFabric from "emoji-regex";
 import GraphemeSplitter from "grapheme-splitter";
 import fs from "node:fs";
 import path from "node:path";
-import { MimeTypeHelper_GetMimeTypeOf } from "../../../helpers/Mimetypes.helper";
+import { MimeTypeHelper_GetMimeTypeOf, MimeTypeHelper_IsImage } from "../../../helpers/Mimetypes.helper";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
 import { GetPath } from "../../../libs/BunPath";
 import type { IWhatsSocket } from "../IWhatsSocket";
@@ -203,11 +203,31 @@ export class WhatsSocket_Submodule_SugarSender {
     let mimeType: string;
     //1. First overload: {sourcePath: string, caption?:string}
     if (typeof imageOptions.source === "string") {
+      //1.1 Check if its a valid img type at least
+      if (!MimeTypeHelper_IsImage(imageOptions.source)) {
+        throw new Error("WhatsSocketSugarSender.Image() can't send a non IMAGE FILE!. What you were trying to send: " + imageOptions.source);
+      }
+
+      //1.2 If using custom formatExtension, check if its a valid custom img valid format
+      //@ts-expect-error Can be usable with formatExtension as well
+      if (imageOptions.formatExtension) {
+        //@ts-expect-error Can be usable with formatExtension as well
+        if (!MimeTypeHelper_IsImage(imageOptions.formatExtension)) {
+          throw new Error(
+            //@ts-expect-error Can be usable with formatExtension as well
+            `WhatsSockerSugarSender.Image(), you are sending a valid file, but you are trying to send it with custom extension which is not a file type => '${imageOptions.formatExtension}'`
+          );
+        }
+      }
+
+      //1.3 Proceed checking if img file to send exists
       if (!fs.existsSync(GetPath(imageOptions.source)) || !imageOptions.source || imageOptions.source.trim() === "") {
         throw new Error(
           "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.source
         );
       }
+
+      //Let's continue
       imgBuffer = fs.readFileSync(imageOptions.source);
 
       //@ts-expect-error Can be usable with formatExtension as well
@@ -298,7 +318,7 @@ export class WhatsSocket_Submodule_SugarSender {
    * Sends a sticker message to a specific chat.
    *
    * This method supports sending stickers from either:
-   * 1. A **local file or Buffer** containing WebP data.
+   * 1. A **local file or Buffer** containing WebP data. IMPORTANT:(Sticker file must have '.webp' format/extension)
    * 2. A **remote URL** pointing to an accessible image (e.g., WebP hosted publicly).
    *
    * If `stickerUrlSource` is a `Buffer`, it will be sent directly.
@@ -322,6 +342,9 @@ export class WhatsSocket_Submodule_SugarSender {
    */
   public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     if (typeof stickerUrlSource === "string") {
+      if (!stickerUrlSource.endsWith(".webp")) {
+        throw new Error("WhatsSocketSugarSender.Sticker() received a non .webp sticker to send. Must be in .webp format first!");
+      }
       if (!fs.existsSync(stickerUrlSource)) {
         throw new Error("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + stickerUrlSource);
       }
@@ -391,7 +414,10 @@ export class WhatsSocket_Submodule_SugarSender {
       }
       buffer = fs.readFileSync(audioParams.source);
       //@ts-expect-error Can be usable with format extension as well
-      mimeType = audioParams.formatExtension ?? MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source });
+      mimeType = audioParams.formatExtension
+        ? //@ts-expect-error Can be usable with format extension as well
+          MimeTypeHelper_GetMimeTypeOf({ source: audioParams.formatExtension })
+        : MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source });
     } else if ("formatExtension" in audioParams) {
       buffer = audioParams.source;
       mimeType = MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source, extensionType: audioParams.formatExtension as string });
@@ -453,8 +479,11 @@ export class WhatsSocket_Submodule_SugarSender {
         throw new Error("SugarSender.Video expected a valid video path!, doesn't exist...  Got instead: " + videoParams.source);
       }
       buffer = fs.readFileSync(videoParams.source);
-      //@ts-expect-error formatExtension can be usable with this as well
-      mimeType = videoParams.formatExtension ?? MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source });
+      //@ts-expect-error Can be usable with format extension as well
+      mimeType = audioParams.formatExtension
+        ? //@ts-expect-error Can be usable with format extension as well
+          MimeTypeHelper_GetMimeTypeOf({ source: videoParams.formatExtension })
+        : MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source });
       //2. Second overload: {source:Buffer, caption?: string, formatExtension: string}
     } else if ("formatExtension" in videoParams) {
       buffer = videoParams.source;
