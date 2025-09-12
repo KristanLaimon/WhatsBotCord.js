@@ -209,8 +209,12 @@ export class WhatsSocket_Submodule_SugarSender {
         );
       }
       imgBuffer = fs.readFileSync(imageOptions.source);
+
       //@ts-expect-error Can be usable with formatExtension as well
-      mimeType = imageOptions.formatExtension ?? MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source });
+      mimeType = imageOptions.formatExtension
+        ? //@ts-expect-error Can be usable with formatExtension as well
+          MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.formatExtension })
+        : MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source });
     }
     //2. Second overload: {sourcePath: Buffer, caption?:string, formatExtension: string}
     else if ("formatExtension" in imageOptions) {

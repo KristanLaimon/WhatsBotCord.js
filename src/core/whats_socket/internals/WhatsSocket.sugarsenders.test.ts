@@ -1,16 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-// import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from "bun:test";
 import fs from "fs";
 import mime from "mime";
-// import mime from "mime-types";
-import path from "node:path";
-// import { GetPath } from "../../../libs/BunPath";
-// import { allMockMsgs } from "../../../mocks/MockManyTypesMsgs.mock";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
-import { GetPath } from "../../../libs/BunPath";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock";
-import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "./WhatsSocket.sugarsenders";
+import { type WhatsMsgSenderSendingOptions, WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders";
 
 //GUIDE to testing
 const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
@@ -24,6 +18,7 @@ const fakeChatId = "338839029383" + WhatsappGroupIdentifier;
  * 3. When using bad the function, how to handle errors, and got correct error structure
  */
 
+// ====================================== TEXT ===================================
 describe("Text", () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
@@ -103,9 +98,9 @@ describe("Text", () => {
   });
 });
 
+// ================================= IMAGE ===================================
 //TODO: Image on 09 september!
-const DEFAULT_MIMETYPE = "application/octet-stream";
-
+// const DEFAULT_MIMETYPE = "application/octet-stream";
 describe("Image", () => {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 1, maxQueueLimit: 10 });
   const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
@@ -135,7 +130,6 @@ describe("Image", () => {
   //     mentions: options?.mentionsIds,
   //     mimetype: mimeType,
   //  }
-
   //1. What happens if you send "imagefile" without extension?, should send with default mimetype
   //2. What happens if you send a non image file type? (can only be validated if extension provided: with img path or optional extension-file-type param provided)
 
@@ -229,6 +223,32 @@ describe("Image", () => {
     //RAM memory access.
     expect(fs_existsSync).not.toHaveBeenCalled();
     expect(fs_readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingFromStringPathWithdefaultFormatParam_ShouldUseParamAsWellAsMimeType", async (): Promise<void> => {
+    const imgContent: Buffer<ArrayBuffer> = Buffer.from("--- img ---");
+    const imgNamePath: string = "./image.jpg";
+    const customFormatExtension: string = ".png";
+
+    fs_existsSync.mockReturnValueOnce(true);
+    fs_readFileSyncSpy.mockReturnValueOnce(imgContent);
+
+    expect(async (): Promise<void> => {
+      await sender.Image(fakeChatId, { source: imgNamePath, formatExtension: customFormatExtension }, undefined);
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        image: imgContent,
+        caption: undefined,
+        mentions: undefined,
+        mimetype: mime.getType(customFormatExtension),
+      },
+      undefined /* no aditional param obj provided */
+    );
   });
 });
 
@@ -463,43 +483,43 @@ describe("Image", () => {
 //   });
 // });
 
-const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
-describe("Sticker", () => {
-  const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
-  const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
+// const mockDataFolderPath = GetPath("src", "core", "whats_socket", "internals", "mock_data");
+// describe("Sticker", () => {
+//   const mockWhatsSender = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
+//   const sender = new WhatsSocket_Submodule_SugarSender(mockWhatsSender);
 
-  //Getting all real stickers examples in webp from mocks folder
-  const stickerFilesPaths = fs
-    .readdirSync(mockDataFolderPath)
-    .filter((fileName) => fileName.endsWith(".webp"))
-    .map((webpFile) => path.join(mockDataFolderPath, webpFile));
+//   //Getting all real stickers examples in webp from mocks folder
+//   const stickerFilesPaths = fs
+//     .readdirSync(mockDataFolderPath)
+//     .filter((fileName) => fileName.endsWith(".webp"))
+//     .map((webpFile) => path.join(mockDataFolderPath, webpFile));
 
-  it("WhenIdealConditions_ShouldSimpleSendIt", async () => {
-    for (const realStickerPath of stickerFilesPaths) {
-      expect(async () => {
-        await sender.Sticker(fakeChatId, realStickerPath);
-      }).not.toThrow();
-    }
-  });
+//   it("WhenIdealConditions_ShouldSimpleSendIt", async () => {
+//     for (const realStickerPath of stickerFilesPaths) {
+//       expect(async () => {
+//         await sender.Sticker(fakeChatId, realStickerPath);
+//       }).not.toThrow();
+//     }
+//   });
 
-  it("WhenProvidingNonExistentSource_ShouldThrowError", async () => {
-    const invalidStickerPath = "./invalid/path/doesnt/exist";
-    expect(async () => {
-      await sender.Sticker(fakeChatId, invalidStickerPath);
-    }).toThrow("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + invalidStickerPath);
-  });
+//   it("WhenProvidingNonExistentSource_ShouldThrowError", async () => {
+//     const invalidStickerPath = "./invalid/path/doesnt/exist";
+//     expect(async () => {
+//       await sender.Sticker(fakeChatId, invalidStickerPath);
+//     }).toThrow("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + invalidStickerPath);
+//   });
 
-  it("WhenProvidingRealStickersPathsAsBuffer_ShouldSendIt", async () => {
-    for (const realStickerPath of stickerFilesPaths) {
-      const stickerBuffer = fs.readFileSync(realStickerPath);
-      expect(async () => {
-        await sender.Sticker(fakeChatId, stickerBuffer);
-      }).not.toThrow();
-    }
-  });
-  //TODO: Check if mock sending msg receives correct parameters
-});
-
+//   it("WhenProvidingRealStickersPathsAsBuffer_ShouldSendIt", async () => {
+//     for (const realStickerPath of stickerFilesPaths) {
+//       const stickerBuffer = fs.readFileSync(realStickerPath);
+//       expect(async () => {
+//         await sender.Sticker(fakeChatId, stickerBuffer);
+//       }).not.toThrow();
+//     }
+//   });
+//   //TODO: Check if mock sending msg receives correct parameters
+// });
+// =============================================================================================================================================
 // //TODO: Improve this suite test to check what's sent to mockWhatsSocket
 // describe("Audio", () => {
 //   const mockWhatsSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });

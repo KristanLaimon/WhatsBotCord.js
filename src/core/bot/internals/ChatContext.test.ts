@@ -1,4 +1,4 @@
-import { expect, it, spyOn, test, type Mock } from "bun:test";
+import { type Mock, expect, it, spyOn, test } from "bun:test";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
@@ -8,11 +8,11 @@ import {
 } from "../../../mocks/MockIndividualGroup.mock";
 import { MsgType, SenderType } from "../../../Msg.types";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types";
-import { WhatsSocket_Submodule_Receiver, WhatsSocketReceiverMsgError, type WhatsSocketReceiverError } from "../../whats_socket/internals/WhatsSocket.receiver";
-import { WhatsSocket_Submodule_SugarSender, type WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
+import { type WhatsSocketReceiverError, WhatsSocket_Submodule_Receiver, WhatsSocketReceiverMsgError } from "../../whats_socket/internals/WhatsSocket.receiver";
+import { type WhatsMsgSenderSendingOptions, WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/WhatsSocket.sugarsenders";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock";
 import type { WhatsappMessage } from "../../whats_socket/types";
-import { ChatContext, type ChatContextConfig } from "./ChatContext";
+import { type ChatContextConfig, ChatContext } from "./ChatContext";
 
 /**
  * ChatSession Testing Suite
@@ -87,22 +87,22 @@ it("Text_WhenUsingSendText_ShouldUseCorrectlySugarSender", async () => {
 
 it("Image_WhenUsingSendImg_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const senderImgSpy: Mock<typeof sender.Image> = spyOn(sender, "Img");
+  const senderImgSpy: Mock<typeof sender.Image> = spyOn(sender, "Image");
   senderImgSpy.mockResolvedValueOnce({} as any);
   await chat.SendImg("./test_img", WHATSMSGOPTIONSPARAM);
 
   expect(senderImgSpy).toHaveBeenCalledTimes(1);
-  expect(senderImgSpy).toBeCalledWith(CHATID, { sourcePath: "./test_img", caption: undefined }, WHATSMSGOPTIONSPARAM);
+  expect(senderImgSpy).toBeCalledWith(CHATID, { source: "./test_img", caption: undefined }, WHATSMSGOPTIONSPARAM);
 });
 
 it("Image_WhenUsingSendImgWithCaption_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const senderImgSpy: Mock<typeof sender.Image> = spyOn(sender, "Img");
+  const senderImgSpy: Mock<typeof sender.Image> = spyOn(sender, "Image");
   senderImgSpy.mockResolvedValueOnce({} as any);
   await chat.SendImgWithCaption("./test_img", "img caption", WHATSMSGOPTIONSPARAM);
 
   expect(senderImgSpy).toHaveBeenCalledTimes(1);
-  expect(senderImgSpy).toBeCalledWith(CHATID, { sourcePath: "./test_img", caption: "img caption" }, WHATSMSGOPTIONSPARAM);
+  expect(senderImgSpy).toBeCalledWith(CHATID, { source: "./test_img", caption: "img caption" }, WHATSMSGOPTIONSPARAM);
 });
 
 it("ReactionEmoji_WhenUsingSendReactEmojiTo_ShouldUseCorrectlySugarSender", async (): Promise<void> => {
@@ -215,7 +215,7 @@ it("Video_WhenUsingSendVideoWithoutCaption_ShouldCorrectlyUseSugarSenderVideo", 
     await chat.SendVideo("./fake_video.mp4", WHATSMSGOPTIONSPARAM);
   }).not.toThrow();
   expect(sendVideoSenderSpy).toHaveBeenCalledTimes(1);
-  expect(sendVideoSenderSpy).toHaveBeenCalledWith(CHATID, { sourcePath: "./fake_video.mp4", caption: undefined }, WHATSMSGOPTIONSPARAM);
+  expect(sendVideoSenderSpy).toHaveBeenCalledWith(CHATID, { source: "./fake_video.mp4", caption: undefined }, WHATSMSGOPTIONSPARAM);
 });
 
 it("Video_WhenUsingSendVideoWithCaption_ShouldCorrectlyUseSugarSenderVideo", async (): Promise<void> => {
@@ -226,7 +226,7 @@ it("Video_WhenUsingSendVideoWithCaption_ShouldCorrectlyUseSugarSenderVideo", asy
     await chat.SendVideoWithCaption("./fake_video_with_caption.mp4", "video caption", WHATSMSGOPTIONSPARAM);
   }).not.toThrow();
   expect(sendVideoSenderSpy).toHaveBeenCalledTimes(1);
-  expect(sendVideoSenderSpy).toHaveBeenCalledWith(CHATID, { sourcePath: "./fake_video_with_caption.mp4", caption: "video caption" }, WHATSMSGOPTIONSPARAM);
+  expect(sendVideoSenderSpy).toHaveBeenCalledWith(CHATID, { source: "./fake_video_with_caption.mp4", caption: "video caption" }, WHATSMSGOPTIONSPARAM);
 });
 
 it("Poll_WhenUsingSendPoll_ShouldCorrectlyUseSugarSenderPoll", async (): Promise<void> => {

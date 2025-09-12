@@ -18,12 +18,11 @@ class EveryoneTag implements IBotCommand {
   description: string = "Tag everyone in group";
 
   async run(ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-    await ctx.Loading();
     await ctx.SendText("EVERYONE!");
     //Should give option to rename
     // await ctx.SendDocument("./test/sleep.pdf");
     await ctx.SendText("Send an img!");
-    const img = await ctx.WaitMultimedia(MsgType.Image);
+    const img: Buffer | null = await ctx.WaitMultimedia(MsgType.Image);
     if (img) {
       fs.writeFileSync("./photo.png", img);
       await ctx.Ok();
