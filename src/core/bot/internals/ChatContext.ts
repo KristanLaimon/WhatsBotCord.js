@@ -3,9 +3,9 @@ import { autobind } from "../../../helpers/Decorators.helper";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper";
 import { MsgType, SenderType } from "../../../Msg.types";
 import {
-  WhatsSocketReceiverHelper_isReceiverError,
   type WhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
+  WhatsSocketReceiverHelper_isReceiverError,
 } from "../../whats_socket/internals/WhatsSocket.receiver";
 import type {
   WhatsMsgPollOptions,
@@ -106,22 +106,62 @@ export class ChatContext {
   }
 
   /**
-   * Sends an image with a caption.
+   * Sends an image to a WhatsApp chat from a local file path.
    *
-   * @param imagePath - Local file path to the image
-   * @param caption - Caption text
-   * @param options - Optional send configuration
-   * @returns The WhatsApp message object, or `null` if sending failed
+   * @param imagePath - Path to the local image file.
+   * @param caption - Text caption to include with the image.
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
    *
-   * Behavior:
-   * - Reads the image file from `imagePath` into memory and attaches it.
-   * - If normalization is enabled, caption  will be cleaned/normalized before sending.
-   *  (Can be enabled in options object param with "normalizeMessageText" property)
-   * - Mentions are injected if `mentionsIds` is specified.
+   * @remarks
+   * - Reads the image from the provided `imagePath` into memory before sending.
+   * - If `options.normalizeMessageText` is `true`, the caption will be cleaned/normalized.
+   * - Mentions can be included using `options.mentionsIds`.
    */
   @autobind
   public SendImgWithCaption(imagePath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     return this._internalSend.Image(this._fixedChatId, { source: imagePath, caption }, options);
+  }
+
+  /**
+   * Sends an image to a WhatsApp chat from a buffer.
+   *
+   * @param imagePath - The image as a Buffer (ArrayBuffer).
+   * @param extensionType - The image file extension/type (e.g., "png", "jpg").
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - Useful when the image is generated or received dynamically and not saved on disk.
+   * - This method does not include a caption. Use `SendImgFromBufferWithCaption` for captioned images.
+   */
+  @autobind
+  public SendImgFromBuffer(imagePath: Buffer<ArrayBuffer>, extensionType: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    return this._internalSend.Image(this._fixedChatId, { source: imagePath, formatExtension: extensionType, caption: undefined }, options);
+  }
+
+  /**
+   * Sends an image to a WhatsApp chat from a buffer with a caption.
+   *
+   * @param imagePath - The image as a Buffer (ArrayBuffer).
+   * @param extensionType - The image file extension/type (e.g., "png", "jpg").
+   * @param caption - Text caption to include with the image.
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - Combines the behavior of `SendImgFromBuffer` and `SendImgWithCaption`.
+   * - Useful for sending dynamically created images along with captions.
+   * - Supports normalization and mentions if specified in `options`.
+   */
+  @autobind
+  public SendImgFromBufferWithCaption(
+    imagePath: Buffer,
+    extensionType: string,
+    caption: string,
+    options?: WhatsMsgSenderSendingOptions
+  ): Promise<WhatsappMessage | null> {
+    return this._internalSend.Image(this._fixedChatId, { source: imagePath, formatExtension: extensionType, caption: caption }, options);
   }
 
   /**

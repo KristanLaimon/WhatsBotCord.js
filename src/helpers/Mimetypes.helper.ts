@@ -79,6 +79,21 @@ export function MimeTypeHelper_IsVideo(filePathOrExtension: string): boolean {
 }
 
 /**
+ * Determines whether the given file path or extension refers to an **audio**.
+ *
+ * @param filePathOrExtension - A string with either:
+ *  - An extension (can start with a dot or not, e.g. `.mp3`, `wav`)
+ *  - A path (relative or absolute, e.g. `./audio/song.mp3`)
+ *
+ * @returns `true` if the file is an audio type (`audio/*`), otherwise `false`.
+ */
+export function MimeTypeHelper_IsAudio(filePathOrExtension: string): boolean {
+  if (!filePathOrExtension || filePathOrExtension.trim() === "") return false;
+  const res: string = _extractExtensionFrom_Path_Or_FileExtension(filePathOrExtension);
+  return res.startsWith("audio/");
+}
+
+/**
  * Retrieves the MIME type of a file or buffer with a given extension.
  *
  * Supports two overloads:

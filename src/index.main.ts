@@ -1,7 +1,4 @@
-import fs from "node:fs";
-//============= Testing file simulating user consumption ====================
-//TODO: Add event when entering into a new group.
-import Whatsbotcord, { CommandType, MsgType, type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI } from "src";
+import Whatsbotcord, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "src";
 
 class PingCommand implements IBotCommand {
   name: string = "ping";
@@ -9,33 +6,33 @@ class PingCommand implements IBotCommand {
   aliases: string[] = ["p"];
   async run(ctx: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
     await ctx.SendText("Pong!");
+    await ctx.SendImgWithCaption("./test/image.png", "I'm a caption!");
   }
 }
-
-class EveryoneTag implements IBotCommand {
-  name: string = "te";
-  aliases?: string[] | undefined = ["all", "a"];
-  description: string = "Tag everyone in group";
-
-  async run(ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-    await ctx.SendText("EVERYONE!");
-    //Should give option to rename
-    // await ctx.SendDocument("./test/sleep.pdf");
-    await ctx.SendText("Send an img!");
-    const img: Buffer | null = await ctx.WaitMultimedia(MsgType.Image);
-    if (img) {
-      fs.writeFileSync("./photo.png", img);
-      await ctx.Ok();
-    } else {
-      await ctx.Fail();
-    }
-  }
-}
-
 // ========================== MAIN ==============================
 const bot = new Whatsbotcord({ commandPrefix: "!", tagCharPrefix: "@", credentialsFolder: "./auth", loggerMode: "silent" });
-bot.Commands.Add(new EveryoneTag(), CommandType.Normal);
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
+
+bot.Commands.Add(
+  {
+    name: "img",
+    description: "a small desc",
+    async run(ctx, _, __) {
+      await ctx.Loading();
+      await ctx.SendText("Send me a msg:");
+      const imgReceived = await ctx.WaitMultimedia(MsgType.Image);
+      if (imgReceived) {
+        await ctx.SendText("Recibí tu imagen!, te lo reenviaré");
+        await ctx.Ok();
+        await ctx.SendImgFromBufferWithCaption(imgReceived, ".png", "Im a caption!");
+      } else {
+        await ctx.SendText("No recibí tu mensaje... Fin");
+        await ctx.Fail();
+      }
+    },
+  },
+  CommandType.Normal
+);
 bot.Start();
 // bot.Use(async (_senderId, chatId, rawMsg, msgType, _senderType, next) => {
 //   if (msgType === MsgType.Text) {

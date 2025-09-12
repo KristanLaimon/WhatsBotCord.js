@@ -3,7 +3,7 @@ import emojiRegexFabric from "emoji-regex";
 import GraphemeSplitter from "grapheme-splitter";
 import fs from "node:fs";
 import path from "node:path";
-import { MimeTypeHelper_GetMimeTypeOf, MimeTypeHelper_IsImage } from "../../../helpers/Mimetypes.helper";
+import { MimeTypeHelper_GetMimeTypeOf, MimeTypeHelper_IsAudio, MimeTypeHelper_IsImage, MimeTypeHelper_IsVideo } from "../../../helpers/Mimetypes.helper";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
 import { GetPath } from "../../../libs/BunPath";
 import type { IWhatsSocket } from "../IWhatsSocket";
@@ -209,12 +209,9 @@ export class WhatsSocket_Submodule_SugarSender {
       }
 
       //1.2 If using custom formatExtension, check if its a valid custom img valid format
-      //@ts-expect-error Can be usable with formatExtension as well
-      if (imageOptions.formatExtension) {
-        //@ts-expect-error Can be usable with formatExtension as well
+      if ("formatExtension" in imageOptions) {
         if (!MimeTypeHelper_IsImage(imageOptions.formatExtension)) {
           throw new Error(
-            //@ts-expect-error Can be usable with formatExtension as well
             `WhatsSockerSugarSender.Image(), you are sending a valid file, but you are trying to send it with custom extension which is not a file type => '${imageOptions.formatExtension}'`
           );
         }
@@ -405,6 +402,19 @@ export class WhatsSocket_Submodule_SugarSender {
     let mimeType: string;
     //1. First overload: {source: string, caption?:string}
     if (typeof audioParams.source === "string") {
+      if (!MimeTypeHelper_IsAudio(audioParams.source)) {
+        throw new Error(
+          "Bad arguments: WhatsSocketSugarSender.Audio() received a non audio file to send (checked from extension format). Expected .mp3, .wav, and others but gotten instead: " +
+            audioParams.source
+        );
+      }
+
+      if ("formatExtension" in audioParams) {
+        if (!MimeTypeHelper_IsAudio(audioParams.formatExtension)) {
+          throw new Error("Bad arguments: WhatsSocketSugarSender.Audio() received a non audio custom extension. Received: " + audioParams.formatExtension);
+        }
+      }
+
       if (!fs.existsSync(GetPath(audioParams.source))) {
         throw new Error(
           "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" +
@@ -419,7 +429,14 @@ export class WhatsSocket_Submodule_SugarSender {
           MimeTypeHelper_GetMimeTypeOf({ source: audioParams.formatExtension })
         : MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source });
     } else if ("formatExtension" in audioParams) {
+      if (!MimeTypeHelper_IsAudio(audioParams.formatExtension)) {
+        throw new Error(
+          "Bad args => SugarSender.Audio() received buffer and a non-video custom extension type. Extension type received: " + audioParams.formatExtension
+        );
+      }
+
       buffer = audioParams.source;
+
       mimeType = MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source, extensionType: audioParams.formatExtension as string });
     } else {
       throw new Error("SugarSender.Audio bad args, expected audio source in buffer or stringpath format. Got Instead: " + JSON.stringify(audioParams, null, 2));
@@ -475,17 +492,36 @@ export class WhatsSocket_Submodule_SugarSender {
 
     //1. First overload: {source:string, caption?:string}
     if (typeof videoParams.source === "string") {
+      if (!MimeTypeHelper_IsVideo(videoParams.source)) {
+        throw new Error("Bad args: WhatsSugarSender.Video() received a non video file to send (checked from extension). Gotten instead: " + videoParams.source);
+      }
+
+      if ("formatExtension" in videoParams) {
+        if (!MimeTypeHelper_IsVideo(videoParams.formatExtension as string)) {
+          throw new Error(
+            "Bad args: WhatsSugarSender.Video() received a NON custom video file format .extension. Given instead: " + videoParams.formatExtension
+          );
+        }
+      }
+
       if (!fs.existsSync(GetPath(videoParams.source))) {
         throw new Error("SugarSender.Video expected a valid video path!, doesn't exist...  Got instead: " + videoParams.source);
       }
+
       buffer = fs.readFileSync(videoParams.source);
       //@ts-expect-error Can be usable with format extension as well
-      mimeType = audioParams.formatExtension
+      mimeType = videoParams.formatExtension
         ? //@ts-expect-error Can be usable with format extension as well
           MimeTypeHelper_GetMimeTypeOf({ source: videoParams.formatExtension })
         : MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source });
       //2. Second overload: {source:Buffer, caption?: string, formatExtension: string}
     } else if ("formatExtension" in videoParams) {
+      if (!MimeTypeHelper_IsVideo(videoParams.formatExtension)) {
+        throw new Error(
+          "Bad args => SugarSender.Video() received a buffer with a NON image formatExtension (for mimetypes). FormatExtension provided: " +
+            videoParams.formatExtension
+        );
+      }
       buffer = videoParams.source;
       mimeType = MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source, extensionType: videoParams.formatExtension });
     } else {
@@ -500,12 +536,16 @@ export class WhatsSocket_Submodule_SugarSender {
       }
     }
     //Default
-    return await this._getSendingMethod(options)(chatId, {
-      video: buffer,
-      caption: caption ?? "",
-      mimetype: mimeType,
-      mentions: options?.mentionsIds,
-    });
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        video: buffer,
+        caption: caption ?? "",
+        mimetype: mimeType,
+        mentions: options?.mentionsIds,
+      },
+      options
+    );
   }
 
   /**
