@@ -6,7 +6,6 @@ class PingCommand implements IBotCommand {
   aliases: string[] = ["p"];
   async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
     await chat.SendText("Pong!");
-    // await chat.SendImgWithCaption("./test/image.png", "I'm a caption!");
   }
 }
 
@@ -60,13 +59,16 @@ bot.Start();
 // TODO : Features
 // [ ] GROUP UTILITES (ICommand, Bot): Give group utilites (fetch all members for example) => Bot should expose GetGroupMetadata and group handling and ChatContext should provide facilities for group info (and group handling?)
 // [ ] CHATCONTEXT:  must have a WaitMsg_# (per message type) dedicated.
-// [ ] GENERAL: Document Update => Should be capable to RECEIVE and SEND documents!
-//        [ ]: Send documents
-//              [ ]: Test..
+// [X] GENERAL: Document Update => Should be capable to RECEIVE and SEND documents!
+//        [X]: Send documents
+//              [X]: Test..
 //        [ ]: Receive documents
 //              [ ]: Test..
 //      @Note: So far, it can recognize and get documents, but not sending (not tested at all) ❌
-// [ ]: WhatsSocket.SugarSender: Test MIME types being inferred correctly from WhatsSocket.SugarSender (TESTS) on all MULTIMEDIA SENDING!
+// [X]: WhatsSocket.SugarSender: Test MIME types being inferred correctly from WhatsSocket.SugarSender (TESTS) on all MULTIMEDIA SENDING!
 // [ ]: WhatsSocket.Start : If internal baileys socket crashes at first run, should reset itself, or console.log user should reset the program. => Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 // CORRECT al ChatContext sending msgs with good params to handle (only string | buffer && extensiontype!);....
 // [ ]: Add a default emoji to send to original msgs when occurs an error (configurable on bot instatiation params!)
+
+//TODO: Improve and document bot EVENTS!! Exon's Feedback!
+//TODO: Improve loggin docs, when creating bot object
