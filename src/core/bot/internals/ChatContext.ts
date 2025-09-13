@@ -662,10 +662,10 @@ export class ChatContext {
     return buffer;
   }
 
-  @autobind
-  public async WaitReactionEmoji(whatsMsgToWaitOn: WhatsappMessage, emojiMsg: string) {
-    //Should return the id who reacted, only
-  }
+  // @autobind
+  // public async WaitReactionEmoji(whatsMsgToWaitOn: WhatsappMessage, emojiMsg: string) {
+  //   //Should return the id who reacted, only
+  // }
 
   //TODO: It needs:
   // [ ]: WaitReactionEmoji

@@ -1,8 +1,9 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": [
-    "**/*.test.ts",
-    "src/core/whats_socket/mocks/",
-    "src/mocks/"
-  ]
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "build"
+  },
+  "exclude": ["**/*.test.ts", "src/core/whats_socket/mocks/", "src/mocks/"]
 }

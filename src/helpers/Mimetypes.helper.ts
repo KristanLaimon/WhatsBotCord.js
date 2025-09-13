@@ -12,7 +12,7 @@ import path from "node:path";
  * - "png"        (missing leading ".")
  * - "file.png"   (this is a path, not an extension)
  */
-const isExtension_regex = /^\.[a-zA-Z0-9]{1,}$/;
+// const isExtension_regex = /^\.[a-zA-Z0-9]{1,}$/;
 
 /**
  * Regex to check if a string is a valid **path** (relative or absolute).

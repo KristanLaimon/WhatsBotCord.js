@@ -27,13 +27,13 @@
     "typescript-eslint": "^8.42.0"
   },
   "scripts": {
-    "build": "bun fullcheck && bun fulltest && bun run build",
-    "buildonly": "tsc --project tsconfig.build.json",
-    "fullcheck": "bun check && bun lint",
     "check": "tsc --noEmit",
     "lint": "eslint",
-    "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
+    "fullcheck": "bun check && bun lint",
     "fastest": "cross-env SKIP_LONG_TESTS=true bun test",
+    "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
+    "build": "bun fullcheck && bun fulltest && bun run buildonly",
+    "buildonly": "tsc --project tsconfig.build.json",
     "prerelease_upgrade": "npm version prerelease --preid=beta",
     "try": "bun ./src/index.test.ts"
   },

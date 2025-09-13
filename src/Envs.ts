@@ -2,11 +2,11 @@ import dotenv from "dotenv";
 dotenv.config({ path: "./.env.development", quiet: true });
 
 /**
- * This file contains environment variables and flags that are used throughout 
+ * This file contains environment variables and flags that are used throughout
  * the project to determine the environment in which the code is running.
- * 
+ *
  * EXPECTED ENVIRONMENT VARIABLES:
- * 1. ISDEVELOPMENT: "true" or "false" 
+ * 1. ISDEVELOPMENT: "true" or "false"
  * 2. ISCOMPILED: "true" or "false" (if compiled with Bun will all paths will be relative to current working directory otherwise they will be relative to the project root)
  */
 
@@ -17,4 +17,3 @@ export const isDev = process.env["ISDEVELOPMENT"] === "true";
 export const isCompiled = process.env["ISCOMPILED"] === "true";
 
 export const skipLongTests: boolean = process.env["SKIP_LONG_TESTS"] === "true";
-
