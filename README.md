@@ -32,13 +32,13 @@
 ## Installation
 
 ```shell
-npm install whatsbotcord@beta
+npm install whatsbotcord
 ```
 
 or
 
 ```shell
-bun i whatsbotcord@beta
+bun i whatsbotcord
 ```
 
 - **_WhatsApp Account_**: You NEED an active WhatsApp account on a mobile device to scan a QR code for Web Device Login (not an official WhatsApp Business API).
@@ -166,6 +166,8 @@ you want to mention many people at once.
 
 There are helpers in this library to convert easily even from a whatsapp msg to fetch its id formatted and ID,
 you can use WhatsappHelpers (import it from whatsbordcord lib) to do it easily.
+
+Note: If you use this fetchgroup method when this command is being called from private chat, it will return null;
 
 Heres a real world example of how to recreate the famous "@everyone" command from discord.
 
