@@ -142,6 +142,70 @@ bot.Commands.Add(
 bot.Start();
 ```
 
+## Usage with group data and tags
+
+If your command is being called/executed from a group, you can use FetchGroupData() from context object to fetch all info
+and send it.
+Its kinda tricky how @mentions works, you need to pass the ID of the user formatted in the raw txt msg and send
+his ID as an array along the options of SendText.
+
+Steps:
+
+- Lets say we have a user with ID: 234234234234@lid
+- You need to convert it into: @234234234234, and send it, but its plain text so far.
+- To convert it into a mention, you need to pass in the obj params {mentionIds: ["234234234234@lid"]}
+
+So you would send:
+
+```js
+await ctx.SendText("@234234234234", /** Params */ { mentionIds: ["234234234234@lid"] });
+```
+
+Yes, that means it _has to be in the same order_, first @234234234234 with index 0 of mentionsIds and so on if
+you want to mention many people at once.
+
+There are helpers in this library to convert easily even from a whatsapp msg to fetch its id formatted and ID,
+you can use WhatsappHelpers (import it from whatsbordcord lib) to do it easily.
+
+Heres a real world example of how to recreate the famous "@everyone" command from discord.
+
+```js
+import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType } from "whatsbotcord";
+
+// =============== EveryoneTag.ts ================
+class EveryoneTag implements IBotCommand {
+  name: string = "e";
+  description: string = "replies with pong!";
+  aliases: string[] = ["test"];
+  async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
+    const res = await chat.FetchGroupData();
+    if (res) {
+      /**
+       *  In this case is easy, res comes with res.members which is an array of all members with their
+       *  respective @23423423 formatted mention and ID 234234234@lid ready to send. This is abstracted
+       *  thanks to this library!
+      */
+      const mentions = res.members.map((m) => m.asMentionFormatted!);
+      const ids = res.members.map((m) => m.rawId!);
+      await chat.SendText(mentions.join(" "), { mentionsIds: ids });
+    }
+  }
+}
+
+
+// ========================== MAIN ==============================
+const bot = new Bot({
+  commandPrefix: ["$", "!", "/"],
+  tagCharPrefix: ["@"],
+  credentialsFolder: "./auth",
+  loggerMode: "recommended",
+});
+bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
+bot.Start();
+```
+
+Then in chat you can easily use @everyone and bot will mention everyone, like discord!
+
 # Documentation
 
 Of course, chat or context object provided in commands has a lot more methods availables to send:

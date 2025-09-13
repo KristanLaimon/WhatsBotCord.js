@@ -1,14 +1,23 @@
 import type { WAMessage } from "baileys";
 import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
 
-export type WhatsappsenderIDType = "legacy LID" | "modern PN";
+//TODO: Export these types
+/**
+ * Enum representing group sending modes.
+ */
+export enum WhatsappIdType {
+  /** Legacy group addressing mode (`pn`) */
+  Legacy = "pn",
+  /** Modern group addressing mode (`lid`) */
+  Modern = "lid",
+}
 
 export type WhatsappIDInfo = {
   /**
    * The original WhatsApp ID as assigned by WhatsApp.
    * This is the raw identifier you receive in messages, without any formatting.
    */
-  rawId: string;
+  rawId?: string;
 
   /**
    * The phone number formatted for mentions in messages.
@@ -21,14 +30,14 @@ export type WhatsappIDInfo = {
    *
    * Note: When sending a message through the socket, make sure to include the sender's full raw ID in the array if required.
    */
-  asMentionFormatted: string;
+  asMentionFormatted?: string;
 
   /**
    * Indicates the type of WhatsApp ID received.
    * - "lid": The ID comes from a group message as a linked device identifier. Messages cannot be sent directly to a `@lid`.
    * - "full": The ID comes from a private chat and is a full WhatsApp ID (e.g., '1234567890@s.whatsapp.net'), which can be used to send messages directly.
    */
-  WhatsappIdType: WhatsappsenderIDType;
+  WhatsappIdType?: WhatsappIdType;
 };
 
 /**
@@ -55,11 +64,11 @@ export function WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(rawMsg: W
 
 export function WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(whatsappIDStr: string): WhatsappIDInfo {
   const idNumbersOnly = whatsappIDStr.split("@").at(0)!;
-  let whatsIdType: WhatsappsenderIDType;
+  let whatsIdType: WhatsappIdType;
   if (WhatsappHelper_isLIDIdentifier(whatsappIDStr)) {
-    whatsIdType = "legacy LID";
+    whatsIdType = WhatsappIdType.Modern;
   } else if (WhatsappHelper_isFullWhatsappIdUser(whatsappIDStr)) {
-    whatsIdType = "modern PN";
+    whatsIdType = WhatsappIdType.Legacy;
   } else {
     throw new Error("WhatsappHelper_ExtractWhatsappIdFromSender couldn't get rawMsgs type id. Got instead: " + whatsappIDStr);
   }
@@ -76,7 +85,7 @@ export function WhatsappHelper_ExtractWhatsappInfoFromMention(mentionId: string)
   return {
     rawId: `${number}${WhatsappLIDIdentifier}`,
     asMentionFormatted: mentionId,
-    WhatsappIdType: "legacy LID",
+    WhatsappIdType: WhatsappIdType.Modern,
   };
 }
 

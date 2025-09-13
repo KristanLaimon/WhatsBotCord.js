@@ -1,6 +1,6 @@
 import type { GroupMetadata } from "baileys";
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
-import { type WhatsappIDInfo, WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId } from "../../../helpers/Whatsapp.helper.js";
+import { type WhatsappIDInfo, WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
 import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
@@ -291,15 +291,22 @@ export class WhatsSocket_Submodule_Receiver {
     } catch {
       return null;
     }
-    const participants: ParticipantInfo[] = res.participants.map((info) => {
+    const participants: ParticipantInfo[] = res.participants.map((info): ParticipantInfo => {
+      const foundId = info.id || info.lid;
+      let foundWhatsInfo: WhatsappIDInfo | null = null;
+      if (foundId) {
+        foundWhatsInfo = WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(foundId);
+      }
       return {
         isAdmin: info.admin === "superadmin",
-        info: info.lid ? WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(info.lid) : null,
+        asMentionFormatted: foundWhatsInfo?.asMentionFormatted,
+        rawId: foundWhatsInfo?.rawId,
+        WhatsappIdType: foundWhatsInfo?.WhatsappIdType,
       };
     });
     return {
       id: res.id,
-      sendingMode: res.addressingMode === "pn" ? GroupSendingMode.Legacy : GroupSendingMode.Modern,
+      sendingMode: res.addressingMode === "pn" ? WhatsappIdType.Legacy : WhatsappIdType.Modern,
       ownerName: res.subjectOwner || res.owner || null,
       groupName: res.subject,
       groupDescription: res.desc || null,
@@ -310,7 +317,7 @@ export class WhatsSocket_Submodule_Receiver {
       membersCanAddOtherMembers: res.memberAddMode || null,
       needsRequestApprovalToJoinIn: res.joinApprovalMode ?? null,
       isCommunityAnnounceChannel: res.isCommunityAnnounce || null,
-      participantCount: res.participants.length || null,
+      membersCount: res.participants.length || null,
       ephemeralDuration: res.ephemeralDuration || null,
       author: null,
       lastNameChangeDateTime: res.subjectTime || null,
@@ -320,26 +327,13 @@ export class WhatsSocket_Submodule_Receiver {
   }
 }
 
-//TODO: Export these types
-/**
- * Enum representing group sending modes.
- */
-export enum GroupSendingMode {
-  /** Legacy group addressing mode (`pn`) */
-  Legacy = "pn",
-  /** Modern group addressing mode (`lid`) */
-  Modern = "lid",
-}
-
 /**
  * Represents a participant in a WhatsApp group.
  */
 export type ParticipantInfo = {
   /** Whether this participant is an admin */
   isAdmin: boolean;
-  /** The participant's WhatsApp ID info, or null if unavailable */
-  info: WhatsappIDInfo | null;
-};
+} & WhatsappIDInfo;
 
 /**
  * Represents all relevant metadata for a WhatsApp group chat.
@@ -348,7 +342,7 @@ export type ChatContextGroupData = {
   /** Group ID */
   id: string;
   /** Sending mode of the group */
-  sendingMode: GroupSendingMode;
+  sendingMode: WhatsappIdType;
   /** Name of the group owner */
   ownerName: string | null;
   /** Display name of the group */
@@ -368,7 +362,7 @@ export type ChatContextGroupData = {
   /** Whether the group is a community announce channel */
   isCommunityAnnounceChannel: boolean | null;
   /** Total number of participants */
-  participantCount: number | null;
+  membersCount: number | null;
   /** Ephemeral message duration in seconds, if enabled */
   ephemeralDuration: number | null;
   /** Invite code for the group */

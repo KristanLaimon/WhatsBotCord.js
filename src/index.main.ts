@@ -1,13 +1,16 @@
 import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType } from "src/index.js";
 
-class PingCommand implements IBotCommand {
-  name: string = "t";
+// =============== EveryoneTag.ts ================
+class EveryoneTag implements IBotCommand {
+  name: string = "e";
   description: string = "replies with pong!";
   aliases: string[] = ["test"];
   async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
     const res = await chat.FetchGroupData();
     if (res) {
-      console.log(res);
+      const mentions = res.members.map((m) => m.asMentionFormatted!);
+      const ids = res.members.map((m) => m.rawId!);
+      await chat.SendText(mentions.join(" "), { mentionsIds: ids });
     }
   }
 }
@@ -17,9 +20,9 @@ const bot = new Bot({
   commandPrefix: ["$", "!", "/"],
   tagCharPrefix: ["@"],
   credentialsFolder: "./auth",
-  loggerMode: "debug",
+  loggerMode: "recommended",
 });
-bot.Commands.Add(new PingCommand(), CommandType.Normal);
+bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
 bot.Start();
 
 // ✅ Essential Testing
