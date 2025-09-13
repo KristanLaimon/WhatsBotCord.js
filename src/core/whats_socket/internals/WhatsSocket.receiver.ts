@@ -1,5 +1,5 @@
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
-import type { MsgType, SenderType } from "../../../Msg.types.js";
+import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
 
@@ -102,6 +102,7 @@ export class WhatsSocket_Submodule_Receiver {
 
   /**
    * Internal helper that waits for the next message satisfying a success condition.
+   * Cancel logic and MsgType checking validation is made here, do not do it on successConditionCallback
    *
    * @param successConditionCallback - Callback to determine if the message meets the success criteria.
    * @param chatIdToLookFor - Chat ID where the message should arrive.
@@ -111,66 +112,56 @@ export class WhatsSocket_Submodule_Receiver {
    */
   private _waitNextMsg(
     successConditionCallback: SuccessConditionCallback,
-    chatIdToLookFor: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
     //Options default values
-    const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, wrongTypeFeedbackMsg, cancelFeedbackMsg } = options;
+    const { cancelKeywords = [], ignoreSelfMessages = true, timeoutSeconds = 30, cancelFeedbackMsg, wrongTypeFeedbackMsg } = options;
 
+    let cachedChatId: string = "====default ID===== (this is error msg), check WhatsSocket.receiver.ts";
     return new Promise((resolve: (WhatsappMessage: WhatsappMessage) => void, reject: (reason: WhatsSocketReceiverError) => void) => {
       let timer: NodeJS.Timeout;
       const resetTimeout = () => {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
-          reject({ wasAbortedByUser: false, errorMessage: WhatsSocketReceiverMsgError.Timeout, chatId: chatIdToLookFor, userId: null });
+          reject({ wasAbortedByUser: false, errorMessage: WhatsSocketReceiverMsgError.Timeout, chatId: cachedChatId, userId: null });
         }, timeoutSeconds * 1000);
       };
 
       const listener = (userId: string | null, chatId: string, msg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => {
-        if (msg.key.remoteJid !== chatIdToLookFor) return;
-
+        // @deprecated_line: This is supposed to be validated on param 'successConditionCallback'
+        // if (msg.key.remoteJid !== chatIdToLookFor) return;
+        cachedChatId = chatId;
         if (ignoreSelfMessages) {
           if (msg.key.fromMe) return;
         }
 
         resetTimeout();
 
-        //If not null, means it is a valid text message with readable content as plain text;
-        const expectedTxtMsgContent: string | null = MsgHelper_FullMsg_GetText(msg);
-
-        //Priority #1: Check if its a suspicious msg (very large)
-        // @deprecated!
-        // if (expectedTxtMsgContent) {
-        //   if (expectedTxtMsgContent.length > 1000) {
-        //     this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
-        //     clearTimeout(timer);
-        //     reject({ wasAbortedByUser: false, errorMessage: "User has sent too much text", chatId: chatId, userId: userId });
-        //     return;
-        //   }
-        // }
-
         //Priority #2: Check if it fits our conditions
         if (!successConditionCallback(userId, chatId, msg, msgType, senderType)) return;
 
-        //Priority #3: Check if user is trying to cancel this command
-        if (expectedTxtMsgContent) {
-          for (let i = 0; i < cancelKeywords.length; i++) {
-            const cancelKeyWordToCheck = cancelKeywords[i];
-            if (cancelKeyWordToCheck && expectedTxtMsgContent.includes(cancelKeyWordToCheck)) {
-              this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
-              clearTimeout(timer);
-              if (cancelFeedbackMsg) {
-                this._whatsSocket.Send.Text(chatId, cancelFeedbackMsg);
+        if (msgType === MsgType.Text) {
+          //Priority #1: Check if user is trying to cancel this command
+          const expectedTxtMsgContent: string | null = MsgHelper_FullMsg_GetText(msg);
+          if (expectedTxtMsgContent) {
+            for (let i = 0; i < cancelKeywords.length; i++) {
+              const cancelKeyWordToCheck = cancelKeywords[i];
+              if (cancelKeyWordToCheck && expectedTxtMsgContent.includes(cancelKeyWordToCheck)) {
+                this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
+                clearTimeout(timer);
+                if (cancelFeedbackMsg) {
+                  this._whatsSocket.Send.Text(chatId, cancelFeedbackMsg);
+                }
+                reject({ wasAbortedByUser: true, errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting, chatId: chatId, userId: userId });
+                return;
               }
-              reject({ wasAbortedByUser: true, errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting, chatId: chatId, userId: userId });
-              return;
             }
           }
         }
 
-        //Priority #4: All good?, User not cancelling, or even text, let's verify if its the type expected
+        // Priority #3: All good?, User not cancelling, or even text, let's verify if its the type expected
         if (msgType !== expectedMsgType) {
           if (wrongTypeFeedbackMsg) {
             this._whatsSocket.Send.Text(chatId, wrongTypeFeedbackMsg);
@@ -214,8 +205,16 @@ export class WhatsSocket_Submodule_Receiver {
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
-    const conditionCallback: SuccessConditionCallback = (_senderID, _chatId, msg, _msgType, _senderType) => msg.key.participant === userIDToWait;
-    return await this._waitNextMsg(conditionCallback, chatToWaitOnID, expectedMsgType, options);
+    //@note:  ChatId validation is already done on this._waitNextMsg method
+    const conditionCallback: SuccessConditionCallback = (participantID, actualChatID, _, _actualMsgType, ___) => {
+      //#1 Comes from same group?
+      if (actualChatID !== chatToWaitOnID) return false;
+      //#2 Its from the expected participant?
+      if (participantID !== userIDToWait) return false;
+
+      return true;
+    };
+    return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
 
   /**
@@ -240,8 +239,18 @@ export class WhatsSocket_Submodule_Receiver {
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
-    const conditionCallback: SuccessConditionCallback = (__userId, chatId, __incomingRawMsg, __incomingMsgType, __incomindSenderType) =>
-      chatId === userIdToWait;
-    return await this._waitNextMsg(conditionCallback, userIdToWait, expectedMsgType, options);
+    //@note:  ChatId validation is already done on this._waitNextMsg method
+    const conditionCallback: SuccessConditionCallback = (_userId, actualChatId, _rawMsg, _actualMsgType, _senderType) => {
+      if (userIdToWait !== actualChatId) return false;
+      return true;
+    };
+    return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
+
+  // public async WaitUntilNextRawMsgFromGroupOrUserWithEmojiReactionInPrivateConversation(
+  //   userIdChat: string,
+  //   options: WhatsSocketReceiverWaitOptions
+  // ): Promise<> {
+  //   const res: WhatsappMessage = await this.WaitUntilNextRawMsgFromUserIdInPrivateConversation(userIdChat, InteractionType.EmojiReaction, options);
+  // }
 }

@@ -1,5 +1,6 @@
 import { type WAMessage, type proto } from "baileys";
 import type { MsgType, SenderType } from "../../../Msg.types.js";
+import { BotMinimalInfo } from "../bot.js";
 
 /**
  * Arguments provided to a bot command when it is executed.
@@ -50,6 +51,8 @@ export type CommandArgs = {
    * Useful for commands that operate on a specific previous message.
    */
   quotedMsgInfo: FoundQuotedMsg | null;
+
+  botInfo: BotMinimalInfo;
 };
 
 /**

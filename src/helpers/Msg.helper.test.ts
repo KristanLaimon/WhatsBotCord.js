@@ -124,7 +124,7 @@ test("MsgHelper_GetMsgTypeFromRawMsg", () => {
   expect(msgType).toBe(MsgType.Poll);
 
   msgType = MsgHelper_FullMsg_GetMsgType(locationMsg);
-  expect(msgType).toBe(MsgType.Location);
+  expect(msgType).toBe(MsgType.Ubication);
 
   msgType = MsgHelper_FullMsg_GetMsgType(contactMsg);
   expect(msgType).toBe(MsgType.Contact);

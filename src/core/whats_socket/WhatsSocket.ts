@@ -261,7 +261,15 @@ export default class WhatsSocket implements IWhatsSocket {
 
       // Connection closed
       if (connection === "close") {
-        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        const error = lastDisconnect?.error as Boom | undefined;
+        const statusCode = error?.output?.statusCode;
+        // const reason = error?.output?.payload?.message;
+
+        // if (reason === "replaced") {
+        //   console.warn("WARNING: Another session has replaced this one. Not reconnecting.");
+        //   await this.Shutdown();
+        //   return;
+        // }
 
         // Only attempt to reconnect if not logged out
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;

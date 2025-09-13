@@ -13,7 +13,7 @@ import { imageWithCaptionMsg } from "../../../mocks/MockManyTypesMsgs.mock.js";
 import { MsgType, SenderType } from "../../../Msg.types.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../types.js";
-import { WhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError, type WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver.js";
+import { type WhatsSocketReceiverError, type WhatsSocketReceiverWaitOptions, WhatsSocket_Submodule_Receiver } from "./WhatsSocket.receiver.js";
 
 /**TODO: List of things to test for receiving messages
  * WhatsSocketReceiver
@@ -75,7 +75,7 @@ it("Only original sender can cancel waiting msg", async (): Promise<void> => {
   const receive = new WhatsSocket_Submodule_Receiver(mockSocket);
 
   const originalSenderId = GroupMsg_SENDERID;
-  const notRelatedSenderId = "123123XDDDDD1@lid";
+  const notRelatedSenderId = "123_NOT_RELATED_@lid";
   const main: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(originalSenderId, GroupMsg_CHATID, MsgType.Image, {
     ...WAITOPTIONS,
     cancelKeywords: ["cancel", "cancelar"],
@@ -303,7 +303,7 @@ it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP
   mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group);
   mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Sticker, SenderType.Group);
   mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Video, SenderType.Group);
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Location, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Ubication, SenderType.Group);
 
   let awaitedMsg: WhatsappMessage | undefined;
   let error: WhatsSocketReceiverError | undefined;

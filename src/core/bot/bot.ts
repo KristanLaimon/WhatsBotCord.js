@@ -1,15 +1,20 @@
 import type { WAMessage, proto } from "baileys";
 import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
-import { MsgType, type SenderType } from "../../Msg.types.js";
-import { WhatsSocketReceiverHelper_isReceiverError, type WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver.js";
+import { type SenderType, MsgType } from "../../Msg.types.js";
+import { type WhatsSocket_Submodule_Receiver, WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
-import { ChatContext, type ChatContextConfig } from "./internals/ChatContext.js";
+import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
 import type { ICommand } from "./internals/IBotCommand.js";
+
+export type BotMinimalInfo = {
+  Settings: WhatsBotOptions;
+  Commands: WhatsBotCommands;
+};
 
 export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
   Omit<Partial<ChatContextConfig>, "ignoreSelfMessages"> & {
@@ -77,7 +82,7 @@ export type BotMiddleWareFunct = (
  * bot.Commands.Register("ping", async (ctx) => ctx.Reply("pong"));
  * ```
  */
-export default class Bot {
+export default class Bot implements BotMinimalInfo {
   private _socket: IWhatsSocket;
   private _commandSearcher: CommandsSearcher;
   private _internalMiddleware: BotMiddleWareFunct[] = [];
@@ -368,6 +373,7 @@ export default class Bot {
           {
             Receive: this._socket.Receive,
             Send: this._socket.Send,
+            InternalSocket: this._socket,
           },
           /** Command basic arguments */
           {
@@ -378,6 +384,7 @@ export default class Bot {
             senderType: senderType,
             userId: senderId,
             quotedMsgInfo: quotedMsgAsArgument,
+            botInfo: this,
           }
         );
       } catch (e) {

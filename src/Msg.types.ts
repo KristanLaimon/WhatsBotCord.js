@@ -6,7 +6,7 @@ export enum MsgType {
   Audio,
   Contact,
   Poll,
-  Location,
+  Ubication,
   Document,
   Unknown,
 }

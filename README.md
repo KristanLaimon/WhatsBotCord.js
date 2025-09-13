@@ -128,11 +128,11 @@ bot.Commands.Add(
         await chat.SendText("I've received your img, Im going to send it back");
         /* -> */ await chat.SendImgFromBufferWithCaption(imgReceived, ".png", "Im a caption");
         //OR
-        /* -> */ await chat.SendImg(imgRecevied);
+        /* -> */ await chat.SendImgFromBuffer(imgReceived, ".png");
         await chat.Ok(); //Sends a ✅ reaction emoji to original msg
         //Otherwise, its null
       } else {
-        await chat.SendText("No recibí tu mensaje... Fin");
+        await chat.SendText("I didn't get your msg... End of command");
         await chat.Fail(); //Sends a ❌ reaction emoji to original msg
       }
     },

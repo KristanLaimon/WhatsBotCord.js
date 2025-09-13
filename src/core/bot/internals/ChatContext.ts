@@ -2,6 +2,7 @@ import { downloadMediaMessage } from "baileys";
 import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../../../Msg.types.js";
+import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
 import {
   type WhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
@@ -571,24 +572,18 @@ export class ChatContext {
   }
   //============================ RECEIVING ==============================
   /**
-   * Waits for the next incoming message of the given `expectedType`, restricted to the
-   * original user who initiated this chat context.
+   * Waits for the next message of the specified type from the original sender.
    *
-   * - In **group chats**, only messages from the fixed original sender will be considered.
-   *   Messages from other participants are ignored without resolving the promise.
-   * - In **private chats**, only the initiating user’s replies are considered.
+   * @param expectedType - Type of message to wait for (e.g., text, media, location).
+   * @param localOptions - Optional configuration overrides (e.g., timeout, cancel keywords).
+   * @returns Resolves with the next matching `WhatsappMessage`, or `null` if no message is received.
    *
-   * Behavior:
-   * - If the user sends the configured **cancel keyword**, the ongoing command is aborted
-   *   immediately (the bot stays alive, but this flow stops).
-   * - If the wait times out (no message arrives within the configured window),
-   *   the method resolves with `null`.
-   * - If a valid message arrives in time, the full `WhatsappMessage` object is returned.
-   *
-   * @param expectedType - Type of message to wait for (e.g., text, media).
-   * @param localOptions - Optional overrides for waiting configuration (e.g., timeout).
-   * @returns The next matching `WhatsappMessage`, or `null` if none is received.
-   * @throws If an invalid sender type is detected or if unexpected receiver errors occur.
+   * @example
+   * ```ts
+   * const message = await chatContext.WaitMsg(MsgType.Text, { timeoutSeconds: 30 });
+   * if (message) console.log("Received message:", message);
+   * else console.log("No message received within timeout");
+   * ```
    */
   @autobind
   public async WaitMsg(expectedType: MsgType, localOptions?: Partial<ChatContextConfig>): Promise<WhatsappMessage | null> {
@@ -634,13 +629,17 @@ export class ChatContext {
   }
 
   /**
-   * Waits for the next text message from the original user who initiated this chat.
+   * Waits for the next text message from the original sender.
    *
-   * Messages from other participants (in groups) or from different users will be ignored
-   * without resolving this promise.
+   * @param localOptions - Optional configuration overrides (e.g., timeout, cancel keywords).
+   * @returns Resolves with the plain text of the next message, or `null` if no message is received.
    *
-   * @param localOptions - Optional waiting configuration (e.g., timeout)
-   * @returns The plain text content of the next message, or `null` if none is received
+   * @example
+   * ```ts
+   * const text = await chatContext.WaitText({ timeoutSeconds: 20 });
+   * if (text) console.log("User sent:", text);
+   * else console.log("No text message received");
+   * ```
    */
   @autobind
   public async WaitText(localOptions?: Partial<ChatContextConfig>): Promise<string | null> {
@@ -651,8 +650,17 @@ export class ChatContext {
   }
 
   /**
-   * recommended to store them im .webp file!
-   * @nottested
+   * Waits for the next multimedia message of the specified type (e.g., image, video, audio).
+   *
+   * @param msgTypeToWaitFor - Multimedia type to wait for.
+   * @param localOptions - Optional configuration overrides (e.g., timeout).
+   * @returns Resolves with a `Buffer` containing the media, or `null` if no message is received.
+   *
+   * @example
+   * ```ts
+   * const imageBuffer = await chatContext.WaitMultimedia(MsgType.Image, { timeoutSeconds: 30 });
+   * if (imageBuffer) saveFile("image.webp", imageBuffer);
+   * ```
    */
   @autobind
   public async WaitMultimedia(msgTypeToWaitFor: MsgTypeMultimediaOnly, localOptions?: Partial<ChatContextConfig>): Promise<Buffer | null> {
@@ -662,18 +670,76 @@ export class ChatContext {
     return buffer;
   }
 
-  // @autobind
-  // public async WaitReactionEmoji(whatsMsgToWaitOn: WhatsappMessage, emojiMsg: string) {
-  //   //Should return the id who reacted, only
-  // }
+  /**
+   * Waits for the next location message from the original sender.
+   *
+   * @param localOptions - Optional configuration overrides (e.g., timeout).
+   * @returns Resolves with an object containing location coordinates and thumbnail, or `null` if no message is received.
+   *
+   * @example
+   * ```ts
+   * const location = await chatContext.WaitUbication({ timeoutSeconds: 30 });
+   * if (location) console.log(`Lat: ${location.degreesLatitude}, Lon: ${location.degreesLongitude}`);
+   * ```
+   */
+  @autobind
+  public async WaitUbication(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextUbicationResponse | null> {
+    const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Ubication, localOptions);
+    if (!found) return null;
+    const res = found?.message?.locationMessage;
+    if (!res) return null;
+    return {
+      degreesLatitude: res.degreesLatitude ?? -1,
+      degreesLongitude: res.degreesLongitude ?? -1,
+      thumbnailJpegBuffer: res.jpegThumbnail ?? null,
+      isLive: res.isLive ?? false,
+    };
+  }
 
-  //TODO: It needs:
-  // [ ]: WaitReactionEmoji
-  // [ ]: WaitUbication
-  // [ ]: WaitPoll
-  // [X]: WaitText
-  // [ ]: WaitContact
+  /**
+   * Waits for the next contact message from the original sender.
+   *
+   * @param localOptions - Optional configuration overrides (e.g., timeout).
+   * @returns Resolves with an object containing contact name, number, and full WhatsApp ID, or `null` if no message is received.
+   *
+   * @example
+   * ```ts
+   * const contact = await chatContext.WaitContact({ timeoutSeconds: 30 });
+   * if (contact) console.log(`Name: ${contact.name}, Number: ${contact.number}, WhatsApp ID: ${contact.whatsappId}`);
+   * ```
+   */
+  @autobind
+  public async WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactResponse | null> {
+    const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Contact, localOptions);
+    if (!found) return null;
+    const contactMessage = found?.message?.contactMessage;
+    if (!contactMessage) return null;
+
+    const contactNumber = contactMessage.vcard?.match(/WAID=(\d+)/i)?.[1] || "";
+
+    const whatsappId = contactNumber ? `${contactNumber}${WhatsappIndividualIdentifier}` : "";
+
+    return {
+      name: contactMessage.displayName || "",
+      number: contactNumber,
+      whatsappId: whatsappId,
+    };
+  }
 }
 
 export type MsgTypeMultimediaOnly = MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio;
 // amongus zorro bruh skibidi beatbox - N.
+
+export type ChatContextUbicationResponse = {
+  degreesLatitude: number;
+  degreesLongitude: number;
+  /** Buffer img preview */
+  thumbnailJpegBuffer: Uint8Array | null;
+  isLive: boolean | null;
+};
+
+export type ChatContextContactResponse = {
+  name: string;
+  number: string;
+  whatsappId: string;
+};

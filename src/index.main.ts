@@ -1,11 +1,15 @@
-import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "src/index.js";
+import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType } from "src/index.js";
 
 class PingCommand implements IBotCommand {
-  name: string = "ping";
+  name: string = "t";
   description: string = "replies with pong!";
-  aliases: string[] = ["p"];
+  aliases: string[] = ["test"];
   async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
-    await chat.SendText("Pong!");
+    await chat.SendText("Manda un contacto, paro:");
+    const location = await chat.WaitContact({ timeoutSeconds: 30 });
+    if (location) {
+      console.log(JSON.stringify(location, null, 2));
+    }
   }
 }
 
@@ -14,31 +18,9 @@ const bot = new Bot({
   commandPrefix: ["$", "!", "/"],
   tagCharPrefix: ["@"],
   credentialsFolder: "./auth",
-  loggerMode: "recommended",
-  wrongTypeFeedbackMsg: "Debes de mandar un tipo valido",
+  loggerMode: "debug",
 });
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
-bot.Commands.Add(
-  {
-    name: "search",
-    description: "a small desc",
-    async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs) {
-      await chat.Loading();
-      await chat.SendText("Send me a image:");
-      const imgReceived = await chat.WaitMultimedia(MsgType.Image, { timeoutSeconds: 60, wrongTypeFeedbackMsg: "Hey, mandame uan imagen, no otra cosa" });
-      //llamada base de datos
-      if (imgReceived) {
-        await chat.SendText("Recibí tu imagen!, te lo reenviaré");
-        await chat.SendImgFromBufferWithCaption(imgReceived, ".png", "Im a caption!");
-        await chat.Ok();
-      } else {
-        await chat.SendText("No recibí tu mensaje... Fin");
-        await chat.Fail();
-      }
-    },
-  },
-  CommandType.Normal
-);
 bot.Start();
 
 // ✅ Essential Testing

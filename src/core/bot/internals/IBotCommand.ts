@@ -1,5 +1,6 @@
 import type { WhatsSocket_Submodule_Receiver } from "../../../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsSocket_Submodule_SugarSender } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket } from "../../whats_socket/IWhatsSocket.js";
 import type { ChatContext } from "./ChatContext.js";
 import type { CommandArgs } from "./CommandsSearcher.types.js";
 
@@ -65,4 +66,6 @@ export type RawMsgAPI = {
    * Provides low-level access to incoming message events and raw data.
    */
   Receive: WhatsSocket_Submodule_Receiver;
+
+  InternalSocket: IWhatsSocket;
 };

@@ -35,7 +35,7 @@
     "build": "bun fullcheck && bun fulltest && bun run buildonly",
     "buildonly": "tsc --project tsconfig.build.json",
     "prerelease_upgrade": "npm version prerelease --preid=beta",
-    "try": "bun ./src/index.test.ts"
+    "try": "bun ./src/index.main.ts"
   },
   "peerDependencies": {
     "typescript": "^5.9.2"
