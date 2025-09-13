@@ -1,17 +1,4 @@
 {
-  "discord.enabled": true
-  // "editor.defaultFormatter": "esbenp.prettier-vscode",
-  // "editor.formatOnSave": true,
-  // "[javascript]": {
-  //   "editor.defaultFormatter": "esbenp.prettier-vscode"
-  // },
-  // "[typescript]": {
-  //   "editor.defaultFormatter": "esbenp.prettier-vscode"
-  // },
-  // "[json]": {
-  //   "editor.defaultFormatter": "esbenp.prettier-vscode"
-  // },
-  // "editor.codeActionsOnSave": {
-  //   "source.organizeImports": "explicit"
-  // }
+  "discord.enabled": true,
+  "typescript.preferences.importModuleSpecifierEnding": "js"
 }
