@@ -662,6 +662,11 @@ export class ChatContext {
     return buffer;
   }
 
+  @autobind
+  public async WaitReactionEmoji(whatsMsgToWaitOn: WhatsappMessage, emojiMsg: string) {
+    //Should return the id who reacted, only
+  }
+
   //TODO: It needs:
   // [ ]: WaitReactionEmoji
   // [ ]: WaitUbication
@@ -669,5 +674,6 @@ export class ChatContext {
   // [X]: WaitText
   // [ ]: WaitContact
 }
+
 export type MsgTypeMultimediaOnly = MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio;
 // amongus zorro bruh skibidi beatbox - N.

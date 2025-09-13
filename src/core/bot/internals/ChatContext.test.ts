@@ -201,10 +201,16 @@ it("Audio_WhenUsingSendAudio_ShouldCorrectlyUseSugarSenderAudio", async (): Prom
   const sendAudioSenderSpy: Mock<typeof sender.Audio> = spyOn(sender, "Audio");
   sendAudioSenderSpy.mockResolvedValueOnce({} as any);
   expect(async (): Promise<void> => {
-    await chat.SendAudio("./mockAudio.mp3", "mp3", WHATSMSGOPTIONSPARAM);
+    await chat.SendAudio("./mockAudio.mp3", WHATSMSGOPTIONSPARAM);
   }).not.toThrow();
   expect(sendAudioSenderSpy).toHaveBeenCalledTimes(1);
-  expect(sendAudioSenderSpy).toHaveBeenCalledWith(CHATID, "./mockAudio.mp3", "mp3", WHATSMSGOPTIONSPARAM);
+  expect(sendAudioSenderSpy).toHaveBeenCalledWith(
+    CHATID,
+    {
+      source: "./mockAudio.mp3",
+    },
+    WHATSMSGOPTIONSPARAM
+  );
 });
 
 it("Video_WhenUsingSendVideoWithoutCaption_ShouldCorrectlyUseSugarSenderVideo", async (): Promise<void> => {

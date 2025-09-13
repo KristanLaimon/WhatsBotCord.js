@@ -1,56 +1,46 @@
-import Whatsbotcord, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "src";
+import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "src";
 
 class PingCommand implements IBotCommand {
   name: string = "ping";
   description: string = "replies with pong!";
   aliases: string[] = ["p"];
-  async run(ctx: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
-    await ctx.SendText("Pong!");
-    await ctx.SendImgWithCaption("./test/image.png", "I'm a caption!");
+  async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
+    await chat.SendText("Pong!");
+    // await chat.SendImgWithCaption("./test/image.png", "I'm a caption!");
   }
 }
-// ========================== MAIN ==============================
-const bot = new Whatsbotcord({ commandPrefix: "!", tagCharPrefix: "@", credentialsFolder: "./auth", loggerMode: "silent" });
-bot.Commands.Add(new PingCommand(), CommandType.Normal);
 
+// ========================== MAIN ==============================
+const bot = new Bot({
+  commandPrefix: ["$", "!", "/"],
+  tagCharPrefix: ["@"],
+  credentialsFolder: "./auth",
+  loggerMode: "recommended",
+  wrongTypeFeedbackMsg: "Debes de mandar un tipo valido",
+});
+bot.Commands.Add(new PingCommand(), CommandType.Normal);
 bot.Commands.Add(
   {
-    name: "img",
+    name: "search",
     description: "a small desc",
-    async run(ctx, _, __) {
-      await ctx.Loading();
-      await ctx.SendText("Send me a msg:");
-      const imgReceived = await ctx.WaitMultimedia(MsgType.Image);
+    async run(chat, _, __) {
+      await chat.Loading();
+      await chat.SendText("Send me a image:");
+      const imgReceived = await chat.WaitMultimedia(MsgType.Image, { timeoutSeconds: 60, wrongTypeFeedbackMsg: "Hey, mandame uan imagen, no otra cosa" });
+      //llamada base de datos
       if (imgReceived) {
-        await ctx.SendText("Recibí tu imagen!, te lo reenviaré");
-        await ctx.Ok();
-        await ctx.SendImgFromBufferWithCaption(imgReceived, ".png", "Im a caption!");
+        await chat.SendText("Recibí tu imagen!, te lo reenviaré");
+        await chat.SendImgFromBufferWithCaption(imgReceived, ".png", "Im a caption!");
+        await chat.Ok();
       } else {
-        await ctx.SendText("No recibí tu mensaje... Fin");
-        await ctx.Fail();
+        await chat.SendText("No recibí tu mensaje... Fin");
+        await chat.Fail();
       }
     },
   },
   CommandType.Normal
 );
 bot.Start();
-// bot.Use(async (_senderId, chatId, rawMsg, msgType, _senderType, next) => {
-//   if (msgType === MsgType.Text) {
-//     const txt: string | null = MsgHelpers.FullMsg_GetText(rawMsg);
-//     if (txt && txt?.length > 1000) {
-//       bot.SendMsg.Text(chatId, "To muuch text!!!");
-//       return;
-//     }
-//   }
-//   next();
-// });
-// bot.Use(async (_senderId, _chatId, rawMsg, _msgType, _senderType, next) => {
-//   DebuggingHelpers.StoreMsgInHistoryJson("./debug.json", rawMsg);
-//   next();
-// });
-// bot.Events.onStartupAllGroupsIn.Subscribe((groups) => {
-//   console.log("Groups: " + groups.map((group) => JSON.stringify(group)));
-// });
 
 // ✅ Essential Testing
 /** TODO TESTING:
