@@ -1,23 +1,23 @@
 import { describe, expect, it } from "bun:test";
 import { MockGroupTxtMsg as GroupTxtMsg, MockIndividualTxtMsg as IndividualTxtMsg } from "../mocks/MockIndividualGroup.mock.js";
 import {
-  WhatsappHelper_ExtractWhatsappIdFromMention,
-  WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
+  type WhatsappIDInfo,
+  WhatsappHelper_ExtractWhatsappInfoFromMention,
+  WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg,
   WhatsappHelper_isLIDIdentifier,
   WhatsappHelper_isMentionId,
-  type WhatsappIDInfo,
 } from "./Whatsapp.helper.js";
 
 describe("WhatsappHelper_ExtractWhatsappIdFromSender", () => {
   it("WhenMsgFromGroup_ShouldExtractWhatsappLID_id_Correctly", () => {
-    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupTxtMsg);
-    expect(res.WhatsappIdType).toBe("lid");
+    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(GroupTxtMsg);
+    expect(res.WhatsappIdType).toBe("legacy LID");
     expect(res.asMentionFormatted).toBe("@999888777666");
     expect(res.rawId).toBe("999888777666@lid");
   });
   it("WhenIndividualGroup_ShouldExtractWhatsappFull_idinfo_Correctly", () => {
-    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(IndividualTxtMsg);
-    expect(res.WhatsappIdType).toBe("full");
+    const res: WhatsappIDInfo = WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(IndividualTxtMsg);
+    expect(res.WhatsappIdType).toBe("modern PN");
     expect(res.asMentionFormatted).toBe("@555123456789");
     expect(res.rawId).toBe("555123456789@s.whatsapp.net");
   });
@@ -41,21 +41,21 @@ describe("WhatsappHelper Auxiliary Functions", () => {
 
   it("WhatsappHelper_ExtractWhatsappIdFromMention should extract LID info correctly", () => {
     const mention = "@999888777666";
-    const res = WhatsappHelper_ExtractWhatsappIdFromMention(mention);
+    const res = WhatsappHelper_ExtractWhatsappInfoFromMention(mention);
     expect(res).not.toBeNull();
     expect(res?.rawId).toBe("999888777666@lid");
     expect(res?.asMentionFormatted).toBe(mention);
-    expect(res?.WhatsappIdType).toBe("lid");
+    expect(res?.WhatsappIdType).toBe("legacy LID");
 
     // invalid mention
-    expect(WhatsappHelper_ExtractWhatsappIdFromMention("123456")).toBeNull();
-    expect(WhatsappHelper_ExtractWhatsappIdFromMention("999888777666")).toBeNull();
+    expect(WhatsappHelper_ExtractWhatsappInfoFromMention("123456")).toBeNull();
+    expect(WhatsappHelper_ExtractWhatsappInfoFromMention("999888777666")).toBeNull();
   });
 
   it("WhatsappHelper_isFullWhatsappIdUser should identify full WhatsApp IDs correctly", () => {
     // Indirect test via regex
-    expect(WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(IndividualTxtMsg).WhatsappIdType).toBe("full");
+    expect(WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(IndividualTxtMsg).WhatsappIdType).toBe("modern PN");
     // false cases
-    expect(() => WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(GroupTxtMsg)).not.toThrow();
+    expect(() => WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(GroupTxtMsg)).not.toThrow();
   });
 });

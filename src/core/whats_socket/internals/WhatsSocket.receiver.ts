@@ -1,4 +1,6 @@
+import type { GroupMetadata } from "baileys";
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
+import { type WhatsappIDInfo, WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId } from "../../../helpers/Whatsapp.helper.js";
 import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
@@ -98,6 +100,11 @@ export class WhatsSocket_Submodule_Receiver {
    */
   constructor(socket: IWhatsSocket) {
     this._whatsSocket = socket;
+    //DO NOT use decorator @autobind for this class, tests start to fail due to that, here has to be done manually
+    this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
+    this.WaitUntilNextRawMsgFromUserIDInGroup = this.WaitUntilNextRawMsgFromUserIDInGroup.bind(this);
+    this.WaitUntilNextRawMsgFromUserIdInPrivateConversation = this.WaitUntilNextRawMsgFromUserIdInPrivateConversation.bind(this);
+    this._waitNextMsg = this._waitNextMsg.bind(this);
   }
 
   /**
@@ -247,10 +254,131 @@ export class WhatsSocket_Submodule_Receiver {
     return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
 
-  // public async WaitUntilNextRawMsgFromGroupOrUserWithEmojiReactionInPrivateConversation(
-  //   userIdChat: string,
-  //   options: WhatsSocketReceiverWaitOptions
-  // ): Promise<> {
-  //   const res: WhatsappMessage = await this.WaitUntilNextRawMsgFromUserIdInPrivateConversation(userIdChat, InteractionType.EmojiReaction, options);
-  // }
+  /**
+   * Retrieves metadata about a WhatsApp group chat.
+   *
+   * This method fetches all relevant information from the WhatsApp group,
+   * including the list of participants, group owner, description, invite code, and
+   * group settings like whether only admins can send messages or change group settings.
+   *
+   * @param chatId - The WhatsApp ID of the group to fetch metadata for.
+   * @returns A promise resolving to `ChatContextGroupData` containing the group metadata,
+   *          or `null` if the metadata could not be retrieved.
+   *
+   * @example
+   * ```ts
+   * const groupData = await chatContext.GetGroupMetadata("12345-67890@g.us");
+   * console.log(groupData.groupName);
+   * console.log(groupData.members.map(m => m.info?.id));
+   * ```
+   *
+   * @example
+   * Handling null:
+   * ```ts
+   * const groupData = await chatContext.GetGroupMetadata("12345-67890@g.us");
+   * if (!groupData) {
+   *   console.error("Failed to fetch group metadata.");
+   * } else {
+   *   console.log("Owner:", groupData.ownerName);
+   * }
+   * ```
+   */
+  public async GetGroupMetadata(chatId: string): Promise<ChatContextGroupData | null> {
+    let res: GroupMetadata;
+    try {
+      //In case its a bad chatId and comes from individual msg
+      res = await this._whatsSocket.GetGroupMetadata(chatId);
+    } catch {
+      return null;
+    }
+    const participants: ParticipantInfo[] = res.participants.map((info) => {
+      return {
+        isAdmin: info.admin === "superadmin",
+        info: info.lid ? WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(info.lid) : null,
+      };
+    });
+    return {
+      id: res.id,
+      sendingMode: res.addressingMode === "pn" ? GroupSendingMode.Legacy : GroupSendingMode.Modern,
+      ownerName: res.subjectOwner || res.owner || null,
+      groupName: res.subject,
+      groupDescription: res.desc || null,
+      inviteCode: res.inviteCode || null,
+      communityIdWhereItBelongs: res.isCommunity ? res.id : null,
+      onlyAdminsCanChangeGroupSettings: res.restrict || null,
+      onlyAdminsCanSendMsgs: res.announce || null,
+      membersCanAddOtherMembers: res.memberAddMode || null,
+      needsRequestApprovalToJoinIn: res.joinApprovalMode ?? null,
+      isCommunityAnnounceChannel: res.isCommunityAnnounce || null,
+      participantCount: res.participants.length || null,
+      ephemeralDuration: res.ephemeralDuration || null,
+      author: null,
+      lastNameChangeDateTime: res.subjectTime || null,
+      creationDate: res.creation || null,
+      members: participants,
+    };
+  }
 }
+
+//TODO: Export these types
+/**
+ * Enum representing group sending modes.
+ */
+export enum GroupSendingMode {
+  /** Legacy group addressing mode (`pn`) */
+  Legacy = "pn",
+  /** Modern group addressing mode (`lid`) */
+  Modern = "lid",
+}
+
+/**
+ * Represents a participant in a WhatsApp group.
+ */
+export type ParticipantInfo = {
+  /** Whether this participant is an admin */
+  isAdmin: boolean;
+  /** The participant's WhatsApp ID info, or null if unavailable */
+  info: WhatsappIDInfo | null;
+};
+
+/**
+ * Represents all relevant metadata for a WhatsApp group chat.
+ */
+export type ChatContextGroupData = {
+  /** Group ID */
+  id: string;
+  /** Sending mode of the group */
+  sendingMode: GroupSendingMode;
+  /** Name of the group owner */
+  ownerName: string | null;
+  /** Display name of the group */
+  groupName: string;
+  /** Group description */
+  groupDescription: string | null;
+  /** ID of the parent community if the group belongs to one */
+  communityIdWhereItBelongs: string | null;
+  /** Whether only admins can change group settings */
+  onlyAdminsCanChangeGroupSettings: boolean | null;
+  /** Whether only admins can send messages */
+  onlyAdminsCanSendMsgs: boolean | null;
+  /** Whether members can add other members */
+  membersCanAddOtherMembers: boolean | null;
+  /** Whether joining requires approval */
+  needsRequestApprovalToJoinIn: boolean | null;
+  /** Whether the group is a community announce channel */
+  isCommunityAnnounceChannel: boolean | null;
+  /** Total number of participants */
+  participantCount: number | null;
+  /** Ephemeral message duration in seconds, if enabled */
+  ephemeralDuration: number | null;
+  /** Invite code for the group */
+  inviteCode: string | null;
+  /** Timestamp of the last group name change */
+  lastNameChangeDateTime: number | null;
+  /** The person who added the bot or changed a setting */
+  author: string | null;
+  /** Timestamp of group creation */
+  creationDate: number | null;
+  /** Array of group participants */
+  members: ParticipantInfo[];
+};

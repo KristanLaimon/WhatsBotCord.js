@@ -1,7 +1,7 @@
 import type { WAMessage } from "baileys";
 import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
 
-export type WhatsappsenderIDType = "lid" | "full";
+export type WhatsappsenderIDType = "legacy LID" | "modern PN";
 
 export type WhatsappIDInfo = {
   /**
@@ -44,35 +44,39 @@ export type WhatsappIDInfo = {
  * const rawMsg = { key: { participant: '1234567890123@s.whatsapp.net' } };
  * const phoneInfo = Phone_GetFullPhoneInfoFromRawmsg(rawMsg);
  */
-export function WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg(rawMsg: WAMessage): WhatsappIDInfo {
+export function WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(rawMsg: WAMessage): WhatsappIDInfo {
   //Let's check if comes from private msg or group
   const id: string | null = rawMsg.key.participant || rawMsg.key.remoteJid || null;
   if (!id) {
     throw Error("This shouldn't happen, baileys library never gives both participant and remoteJid as undefined, only one of them");
   }
-  const idNumbersOnly = id.split("@").at(0)!;
+  return WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(id);
+}
+
+export function WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(whatsappIDStr: string): WhatsappIDInfo {
+  const idNumbersOnly = whatsappIDStr.split("@").at(0)!;
   let whatsIdType: WhatsappsenderIDType;
-  if (WhatsappHelper_isLIDIdentifier(id)) {
-    whatsIdType = "lid";
-  } else if (WhatsappHelper_isFullWhatsappIdUser(id)) {
-    whatsIdType = "full";
+  if (WhatsappHelper_isLIDIdentifier(whatsappIDStr)) {
+    whatsIdType = "legacy LID";
+  } else if (WhatsappHelper_isFullWhatsappIdUser(whatsappIDStr)) {
+    whatsIdType = "modern PN";
   } else {
-    throw new Error("WhatsappHelper_ExtractWhatsappIdFromSender couldn't get rawMsgs type id. Got insted: " + id);
+    throw new Error("WhatsappHelper_ExtractWhatsappIdFromSender couldn't get rawMsgs type id. Got instead: " + whatsappIDStr);
   }
   return {
     asMentionFormatted: `@${idNumbersOnly}`,
-    rawId: id,
+    rawId: whatsappIDStr,
     WhatsappIdType: whatsIdType,
   };
 }
 
-export function WhatsappHelper_ExtractWhatsappIdFromMention(mentionId: string): WhatsappIDInfo | null {
+export function WhatsappHelper_ExtractWhatsappInfoFromMention(mentionId: string): WhatsappIDInfo | null {
   if (!WhatsappHelper_isMentionId(mentionId)) return null;
   const number = mentionId.slice(1);
   return {
     rawId: `${number}${WhatsappLIDIdentifier}`,
     asMentionFormatted: mentionId,
-    WhatsappIdType: "lid",
+    WhatsappIdType: "legacy LID",
   };
 }
 

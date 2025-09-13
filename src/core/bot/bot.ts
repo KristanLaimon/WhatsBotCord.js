@@ -10,6 +10,7 @@ import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js"
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
 import type { ICommand } from "./internals/IBotCommand.js";
+import { autobind } from "../../helpers/Decorators.helper.js";
 
 export type BotMinimalInfo = {
   Settings: WhatsBotOptions;
@@ -231,10 +232,8 @@ export default class Bot implements BotMinimalInfo {
       enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
     };
 
-    this.Start = this.Start.bind(this);
     this._commandSearcher = new CommandsSearcher();
     this._socket = this.Settings.ownWhatsSocketImplementation ?? new WhatsSocket(this.Settings);
-    this.EVENT_OnMessageIncoming = this.EVENT_OnMessageIncoming.bind(this);
     this._socket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
   }
 
@@ -249,6 +248,7 @@ export default class Bot implements BotMinimalInfo {
    * await bot.Start();
    * ```
    */
+  @autobind
   public async Start(): Promise<void> {
     return this._socket.Start();
   }
@@ -288,10 +288,12 @@ export default class Bot implements BotMinimalInfo {
    *   next();
    * });
    */
+  @autobind
   public Use(middleware: BotMiddleWareFunct): void {
     this._internalMiddleware.push(middleware);
   }
 
+  @autobind
   private async EVENT_OnMessageIncoming(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType): Promise<void> {
     // ======== Middleware chain section ========
     let middlewareChainSuccess: boolean = false;

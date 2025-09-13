@@ -4,6 +4,7 @@ import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../.
 import { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
 import {
+  type ChatContextGroupData,
   type WhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverHelper_isReceiverError,
@@ -663,7 +664,10 @@ export class ChatContext {
    * ```
    */
   @autobind
-  public async WaitMultimedia(msgTypeToWaitFor: MsgTypeMultimediaOnly, localOptions?: Partial<ChatContextConfig>): Promise<Buffer | null> {
+  public async WaitMultimedia(
+    msgTypeToWaitFor: MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio,
+    localOptions?: Partial<ChatContextConfig>
+  ): Promise<Buffer | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(msgTypeToWaitFor, localOptions);
     if (!found) return null;
     const buffer = await downloadMediaMessage(found, "buffer", {});
@@ -683,7 +687,7 @@ export class ChatContext {
    * ```
    */
   @autobind
-  public async WaitUbication(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextUbicationResponse | null> {
+  public async WaitUbication(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextUbication | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Ubication, localOptions);
     if (!found) return null;
     const res = found?.message?.locationMessage;
@@ -709,7 +713,7 @@ export class ChatContext {
    * ```
    */
   @autobind
-  public async WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactResponse | null> {
+  public async WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Contact, localOptions);
     if (!found) return null;
     const contactMessage = found?.message?.contactMessage;
@@ -725,21 +729,71 @@ export class ChatContext {
       whatsappId: whatsappId,
     };
   }
+
+  /**
+   * Fetches the group data for a specific chat.
+   *
+   * This method retrieves detailed information about the group, including its ID,
+   * sending mode, owner, and participant details.
+   *
+   * Fun fact: The WhatsApp group sending mode can affect how messages are delivered
+   * to participants, with 'Legacy' indicating older behavior and 'Modern' for the newer format.
+   *
+   * @returns Resolves with the `ChatContextGroupData` object containing group details,
+   *          or `null` if the chat is an individual/private chat.
+   *
+   * @example
+   * ```ts
+   * const groupData = await chatContext.FetchGroupData();
+   * if (groupData) {
+   *   console.log("Group name:", groupData.groupName);
+   *   console.log("Participants:", groupData.members.map(m => m.info?.id));
+   * } else {
+   *   console.log("This is an individual chat, not a group.");
+   * }
+   * ```
+   * @throws Error if there is a problem fetching group metadata.
+   */
+  @autobind
+  public async FetchGroupData(): Promise<ChatContextGroupData | null> {
+    if (this._senderType === SenderType.Individual) {
+      return null;
+    }
+    return await this._internalReceive.GetGroupMetadata(this._fixedChatId);
+  }
 }
 
-export type MsgTypeMultimediaOnly = MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio;
-// amongus zorro bruh skibidi beatbox - N.
-
-export type ChatContextUbicationResponse = {
+/**
+ * Represents a location shared in a chat.
+ *
+ * Includes geographic coordinates and an optional thumbnail image buffer.
+ */
+export type ChatContextUbication = {
+  /** Latitude in decimal degrees */
   degreesLatitude: number;
+
+  /** Longitude in decimal degrees */
   degreesLongitude: number;
-  /** Buffer img preview */
+
+  /** Optional JPEG thumbnail preview of the location */
   thumbnailJpegBuffer: Uint8Array | null;
+
+  /** Whether the location is live/real-time (e.g., live location sharing) */
   isLive: boolean | null;
 };
 
-export type ChatContextContactResponse = {
+/**
+ * Represents a contact shared in a chat.
+ *
+ * Contains the contact's display name, phone number, and WhatsApp ID.
+ */
+export type ChatContextContactRes = {
+  /** Display name of the contact */
   name: string;
+
+  /** Phone number of the contact */
   number: string;
+
+  /** WhatsApp ID of the contact */
   whatsappId: string;
 };

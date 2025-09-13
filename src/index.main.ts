@@ -5,10 +5,9 @@ class PingCommand implements IBotCommand {
   description: string = "replies with pong!";
   aliases: string[] = ["test"];
   async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
-    await chat.SendText("Manda un contacto, paro:");
-    const location = await chat.WaitContact({ timeoutSeconds: 30 });
-    if (location) {
-      console.log(JSON.stringify(location, null, 2));
+    const res = await chat.FetchGroupData();
+    if (res) {
+      console.log(res);
     }
   }
 }

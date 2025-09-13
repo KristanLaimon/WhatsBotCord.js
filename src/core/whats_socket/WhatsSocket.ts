@@ -359,7 +359,8 @@ export default class WhatsSocket implements IWhatsSocket {
    * @returns A promise that resolves to the group metadata.
    */
   public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
-    if (!chatId.endsWith(WhatsappGroupIdentifier)) throw new Error("Provided chatId is not a group chat ID. => " + chatId);
+    if (!chatId.endsWith(WhatsappGroupIdentifier))
+      throw new Error("Bad args => WhatsSocket.GetGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
     return await this._socket.groupMetadata(chatId);
   }
 

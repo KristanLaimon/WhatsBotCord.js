@@ -8,7 +8,11 @@ import {
 } from "../../../mocks/MockIndividualGroup.mock.js";
 import { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
-import { type WhatsSocketReceiverError, WhatsSocket_Submodule_Receiver, WhatsSocketReceiverMsgError } from "../../whats_socket/internals/WhatsSocket.receiver.js";
+import {
+  type WhatsSocketReceiverError,
+  WhatsSocket_Submodule_Receiver,
+  WhatsSocketReceiverMsgError,
+} from "../../whats_socket/internals/WhatsSocket.receiver.js";
 import { type WhatsMsgSenderSendingOptions, WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
@@ -473,7 +477,6 @@ it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMGROUP_ShouldIdentifyAndR
 
 it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMINDIVIDUAL_ShouldIdentifyAndRejectImmediatelyWithError", async (): Promise<void> => {
   const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
-
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
   const abortedWaitError: Partial<WhatsSocketReceiverError> = {
     chatId: IndividualMsg_CHATID,

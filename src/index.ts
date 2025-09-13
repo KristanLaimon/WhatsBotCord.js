@@ -9,8 +9,8 @@ import {
   MsgHelper_QuotedMsg_GetText,
 } from "./helpers/Msg.helper.js";
 import {
-  WhatsappHelper_ExtractWhatsappIdFromMention,
-  WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
+  WhatsappHelper_ExtractWhatsappInfoFromMention,
+  WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg,
   WhatsappHelper_isFullWhatsappIdUser,
   WhatsappHelper_isLIDIdentifier,
   WhatsappHelper_isMentionId,
@@ -60,8 +60,8 @@ export const MsgHelpers = {
  * and verify WhatsApp ID formats.
  */
 export const WhatsappHelpers = {
-  GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
-  GetWhatsInfoFromMentionStr: WhatsappHelper_ExtractWhatsappIdFromMention,
+  GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg,
+  GetWhatsInfoFromMentionStr: WhatsappHelper_ExtractWhatsappInfoFromMention,
   IsLidIdentifier: WhatsappHelper_isLIDIdentifier,
   IsMentionString: WhatsappHelper_isMentionId,
   IsIDIdentifier: WhatsappHelper_isFullWhatsappIdUser,
