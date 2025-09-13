@@ -603,7 +603,9 @@ export class WhatsSocket_Submodule_SugarSender {
       buffer = fs.readFileSync(docParams.source);
       mimeType = MimeTypeHelper_GetMimeTypeOf({ source: docParams.source });
       if ("fileNameToDisplay" in docParams) {
-        fileNameToDisplay = docParams.fileNameToDisplay ?? path.basename(docParams.source); //Gets file name WITH extension
+        // fileNameToDisplay = docParams.fileNameToDisplay ?? path.basename(docParams.source); //Gets file name WITH extension
+        fileNameToDisplay =
+          !docParams.fileNameToDisplay || docParams.fileNameToDisplay.trim() === "" ? path.basename(docParams.source) : docParams.fileNameToDisplay;
       } else {
         fileNameToDisplay = path.basename(docParams.source); //Gets file name WITH extension
       }
@@ -618,12 +620,16 @@ export class WhatsSocket_Submodule_SugarSender {
       );
     }
 
-    return await this._getSendingMethod(options)(chatId, {
-      document: buffer,
-      mimetype: mimeType,
-      fileName: fileNameToDisplay,
-      mentions: options?.mentionsIds,
-    });
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        document: buffer,
+        mimetype: mimeType,
+        fileName: fileNameToDisplay,
+        mentions: options?.mentionsIds,
+      },
+      options
+    );
   }
 
   /**

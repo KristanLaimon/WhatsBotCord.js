@@ -1,4 +1,4 @@
-import { type Mock, afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { type Mock, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import mime from "mime";
 import fs from "node:fs";
 import path from "node:path";
@@ -30,16 +30,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fs_existsSync.mockClear();
-  fs_readFileSyncSpy.mockClear();
-  sendSafeSpy.mockClear();
-  sendRawSpy.mockClear();
-});
-
-afterAll(() => {
-  // Restore fs mocks if you stubbed them
-  // fs_existsSync?.mockRestore?.();
-  // fs_readFileSyncSpy?.mockRestore?.();
+  fs_existsSync.mockRestore();
+  fs_readFileSyncSpy.mockRestore();
+  sendSafeSpy.mockRestore();
+  sendRawSpy.mockRestore();
 });
 
 /**
@@ -1098,6 +1092,372 @@ describe("Video", () => {
         video: videoBuffer,
         caption: "",
         mimetype: mime.getType(formatExtension),
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+});
+
+describe("Document", () => {
+  // =========== Normal usage (No errors) ====================
+  it("StringPath_Simple_NoOptionsParams", async () => {
+    // Prepare
+    const docPath: string = "./fakeSource.pdf";
+    const fakeDocContent: Buffer = Buffer.from("fakeDocContent");
+    const expectedFileName = path.basename(docPath);
+
+    fs_existsSync.mockReturnValueOnce(true);
+    fs_readFileSyncSpy.mockReturnValueOnce(fakeDocContent as any);
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, { source: docPath });
+    }).not.toThrow();
+
+    // Assert
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: fakeDocContent,
+        mimetype: mime.getType(docPath),
+        fileName: expectedFileName,
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  it("StringPath_WithCustomDisplayName_ShouldUseCustomName", async () => {
+    // Prepare
+    const docPath: string = "./fakeSource.pdf";
+    const customDisplayName = "custom-name.pdf";
+    const fakeDocContent: Buffer = Buffer.from("fakeDocContent");
+
+    fs_existsSync.mockReturnValueOnce(true);
+    fs_readFileSyncSpy.mockReturnValueOnce(fakeDocContent as any);
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, {
+        source: docPath,
+        fileNameToDisplay: customDisplayName,
+      });
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: fakeDocContent,
+        mimetype: mime.getType(docPath),
+        fileName: customDisplayName,
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  it("Buffer_WithFormatExtension_NoOptionsParams", async () => {
+    // Prepare
+    const docBuffer: Buffer = Buffer.from("document buffer content");
+    const formatExtension = "pdf";
+    const fileNameWithoutExtension = "document";
+    const expectedFileName = "document.pdf";
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, {
+        source: docBuffer,
+        formatExtension,
+        fileNameWithoutExtension,
+      });
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: docBuffer,
+        mimetype: mime.getType(formatExtension),
+        fileName: expectedFileName,
+        mentions: undefined,
+      },
+      undefined
+    );
+
+    // No I/O operations should be executed
+    expect(fs_existsSync).not.toHaveBeenCalled();
+    expect(fs_readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it("Buffer_WithFormatExtensionWithDot_ShouldRemoveDot", async () => {
+    // Prepare
+    const docBuffer: Buffer = Buffer.from("document buffer content");
+    const formatExtension = ".pdf";
+    const fileNameWithoutExtension = "document";
+    const expectedFileName = "document.pdf";
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, {
+        source: docBuffer,
+        formatExtension,
+        fileNameWithoutExtension,
+      });
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: docBuffer,
+        mimetype: mime.getType(formatExtension),
+        fileName: expectedFileName,
+        mentions: undefined,
+      },
+      undefined
+    );
+
+    // No I/O operations
+    expect(fs_existsSync).not.toHaveBeenCalled();
+    expect(fs_readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it("WithMentionsOptions_ShouldIncludeMentions", async () => {
+    // Prepare
+    const docBuffer: Buffer = Buffer.from("document content");
+    const formatExtension = "pdf";
+    const fileNameWithoutExtension = "report";
+    const options = {
+      mentionsIds: ["user1" + WhatsappIndividualIdentifier, "user2" + WhatsappIndividualIdentifier],
+    };
+
+    // Execute
+    expect(async () => {
+      await sender.Document(
+        fakeChatId,
+        {
+          source: docBuffer,
+          formatExtension,
+          fileNameWithoutExtension,
+        },
+        options
+      );
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: docBuffer,
+        mimetype: mime.getType(formatExtension),
+        fileName: "report.pdf",
+        mentions: options.mentionsIds,
+      },
+      options
+    );
+  });
+
+  it("StringPath_WithSendRawWithoutEnqueueOption_ShouldUseSendRaw", async () => {
+    // Prepare
+    const docPath: string = "./document.zip";
+    const fakeDocContent: Buffer = Buffer.from("fake zip content");
+    const expectedFileName = path.basename(docPath);
+    const options = {
+      sendRawWithoutEnqueue: true,
+    };
+
+    fs_existsSync.mockReturnValueOnce(true);
+    fs_readFileSyncSpy.mockReturnValueOnce(fakeDocContent as any);
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, { source: docPath }, options);
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(0);
+    expect(sendRawSpy).toHaveBeenCalledTimes(1);
+    expect(sendRawSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: fakeDocContent,
+        mimetype: mime.getType(docPath),
+        fileName: expectedFileName,
+        mentions: undefined,
+      },
+      options
+    );
+  });
+
+  // =========== Error handling ====================
+  it("StringPath_NonExistentFile_ShouldThrowError", async () => {
+    // Prepare
+    const nonExistentPath = "./non/existent/file.pdf";
+    fs_existsSync.mockReturnValueOnce(false);
+
+    // Execute & Assert
+    await expect(sender.Document(fakeChatId, { source: nonExistentPath })).rejects.toThrow("SugarSender.Document(), received path document");
+  });
+
+  it("Buffer_WithoutFormatExtension_ShouldThrowError", async () => {
+    // Prepare
+    const docBuffer: Buffer = Buffer.from("document content");
+
+    // Execute & Assert
+    await expect(sender.Document(fakeChatId, { source: docBuffer } as any)).rejects.toThrow(
+      "SugarSender.Document bad args, expected document source in buffer or stringpath format"
+    );
+  });
+
+  it("Buffer_WithoutFileNameWithoutExtension_ShouldThrowError", async () => {
+    // Prepare
+    const docBuffer: Buffer = Buffer.from("document content");
+    const formatExtension = "pdf";
+
+    // Execute & Assert
+    expect(async () => {
+      sender.Document(fakeChatId, {
+        source: docBuffer,
+        formatExtension,
+      } as any);
+    }).not.toThrow("SugarSender.Document bad args, expected document source in buffer or stringpath format");
+  });
+
+  it("InvalidSourceType_ShouldThrowError", async () => {
+    // Prepare
+    const invalidSource = 12345;
+
+    // Execute & Assert
+    await expect(sender.Document(fakeChatId, { source: invalidSource as any })).rejects.toThrow(
+      "SugarSender.Document bad args, expected document source in buffer or stringpath format"
+    );
+  });
+
+  // =========== Edge cases ====================
+  it("MultipleDocumentTypes_ShouldHandleDifferentFormats", async () => {
+    const formats = ["pdf", "docx", "xlsx", "zip", "txt"];
+
+    for (const format of formats) {
+      const docBuffer: Buffer = Buffer.from(`document content for ${format}`);
+      const fileNameWithoutExtension = `file_${format}`;
+
+      expect(async () => {
+        await sender.Document(fakeChatId, {
+          source: docBuffer,
+          formatExtension: format,
+          fileNameWithoutExtension,
+        });
+      }).not.toThrow();
+
+      expect(sendSafeSpy).toHaveBeenCalledWith(
+        fakeChatId,
+        {
+          document: docBuffer,
+          mimetype: mime.getType(format),
+          fileName: `${fileNameWithoutExtension}.${format}`,
+          mentions: undefined,
+        },
+        undefined
+      );
+    }
+
+    expect(sendSafeSpy).toHaveBeenCalledTimes(formats.length);
+  });
+
+  it("StringPath_EmptyFileNameToDisplay_ShouldUseBasename", async () => {
+    // Prepare
+    const docPath: string = "./path/to/document.pdf";
+    const fakeDocContent: Buffer = Buffer.from("fake content");
+    const expectedFileName = path.basename(docPath);
+
+    fs_existsSync.mockReturnValueOnce(true);
+    fs_readFileSyncSpy.mockReturnValueOnce(fakeDocContent as any);
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, {
+        source: docPath,
+        fileNameToDisplay: "",
+      });
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: fakeDocContent,
+        mimetype: mime.getType(docPath),
+        fileName: expectedFileName,
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  it("Buffer_ComplexFileNameConstruction_ShouldWorkCorrectly", async () => {
+    // Prepare
+    const docBuffer: Buffer = Buffer.from("complex document content");
+    const formatExtension = "docx";
+    const fileNameWithoutExtension = "report_final_version";
+    const expectedFileName = "report_final_version.docx";
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, {
+        source: docBuffer,
+        formatExtension,
+        fileNameWithoutExtension,
+      });
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: docBuffer,
+        mimetype: mime.getType(formatExtension),
+        fileName: expectedFileName,
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  it("StringPath_WithUndefinedFileNameToDisplay_ShouldUseBasename", async () => {
+    // Prepare
+    const docPath: string = "./documents/contract.docx";
+    const fakeDocContent: Buffer = Buffer.from("contract content");
+    const expectedFileName = path.basename(docPath);
+
+    fs_existsSync.mockReturnValueOnce(true);
+    fs_readFileSyncSpy.mockReturnValueOnce(fakeDocContent as any);
+
+    // Execute
+    expect(async () => {
+      await sender.Document(fakeChatId, {
+        source: docPath,
+        fileNameToDisplay: undefined,
+      });
+    }).not.toThrow();
+
+    // Assert
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        document: fakeDocContent,
+        mimetype: mime.getType(docPath),
+        fileName: expectedFileName,
         mentions: undefined,
       },
       undefined

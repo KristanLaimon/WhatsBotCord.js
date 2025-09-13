@@ -259,13 +259,6 @@ export class ChatContext {
    *
    */
   @autobind
-  /*************  ✨ Windsurf Command ⭐  *************/
-  /**
-   * Sends a sticker message to a specific chat.
-   *
-   * This method supports sending stickers from either:
-
-/*******  397404fb-aa15-44eb-a632-715d654dd013  *******/
   public SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     return this._internalSend.Sticker(this._fixedChatId, stickerUrlSource, options);
   }
@@ -275,12 +268,9 @@ export class ChatContext {
    *
    * This method supports sending audio from:
    * 1. A **local file path** (MP3, OGG, M4A, etc.).
-   * 2. A **remote URL** (publicly accessible audio file).
-   * 3. A **WhatsApp audio message object** (voice note or audio message) via `downloadMediaMessage`.
    *
    * @param audioSource - The audio content to send:
    *   - `string`: Either a local file path or a public URL, it will be converted to absolute path if relative given.
-   *   - `Buffer`: Raw audio data.
    *   - `WAMessage`: A WhatsApp message object containing an audioMessage.
    * @param audioFormat The audio format should be treated for. (e.g "mp3", "ogg", "flac")
    * @param options - Optional sending options:
@@ -300,77 +290,134 @@ export class ChatContext {
    * await bot.Audio(chatId, receivedMessage);
    */
   @autobind
-  public SendAudio(audioSource: string | Buffer, audioFormat: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Audio(this._fixedChatId, audioSource, audioFormat, options);
+  public SendAudio(audioSource: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    return this._internalSend.Audio(this._fixedChatId, { source: audioSource }, options);
   }
 
   /**
-   * Sends a video message;
+   * Sends an audio message to a WhatsApp chat from a buffer.
    *
-   * This method supports sending videos from either:
-   * 1. A **local file path** (e.g., MP4, MOV, AVI).
-   * 2. A **Buffer** containing raw video data.
+   * @param audioSource - Audio content as a `Buffer`.
+   * @param formatFile - File format/extension of the audio (e.g., "mp3", "ogg").
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
    *
-   * Behavior:
-   * - The MIME type is determined by the file extension:
-   *   - `.mov` → `video/mov`
-   *   - `.avi` → `video/avi`
-   *   - Otherwise → defaults to `video/mp4`
-   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set in options param.
-   *
-   * @param sourcePath Absolute/relative path to video file OR a `Buffer`.
-   * @param options - Additional sending options:
-   *   - `normalizeMessageText`: Normalize caption text (default: true).
-   *   - `mentionsIds`: Users to mention in the caption.
-   *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
-   *   - Any other Baileys `MiscMessageGenerationOptions`.
-   *
-   * @example
-   * // Send a local MP4 with caption
-   * await bot.Video(chatId, { sourcePath: "./video.mp4", caption: "Check this out!" });
-   *
-   * @example
-   * // Send a raw Buffer without queuing
-   * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
+   * @remarks
+   * - Useful for sending audio that is generated or downloaded dynamically and not saved on disk.
+   * - The `formatFile` parameter ensures WhatsApp knows how to handle the audio format correctly.
+   * - Supports optional normalization, mentions, or other sending options via `options`.
    */
   @autobind
-  public SendVideo(sourcePath: string | Buffer, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { source: sourcePath, caption: undefined }, options);
+  public SendAudioFromBuffer(audioSource: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    return this._internalSend.Audio(this._fixedChatId, { source: audioSource, formatExtension: formatFile }, options);
   }
 
   /**
-   * Sends a video message;
+   * Sends a video message from a local file path.
    *
-   * This method supports sending videos from either:
-   * 1. A **local file path** (e.g., MP4, MOV, AVI).
-   * 2. A **Buffer** containing raw video data.
-   *
-   * Behavior:
-   * - The MIME type is determined by the file extension:
-   *   - `.mov` → `video/mov`
-   *   - `.avi` → `video/avi`
-   *   - Otherwise → defaults to `video/mp4`
-   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set in options param.
-   *
-   * @param sourcePath Absolute/relative path to video file OR a `Buffer`.
-   * @param caption String caption to send along the video
-   * @param options - Additional sending options:
+   * @param videoPath - Absolute or relative path to the video file (MP4, MOV, AVI, etc.).
+   * @param options - Optional configuration for sending the message:
    *   - `normalizeMessageText`: Normalize caption text (default: true).
-   *   - `mentionsIds`: Users to mention in the caption.
+   *   - `mentionsIds`: Array of user IDs to mention.
    *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
    *   - Any other Baileys `MiscMessageGenerationOptions`.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - MIME type is inferred from file extension:
+   *   - `.mov` → `video/mov`
+   *   - `.avi` → `video/avi`
+   *   - Otherwise → `video/mp4`
    *
    * @example
-   * // Send a local MP4 with caption
-   * await bot.Video(chatId, { sourcePath: "./video.mp4", caption: "Check this out!" });
+   * // Send a local MP4 video
+   * await chatContext.SendVideo("./video.mp4");
    *
    * @example
-   * // Send a raw Buffer without queuing
-   * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
+   * // Send a local AVI video mentioning specific users
+   * await chatContext.SendVideo("./clip.avi", { mentionsIds: ["12345@s.whatsapp.net"] });
    */
   @autobind
-  public SendVideoWithCaption(sourcePath: string | Buffer, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { source: sourcePath, caption: caption }, options);
+  public SendVideo(videopath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    return this._internalSend.Video(this._fixedChatId, { source: videopath }, options);
+  }
+
+  /**
+   * Sends a video message with a caption from a local file path.
+   *
+   * @param videoPath - Absolute or relative path to the video file.
+   * @param caption - Text caption to include with the video.
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - MIME type detection and safe queue system are the same as `SendVideo`.
+   *
+   * @example
+   * // Send MP4 video with caption
+   * await chatContext.SendVideoWithCaption("./video.mp4", "Check this out!");
+   *
+   * @example
+   * // Send MOV video with caption and immediate sending
+   * await chatContext.SendVideoWithCaption("./clip.mov", "Important!", { sendRawWithoutEnqueue: true });
+   */
+  @autobind
+  public SendVideoWithCaption(videoPath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    return this._internalSend.Video(this._fixedChatId, { source: videoPath, caption: caption }, options);
+  }
+
+  /**
+   * Sends a video message from a buffer.
+   *
+   * @param videoBuffer - Video content as a `Buffer`.
+   * @param formatFile - File format/extension of the video (e.g., "mp4", "mov").
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - Useful when the video is generated or downloaded dynamically and not saved on disk.
+   * - The `formatFile` ensures WhatsApp interprets the video format correctly.
+   *
+   * @example
+   * // Send a dynamically downloaded MP4 buffer
+   * const buf = fs.readFileSync("./video.mp4");
+   * await chatContext.SendVideoFromBuffer(buf, "mp4");
+   */
+  @autobind
+  public SendVideoFromBuffer(videoBuffer: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    return this._internalSend.Video(this._fixedChatId, { source: videoBuffer, formatExtension: formatFile }, options);
+  }
+
+  /**
+   * Sends a video message from a buffer with a caption.
+   *
+   * @param videoBuffer - Video content as a `Buffer`.
+   * @param caption - Text caption to include with the video.
+   * @param formatFile - File format/extension of the video (e.g., "mp4", "mov").
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - Combines the behavior of `SendVideoFromBuffer` and `SendVideoWithCaption`.
+   * - Supports optional normalization, mentions, or other sending options via `options`.
+   *
+   * @example
+   * // Send buffer with caption
+   * const buf = fs.readFileSync("./clip.mov");
+   * await chatContext.SendVideoFromBufferWithCaption(buf, "Check this!", "mov");
+   *
+   * @example
+   * // Send buffer immediately bypassing queue
+   * await chatContext.SendVideoFromBufferWithCaption(buf, "Urgent!", "mov", { sendRawWithoutEnqueue: true });
+   */
+  @autobind
+  public SendVideoFromBufferWithCaption(
+    videoBuffer: Buffer,
+    caption: string,
+    formatFile: string,
+    options?: WhatsMsgSenderSendingOptions
+  ): Promise<WhatsappMessage | null> {
+    return this._internalSend.Video(this._fixedChatId, { source: videoBuffer, formatExtension: formatFile, caption: caption }, options);
   }
 
   /**
@@ -412,7 +459,6 @@ export class ChatContext {
    * }, { sendRawWithoutEnqueue: true });
    *
    */
-
   @autobind
   public SendPoll(
     pollTitle: string,
