@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
-import WhatsSocketMock from "./WhatsSocket.mock";
+import { WhatsappGroupIdentifier } from "../../../Whatsapp.types.js";
+import WhatsSocketMock from "./WhatsSocket.mock.js";
 
 describe("WhatsSocketMock Generally", () => {
   it("WhenInstatiatingWithNoParams_ShouldNotThrowError", () => {

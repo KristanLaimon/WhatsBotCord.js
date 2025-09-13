@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import path from "node:path";
-import { isCompiled, isDev } from "../Envs";
+import { isCompiled, isDev } from "../Envs.js";
 
 const EnvsModulePath = "../Envs";
 

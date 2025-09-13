@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { MimeTypeHelper_IsAudio, MimeTypeHelper_IsImage, MimeTypeHelper_IsVideo } from "./Mimetypes.helper";
+import { MimeTypeHelper_IsAudio, MimeTypeHelper_IsImage, MimeTypeHelper_IsVideo } from "./Mimetypes.helper.js";
 
 describe("MimeTypeHelper_IsImage", () => {
   const imageFileTypes: string[] = [

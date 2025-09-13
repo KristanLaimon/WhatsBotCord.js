@@ -1,9 +1,9 @@
 import type { proto } from "baileys";
 import { getAggregateVotesInPollMessage } from "baileys";
-import Delegate from "../../../libs/Delegate";
-import type { MsgType, SenderType } from "../../../Msg.types";
-import type { IWhatsSocket } from "../IWhatsSocket";
-import type { WhatsappMessage } from "../types";
+import Delegate from "../../../libs/Delegate.js";
+import type { MsgType, SenderType } from "../../../Msg.types.js";
+import type { IWhatsSocket } from "../IWhatsSocket.js";
+import type { WhatsappMessage } from "../types.js";
 
 type WhatsPollResult = {
   Option: string;

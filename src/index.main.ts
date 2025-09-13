@@ -1,4 +1,4 @@
-import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "src";
+import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "src/index.js";
 
 class PingCommand implements IBotCommand {
   name: string = "ping";
@@ -22,7 +22,7 @@ bot.Commands.Add(
   {
     name: "search",
     description: "a small desc",
-    async run(chat, _, __) {
+    async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs) {
       await chat.Loading();
       await chat.SendText("Send me a image:");
       const imgReceived = await chat.WaitMultimedia(MsgType.Image, { timeoutSeconds: 60, wrongTypeFeedbackMsg: "Hey, mandame uan imagen, no otra cosa" });

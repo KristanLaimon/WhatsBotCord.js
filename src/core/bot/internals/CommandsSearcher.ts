@@ -1,4 +1,4 @@
-import type { ICommand } from "./IBotCommand";
+import type { ICommand } from "./IBotCommand.js";
 
 export enum CommandType {
   Normal = "Normal",

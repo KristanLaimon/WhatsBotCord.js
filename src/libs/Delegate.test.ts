@@ -1,4 +1,4 @@
-import Delegate from "./Delegate";
+import Delegate from "./Delegate.js";
 import { expect, test, beforeEach, mock as fn, describe, it } from "bun:test";
 
 /** In C# delegate with no params and no return types are called 'Actions' */

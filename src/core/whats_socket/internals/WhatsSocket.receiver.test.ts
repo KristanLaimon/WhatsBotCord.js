@@ -1,6 +1,6 @@
 import { expect, it } from "bun:test";
 import { performance } from "node:perf_hooks";
-import { skipLongTests } from "../../../Envs";
+import { skipLongTests } from "../../../Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
@@ -8,12 +8,12 @@ import {
   MockIndividualTxtMsg as IndividualTxtMsg,
   MockGroupTxtMsg_CHATID,
   MockGroupTxtMsg_SENDERID,
-} from "../../../mocks/MockIndividualGroup.mock";
-import { imageWithCaptionMsg } from "../../../mocks/MockManyTypesMsgs.mock";
-import { MsgType, SenderType } from "../../../Msg.types";
-import WhatsSocketMock from "../mocks/WhatsSocket.mock";
-import type { WhatsappMessage } from "../types";
-import { WhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError, type WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver";
+} from "../../../mocks/MockIndividualGroup.mock.js";
+import { imageWithCaptionMsg } from "../../../mocks/MockManyTypesMsgs.mock.js";
+import { MsgType, SenderType } from "../../../Msg.types.js";
+import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
+import type { WhatsappMessage } from "../types.js";
+import { WhatsSocket_Submodule_Receiver, type WhatsSocketReceiverError, type WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver.js";
 
 /**TODO: List of things to test for receiving messages
  * WhatsSocketReceiver

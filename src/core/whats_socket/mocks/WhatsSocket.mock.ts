@@ -1,14 +1,14 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
-import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper";
-import Delegate from "../../../libs/Delegate";
-import type { MsgType, SenderType } from "../../../Msg.types";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types";
-import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver";
-import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue";
-import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders";
-import type { IWhatsSocket } from "../IWhatsSocket";
-import type { WhatsappMessage } from "../types";
-import type { MsgServiceSocketMessageSentMock } from "./types";
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
+import Delegate from "../../../libs/Delegate.js";
+import type { MsgType, SenderType } from "../../../Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
+import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue.js";
+import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket } from "../IWhatsSocket.js";
+import type { WhatsappMessage } from "../types.js";
+import type { MsgServiceSocketMessageSentMock } from "./types.js";
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;

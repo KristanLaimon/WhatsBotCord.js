@@ -1,7 +1,7 @@
 import { type WAMessage, type proto } from "baileys";
-import { MsgType, SenderType } from "../Msg.types";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types";
-import type { WhatsappMessage } from "../core/whats_socket/types";
+import { MsgType, SenderType } from "../Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+import type { WhatsappMessage } from "../core/whats_socket/types.js";
 
 /**
  * Extracts the textual content from a raw WhatsApp message.

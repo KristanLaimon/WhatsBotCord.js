@@ -1,5 +1,5 @@
 import { type WAMessage, type proto } from "baileys";
-import type { MsgType, SenderType } from "../../../Msg.types";
+import type { MsgType, SenderType } from "../../../Msg.types.js";
 
 /**
  * Arguments provided to a bot command when it is executed.

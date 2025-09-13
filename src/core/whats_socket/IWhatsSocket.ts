@@ -1,8 +1,8 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage, WAMessageUpdate } from "baileys";
-import type Delegate from "../../libs/Delegate";
-import type { MsgType, SenderType } from "../../Msg.types";
-import type { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
-import type { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
+import type Delegate from "../../libs/Delegate.js";
+import type { MsgType, SenderType } from "../../Msg.types.js";
+import type { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
+import type { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
 
 interface IWhatsSocket_SendingMsgsOnly_Module {
   /**

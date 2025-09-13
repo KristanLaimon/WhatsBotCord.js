@@ -1,19 +1,19 @@
 import { downloadMediaMessage } from "baileys";
-import { autobind } from "../../../helpers/Decorators.helper";
-import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper";
-import { MsgType, SenderType } from "../../../Msg.types";
+import { autobind } from "../../../helpers/Decorators.helper.js";
+import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
+import { MsgType, SenderType } from "../../../Msg.types.js";
 import {
   type WhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverHelper_isReceiverError,
-} from "../../whats_socket/internals/WhatsSocket.receiver";
+} from "../../whats_socket/internals/WhatsSocket.receiver.js";
 import type {
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
   WhatsSocket_Submodule_SugarSender,
-} from "../../whats_socket/internals/WhatsSocket.sugarsenders";
-import type { WhatsappMessage } from "../../whats_socket/types";
+} from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
+import type { WhatsappMessage } from "../../whats_socket/types.js";
 
 export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
 

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { isCompiled } from "../Envs";
+import { isCompiled } from "../Envs.js";
 
 export function GetPath(...filePathToAppendFromRoot: string[]): string {
   if (filePathToAppendFromRoot.length === 0)

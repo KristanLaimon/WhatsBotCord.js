@@ -1,6 +1,6 @@
 import fs from "node:fs";
-import type { WhatsappMessage } from "./core/whats_socket/types";
-import { GetPath } from "./libs/BunPath";
+import type { WhatsappMessage } from "./core/whats_socket/types.js";
+import { GetPath } from "./libs/BunPath.js";
 
 export function Debug_StoreWhatsMsgHistoryInJson(filePath: string, rawMsg: WhatsappMessage) {
   let msgsStored: any[] = [];

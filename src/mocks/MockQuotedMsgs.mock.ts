@@ -1,4 +1,4 @@
-import type { WhatsappMessage } from "../core/whats_socket/types";
+import type { WhatsappMessage } from "../core/whats_socket/types.js";
 
 // Message from private chat
 export const MockQuotedMsg_Individual: WhatsappMessage = {

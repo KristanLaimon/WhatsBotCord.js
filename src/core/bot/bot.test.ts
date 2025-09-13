@@ -1,6 +1,6 @@
 import { expect, mock as fn, spyOn, test } from "bun:test";
 import { MsgHelpers, type WhatsappMessage } from "../..";
-import { skipLongTests } from "../../Envs";
+import { skipLongTests } from "../../Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
@@ -10,22 +10,22 @@ import {
   MockGroupTxtMsg,
   MockGroupTxtMsg_CHATID,
   MockGroupTxtMsg_SENDERID,
-} from "../../mocks/MockIndividualGroup.mock";
-import { MockQuotedMsg_Group, MockQuotedMsg_Individual, MockQuotedMsg_Individual_CHATID } from "../../mocks/MockQuotedMsgs.mock";
-import { MsgType, SenderType } from "../../Msg.types";
+} from "../../mocks/MockIndividualGroup.mock.js";
+import { MockQuotedMsg_Group, MockQuotedMsg_Individual, MockQuotedMsg_Individual_CHATID } from "../../mocks/MockQuotedMsgs.mock.js";
+import { MsgType, SenderType } from "../../Msg.types.js";
 import {
   WhatsSocket_Submodule_Receiver,
   WhatsSocketReceiverHelper_isReceiverError,
   WhatsSocketReceiverMsgError,
   type WhatsSocketReceiverError,
-} from "../whats_socket/internals/WhatsSocket.receiver";
-import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
-import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock";
-import Bot, { type BotMiddleWareFunct } from "./bot";
-import type { ChatContext } from "./internals/ChatContext";
-import { CommandType } from "./internals/CommandsSearcher";
-import type { CommandArgs } from "./internals/CommandsSearcher.types";
-import type { ICommand, RawMsgAPI } from "./internals/IBotCommand";
+} from "../whats_socket/internals/WhatsSocket.receiver.js";
+import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
+import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock.js";
+import Bot, { type BotMiddleWareFunct } from "./bot.js";
+import type { ChatContext } from "./internals/ChatContext.js";
+import { CommandType } from "./internals/CommandsSearcher.js";
+import type { CommandArgs } from "./internals/CommandsSearcher.types.js";
+import type { ICommand, RawMsgAPI } from "./internals/IBotCommand.js";
 
 /** WOW = All finished!
  * Bot.ts Suite testing

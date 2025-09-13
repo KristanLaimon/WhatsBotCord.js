@@ -14,18 +14,18 @@ import {
 import moment from "moment";
 import pino from "pino";
 import encodeQr from "qr";
-import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../helpers/Msg.helper";
-import { GetPath } from "../../libs/BunPath";
-import Delegate from "../../libs/Delegate";
-import type { MsgType } from "../../Msg.types";
-import { SenderType } from "../../Msg.types";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
-import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver";
-import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
-import type { IWhatsSocket } from "./IWhatsSocket";
-import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types";
-import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock";
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../helpers/Msg.helper.js";
+import { GetPath } from "../../libs/BunPath.js";
+import Delegate from "../../libs/Delegate.js";
+import type { MsgType } from "../../Msg.types.js";
+import { SenderType } from "../../Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types.js";
+import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
+import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
+import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket } from "./IWhatsSocket.js";
+import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types.js";
+import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock.js";
 
 export type WhatsSocketOptions = {
   /**

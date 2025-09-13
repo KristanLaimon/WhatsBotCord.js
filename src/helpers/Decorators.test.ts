@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { autobind } from "./Decorators.helper";
+import { autobind } from "./Decorators.helper.js";
 
 describe("@autobind", () => {
   it("WhenUsingOnNonMethods_ShouldThrowError", () => {

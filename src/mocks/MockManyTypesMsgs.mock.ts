@@ -1,6 +1,6 @@
 import type { WAMessage } from "baileys";
 import fs from "fs";
-import { GetPath } from "../libs/BunPath";
+import { GetPath } from "../libs/BunPath.js";
 
 const messagesMocksPath = GetPath("src", "mocks", "Msg.helper.mocks.json");
 if (!fs.existsSync(messagesMocksPath)) {

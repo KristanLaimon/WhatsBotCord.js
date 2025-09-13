@@ -2,12 +2,12 @@ import { Boom } from "@hapi/boom";
 import type { GroupMetadata, WAMessage, WAMessageUpdate } from "baileys";
 
 import { type Mock, describe, expect, mock as fn, it, spyOn } from "bun:test";
-import { MsgType, SenderType } from "../../Msg.types";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types";
-import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue";
-import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders";
-import WhatsSocket from "./WhatsSocket";
-import { BaileysSocketServiceAdapter_Mock } from "./WhatsSocket.baileys.mock";
+import { MsgType, SenderType } from "../../Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types.js";
+import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
+import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
+import WhatsSocket from "./WhatsSocket.js";
+import { BaileysSocketServiceAdapter_Mock } from "./WhatsSocket.baileys.mock.js";
 
 describe("Initialization", () => {
   it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {

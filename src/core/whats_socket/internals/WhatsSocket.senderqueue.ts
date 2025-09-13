@@ -1,7 +1,7 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
-import Delegate from "../../../libs/Delegate";
-import type { IWhatsSocket } from "../IWhatsSocket";
-import type { WhatsappMessage } from "../types";
+import Delegate from "../../../libs/Delegate.js";
+import type { IWhatsSocket } from "../IWhatsSocket.js";
+import type { WhatsappMessage } from "../types.js";
 
 type SocketMsgQueueItem = {
   chatId: string;

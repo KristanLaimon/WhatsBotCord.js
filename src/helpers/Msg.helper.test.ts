@@ -1,7 +1,7 @@
 import { type WAMessage } from "baileys";
 import { describe, expect, it, test } from "bun:test";
 import fs from "fs";
-import { GetPath } from "../libs/BunPath";
+import { GetPath } from "../libs/BunPath.js";
 import {
   audioMsg,
   contactMsg,
@@ -16,9 +16,9 @@ import {
   txtMessage,
   videoNoCaptionMsg,
   videoWithCaptionMsg,
-} from "../mocks/MockManyTypesMsgs.mock";
-import { MsgType } from "../Msg.types";
-import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetQuotedMsgText, MsgHelper_FullMsg_GetText } from "./Msg.helper";
+} from "../mocks/MockManyTypesMsgs.mock.js";
+import { MsgType } from "../Msg.types.js";
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetQuotedMsgText, MsgHelper_FullMsg_GetText } from "./Msg.helper.js";
 
 test("Mockdata from .json can be imported", () => {
   const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "mocks", "./Msg.helper.mocks.json"), "utf-8"));

@@ -3,10 +3,10 @@ import emojiRegexFabric from "emoji-regex";
 import GraphemeSplitter from "grapheme-splitter";
 import fs from "node:fs";
 import path from "node:path";
-import { MimeTypeHelper_GetMimeTypeOf, MimeTypeHelper_IsAudio, MimeTypeHelper_IsImage, MimeTypeHelper_IsVideo } from "../../../helpers/Mimetypes.helper";
-import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper";
-import { GetPath } from "../../../libs/BunPath";
-import type { IWhatsSocket } from "../IWhatsSocket";
+import { MimeTypeHelper_GetMimeTypeOf, MimeTypeHelper_IsAudio, MimeTypeHelper_IsImage, MimeTypeHelper_IsVideo } from "../../../helpers/Mimetypes.helper.js";
+import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper.js";
+import { GetPath } from "../../../libs/BunPath.js";
+import type { IWhatsSocket } from "../IWhatsSocket.js";
 
 const emojiRegex = emojiRegexFabric();
 const emojiSplitter = new GraphemeSplitter();

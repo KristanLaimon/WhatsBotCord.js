@@ -1,7 +1,7 @@
-import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper";
-import type { MsgType, SenderType } from "../../../Msg.types";
-import type { IWhatsSocket } from "../IWhatsSocket";
-import type { WhatsappMessage } from "../types";
+import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
+import type { MsgType, SenderType } from "../../../Msg.types.js";
+import type { IWhatsSocket } from "../IWhatsSocket.js";
+import type { WhatsappMessage } from "../types.js";
 
 /**
  * Callback type used to determine whether a received message satisfies a success condition.

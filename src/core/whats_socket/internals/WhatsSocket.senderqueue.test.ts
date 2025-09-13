@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { performance } from "node:perf_hooks";
-import { skipLongTests } from "../../../Envs";
-import { WhatsappGroupIdentifier } from "../../../Whatsapp.types";
-import WhatsSocketMock from "../mocks/WhatsSocket.mock";
-import WhatsSocketSenderQueue from "./WhatsSocket.senderqueue";
+import { skipLongTests } from "../../../Envs.js";
+import { WhatsappGroupIdentifier } from "../../../Whatsapp.types.js";
+import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
+import WhatsSocketSenderQueue from "./WhatsSocket.senderqueue.js";
 
 const fakeChatId: string = "23423423234" + WhatsappGroupIdentifier;
 

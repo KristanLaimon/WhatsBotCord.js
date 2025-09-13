@@ -1,15 +1,15 @@
 import type { WAMessage, proto } from "baileys";
-import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper";
-import Delegate from "../../libs/Delegate";
-import { MsgType, type SenderType } from "../../Msg.types";
-import { WhatsSocketReceiverHelper_isReceiverError, type WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver";
-import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders";
-import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket";
-import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket";
-import { ChatContext, type ChatContextConfig } from "./internals/ChatContext";
-import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher";
-import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types";
-import type { ICommand } from "./internals/IBotCommand";
+import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper.js";
+import Delegate from "../../libs/Delegate.js";
+import { MsgType, type SenderType } from "../../Msg.types.js";
+import { WhatsSocketReceiverHelper_isReceiverError, type WhatsSocket_Submodule_Receiver } from "../whats_socket/internals/WhatsSocket.receiver.js";
+import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
+import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
+import { ChatContext, type ChatContextConfig } from "./internals/ChatContext.js";
+import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
+import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
+import type { ICommand } from "./internals/IBotCommand.js";
 
 export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
   Omit<Partial<ChatContextConfig>, "ignoreSelfMessages"> & {

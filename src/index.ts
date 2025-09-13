@@ -1,4 +1,4 @@
-import Whatsbotcord from "./core/bot/bot";
+import Whatsbotcord from "./core/bot/bot.js";
 import {
   MsgHelper_FullMsg_GetMsgType,
   MsgHelper_FullMsg_GetQuotedMsg,
@@ -7,33 +7,33 @@ import {
   MsgHelper_FullMsg_GetText,
   MsgHelper_ProtoMsg_GetMsgType,
   MsgHelper_QuotedMsg_GetText,
-} from "./helpers/Msg.helper";
+} from "./helpers/Msg.helper.js";
 import {
   WhatsappHelper_ExtractWhatsappIdFromMention,
   WhatsappHelper_ExtractWhatsappIdInfoFromSenderRawMsg,
   WhatsappHelper_isFullWhatsappIdUser,
   WhatsappHelper_isLIDIdentifier,
   WhatsappHelper_isMentionId,
-} from "./helpers/Whatsapp.helper";
+} from "./helpers/Whatsapp.helper.js";
 
 // === Types deps exporting ===
-import type { BotMiddleWareFunct } from "./core/bot/bot";
-import type { ChatContextConfig } from "./core/bot/internals/ChatContext";
-import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types";
-import type { ICommand, RawMsgAPI } from "./core/bot/internals/IBotCommand";
-import type { WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver";
-import type { WhatsappMessage } from "./core/whats_socket/types";
+import type { BotMiddleWareFunct } from "./core/bot/bot.js";
+import type { ChatContextConfig } from "./core/bot/internals/ChatContext.js";
+import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
+import type { ICommand, RawMsgAPI } from "./core/bot/internals/IBotCommand.js";
+import type { WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
+import type { WhatsappMessage } from "./core/whats_socket/types.js";
 export type { BotMiddleWareFunct, ChatContextConfig, CommandArgs, ICommand as IBotCommand, RawMsgAPI, WhatsappMessage, WhatsSocketReceiverError };
 
 // == Runtime deps exporting ==
-import { ChatContext } from "./core/bot/internals/ChatContext";
-import { CommandType } from "./core/bot/internals/CommandsSearcher";
-import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver";
-import WhatsSocket from "./core/whats_socket/WhatsSocket";
-import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper";
-import Delegate from "./libs/Delegate";
-import { MsgType, SenderType } from "./Msg.types";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types";
+import { ChatContext } from "./core/bot/internals/ChatContext.js";
+import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
+import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
+import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
+import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
+import Delegate from "./libs/Delegate.js";
+import { MsgType, SenderType } from "./Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types.js";
 export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsSocket, WhatsSocketReceiverMsgError };
 
 // === Helpers ===
