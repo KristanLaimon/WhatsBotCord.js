@@ -5,6 +5,7 @@ import type { IChatContext } from "../core/bot/internals/IChatContext.js";
 import { SenderType } from "../Msg.types.js";
 import MockingChat from "./MockChat.js";
 
+//Canonical test :3
 class MyCommand implements ICommand {
   public name: string = "name";
   async run(ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
@@ -15,6 +16,15 @@ class MyCommand implements ICommand {
     await ctx.SendText("Your name is " + nameAwaited, { normalizeMessageText: true });
   }
 }
+//=======================================================================================
+//So.... timeoutSeconds is not used, or any other param. Only "cancelKeyboards"
+test("Simplest_WhenExpectingTxtMsg_ItsCatchedByCommandWaitTxt", async () => {
+  const chat = new MockingChat(new MyCommand(), { args: ["arg1"], cancelKeywords: ["hello"], customChatId: "xddddd@g.us" });
+  chat.SendText("chris");
+  await chat.StartChatSimulation();
+  expect(chat.SentFromCommand.Texts).toHaveLength(2);
+  expect(chat.SentFromCommand.Texts[1]!.text).toBe("Your name is chris");
+});
 
 //GENERAL Tests
 
@@ -222,14 +232,4 @@ describe("Text", () => {
       cancelKeywords: ["hello", "world"],
     });
   });
-});
-
-//=======================================================================================
-//So.... timeoutSeconds is not used, or any other param. Only "cancelKeyboards"
-test("Simplest_WhenExpectingTxtMsg_ItsCatchedByCommandWaitTxt", async () => {
-  const chat = new MockingChat(new MyCommand(), { args: ["arg1"], cancelKeywords: ["hello"], customChatId: "xddddd@g.us" });
-  chat.SendText("chris");
-  await chat.StartChatSimulation();
-  expect(chat.SentFromCommand.Texts).toHaveLength(2);
-  expect(chat.SentFromCommand.Texts[1]!.text).toBe("Your name is chris");
 });
