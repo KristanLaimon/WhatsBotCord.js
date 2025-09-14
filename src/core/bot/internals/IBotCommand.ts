@@ -1,8 +1,8 @@
 import type { WhatsSocket_Submodule_Receiver } from "../../../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsSocket_Submodule_SugarSender } from "../../../core/whats_socket/internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "../../whats_socket/IWhatsSocket.js";
-import type { ChatContext } from "./ChatContext.js";
 import type { CommandArgs } from "./CommandsSearcher.types.js";
+import type { IChatContext } from "./IChatContext.js";
 
 /**
  * Represents a bot command.
@@ -36,7 +36,7 @@ export interface ICommand {
    *               another ChatSession object on your own.
    * @param args - Arguments passed to the command when invoked.
    */
-  run(ctx: ChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void>;
+  run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void>;
 }
 
 /**

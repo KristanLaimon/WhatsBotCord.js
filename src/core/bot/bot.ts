@@ -12,6 +12,7 @@ import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js"
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { CommandArgs, FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
 import type { ICommand, RawMsgAPI } from "./internals/IBotCommand.js";
+import type { IChatContext } from "./internals/IChatContext.js";
 
 //Little dependency to verify that "defaulEmojiToSendOnCommandFailure" is 1 emoji length!
 const emojiSplitter = new GraphemeSplitter();
@@ -48,14 +49,24 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
     commandPrefix?: string | string[];
 
     /**
-     * For advanced users: replace the internal WhatsApp socket implementation.
+     * For advanced users and maintainers: replace the internal WhatsApp socket implementation.
      *
      * If provided, the bot will use this custom implementation instead of the
      * built-in `WhatsSocket`. Useful for testing, extending, or mocking.
      *
      * ⚠️ Use at your own risk — incorrect implementations can break bot behavior.
      */
-    ownWhatsSocketImplementation?: IWhatsSocket;
+    ownWhatsSocketImplementation_Internal?: IWhatsSocket;
+
+    /**
+     * For advanced users and maintainers: replaces the ChatContext that will be sent to all commands.
+     *
+     * Used primarly for testing
+     *
+     * ⚠️ Use at your own risk — incorrect implementations can break bot behavior.
+     * @returns
+     */
+    ownChatContextCreationHook_Internal?: () => IChatContext | null;
 
     /**
      * Enables or disables the "safe net" around command execution.
@@ -91,7 +102,7 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
   };
 
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
-  onCommandNotFound: Delegate<(ctx: ChatContext, commandNameThatCouldntBeFound: string) => void | Promise<void>>;
+  onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void | Promise<void>>;
   onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
 };
 export type WhatsBotSender = WhatsSocket_Submodule_SugarSender;
@@ -142,7 +153,7 @@ export default class Bot implements BotMinimalInfo {
    * });
    * ```
    */
-  private _onCommandNotFound: Delegate<(ctx: ChatContext, commandNameThatCouldntBeFound: string) => void> = new Delegate();
+  private _onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void> = new Delegate();
 
   /**
    * Event triggered **after the middleware chain finishes running**.
@@ -325,10 +336,11 @@ export default class Bot implements BotMinimalInfo {
       cancelKeywords: options?.cancelKeywords ?? ["cancel", "cancelar", "para", "stop"],
       timeoutSeconds: options?.timeoutSeconds ?? 30,
       wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
-      ownWhatsSocketImplementation: options?.ownWhatsSocketImplementation,
+      ownWhatsSocketImplementation_Internal: options?.ownWhatsSocketImplementation_Internal,
       enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
       defaultEmojiToSendReactionOnFailureCommand: options?.defaultEmojiToSendReactionOnFailureCommand ?? null,
       sendErrorToChatOnFailureCommand_debug: options?.sendErrorToChatOnFailureCommand_debug ?? false,
+      ownChatContextCreationHook_Internal: options?.ownChatContextCreationHook_Internal ?? (() => null),
     };
 
     //# Validations:
@@ -344,7 +356,7 @@ export default class Bot implements BotMinimalInfo {
     }
 
     this._commandSearcher = new CommandsSearcher();
-    this._socket = this.Settings.ownWhatsSocketImplementation ?? new WhatsSocket(this.Settings);
+    this._socket = this.Settings.ownWhatsSocketImplementation_Internal ?? new WhatsSocket(this.Settings);
     this._socket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
   }
 
@@ -470,13 +482,19 @@ export default class Bot implements BotMinimalInfo {
       const quotedMsgAsArgument: FoundQuotedMsg | null = MsgHelper_ExtractQuotedMsgInfo(rawMsg);
 
       //=========================================================
-      const ARG1_ChatContext: ChatContext = new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
-        cancelKeywords: this.Settings.cancelKeywords!,
-        timeoutSeconds: this.Settings.timeoutSeconds!,
-        ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-        wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-        cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-      });
+      let ARG1_ChatContext: IChatContext;
+      const customChatContext: IChatContext | null = this.Settings.ownChatContextCreationHook_Internal!();
+      if (customChatContext) {
+        ARG1_ChatContext = customChatContext;
+      } else {
+        ARG1_ChatContext = new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
+          cancelKeywords: this.Settings.cancelKeywords!,
+          timeoutSeconds: this.Settings.timeoutSeconds!,
+          ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+          wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+          cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+        });
+      }
       const ARG2_RawAPI: RawMsgAPI = {
         Receive: this._socket.Receive,
         Send: this._socket.Send,
@@ -526,76 +544,3 @@ export default class Bot implements BotMinimalInfo {
     }
   } //EVENT_...() Method
 }
-
-//TODO: Create testing toolkit for users to simulate chats with these commands!
-// public async RunCommand(command: ICommand, config: BotRunningCommandParams ): Promise<boolean>{
-//     try {
-//       await command.run(
-//         /** Chat Context */
-//         new ChatContext(
-//           config.sender_participant_ID ?? null,
-//           config.chatID,
-//           {
-//             key: {
-//               remoteJid: config.chatID,
-//               participant: config.sender_participant_ID,
-//               fromMe: false,
-//             },
-//           },
-//           this._socket.Send,
-//           this._socket.Receive,
-//           {
-//             cancelKeywords: this.Settings.cancelKeywords!,
-//             timeoutSeconds: this.Settings.timeoutSeconds!,
-//             ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-//             wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-//             cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-//           }
-//         ),
-//         /** RawAPI */
-//         {
-//           Receive: this._socket.Receive,
-//           Send: this._socket.Send,
-//         },
-//         /** Command basic arguments */
-//         {
-//           args: commandArgs,
-//           chatId: config.chatID,
-//           msgType: msgType,
-//           originalRawMsg: rawMsg,
-//           senderType: senderType,
-//           userId: config.sender_participant_ID ?? null,
-//           quotedMsgInfo: quotedMsgAsArgument,
-//         }
-//       );
-//     } catch (e) {
-//       if (WhatsSocketReceiverHelper_isReceiverError(e)) {
-//         if (e.wasAbortedByUser && this.Settings.loggerMode !== "silent") {
-//           console.log(`[Command Canceled]: Name ${commandOrAliasNameLowerCased}`);
-//         }
-//       } else {
-//         if (this.Settings.loggerMode !== "silent")
-//           console.log(
-//             `[COMMAND EXECUTION ERROR]: Error when trying to execute '${commandOrAliasNameLowerCased}'\n\n`,
-//             `Error Info: ${JSON.stringify(e, null, 2)}`
-//           );
-//       }
-//       if (!this.Settings.enableCommandSafeNet) {
-//         throw e;
-//       }
-//     }
-//   }
-// }
-// } //Class
-
-// type CommandArgsMinimum = {
-//   args?: string[];
-//   customIncomingMsgType?: MsgType;
-//   customQuotedMsg?: FoundQuotedMsg;
-// }
-
-// type BotRunningCommandParams = {
-//   chatID: string;
-//   sender_participant_ID?: string;
-//   args: ;
-// }

@@ -35,17 +35,17 @@ class EveryoneId implements IBotCommand {
   }
 }
 
-class ErrorCommand implements IBotCommand {
-  name: string = "error";
-  aliases?: string[] | undefined;
-  description: string = "error desc";
-  async run(ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-    await ctx.SendText("Daré un error ahora mismo.");
-    await new Promise<void>((_resolve, reject) => {
-      reject({ xd: "JAJAJA" });
-    });
-  }
-}
+// class ErrorCommand implements IBotCommand {
+//   name: string = "error";
+//   aliases?: string[] | undefined;
+//   description: string = "error desc";
+//   async run(ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+//     await ctx.SendText("Daré un error ahora mismo.");
+//     await new Promise<void>((_resolve, reject) => {
+//       reject({ xd: "JAJAJA" });
+//     });
+//   }
+// }
 
 // ========================== MAIN ==============================
 const bot = new Bot({
