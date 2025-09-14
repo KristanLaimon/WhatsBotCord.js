@@ -8,6 +8,7 @@ import type {
   WhatsMsgSenderSendingOptionsMINIMUM,
 } from "../core/whats_socket/internals/WhatsSocket.sugarsenders.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
+import { autobind } from "../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
 import type { SenderType } from "../Msg.types.js";
 import { MsgType } from "../Msg.types.js";
@@ -37,11 +38,14 @@ export default class ChatContextSpy implements IChatContext {
   public Config: ChatContextConfig;
   private _queuedContent: ChatContextSpyWhatsMsg[];
 
+  //========== TEXT ===========
   public SentMessages_Text: Array<{
     text: string;
     options?: WhatsMsgSenderSendingOptions;
   }> = [];
+  public Waited_Text: Array<{ options: Partial<ChatContextConfig> }> = [];
 
+  //================================================= Constructor ==============================================
   constructor(queuedContent: ChatContextSpyWhatsMsg[], participantId: string | null, chatId: string, senderType: SenderType, config: ChatContextConfig) {
     this.FixedOriginalParticipantId = participantId;
     this.FixedChatId = chatId;
@@ -77,7 +81,7 @@ export default class ChatContextSpy implements IChatContext {
     const toSend = this._queuedContent.shift()!;
     const actualMsg_msgType = MsgHelper_FullMsg_GetMsgType(toSend.rawMsg);
 
-    const thereAreOptions = !!_localOptions || !!toSend.options;
+    const thereAreOptions = !!_localOptions || toSend.options || !!this.Config;
     if (thereAreOptions) {
       //Overriding priority
       const options: Partial<ChatContextConfig> = {
@@ -106,16 +110,30 @@ export default class ChatContextSpy implements IChatContext {
                 } satisfies WhatsSocketReceiverError;
               }
             }
-          }
+          } //if (txt)
         }
       }
     }
 
     if (actualMsg_msgType !== expectedType) {
-      console.warn(`ChatContext received a msg of type ${MsgType[actualMsg_msgType]}`);
+      throw new Error(`ChatContext received a msg of type ${MsgType[actualMsg_msgType]}`);
+    }
+
+    if (_localOptions) {
+      switch (actualMsg_msgType) {
+        case MsgType.Text:
+          this.Waited_Text.push({ options: _localOptions });
+          break;
+      }
     }
 
     return toSend.rawMsg;
+  }
+
+  @autobind
+  public ClearMocks(): void {
+    this.SentMessages_Text = [];
+    this.Waited_Text = [];
   }
 
   //==== testing ====

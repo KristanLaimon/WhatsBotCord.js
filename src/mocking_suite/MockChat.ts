@@ -5,7 +5,7 @@ import type { ICommand } from "../core/bot/internals/IBotCommand.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { MsgType, SenderType } from "../index.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier } from "../Whatsapp.types.js";
 import ChatContextSpy, { type ChatContextSpyWhatsMsg } from "./ChatContextSpy.js";
 
 export type MockingChatParams = {
@@ -23,7 +23,7 @@ export default class MockingChat {
   public EnqueuedMsgsFromUser: ChatContextSpyWhatsMsg[] = [];
 
   private _constructorConfig?: MockingChatParams;
-  private _participantIdFromConstructor: string;
+  private _participantIdFromConstructor?: string;
   private _chatIdFromConstructor: string;
   private _chatContextSpy: ChatContextSpy;
   private _command: ICommand;
@@ -34,10 +34,16 @@ export default class MockingChat {
     };
   }
 
+  public get WaitedFromCommand() {
+    return {
+      Texts: this._chatContextSpy.Waited_Text,
+    };
+  }
+
   constructor(commandToTest: ICommand, additionalOptions?: MockingChatParams) {
     // Initialize participant and chat IDs
     this._command = commandToTest;
-    this._participantIdFromConstructor = additionalOptions?.customParticipantId ?? "fakeUserLidOnGroupOnly" + WhatsappLIDIdentifier;
+    this._participantIdFromConstructor = additionalOptions?.customParticipantId;
     this._chatIdFromConstructor = additionalOptions?.customChatId ?? "fakeChatId" + WhatsappGroupIdentifier;
     this._constructorConfig = additionalOptions;
 
@@ -55,9 +61,9 @@ export default class MockingChat {
 
     this._chatContextSpy = new ChatContextSpy(
       this.EnqueuedMsgsFromUser,
-      this._participantIdFromConstructor,
+      this._participantIdFromConstructor ?? null,
       this._chatIdFromConstructor,
-      additionalOptions?.senderType ?? SenderType.Individual,
+      this._constructorConfig?.senderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual),
       chatContextConfig
     );
   }
@@ -78,7 +84,7 @@ export default class MockingChat {
   }
 
   @autobind
-  public async Simulate(): Promise<void> {
+  public async StartChatSimulation(): Promise<void> {
     // const receiver: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver();
     //Need to conver
     //TODO: Need to convert WhatsSocket_Submodule_Receiver into an interface and mock it here
@@ -97,13 +103,15 @@ export default class MockingChat {
           Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextSpy.Config.cancelKeywords }),
         },
         chatId: this._chatIdFromConstructor,
-        participantId: this._participantIdFromConstructor,
+        participantId: this._participantIdFromConstructor ?? null,
         msgType: this._constructorConfig?.msgType ?? MsgType.Text,
         originalRawMsg: {} as any,
         quotedMsgInfo: {} as any,
         senderType: this._constructorConfig?.senderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual),
       }
     );
+
+    this._chatContextSpy.ClearMocks();
   }
 
   @autobind
