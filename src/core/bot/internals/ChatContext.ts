@@ -28,39 +28,83 @@ export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
  * initial message and other common high-level utilities.
  */
 export class ChatContext {
-  /** Low-level sender dependency used to actually send messages */
+  /**
+   * Low-level sender dependency responsible for dispatching
+   * messages, reactions, edits, and other outbound events.
+   *
+   * This is an internal utility—use higher-level convenience
+   * methods instead of calling this directly where possible.
+   */
   private _internalSend: WhatsSocket_Submodule_SugarSender;
-  private _internalReceive: WhatsSocket_Submodule_Receiver;
-
-  /** The chat ID this session is permanently bound to */
-  private _fixedOriginalSenderId: string | null;
-  private _fixedChatId: string;
-
-  /** The initial message that triggered the command/session */
-  private _initialMsg: WhatsappMessage;
-
-  private _senderType: SenderType;
 
   /**
-   * Retrieves the a copy from the original WAMessage object that triggered this session.
+   * Low-level receiver dependency responsible for listening
+   * to incoming WhatsApp events (messages, status updates, etc).
    *
-   * Useful if you need to access the message's metadata, such as the sender's ID
-   * or the message ID.
-   *
-   * @returns The raw WAMessage object that triggered this session.
+   * Exposed internally so that session features can react to
+   * real-time events within the same chat context.
    */
-  public get InitialRawMsg(): WhatsappMessage {
-    return structuredClone(this._initialMsg);
-  }
+  private _internalReceive: WhatsSocket_Submodule_Receiver;
 
+  /**
+   * The unique ID of the original participant who triggered
+   * this session, if available.
+   *
+   * - `null` when the origin is a system event or when the
+   *   participant cannot be resolved.
+   * - Typically corresponds to a phone number JID or group member JID.
+   *
+   * **Immutable**: set only in the constructor.
+   */
+  public readonly FixedOriginalParticipantId: string | null;
+
+  /**
+   * The WhatsApp chat ID this session is permanently bound to.
+   *
+   * - Always points to a valid chat JID (user, group, or broadcast).
+   * - Remains constant for the lifetime of the session.
+   */
+  public readonly FixedChatId: string;
+
+  /**
+   * The initial WhatsApp message that triggered creation of this context.
+   *
+   * Use this when you need the message payload itself (e.g., replying,
+   * quoting, or inspecting structured message content).
+   */
+  public readonly FixedInitialMsg: WhatsappMessage;
+
+  /**
+   * Indicates the type of the original sender (user, group, system, etc.)
+   * extracted from the initial message.
+   *
+   * This is derived at construction time and remains constant.
+   */
+  public readonly FixedSenderType: SenderType;
+
+  /**
+   * Configuration options for this chat context.
+   *
+   * Provides toggles, timeouts, or feature flags that control
+   * how the session should behave.
+   */
   public Config: ChatContextConfig;
 
   /**
    * Creates a new chat session bound to a specific chat and initial message.
    *
-   * @param fixedChatId - The WhatsApp chat ID this session is tied to
-   * @param initialMsg - The original triggering message (used for reactions)
-   * @param senderDependency - Low-level sender utility used to dispatch messages
+   * @param originalSenderID - The ID of the participant that triggered this session,
+   *   or `null` if the origin cannot be determined.
+   * @param fixedChatId - The WhatsApp chat JID this context is tied to.
+   * @param initialMsg - The original message object that caused this context to spawn.
+   * @param senderDependency - Internal sender utility for dispatching messages.
+   * @param receiverDependency - Internal receiver utility for subscribing to events.
+   * @param config - Context configuration controlling runtime behavior.
+   *
+   * @remarks
+   * - All `Fixed*` properties are immutable once the context is created.
+   * - The context is designed to encapsulate state and metadata for a
+   *   single session, preventing accidental leakage between chats.
    */
   constructor(
     originalSenderID: string | null,
@@ -71,12 +115,12 @@ export class ChatContext {
     config: ChatContextConfig
   ) {
     this.Config = config;
-    this._fixedOriginalSenderId = originalSenderID;
+    this.FixedOriginalParticipantId = originalSenderID;
     this._internalSend = senderDependency;
     this._internalReceive = receiverDependency;
-    this._fixedChatId = fixedChatId;
-    this._initialMsg = initialMsg;
-    this._senderType = MsgHelper_FullMsg_GetSenderType(this._initialMsg);
+    this.FixedChatId = fixedChatId;
+    this.FixedInitialMsg = initialMsg;
+    this.FixedSenderType = MsgHelper_FullMsg_GetSenderType(this.FixedInitialMsg);
   }
 
   /**
@@ -88,7 +132,7 @@ export class ChatContext {
    */
   @autobind
   public SendText(text: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Text(this._fixedChatId, text, options);
+    return this._internalSend.Text(this.FixedChatId, text, options);
   }
 
   /**
@@ -104,7 +148,7 @@ export class ChatContext {
    */
   @autobind
   public SendImg(imagePath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this._fixedChatId, { source: imagePath, caption: undefined }, options);
+    return this._internalSend.Image(this.FixedChatId, { source: imagePath, caption: undefined }, options);
   }
 
   /**
@@ -122,7 +166,7 @@ export class ChatContext {
    */
   @autobind
   public SendImgWithCaption(imagePath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this._fixedChatId, { source: imagePath, caption }, options);
+    return this._internalSend.Image(this.FixedChatId, { source: imagePath, caption }, options);
   }
 
   /**
@@ -139,7 +183,7 @@ export class ChatContext {
    */
   @autobind
   public SendImgFromBuffer(imagePath: Buffer<ArrayBuffer>, extensionType: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this._fixedChatId, { source: imagePath, formatExtension: extensionType, caption: undefined }, options);
+    return this._internalSend.Image(this.FixedChatId, { source: imagePath, formatExtension: extensionType, caption: undefined }, options);
   }
 
   /**
@@ -163,7 +207,7 @@ export class ChatContext {
     caption: string,
     options?: WhatsMsgSenderSendingOptions
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this._fixedChatId, { source: imagePath, formatExtension: extensionType, caption: caption }, options);
+    return this._internalSend.Image(this.FixedChatId, { source: imagePath, formatExtension: extensionType, caption: caption }, options);
   }
 
   /**
@@ -176,7 +220,7 @@ export class ChatContext {
    */
   @autobind
   public SendReactEmojiTo(msgToReactTo: WhatsappMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, msgToReactTo, emojiStr, options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, msgToReactTo, emojiStr, options);
   }
 
   /**
@@ -192,7 +236,7 @@ export class ChatContext {
    */
   @autobind
   public SendReactEmojiToInitialMsg(emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, emojiStr, options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, emojiStr, options);
   }
 
   /**
@@ -205,7 +249,7 @@ export class ChatContext {
    */
   @autobind
   public Ok(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "✅", options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "✅", options);
   }
 
   /**
@@ -218,7 +262,7 @@ export class ChatContext {
    */
   @autobind
   public Loading(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "⌛", options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "⌛", options);
   }
 
   /**
@@ -231,7 +275,7 @@ export class ChatContext {
    */
   @autobind
   public Fail(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.ReactEmojiToMsg(this._fixedChatId, this._initialMsg, "❌", options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "❌", options);
   }
 
   /**
@@ -262,7 +306,7 @@ export class ChatContext {
    */
   @autobind
   public SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Sticker(this._fixedChatId, stickerUrlSource, options);
+    return this._internalSend.Sticker(this.FixedChatId, stickerUrlSource, options);
   }
 
   /**
@@ -293,7 +337,7 @@ export class ChatContext {
    */
   @autobind
   public SendAudio(audioSource: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Audio(this._fixedChatId, { source: audioSource }, options);
+    return this._internalSend.Audio(this.FixedChatId, { source: audioSource }, options);
   }
 
   /**
@@ -311,7 +355,7 @@ export class ChatContext {
    */
   @autobind
   public SendAudioFromBuffer(audioSource: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Audio(this._fixedChatId, { source: audioSource, formatExtension: formatFile }, options);
+    return this._internalSend.Audio(this.FixedChatId, { source: audioSource, formatExtension: formatFile }, options);
   }
 
   /**
@@ -341,7 +385,7 @@ export class ChatContext {
    */
   @autobind
   public SendVideo(videopath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { source: videopath }, options);
+    return this._internalSend.Video(this.FixedChatId, { source: videopath }, options);
   }
 
   /**
@@ -365,7 +409,7 @@ export class ChatContext {
    */
   @autobind
   public SendVideoWithCaption(videoPath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { source: videoPath, caption: caption }, options);
+    return this._internalSend.Video(this.FixedChatId, { source: videoPath, caption: caption }, options);
   }
 
   /**
@@ -387,7 +431,7 @@ export class ChatContext {
    */
   @autobind
   public SendVideoFromBuffer(videoBuffer: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { source: videoBuffer, formatExtension: formatFile }, options);
+    return this._internalSend.Video(this.FixedChatId, { source: videoBuffer, formatExtension: formatFile }, options);
   }
 
   /**
@@ -419,7 +463,7 @@ export class ChatContext {
     formatFile: string,
     options?: WhatsMsgSenderSendingOptions
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this._fixedChatId, { source: videoBuffer, formatExtension: formatFile, caption: caption }, options);
+    return this._internalSend.Video(this.FixedChatId, { source: videoBuffer, formatExtension: formatFile, caption: caption }, options);
   }
 
   /**
@@ -468,7 +512,7 @@ export class ChatContext {
     pollParams: WhatsMsgPollOptions,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Poll(this._fixedChatId, pollTitle, selections, pollParams, options);
+    return this._internalSend.Poll(this.FixedChatId, pollTitle, selections, pollParams, options);
   }
 
   /**
@@ -481,7 +525,7 @@ export class ChatContext {
    */
   @autobind
   public SendUbication(degreesLatitude: number, degreesLongitude: number, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
+    return this._internalSend.Ubication(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
   }
 
   /**
@@ -502,7 +546,7 @@ export class ChatContext {
     moreInfoAddress: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Ubication(this._fixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
+    return this._internalSend.Ubication(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
   }
 
   /**
@@ -541,12 +585,12 @@ export class ChatContext {
     contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Contact(this._fixedChatId, contacts, options);
+    return this._internalSend.Contact(this.FixedChatId, contacts, options);
   }
 
   @autobind
   public SendDocument(docPath: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Document(this._fixedChatId, { source: docPath }, options);
+    return this._internalSend.Document(this.FixedChatId, { source: docPath }, options);
   }
 
   @autobind
@@ -555,7 +599,7 @@ export class ChatContext {
     fileNameToDisplay: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Document(this._fixedChatId, { source: docPath, fileNameToDisplay: fileNameToDisplay }, options);
+    return this._internalSend.Document(this.FixedChatId, { source: docPath, fileNameToDisplay: fileNameToDisplay }, options);
   }
 
   @autobind
@@ -566,7 +610,7 @@ export class ChatContext {
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
     return this._internalSend.Document(
-      this._fixedChatId,
+      this.FixedChatId,
       { source: docBuffer, fileNameWithoutExtension: fileNameToDisplayWithoutExt, formatExtension: extensionFileTypeOnly },
       options
     );
@@ -588,19 +632,19 @@ export class ChatContext {
    */
   @autobind
   public async WaitMsg(expectedType: MsgType, localOptions?: Partial<ChatContextConfig>): Promise<WhatsappMessage | null> {
-    switch (this._senderType) {
+    switch (this.FixedSenderType) {
       case SenderType.Unknown:
         throw new Error(
           "[FATAL ERROR] on ChatContext.WaitMsg: ChatContext Obj received a non valid WhatsappMessage as parameter (couldn't identify sender type)"
         );
       case SenderType.Group:
-        if (!this._fixedOriginalSenderId) {
+        if (!this.FixedOriginalParticipantId) {
           throw new Error(
             "[FATAL ERROR]: This shouldn't happen at all. Couldn't find group participant from group msg!... Report this bug as a github issue please."
           );
         }
         try {
-          return await this._internalReceive.WaitUntilNextRawMsgFromUserIDInGroup(this._fixedOriginalSenderId, this._fixedChatId, expectedType, {
+          return await this._internalReceive.WaitUntilNextRawMsgFromUserIDInGroup(this.FixedOriginalParticipantId, this.FixedChatId, expectedType, {
             ...this.Config,
             ...localOptions,
           });
@@ -614,7 +658,7 @@ export class ChatContext {
         }
       case SenderType.Individual:
         try {
-          return await this._internalReceive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(this._fixedChatId, expectedType, {
+          return await this._internalReceive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(this.FixedChatId, expectedType, {
             ...this.Config,
             ...localOptions,
           });
@@ -756,10 +800,10 @@ export class ChatContext {
    */
   @autobind
   public async FetchGroupData(): Promise<ChatContextGroupData | null> {
-    if (this._senderType === SenderType.Individual) {
+    if (this.FixedSenderType === SenderType.Individual) {
       return null;
     }
-    return await this._internalReceive.GetGroupMetadata(this._fixedChatId);
+    return await this._internalReceive.GetGroupMetadata(this.FixedChatId);
   }
 }
 

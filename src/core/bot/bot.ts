@@ -1,4 +1,5 @@
 import type { WAMessage, proto } from "baileys";
+import { autobind } from "../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
 import { type SenderType, MsgType } from "../../Msg.types.js";
@@ -10,7 +11,6 @@ import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js"
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
 import type { ICommand } from "./internals/IBotCommand.js";
-import { autobind } from "../../helpers/Decorators.helper.js";
 
 export type BotMinimalInfo = {
   Settings: WhatsBotOptions;
@@ -49,7 +49,7 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
   };
 
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
-  onCommandNotFound: Delegate<(commandNameThatCouldntBeFound: string) => void | Promise<void>>;
+  onCommandNotFound: Delegate<(ctx: ChatContext, commandNameThatCouldntBeFound: string) => void | Promise<void>>;
   onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
 };
 export type WhatsBotSender = WhatsSocket_Submodule_SugarSender;
@@ -100,7 +100,7 @@ export default class Bot implements BotMinimalInfo {
    * });
    * ```
    */
-  private _onCommandNotFound: Delegate<(commandNameThatCouldntBeFound: string) => void> = new Delegate();
+  private _onCommandNotFound: Delegate<(ctx: ChatContext, commandNameThatCouldntBeFound: string) => void> = new Delegate();
 
   /**
    * Event triggered **after the middleware chain finishes running**.
@@ -342,11 +342,17 @@ export default class Bot implements BotMinimalInfo {
         commandFound = this.Commands.GetWhateverWithAlias(commandOrAliasNameLowerCased, commandTypeFound);
       }
       // 4. Can't be found after all that? its not a valid command
-      if (!commandFound) return;
-
-      //Couldn't found any commands or tag with that name or alias
       if (!commandFound) {
-        this.Events.onCommandNotFound.CallAll(commandOrAliasNameLowerCased);
+        await this.Events.onCommandNotFound.CallAllAsync(
+          new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
+            cancelKeywords: this.Settings.cancelKeywords!,
+            timeoutSeconds: this.Settings.timeoutSeconds!,
+            ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+            wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+            cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+          }),
+          commandOrAliasNameLowerCased
+        );
         return;
       }
 

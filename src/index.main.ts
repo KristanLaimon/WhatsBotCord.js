@@ -1,4 +1,4 @@
-import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType } from "src/index.js";
+import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, SenderType } from "src/index.js";
 
 // =============== EveryoneTag.ts ================
 class EveryoneTag implements IBotCommand {
@@ -15,6 +15,26 @@ class EveryoneTag implements IBotCommand {
   }
 }
 
+class EveryoneId implements IBotCommand {
+  name: string = "ids";
+  aliases?: string[] | undefined;
+  description: string = "All ids";
+  async run(ctx: ChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+    if (args.senderType === SenderType.Individual) {
+      await ctx.SendText("Este comando solo puede ser usado en grupos!");
+      return;
+    }
+
+    const groupData = await ctx.FetchGroupData();
+    if (!groupData) {
+      await ctx.SendText("Hubo un error al intentar obtener la data del grupo!...");
+      return;
+    }
+    const allIds = groupData.members.map((m) => m.rawId!);
+    await ctx.SendText(allIds.join(" "));
+  }
+}
+
 // ========================== MAIN ==============================
 const bot = new Bot({
   commandPrefix: ["$", "!", "/"],
@@ -23,7 +43,15 @@ const bot = new Bot({
   loggerMode: "recommended",
 });
 bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
+bot.Commands.Add(new EveryoneId(), CommandType.Normal);
+bot.Events.onCommandNotFound.Subscribe(async (ctx, commandName) => {
+  await ctx.SendText("No has enviado un comando válido, usaste: " + commandName);
+});
 bot.Start();
+
+const str: string = "string";
+
+console.log(str);
 
 // ✅ Essential Testing
 /** TODO TESTING:
