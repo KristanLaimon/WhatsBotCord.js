@@ -19,7 +19,7 @@ export interface ICommand {
   aliases?: string[];
 
   /** Short description explaining what the command does */
-  description: string;
+  description?: string;
 
   /**
    * Executes the command.

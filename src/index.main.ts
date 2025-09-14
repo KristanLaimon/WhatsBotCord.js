@@ -19,7 +19,7 @@ class EveryoneId implements IBotCommand {
   name: string = "ids";
   aliases?: string[] | undefined;
   description: string = "All ids";
-  async run(ctx: ChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+  async run(ctx: ChatContext, _: RawMsgAPI, args: CommandArgs): Promise<void> {
     if (args.senderType === SenderType.Individual) {
       await ctx.SendText("Este comando solo puede ser usado en grupos!");
       return;
@@ -32,6 +32,15 @@ class EveryoneId implements IBotCommand {
     }
     const allIds = groupData.members.map((m) => m.rawId!);
     await ctx.SendText(allIds.join(" "));
+  }
+}
+
+class ErrorCommand implements IBotCommand {
+  name: string = "error";
+  aliases?: string[] | undefined;
+  description: string = "error desc";
+  async run(ctx: ChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+    await ctx.SendText("Daré un error ahora mismo.");
   }
 }
 
@@ -74,13 +83,14 @@ console.log(str);
 // [X] GENERAL: Document Update => Should be capable to RECEIVE and SEND documents!
 //        [X]: Send documents
 //              [X]: Test..
-//        [ ]: Receive documents
-//              [ ]: Test..
+//        [X]: Receive documents
+//              [X]: Test..
 //      @Note: So far, it can recognize and get documents, but not sending (not tested at all) ❌
 // [X]: WhatsSocket.SugarSender: Test MIME types being inferred correctly from WhatsSocket.SugarSender (TESTS) on all MULTIMEDIA SENDING!
-// [ ]: WhatsSocket.Start : If internal baileys socket crashes at first run, should reset itself, or console.log user should reset the program. => Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
+// [X]: WhatsSocket.Start : If internal baileys socket crashes at first run, should reset itself, or console.log user should reset the program. => Document common error cases. When running the same bot twice but in second time doens't work. (Maybe you have an already running instance of this same socket with same credentials)
 // CORRECT al ChatContext sending msgs with good params to handle (only string | buffer && extensiontype!);....
 // [ ]: Add a default emoji to send to original msgs when occurs an error (configurable on bot instatiation params!)
 
 //TODO: Improve and document bot EVENTS!! Exon's Feedback!
 //TODO: Improve loggin docs, when creating bot object
+//TODO: Create testing toolkit for users to simulate chats with these commands!

@@ -1,5 +1,5 @@
 import { expect, mock as fn, spyOn, test } from "bun:test";
-import { MsgHelpers, type WhatsappMessage } from "../..";
+import { type WhatsappMessage, MsgHelpers } from "../..";
 import { skipLongTests } from "../../Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
@@ -14,10 +14,10 @@ import {
 import { MockQuotedMsg_Group, MockQuotedMsg_Individual, MockQuotedMsg_Individual_CHATID } from "../../mocks/MockQuotedMsgs.mock.js";
 import { MsgType, SenderType } from "../../Msg.types.js";
 import {
+  type WhatsSocketReceiverError,
   WhatsSocket_Submodule_Receiver,
   WhatsSocketReceiverHelper_isReceiverError,
   WhatsSocketReceiverMsgError,
-  type WhatsSocketReceiverError,
 } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock.js";
@@ -702,4 +702,115 @@ test("Middleware_WhenNOTBreakingChain_ShouldExecuteCommandHandling", async () =>
   //3. Assert
   expect(comRunSpy).toHaveBeenCalledTimes(1);
   expect(sub).toHaveBeenCalledTimes(1);
+});
+
+test("WhenCreatingBotWithTwoEmojisAsDefaultEmojiToSend_ShouldFail", async () => {
+  expect(() => {
+    new Bot({ defaultEmojiToSendReactionOnFailureCommand: "😍😒" });
+  }).toThrow();
+
+  expect(() => {
+    new Bot({ defaultEmojiToSendReactionOnFailureCommand: "🦊" });
+  }).not.toThrow();
+
+  //Maybe add validation in future to be only emojis
+  expect(() => {
+    new Bot({ defaultEmojiToSendReactionOnFailureCommand: "A" });
+  }).not.toThrow();
+});
+
+test("WhenUsingConfigSendtoChatOnError_ShouldDoIt", async (): Promise<void> => {
+  const myError = { errorcode: "400", msg: "my custom error" };
+  const { bot, socket } = toolkit();
+  bot.Settings.sendErrorToChatOnFailureCommand_debug = true;
+  bot.Settings.commandPrefix = "!";
+  bot.Commands.Add(
+    {
+      name: "error",
+      async run(ctx, _rawMsgApi, _args) {
+        await ctx.SendText("Creating error rn!");
+        await new Promise<void>((_, reject) => {
+          reject(myError);
+        });
+      },
+    },
+    CommandType.Normal
+  );
+  bot.Start();
+
+  const originalSendSafeSpy = socket._SendSafe;
+  const sendSafeSpy = spyOn(socket, "_SendSafe");
+  sendSafeSpy.mockImplementation(async (chat, content, options): Promise<WhatsappMessage | null> => {
+    console.log(chat, content, options);
+    return await originalSendSafeSpy(chat, content, options);
+  });
+
+  try {
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!error" });
+    throw new Error("Should throw error!");
+  } catch (e) {
+    expect(sendSafeSpy).toHaveBeenCalledTimes(2);
+    expect(socket.SentMessagesThroughQueue).toHaveLength(2);
+    expect(socket.SentMessagesThroughQueue[0]!).toMatchObject({
+      chatId: MockGroupTxtMsg_CHATID,
+      content: {
+        mentions: undefined,
+        text: "Creating error rn!",
+      },
+      miscOptions: undefined,
+    });
+    expect(socket.SentMessagesThroughQueue[1]!).toMatchObject({
+      chatId: MockGroupTxtMsg_CHATID,
+      content: {
+        mentions: undefined,
+        text: JSON.stringify(myError, null, 2),
+      },
+      miscOptions: {
+        normalizeMessageText: false,
+      },
+    });
+  }
+});
+
+test("WhenNotUsingConfigSendtoChatOnError_ShouldNotSendErrorToChat", async (): Promise<void> => {
+  const myError = { errorcode: "400", msg: "my custom error" };
+  const { bot, socket } = toolkit();
+  bot.Settings.sendErrorToChatOnFailureCommand_debug = false;
+  bot.Settings.commandPrefix = "!";
+  bot.Commands.Add(
+    {
+      name: "error",
+      async run(ctx, _rawMsgApi, _args) {
+        await ctx.SendText("Creating error rn!");
+        await new Promise<void>((_, reject) => {
+          reject(myError);
+        });
+      },
+    },
+    CommandType.Normal
+  );
+  bot.Start();
+
+  const originalSendSafeSpy = socket._SendSafe;
+  const sendSafeSpy = spyOn(socket, "_SendSafe");
+  sendSafeSpy.mockImplementation(async (chat, content, options): Promise<WhatsappMessage | null> => {
+    console.log(chat, content, options);
+    return await originalSendSafeSpy(chat, content, options);
+  });
+
+  try {
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!error" });
+    throw new Error("Should throw error!");
+  } catch (e) {
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(socket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(socket.SentMessagesThroughQueue[0]!).toMatchObject({
+      chatId: MockGroupTxtMsg_CHATID,
+      content: {
+        mentions: undefined,
+        text: "Creating error rn!",
+      },
+      miscOptions: undefined,
+    });
+  }
 });

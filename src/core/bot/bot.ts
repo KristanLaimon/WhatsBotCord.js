@@ -1,4 +1,5 @@
 import type { WAMessage, proto } from "baileys";
+import GraphemeSplitter from "grapheme-splitter";
 import { autobind } from "../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
@@ -12,6 +13,9 @@ import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
 import type { ICommand } from "./internals/IBotCommand.js";
 
+//Little dependency to verify that "defaulEmojiToSendOnCommandFailure" is 1 emoji length!
+const emojiSplitter = new GraphemeSplitter();
+
 export type BotMinimalInfo = {
   Settings: WhatsBotOptions;
   Commands: WhatsBotCommands;
@@ -20,32 +24,70 @@ export type BotMinimalInfo = {
 export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
   Omit<Partial<ChatContextConfig>, "ignoreSelfMessages"> & {
     /**
-     * Character(s) used to tag the bot.
+     * Character(s) used to tag the bot in messages.
+     *
+     * Useful in group contexts where multiple bots or members exist;
+     * allows users to explicitly "mention" the bot.
+     *
      * @default '@'
+     * @example
+     * tagCharPrefix: ['@', '#'] // bot reacts to both "@bot" and "#bot"
      */
     tagCharPrefix?: string | string[];
 
     /**
      * Character(s) used to prefix commands.
+     *
+     * Common convention is `"!"`, but you can use any characters or multiple
+     * prefixes to support different command styles.
+     *
      * @default '!'
+     * @example
+     * commandPrefix: ['/'] // commands triggered with "/help"
      */
     commandPrefix?: string | string[];
 
     /**
      * For advanced users: replace the internal WhatsApp socket implementation.
-     * Use at your own risk.
+     *
+     * If provided, the bot will use this custom implementation instead of the
+     * built-in `WhatsSocket`. Useful for testing, extending, or mocking.
+     *
+     * ⚠️ Use at your own risk — incorrect implementations can break bot behavior.
      */
     ownWhatsSocketImplementation?: IWhatsSocket;
 
     /**
-     * Disables the "safe net" for command execution.
-     * When `false`, all command errors are caught internally and logged.
-     * When `true`, (default) errors thrown by commands will bubble up instead of being swallowed.
+     * Enables or disables the "safe net" around command execution.
      *
-     * In case of advanced scenarios where you want to handle errors externally
-     * or you want to include bot inside your tests and recognize the error
+     * - When `true` (default): command errors are caught internally, logged,
+     *   and prevented from crashing the bot.
+     * - When `false`: errors bubble up to the caller, allowing external handling
+     *   (useful for integration tests or advanced error pipelines).
+     *
+     * @default true
+     * @remarks This setting is primarily for developers who want fine-grained
+     * control over error handling.
      */
     enableCommandSafeNet?: boolean;
+
+    /**
+     * Default emoji reaction to send when a command fails unexpectedly.
+     *
+     * If set, the bot will react to the triggering message with this emoji
+     * whenever a command throws or exits with an error.
+     *
+     * @default undefined (no reaction sent on command failure)
+     * @example
+     * defaultEmojiToSendReactionOnFailureCommand: "⚠️"
+     */
+    defaultEmojiToSendReactionOnFailureCommand?: string | null;
+
+    /**
+     * Send to chat a json representation of catched error when a
+     * commands fails unexpectedly. Useful for debug in real time.
+     */
+    sendErrorToChatOnFailureCommand_debug?: boolean;
   };
 
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
@@ -202,17 +244,72 @@ export default class Bot implements BotMinimalInfo {
   }
 
   /**
-   * Creates a new instance of the `Bot`.
+   * Creates a new `Bot` instance with customizable behavior.
+   *
+   * The constructor accepts a `WhatsBotOptions` object that allows overriding
+   * runtime settings such as logging, message delays, command handling, and
+   * socket implementation.
    *
    * @param options - Optional configuration for customizing bot behavior.
    *
    * Default values:
    * - `credentialsFolder`: `"./auth"`
+   *   Folder path where WhatsApp session credentials are stored and reused.
+   *
    * - `delayMilisecondsBetweenMsgs`: `100`
+   *   Minimum delay (in ms) between consecutive outgoing messages.
+   *   Helps avoid spam detection and rate-limiting by WhatsApp.
+   *
    * - `ignoreSelfMessage`: `true`
-   * - `loggerMode`: `"debug"`
+   *   When enabled, the bot ignores messages sent by its own account.
+   *
+   * - `loggerMode`: `"recommended"`
+   *   Logging verbosity. `"recommended"` provides balanced visibility;
+   *   other modes may increase or decrease log detail.
+   *
    * - `maxReconnectionRetries`: `5`
+   *   Number of reconnection attempts before giving up when the socket disconnects.
+   *
    * - `senderQueueMaxLimit`: `20`
+   *   Maximum number of pending messages allowed in the send queue.
+   *   Prevents unbounded memory growth if the bot cannot send fast enough.
+   *
+   * - `commandPrefix`: `["!"]`
+   *   One or more prefixes that trigger command execution.
+   *   Can be a string or string[]; strings are normalized into arrays.
+   *
+   * - `tagCharPrefix`: `["@"]`
+   *   Characters used to denote mentions or tagging in commands.
+   *   Similar normalization rules as `commandPrefix`.
+   *
+   * - `cancelFeedbackMsg`:
+   *   `"canceled ❌ (Default Message: Change me using Bot constructor params options)"`
+   *   Feedback message shown when a user cancels an interactive flow.
+   *
+   * - `cancelKeywords`: `["cancel", "cancelar", "para", "stop"]`
+   *   Keywords that trigger cancellation of interactive sessions.
+   *
+   * - `timeoutSeconds`: `30`
+   *   Default timeout for interactive flows (in seconds).
+   *
+   * - `wrongTypeFeedbackMsg`:
+   *   `"wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)"`
+   *   Feedback shown when the received message type doesn’t match expectations.
+   *
+   * - `ownWhatsSocketImplementation`: `undefined`
+   *   Allows injecting a custom `WhatsSocket` implementation. If omitted,
+   *   the built-in socket (`new WhatsSocket(Settings)`) is used.
+   *
+   * - `enableCommandSafeNet`: `true`
+   *   Enables a safeguard layer around command execution, preventing
+   *   crashes or unintended side effects from propagating.
+   *
+   * @remarks
+   * - All defaults are applied when their corresponding `options` field
+   *   is `undefined` or invalid.
+   * - `commandPrefix` and `tagCharPrefix` always normalize to arrays.
+   * - For production bots, consider raising `delayMilisecondsBetweenMsgs`
+   *   slightly to avoid WhatsApp anti-spam systems.
    */
   constructor(options?: WhatsBotOptions) {
     this.Settings = {
@@ -230,7 +327,21 @@ export default class Bot implements BotMinimalInfo {
       wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
       ownWhatsSocketImplementation: options?.ownWhatsSocketImplementation,
       enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
+      defaultEmojiToSendReactionOnFailureCommand: options?.defaultEmojiToSendReactionOnFailureCommand ?? null,
+      sendErrorToChatOnFailureCommand_debug: options?.sendErrorToChatOnFailureCommand_debug ?? false,
     };
+
+    //# Validations:
+    //      1.Validate is only one emoji length on defaultEmojiToSend...
+    if (this.Settings.defaultEmojiToSendReactionOnFailureCommand) {
+      const emojisCount: number = emojiSplitter.countGraphemes(this.Settings.defaultEmojiToSendReactionOnFailureCommand);
+      if (emojisCount !== 1) {
+        throw new Error(
+          "WhatsbotCord BOT received in 'defaultEmojiToSendReactionOnFailureCommand' a non valid SINGLE emoji. Received instead: " +
+            this.Settings.defaultEmojiToSendReactionOnFailureCommand
+        );
+      }
+    }
 
     this._commandSearcher = new CommandsSearcher();
     this._socket = this.Settings.ownWhatsSocketImplementation ?? new WhatsSocket(this.Settings);
@@ -367,35 +478,45 @@ export default class Bot implements BotMinimalInfo {
         };
       }
 
+      //=========================================================
+      const ARG1_ChatContext = new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
+        cancelKeywords: this.Settings.cancelKeywords!,
+        timeoutSeconds: this.Settings.timeoutSeconds!,
+        ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+        wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+        cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+      });
+      const ARG2_RawAPI = {
+        Receive: this._socket.Receive,
+        Send: this._socket.Send,
+        InternalSocket: this._socket,
+      };
+      const ARG3_AdditionalArgs = {
+        args: commandArgs,
+        chatId: chatId,
+        msgType: msgType,
+        originalRawMsg: rawMsg,
+        senderType: senderType,
+        userId: senderId,
+        quotedMsgInfo: quotedMsgAsArgument,
+        botInfo: this,
+      };
       try {
         await commandFound.run(
           /** Chat Context */
-          new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
-            cancelKeywords: this.Settings.cancelKeywords!,
-            timeoutSeconds: this.Settings.timeoutSeconds!,
-            ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-            wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-            cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-          }),
+          ARG1_ChatContext,
           /** RawAPI */
-          {
-            Receive: this._socket.Receive,
-            Send: this._socket.Send,
-            InternalSocket: this._socket,
-          },
+          ARG2_RawAPI,
           /** Command basic arguments */
-          {
-            args: commandArgs,
-            chatId: chatId,
-            msgType: msgType,
-            originalRawMsg: rawMsg,
-            senderType: senderType,
-            userId: senderId,
-            quotedMsgInfo: quotedMsgAsArgument,
-            botInfo: this,
-          }
+          ARG3_AdditionalArgs
         );
       } catch (e) {
+        if (this.Settings.defaultEmojiToSendReactionOnFailureCommand) {
+          await ARG1_ChatContext.SendReactEmojiToInitialMsg(this.Settings.defaultEmojiToSendReactionOnFailureCommand);
+        }
+        if (this.Settings.sendErrorToChatOnFailureCommand_debug) {
+          await ARG1_ChatContext.SendText(JSON.stringify(e, null, 2), { normalizeMessageText: false });
+        }
         if (WhatsSocketReceiverHelper_isReceiverError(e)) {
           if (e.wasAbortedByUser && this.Settings.loggerMode !== "silent") {
             console.log(`[Command Canceled]: Name ${commandOrAliasNameLowerCased}`);
