@@ -1,7 +1,7 @@
-import type { WAMessage, proto } from "baileys";
+import type { WAMessage } from "baileys";
 import GraphemeSplitter from "grapheme-splitter";
 import { autobind } from "../../helpers/Decorators.helper.js";
-import { MsgHelper_FullMsg_GetQuotedMsg, MsgHelper_FullMsg_GetText, MsgHelper_ProtoMsg_GetMsgType } from "../../helpers/Msg.helper.js";
+import { MsgHelper_ExtractQuotedMsgInfo, MsgHelper_FullMsg_GetText } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
 import { type SenderType, MsgType } from "../../Msg.types.js";
 import { type WhatsSocket_Submodule_Receiver, WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
@@ -10,8 +10,8 @@ import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_sock
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
-import type { FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
-import type { ICommand } from "./internals/IBotCommand.js";
+import type { CommandArgs, FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
+import type { ICommand, RawMsgAPI } from "./internals/IBotCommand.js";
 
 //Little dependency to verify that "defaulEmojiToSendOnCommandFailure" is 1 emoji length!
 const emojiSplitter = new GraphemeSplitter();
@@ -467,37 +467,28 @@ export default class Bot implements BotMinimalInfo {
         return;
       }
 
-      const existsQuotedMsg: proto.IMessage | null = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
-      let quotedMsgAsArgument: FoundQuotedMsg | null = null;
-      if (existsQuotedMsg) {
-        const quotedMsgType: MsgType = MsgHelper_ProtoMsg_GetMsgType(existsQuotedMsg);
-        quotedMsgAsArgument = {
-          userIdItComesFrom: rawMsg.message?.extendedTextMessage?.contextInfo?.participant ?? senderId! ?? "ID_NOT_IDENTIFIED",
-          msg: existsQuotedMsg,
-          type: quotedMsgType,
-        };
-      }
+      const quotedMsgAsArgument: FoundQuotedMsg | null = MsgHelper_ExtractQuotedMsgInfo(rawMsg);
 
       //=========================================================
-      const ARG1_ChatContext = new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
+      const ARG1_ChatContext: ChatContext = new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
         cancelKeywords: this.Settings.cancelKeywords!,
         timeoutSeconds: this.Settings.timeoutSeconds!,
         ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
         wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
         cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
       });
-      const ARG2_RawAPI = {
+      const ARG2_RawAPI: RawMsgAPI = {
         Receive: this._socket.Receive,
         Send: this._socket.Send,
         InternalSocket: this._socket,
       };
-      const ARG3_AdditionalArgs = {
+      const ARG3_AdditionalArgs: CommandArgs = {
         args: commandArgs,
         chatId: chatId,
         msgType: msgType,
         originalRawMsg: rawMsg,
         senderType: senderType,
-        userId: senderId,
+        participantId: senderId,
         quotedMsgInfo: quotedMsgAsArgument,
         botInfo: this,
       };

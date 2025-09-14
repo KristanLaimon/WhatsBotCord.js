@@ -1,6 +1,7 @@
 import { type WAMessage, type proto } from "baileys";
 import { MsgType, SenderType } from "../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+import { FoundQuotedMsg } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 
 /**
@@ -70,6 +71,19 @@ export function MsgHelper_QuotedMsg_GetText(quotedMsgOnly: proto.IMessage): stri
 
 export function MsgHelper_FullMsg_GetQuotedMsg(rawMsg: WAMessage): proto.IMessage | null {
   return rawMsg.message?.extendedTextMessage?.contextInfo?.quotedMessage ?? null;
+}
+
+export function MsgHelper_ExtractQuotedMsgInfo(rawMsg: WAMessage): FoundQuotedMsg | null {
+  const existsQuotedMsg: proto.IMessage | null = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
+  let quotedMsgAsArgument: FoundQuotedMsg | null = null;
+  if (existsQuotedMsg) {
+    const quotedMsgType: MsgType = MsgHelper_ProtoMsg_GetMsgType(existsQuotedMsg);
+    quotedMsgAsArgument = {
+      msg: existsQuotedMsg,
+      type: quotedMsgType,
+    };
+  }
+  return quotedMsgAsArgument;
 }
 
 /**

@@ -152,7 +152,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
       expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
       expect(args.quotedMsgInfo).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
-      expect(args.userId).toBe(GroupMsg_SENDERID);
+      expect(args.participantId).toBe(GroupMsg_SENDERID);
 
       console.log(" ==== I'm code running inside a normal command! FROM GROUP ====");
     },
@@ -184,7 +184,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
       expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
       expect(args.quotedMsgInfo).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
-      expect(args.userId).toBe(GroupMsg_SENDERID);
+      expect(args.participantId).toBe(GroupMsg_SENDERID);
 
       console.log(" ==== I'm code running inside a tag command! FROM GROUP ====");
     },
@@ -218,7 +218,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
 
       //Comes from private msg
       expect(args.senderType).toBe(SenderType.Individual);
-      expect(args.userId).toBe(null);
+      expect(args.participantId).toBe(null);
 
       console.log(" ==== I'm code running inside a normal command! FROM INDIVIDUAL ====");
     },
@@ -252,7 +252,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
 
       //Comes from private msg
       expect(args.senderType).toBe(SenderType.Individual);
-      expect(args.userId).toBe(null);
+      expect(args.participantId).toBe(null);
 
       console.log(" ==== I'm code running inside a tag command! FROM INDIVIDUAL ====");
     },

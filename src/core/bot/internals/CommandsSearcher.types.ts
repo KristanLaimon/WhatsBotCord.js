@@ -20,7 +20,7 @@ export type CommandArgs = {
    * Example: `5216121407908@s.whatsapp.net`.
    * Undefined if the sender could not be resolved.
    */
-  userId: string | null;
+  participantId: string | null;
 
   /**
    * WhatsApp ID of the chat where the command was triggered.
@@ -68,9 +68,4 @@ export type FoundQuotedMsg = {
    * The type of the quoted message (text, image, audio, etc.).
    */
   type: MsgType;
-
-  /**
-   * WhatsApp ID of the user who originally sent the quoted message.
-   */
-  userIdItComesFrom: string;
 };

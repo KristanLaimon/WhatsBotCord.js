@@ -354,7 +354,7 @@ export class ChatContext {
    * - Supports optional normalization, mentions, or other sending options via `options`.
    */
   @autobind
-  public SendAudioFromBuffer(audioSource: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  public SendAudioFromBuffer(audioSource: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     return this._internalSend.Audio(this.FixedChatId, { source: audioSource, formatExtension: formatFile }, options);
   }
 
