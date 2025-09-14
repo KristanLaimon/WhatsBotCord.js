@@ -1,87 +1,49 @@
-import type { WhatsBotOptions } from "../core/bot/bot.js";
-import Bot from "../core/bot/bot.js";
+import { type WhatsBotOptions, BotUtils_GenerateOptions } from "../core/bot/bot.js";
 import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
+import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
 import type { ICommand } from "../core/bot/internals/IBotCommand.js";
-import type { WhatsSocketMockOptions } from "../core/whats_socket/mocks/WhatsSocket.mock.js";
-import WhatsSocketMock from "../core/whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
-import { type MsgType, type SenderType, CommandType } from "../index.js";
+import { MsgType, SenderType } from "../index.js";
 import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
-import ChatContextSpy from "./ChatContextSpy.js";
+import ChatContextSpy, { type ChatContextSpyWhatsMsg } from "./ChatContextSpy.js";
 
 export type MockingChatParams = {
-  internalMessagingOptions?: WhatsSocketMockOptions;
-  chatContextConfig?: Partial<ChatContextConfig>;
-  botSettings?: Partial<WhatsBotOptions>;
+  chatContextConfig?: Omit<Partial<ChatContextConfig>, "cancelKeywords">;
+  botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
   customChatId?: string;
   customParticipantId?: string;
   args?: string[];
   msgType?: MsgType;
   senderType?: SenderType;
-};
-
-export type MockingChatMsgToSend = {
-  rawMsg: WhatsappMessage;
+  cancelKeywords?: string[];
 };
 
 export default class MockingChat {
-  public EnqueuedMsgsFromUser: MockingChatMsgToSend[] = [];
+  public EnqueuedMsgsFromUser: ChatContextSpyWhatsMsg[] = [];
 
-  private _bot: Bot;
-  private _command: ICommand;
-  private _mockSocket: WhatsSocketMock;
   private _constructorConfig?: MockingChatParams;
   private _participantIdFromConstructor: string;
   private _chatIdFromConstructor: string;
-  private _triggerCommand: WhatsappMessage;
   private _chatContextSpy: ChatContextSpy;
+  private _command: ICommand;
 
   public get SentFromCommand() {
     return {
-      Texts: this._chatContextSpy.SentFromCommand_Texts,
+      Texts: this._chatContextSpy.SentMessages_Text,
     };
   }
 
   constructor(commandToTest: ICommand, additionalOptions?: MockingChatParams) {
     // Initialize participant and chat IDs
+    this._command = commandToTest;
     this._participantIdFromConstructor = additionalOptions?.customParticipantId ?? "fakeUserLidOnGroupOnly" + WhatsappLIDIdentifier;
     this._chatIdFromConstructor = additionalOptions?.customChatId ?? "fakeChatId" + WhatsappGroupIdentifier;
-    const defaultSocketOptions: WhatsSocketMockOptions = {
-      minimumMilisecondsDelayBetweenMsgs: additionalOptions?.internalMessagingOptions?.minimumMilisecondsDelayBetweenMsgs ?? 1,
-      maxQueueLimit: additionalOptions?.internalMessagingOptions?.maxQueueLimit ?? 1000,
-    };
-    this._mockSocket = new WhatsSocketMock(defaultSocketOptions);
-    this._command = commandToTest;
     this._constructorConfig = additionalOptions;
-    this._bot = new Bot({ ...additionalOptions?.botSettings, ownWhatsSocketImplementation_Internal: this._mockSocket });
-    this._bot.Commands.Add(commandToTest, CommandType.Normal);
-    this._bot.Settings.enableCommandSafeNet = false;
-    this._bot.Start(); //to initialize itself
-
-    // 1. ============== Trigger command ====================
-    const prefix: string =
-      typeof this._bot.Settings.commandPrefix === "string" ? this._bot.Settings.commandPrefix : this._bot.Settings.commandPrefix?.at(0) ?? "!";
-    const commandName: string = this._command.name.toLowerCase();
-    const argsJoined: string | null = this._constructorConfig?.args ? this._constructorConfig.args.join(" ") : null;
-    const triggerCommandText: string = prefix + commandName + (argsJoined ? " " + argsJoined : "");
-    const triggerMsg: WhatsappMessage = {
-      key: {
-        fromMe: false,
-        participant: this._participantIdFromConstructor,
-        remoteJid: this._chatIdFromConstructor,
-        id: "trigger_" + Date.now(),
-      },
-      message: { conversation: triggerCommandText },
-      messageTimestamp: Math.floor(Date.now() / 1000),
-      pushName: "Test User (This msg is sent by mocking framework, to trigger your command so it can simulate a production environment, ignore this",
-      broadcast: false,
-    };
-    this._triggerCommand = triggerMsg;
 
     // 2. ============== Chat context spy creation (to be able to store all msgs sent) ====================
     const chatContextConfig: ChatContextConfig = {
-      cancelKeywords: this._constructorConfig?.chatContextConfig?.cancelKeywords ?? ["cancel"],
+      cancelKeywords: this._constructorConfig?.cancelKeywords ?? ["cancel"],
       ignoreSelfMessages: this._constructorConfig?.chatContextConfig?.ignoreSelfMessages ?? true,
       timeoutSeconds: this._constructorConfig?.chatContextConfig?.timeoutSeconds ?? 15,
       cancelFeedbackMsg:
@@ -92,15 +54,56 @@ export default class MockingChat {
     };
 
     this._chatContextSpy = new ChatContextSpy(
+      this.EnqueuedMsgsFromUser,
       this._participantIdFromConstructor,
       this._chatIdFromConstructor,
-      triggerMsg,
-      this._bot.SendMsg,
-      this._bot.ReceiveMsg,
+      additionalOptions?.senderType ?? SenderType.Individual,
       chatContextConfig
     );
+  }
 
-    this._bot.Settings.ownChatContextCreationHook_Internal = () => this._chatContextSpy;
+  @autobind
+  public SendText(textToEnqueue: string, options?: { customSenderWhatsUsername?: string }): void {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const pushName = options?.customSenderWhatsUsername ?? "User Who Sends this msg (mock response)";
+
+    const message: WhatsappMessage = this.__createBaseMessage("5AD0EEC1D2649BF2A2EC614714B3ED11", timestamp, pushName);
+    message.message = {
+      conversation: textToEnqueue,
+    };
+
+    this.EnqueuedMsgsFromUser.push({
+      rawMsg: message,
+    });
+  }
+
+  @autobind
+  public async Simulate(): Promise<void> {
+    // const receiver: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver();
+    //Need to conver
+    //TODO: Need to convert WhatsSocket_Submodule_Receiver into an interface and mock it here
+    //TODO: Need to convert WhatsSocket_Submodule_SugarSender into an interface and mock it here
+    await this._command.run(
+      this._chatContextSpy,
+      //TODO: How to mock receive and send to align with SentFromCommadn get() prop from this class??
+      {
+        // Receive: {}, // pending to mock and use instead chatconfig!
+        // Sending: {}, // pendin to mock and use instead chatconfig!
+      } as any,
+      {
+        args: this._constructorConfig?.args ?? [],
+        botInfo: {
+          Commands: new CommandsSearcher(),
+          Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextSpy.Config.cancelKeywords }),
+        },
+        chatId: this._chatIdFromConstructor,
+        participantId: this._participantIdFromConstructor,
+        msgType: this._constructorConfig?.msgType ?? MsgType.Text,
+        originalRawMsg: {} as any,
+        quotedMsgInfo: {} as any,
+        senderType: this._constructorConfig?.senderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual),
+      }
+    );
   }
 
   @autobind
@@ -126,37 +129,5 @@ export default class MockingChat {
       //@ts-expect-error this is string for sure, ts is annoying with this
       messageSecret: "j+pPQKnytgjeJuMsvrly26TrQQjTFgDauhu2Gy9XsUM=",
     };
-  }
-
-  public SendText(textToEnqueue: string, options?: { customSenderWhatsUsername?: string }): void {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const pushName = options?.customSenderWhatsUsername ?? "User Who Sends this msg (mock response)";
-
-    const message: WhatsappMessage = this.__createBaseMessage("5AD0EEC1D2649BF2A2EC614714B3ED11", timestamp, pushName);
-    message.message = {
-      conversation: textToEnqueue,
-    };
-
-    this.EnqueuedMsgsFromUser.push({
-      rawMsg: message,
-    });
-  }
-
-  @autobind
-  public async Simulate(): Promise<void> {
-    // Send the trigger command and wait for it to start processing
-    const command = this._mockSocket.MockSendMsgAsync(this._triggerCommand);
-    await new Promise<void>((resolve) => setTimeout(resolve, 10)); // Small delay to let command start
-
-    // Send enqueued user messages sequentially
-    if (this.EnqueuedMsgsFromUser.length > 0) {
-      for (const msgObjInfo of this.EnqueuedMsgsFromUser) {
-        await this._mockSocket.MockSendMsgAsync(msgObjInfo.rawMsg); // Await each message
-      }
-    }
-
-    // Wait for command execution and all promises to resolve
-    await Promise.all([command, this._chatContextSpy.ExecuteAllInOrder()]);
-    this.EnqueuedMsgsFromUser = [];
   }
 }

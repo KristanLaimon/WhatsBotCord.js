@@ -323,25 +323,7 @@ export default class Bot implements BotMinimalInfo {
    *   slightly to avoid WhatsApp anti-spam systems.
    */
   constructor(options?: WhatsBotOptions) {
-    this.Settings = {
-      credentialsFolder: options?.credentialsFolder ?? "./auth",
-      delayMilisecondsBetweenMsgs: options?.delayMilisecondsBetweenMsgs ?? 100,
-      ignoreSelfMessage: options?.ignoreSelfMessage ?? true,
-      loggerMode: options?.loggerMode ?? "recommended",
-      maxReconnectionRetries: options?.maxReconnectionRetries ?? 5,
-      senderQueueMaxLimit: options?.senderQueueMaxLimit ?? 20,
-      commandPrefix: typeof options?.commandPrefix === "string" ? [options.commandPrefix] : options?.commandPrefix ?? ["!"],
-      tagCharPrefix: typeof options?.tagCharPrefix === "string" ? [options.tagCharPrefix] : options?.tagCharPrefix ?? ["@"],
-      cancelFeedbackMsg: options?.cancelFeedbackMsg ?? "canceled ❌ (Default Message: Change me using Bot constructor params options)",
-      cancelKeywords: options?.cancelKeywords ?? ["cancel", "cancelar", "para", "stop"],
-      timeoutSeconds: options?.timeoutSeconds ?? 30,
-      wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
-      ownWhatsSocketImplementation_Internal: options?.ownWhatsSocketImplementation_Internal,
-      enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
-      defaultEmojiToSendReactionOnFailureCommand: options?.defaultEmojiToSendReactionOnFailureCommand ?? null,
-      sendErrorToChatOnFailureCommand_debug: options?.sendErrorToChatOnFailureCommand_debug ?? false,
-      ownChatContextCreationHook_Internal: options?.ownChatContextCreationHook_Internal ?? (() => null),
-    };
+    this.Settings = BotUtils_GenerateOptions(options);
 
     //# Validations:
     //      1.Validate is only one emoji length on defaultEmojiToSend...
@@ -543,4 +525,26 @@ export default class Bot implements BotMinimalInfo {
       }
     }
   } //EVENT_...() Method
+}
+
+export function BotUtils_GenerateOptions(options?: Partial<WhatsBotOptions>): WhatsBotOptions {
+  return {
+    credentialsFolder: options?.credentialsFolder ?? "./auth",
+    delayMilisecondsBetweenMsgs: options?.delayMilisecondsBetweenMsgs ?? 100,
+    ignoreSelfMessage: options?.ignoreSelfMessage ?? true,
+    loggerMode: options?.loggerMode ?? "recommended",
+    maxReconnectionRetries: options?.maxReconnectionRetries ?? 5,
+    senderQueueMaxLimit: options?.senderQueueMaxLimit ?? 20,
+    commandPrefix: typeof options?.commandPrefix === "string" ? [options.commandPrefix] : options?.commandPrefix ?? ["!"],
+    tagCharPrefix: typeof options?.tagCharPrefix === "string" ? [options.tagCharPrefix] : options?.tagCharPrefix ?? ["@"],
+    cancelFeedbackMsg: options?.cancelFeedbackMsg ?? "canceled ❌ (Default Message: Change me using Bot constructor params options)",
+    cancelKeywords: options?.cancelKeywords ?? ["cancel", "cancelar", "para", "stop"],
+    timeoutSeconds: options?.timeoutSeconds ?? 30,
+    wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
+    ownWhatsSocketImplementation_Internal: options?.ownWhatsSocketImplementation_Internal,
+    enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
+    defaultEmojiToSendReactionOnFailureCommand: options?.defaultEmojiToSendReactionOnFailureCommand ?? null,
+    sendErrorToChatOnFailureCommand_debug: options?.sendErrorToChatOnFailureCommand_debug ?? false,
+    ownChatContextCreationHook_Internal: options?.ownChatContextCreationHook_Internal ?? (() => null),
+  };
 }

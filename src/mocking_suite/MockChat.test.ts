@@ -8,22 +8,18 @@ class MyCommand implements ICommand {
   public name: string = "name";
   async run(ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
     await ctx.SendText("Tell me your name pls");
-    await ctx.SendText("Tell me your name again");
-    await ctx.SendText("Tell me your name again");
-    await ctx.SendText("Tell me your name again");
-    await ctx.SendText("Tell me your name again");
     const nameAwaited = await ctx.WaitText({ timeoutSeconds: 2 });
     expect(_args.args).toEqual(["arg1"]);
     expect(nameAwaited).toBe("chris");
-    await ctx.SendText("Your name is " + nameAwaited);
+    await ctx.SendText("Your name is " + nameAwaited, { normalizeMessageText: true });
   }
 }
 
+//So.... timeoutSeconds is not used, or any other param. Only "cancelKeyboards"
 test("Simplest_WhenExpectingTxtMsg_ItsCatchedByCommandWaitTxt", async () => {
-  const chat = new MockingChat(new MyCommand(), { args: ["arg1"] });
-  // chat.SendText("hello world");
+  const chat = new MockingChat(new MyCommand(), { args: ["arg1"], cancelKeywords: ["hello"] });
   chat.SendText("chris");
-  // expect(chat).toEqual([{ text: "Your name is chris", options: undefined }]);
   await chat.Simulate();
-  console.log(chat.SentFromCommand.Texts);
+  expect(chat.SentFromCommand.Texts).toHaveLength(2);
+  expect(chat.SentFromCommand.Texts[1]!.text).toBe("Your name is chris");
 });

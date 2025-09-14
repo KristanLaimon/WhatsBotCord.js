@@ -153,9 +153,10 @@ export class WhatsSocket_Submodule_Receiver {
           //Priority #1: Check if user is trying to cancel this command
           const expectedTxtMsgContent: string | null = MsgHelper_FullMsg_GetText(msg);
           if (expectedTxtMsgContent) {
-            for (let i = 0; i < cancelKeywords.length; i++) {
-              const cancelKeyWordToCheck = cancelKeywords[i];
-              if (cancelKeyWordToCheck && expectedTxtMsgContent.includes(cancelKeyWordToCheck)) {
+            const wordsLowerCased = expectedTxtMsgContent.split(" ").map((word) => word.toLowerCase());
+            for (let i = 0; i < wordsLowerCased.length; i++) {
+              const actualWord = wordsLowerCased[i]!;
+              if (cancelKeywords.includes(actualWord)) {
                 this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
                 clearTimeout(timer);
                 if (cancelFeedbackMsg) {
