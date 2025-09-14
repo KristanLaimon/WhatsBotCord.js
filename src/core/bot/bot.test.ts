@@ -814,3 +814,125 @@ test("WhenNotUsingConfigSendtoChatOnError_ShouldNotSendErrorToChat", async (): P
     });
   }
 });
+
+test("WhenUsingDefaultEmojiOnCommandFailure_ShouldUseIt", async (): Promise<void> => {
+  const myError = { errorcode: "400", msg: "my custom error" };
+  const { bot, socket } = toolkit();
+  const emoji = "🦊";
+  bot.Settings.sendErrorToChatOnFailureCommand_debug = false;
+  bot.Settings.defaultEmojiToSendReactionOnFailureCommand = emoji;
+  bot.Settings.commandPrefix = "!";
+  bot.Commands.Add(
+    {
+      name: "error",
+      async run(ctx, _rawMsgApi, _args) {
+        await ctx.SendText("Creating error rn!");
+        await new Promise<void>((_, reject) => {
+          reject(myError);
+        });
+      },
+    },
+    CommandType.Normal
+  );
+  bot.Start();
+
+  const originalSendSafeSpy = socket._SendSafe;
+  const sendSafeSpy = spyOn(socket, "_SendSafe");
+  sendSafeSpy.mockImplementation(async (chat, content, options): Promise<WhatsappMessage | null> => {
+    console.log(chat, content, options);
+    return await originalSendSafeSpy(chat, content, options);
+  });
+
+  try {
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!error" });
+    throw new Error("Should throw error!");
+  } catch (e) {
+    expect(sendSafeSpy).toHaveBeenCalledTimes(2);
+    expect(socket.SentMessagesThroughQueue).toHaveLength(2);
+    expect(socket.SentMessagesThroughQueue[0]!).toMatchObject({
+      chatId: MockGroupTxtMsg_CHATID,
+      content: {
+        mentions: undefined,
+        text: "Creating error rn!",
+      },
+      miscOptions: undefined,
+    });
+    expect(socket.SentMessagesThroughQueue[1]!).toMatchObject({
+      chatId: MockGroupTxtMsg_CHATID,
+      content: {
+        mentions: undefined,
+        react: {
+          text: emoji,
+          key: {
+            remoteJid: MockGroupTxtMsg_CHATID,
+            fromMe: false,
+            /** id */
+            participant: MockGroupTxtMsg_SENDERID,
+          },
+        },
+      },
+      miscOptions: undefined,
+    });
+  }
+});
+
+test("WhenNotUsingDefaultEmojiOnCommandFailure_ShouldNotSendIt", async (): Promise<void> => {
+  const myError = { errorcode: "400", msg: "my custom error" };
+  const { bot, socket } = toolkit();
+  bot.Settings.sendErrorToChatOnFailureCommand_debug = false;
+  bot.Settings.defaultEmojiToSendReactionOnFailureCommand = undefined;
+  bot.Settings.commandPrefix = "!";
+  bot.Commands.Add(
+    {
+      name: "error",
+      async run(ctx, _rawMsgApi, _args) {
+        await ctx.SendText("Creating error rn!");
+        await new Promise<void>((_, reject) => {
+          reject(myError);
+        });
+      },
+    },
+    CommandType.Normal
+  );
+  bot.Start();
+
+  const originalSendSafeSpy = socket._SendSafe;
+  const sendSafeSpy = spyOn(socket, "_SendSafe");
+  sendSafeSpy.mockImplementation(async (chat, content, options): Promise<WhatsappMessage | null> => {
+    console.log(chat, content, options);
+    return await originalSendSafeSpy(chat, content, options);
+  });
+
+  try {
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!error" });
+    throw new Error("Should throw error!");
+  } catch (e) {
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(socket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(socket.SentMessagesThroughQueue[0]!).toMatchObject({
+      chatId: MockGroupTxtMsg_CHATID,
+      content: {
+        mentions: undefined,
+        text: "Creating error rn!",
+      },
+      miscOptions: undefined,
+    });
+    // # Should not send any reactions
+    // expect(socket.SentMessagesThroughQueue[1]!).toMatchObject({
+    //   chatId: MockGroupTxtMsg_CHATID,
+    //   content: {
+    //     mentions: undefined,
+    //     react: {
+    //       text: emoji,
+    //       key: {
+    //         remoteJid: MockGroupTxtMsg_CHATID,
+    //         fromMe: false,
+    //         /** id */
+    //         participant: MockGroupTxtMsg_SENDERID,
+    //       },
+    //     },
+    //   },
+    //   miscOptions: undefined,
+    // });
+  }
+});

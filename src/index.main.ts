@@ -39,8 +39,11 @@ class ErrorCommand implements IBotCommand {
   name: string = "error";
   aliases?: string[] | undefined;
   description: string = "error desc";
-  async run(ctx: ChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+  async run(ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
     await ctx.SendText("Daré un error ahora mismo.");
+    await new Promise<void>((_resolve, reject) => {
+      reject({ xd: "JAJAJA" });
+    });
   }
 }
 
@@ -56,6 +59,7 @@ bot.Commands.Add(new EveryoneId(), CommandType.Normal);
 bot.Events.onCommandNotFound.Subscribe(async (ctx, commandName) => {
   await ctx.SendText("No has enviado un comando válido, usaste: " + commandName);
 });
+bot.Settings.defaultEmojiToSendReactionOnFailureCommand = "🦊";
 bot.Start();
 
 const str: string = "string";
