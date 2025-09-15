@@ -4,6 +4,7 @@ import { type WhatsappIDInfo, WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId,
 import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
+import type { IWhatsSocket_Submodule_Receiver } from "./IWhatsSocket.receiver.js";
 
 /**
  * Callback type used to determine whether a received message satisfies a success condition.
@@ -92,7 +93,7 @@ export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): an
 /**
  * Submodule responsible for listening and waiting for messages through a WhatsSocket instance.
  */
-export class WhatsSocket_Submodule_Receiver {
+export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Receiver {
   private _whatsSocket: IWhatsSocket;
 
   /**
@@ -190,23 +191,6 @@ export class WhatsSocket_Submodule_Receiver {
     });
   }
 
-  /**
-   * Waits for the next message from a specific user in a group chat.
-   *
-   * The returned promise resolves only if the specified participant sends
-   * a message of the expected type.
-   *
-   * If the timeout is reached, or if the wait is explicitly cancelled,
-   * the promise may reject or throw an error depending on configuration.
-   *
-   * @throws error if timeout reached
-   * @param userIDToWait - The participant ID to wait for.
-   * @param chatToWaitOnID - Group chat ID to monitor.
-   * @param expectedMsgType - The type of message to wait for.
-   * @param options - Options such as timeout duration, cancel keywords, etc.
-   * @returns Resolves with the next `WhatsappMessage` from the specified user,
-   *          or rejects/throws on timeout or cancellation.
-   */
   public async WaitUntilNextRawMsgFromUserIDInGroup(
     userIDToWait: string,
     chatToWaitOnID: string,
@@ -225,23 +209,6 @@ export class WhatsSocket_Submodule_Receiver {
     return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
 
-  /**
-   * Waits for the next message from a specific user in a private 1:1 conversation.
-   *
-   * Fun fact: WhatsApp treats the user ID itself as the chat ID in private conversations.
-   *
-   * The returned promise resolves only if the specified user sends a message of
-   * the expected type.
-   *
-   * If the timeout is reached, or if the wait is explicitly cancelled,
-   * the promise may reject or throw an error depending on configuration.
-   * @throws error if timeout reached
-   * @param userIdToWait - The user ID to wait for.
-   * @param expectedMsgType - The type of message to wait for.
-   * @param options - Options such as timeout duration, cancel keywords, etc.
-   * @returns Resolves with the next `WhatsappMessage` from the specified user,
-   *          or rejects/throws on timeout or cancellation.
-   */
   public async WaitUntilNextRawMsgFromUserIdInPrivateConversation(
     userIdToWait: string,
     expectedMsgType: MsgType,
@@ -255,35 +222,6 @@ export class WhatsSocket_Submodule_Receiver {
     return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
 
-  /**
-   * Retrieves metadata about a WhatsApp group chat.
-   *
-   * This method fetches all relevant information from the WhatsApp group,
-   * including the list of participants, group owner, description, invite code, and
-   * group settings like whether only admins can send messages or change group settings.
-   *
-   * @param chatId - The WhatsApp ID of the group to fetch metadata for.
-   * @returns A promise resolving to `ChatContextGroupData` containing the group metadata,
-   *          or `null` if the metadata could not be retrieved.
-   *
-   * @example
-   * ```ts
-   * const groupData = await chatContext.GetGroupMetadata("12345-67890@g.us");
-   * console.log(groupData.groupName);
-   * console.log(groupData.members.map(m => m.info?.id));
-   * ```
-   *
-   * @example
-   * Handling null:
-   * ```ts
-   * const groupData = await chatContext.GetGroupMetadata("12345-67890@g.us");
-   * if (!groupData) {
-   *   console.error("Failed to fetch group metadata.");
-   * } else {
-   *   console.log("Owner:", groupData.ownerName);
-   * }
-   * ```
-   */
   public async GetGroupMetadata(chatId: string): Promise<ChatContextGroupData | null> {
     let res: GroupMetadata;
     try {
