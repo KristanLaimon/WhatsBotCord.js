@@ -30,6 +30,7 @@ export type ChatContextSpyWhatsMsg = {
   options?: WhatsMsgSenderSendingOptions | WhatsMsgSenderSendingOptionsMINIMUM;
 };
 
+//TODO: Put all this logic inside SugarSender CLASS, use original chatcontext, is not necessary to make a ChatContextSpy
 export default class ChatContextSpy implements IChatContext {
   public readonly FixedOriginalParticipantId: string | null;
   public readonly FixedChatId: string;
