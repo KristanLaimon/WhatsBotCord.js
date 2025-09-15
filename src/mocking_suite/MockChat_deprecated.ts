@@ -18,7 +18,7 @@ import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.type
 // const participantId: string | undefined = "fakeuser@whatsapp.es";
 // const chatId: string = "fakeId@g.us";
 // const initialMsg: WhatsappMessage = {
-//   key: {
+//   key: 
 //     fromMe: false,
 //     participant: participantId,
 //     remoteJid: chatId,
@@ -37,6 +37,10 @@ import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.type
 // const sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
 // const ctx = new ChatContext(participantId, chatId, initialMsg, sender, receiver, config);
 
+
+/**
+ * @deprecated do not use this anymore
+ */
 export type MockingChatParams = {
   //Packed complex configs objects
   internalMessagingOptions?: WhatsSocketMockOptions;

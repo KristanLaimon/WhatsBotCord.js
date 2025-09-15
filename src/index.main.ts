@@ -1,37 +1,29 @@
 import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, SenderType } from "src/index.js";
 
 // =============== EveryoneTag.ts ================
-class EveryoneTag implements IBotCommand {
-  name: string = "e";
-  description: string = "replies with pong!";
-  aliases: string[] = ["test"];
+class PingCommand implements IBotCommand {
+  name: string = "ping";
   async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
-    const res = await chat.FetchGroupData();
-    if (res) {
-      const mentions = res.members.map((m) => m.asMentionFormatted!);
-      const ids = res.members.map((m) => m.rawId!);
-      await chat.SendText(mentions.join(" "), { mentionsIds: ids });
-    }
+    await chat.SendText("Pong");
   }
 }
 
 class EveryoneId implements IBotCommand {
-  name: string = "ids";
-  aliases?: string[] | undefined;
-  description: string = "All ids";
+  name: string = "everyone";
+  aliases?: string[] = ["e"];
   async run(ctx: ChatContext, _: RawMsgAPI, args: CommandArgs): Promise<void> {
     if (args.senderType === SenderType.Individual) {
       await ctx.SendText("Este comando solo puede ser usado en grupos!");
       return;
     }
-
     const groupData = await ctx.FetchGroupData();
     if (!groupData) {
       await ctx.SendText("Hubo un error al intentar obtener la data del grupo!...");
       return;
     }
     const allIds = groupData.members.map((m) => m.rawId!);
-    await ctx.SendText(allIds.join(" "));
+    const allMentionsIds: string[] = groupData.members.map((m) => m.asMentionFormatted!);
+    await ctx.SendText(allMentionsIds.join(" "), { mentionsIds: allIds });
   }
 }
 // ========================== MAIN ==============================
@@ -41,8 +33,8 @@ const bot = new Bot({
   credentialsFolder: "./auth",
   loggerMode: "recommended",
 });
-bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
-bot.Commands.Add(new EveryoneId(), CommandType.Normal);
+bot.Commands.Add(new PingCommand(), CommandType.Normal);
+bot.Commands.Add(new EveryoneId(), CommandType.Tag);
 bot.Events.onCommandNotFound.Subscribe(async (ctx, commandName) => {
   await ctx.SendText("No has enviado un comando válido, usaste: " + commandName);
 });
@@ -84,7 +76,7 @@ console.log(str);
 
 //#1 TODO: Create testing toolkit for users to simulate chats with these commands!
 //TODO: (IMPORTANT) fix testing toolkit, all spy logic should be inside WhatsSocket_Submodule_Receiver and WhatsSocket_Submodule_SugarSender
-//      [ ]: Need to extract WhatsSocket_Submodule_Receiver into an interface and extract WhatsSocket_Submodule_SugarSender into an interface
+//      ✅[X]: Need to extract WhatsSocket_Submodule_Receiver into an interface and extract WhatsSocket_Submodule_SugarSender into an interface
 //      [ ]: Need to create a WhatsSocket_Submodule_Receiver mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
 //          [ ]: Do it per send*() type
 //      [ ]: Need to create a WhatsSocket_Submodule_SugarSender mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)

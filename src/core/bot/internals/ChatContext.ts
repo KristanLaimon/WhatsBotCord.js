@@ -5,20 +5,26 @@ import { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
 import {
   type ChatContextGroupData,
-  type WhatsSocket_Submodule_Receiver,
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverHelper_isReceiverError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
+
+import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
 import type {
+  IWhatsSocket_Submodule_SugarSender,
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
-  WhatsSocket_Submodule_SugarSender,
-} from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
+} from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import type { ChatContextContactRes, ChatContextUbication, IChatContext } from "./IChatContext.js";
 
-export type ChatContextConfig = WhatsSocketReceiverWaitOptions;
+export type ChatContextConfig = WhatsSocketReceiverWaitOptions & {
+  /**
+   * Used primarly in mocking system
+   */
+  customSenderType_Internal?: SenderType;
+};
 
 /**
  * A sugar-layer abstraction for sending/receiving msgs bound to the actual chat.
@@ -36,7 +42,7 @@ export class ChatContext implements IChatContext {
    * This is an internal utility—use higher-level convenience
    * methods instead of calling this directly where possible.
    */
-  private _internalSend: WhatsSocket_Submodule_SugarSender;
+  private _internalSend: IWhatsSocket_Submodule_SugarSender;
 
   /**
    * Low-level receiver dependency responsible for listening
@@ -45,7 +51,7 @@ export class ChatContext implements IChatContext {
    * Exposed internally so that session features can react to
    * real-time events within the same chat context.
    */
-  private _internalReceive: WhatsSocket_Submodule_Receiver;
+  private _internalReceive: IWhatsSocket_Submodule_Receiver;
 
   public readonly FixedOriginalParticipantId: string | null;
 
@@ -77,8 +83,8 @@ export class ChatContext implements IChatContext {
     originalSenderID: string | null,
     fixedChatId: string,
     initialMsg: WhatsappMessage,
-    senderDependency: WhatsSocket_Submodule_SugarSender,
-    receiverDependency: WhatsSocket_Submodule_Receiver,
+    senderDependency: IWhatsSocket_Submodule_SugarSender,
+    receiverDependency: IWhatsSocket_Submodule_Receiver,
     config: ChatContextConfig
   ) {
     this.Config = config;
@@ -87,7 +93,7 @@ export class ChatContext implements IChatContext {
     this._internalReceive = receiverDependency;
     this.FixedChatId = fixedChatId;
     this.FixedInitialMsg = initialMsg;
-    this.FixedSenderType = MsgHelper_FullMsg_GetSenderType(this.FixedInitialMsg);
+    this.FixedSenderType = config.customSenderType_Internal ?? MsgHelper_FullMsg_GetSenderType(this.FixedInitialMsg);
   }
 
   @autobind

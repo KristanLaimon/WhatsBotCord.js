@@ -5,29 +5,7 @@ import type { IChatContext } from "../core/bot/internals/IChatContext.js";
 import { SenderType } from "../Msg.types.js";
 import MockingChat from "./MockChat.js";
 
-//Canonical test :3
-class MyCommand implements ICommand {
-  public name: string = "name";
-  async run(ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-    await ctx.SendText("Tell me your name pls");
-    const nameAwaited = await ctx.WaitText({ timeoutSeconds: 2 });
-    expect(_args.args).toEqual(["arg1"]);
-    expect(nameAwaited).toBe("chris");
-    await ctx.SendText("Your name is " + nameAwaited, { normalizeMessageText: true });
-  }
-}
-//=======================================================================================
-//So.... timeoutSeconds is not used, or any other param. Only "cancelKeyboards"
-test("Simplest_WhenExpectingTxtMsg_ItsCatchedByCommandWaitTxt", async () => {
-  const chat = new MockingChat(new MyCommand(), { args: ["arg1"], cancelKeywords: ["hello"], customChatId: "xddddd@g.us" });
-  chat.SendText("chris");
-  await chat.StartChatSimulation();
-  expect(chat.SentFromCommand.Texts).toHaveLength(2);
-  expect(chat.SentFromCommand.Texts[1]!.text).toBe("Your name is chris");
-});
-
-//GENERAL Tests
-
+//                    ------------------- ======== GENERAL Tests ========= -----------------------------
 test("Nothing_ShouldNotThrowAnyError", async () => {
   class Com implements ICommand {
     name: string = "mynamecommand";
@@ -107,20 +85,81 @@ test("WhenSendingCustomParticipantId_CommandShouldReceiveIt", async (): Promise<
   await chat.StartChatSimulation();
 });
 
+//TODO: DO THIS
+//                      ------------------- ======== Raw API Testing ========= -----------------------------
+/**
+ * Using chat context seems to correct easily, but commands also are provided with a RAWAPI object to interact which comes with:
+ * 1. A ReceiverObject  (To wait for msgs from whatsapp)                   (it's the same obj by ref used like in ChatContext)
+ * 2. A SenderObject    (To send easily msgs to whatsapp groups or chats)  (it's the same obj by ref used like in ChatContext)
+ *
+ * 3. A raw access to socket (Which you cand send msgs as well and receive them but at a low control)
+ *
+ * Let's check if ChatMock can catch received and sent messages from:
+ * 1. ChatContext (already checked previously)
+ * 2. ReceiverObject (to check)
+ * 3. SenderObject (to check)
+ * 4. RawSocket a mock one (to check)
+ */
+// test("WhenUsingRawApi_NoSocket_Sending_ShouldCatchMsgSent");
+
+//                      ------------------- ======== SenderType Testing ========= -----------------------------
+test("WhenNoProvidingCustomParticipantIdOrGroupChatId_ByDefaultShouldBeTreatedAsIndividualChat", async () => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      expect(_args.senderType).toBe(SenderType.Individual);
+      expect(_ctx.FixedSenderType).toBe(SenderType.Individual);
+    }
+  }
+  const chat = new MockingChat(new Com());
+  await chat.StartChatSimulation();
+});
+
 test("WhenProvidingParticipantId_MustBeGroup", async (): Promise<void> => {
   const customParticipantID: string = "participant@whatsapp.es";
   class Com implements ICommand {
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
       expect(_args.senderType).toBe(SenderType.Group);
+      expect(_ctx.FixedSenderType).toBe(SenderType.Group);
     }
   }
   const chat = new MockingChat(new Com(), { customParticipantId: customParticipantID });
   await chat.StartChatSimulation();
 });
 
+test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndParticipantId_IndividualCase", async () => {
+  const customParticipantID: string = "participant@whatsapp.es";
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      expect(_args.senderType).toBe(SenderType.Individual);
+      expect(_ctx.FixedSenderType).toBe(SenderType.Individual);
+    }
+  }
+  //Normally this would be a chat of type SenderType.Group due to customParticipantId
+  //but customSenderType is provided and set to individual, so it'll be individual
+  const chat = new MockingChat(new Com(), { customParticipantId: customParticipantID, customSenderType: SenderType.Individual });
+  await chat.StartChatSimulation();
+});
+
+test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndParticipantId_GroupCase", async () => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      expect(_args.senderType).toBe(SenderType.Group);
+      expect(_ctx.FixedSenderType).toBe(SenderType.Group);
+    }
+  }
+  //Normally this would be a chat of type SenderType.Group due to customParticipantId
+  //but customSenderType is provided and set to individual, so it'll be individual
+  const chat = new MockingChat(new Com(), { customSenderType: SenderType.Group });
+  await chat.StartChatSimulation();
+});
+
+//        ----------------------- ================== Cancel words testing ================== -------------------------
 test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
-  //================ With "twitter omg" ===================
+  // ================ With "twitter omg" ===================
   class Com implements ICommand {
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
@@ -147,6 +186,26 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
   }).toThrow();
 });
 
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ * Command Mocking System Tests
+ * Here starts general testing for each type of sending and receving msg!
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+//                      ------------------- ======== TEXTS ========= -----------------------------
 describe("Text", () => {
   it("ShouldGetTextSentFromCommand", async () => {
     class Com implements ICommand {
@@ -173,6 +232,7 @@ describe("Text", () => {
   });
 
   it("ShouldBeAbleToWaitTxtMsgs", async (): Promise<void> => {
+    //This is supposed to be an Individual mock chat
     class Com implements ICommand {
       name: string = "mynamecommand";
       async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
@@ -233,3 +293,5 @@ describe("Text", () => {
     });
   });
 });
+
+//                      ------------------- ======== IMAGES ========= -----------------------------

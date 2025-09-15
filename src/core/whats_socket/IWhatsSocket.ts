@@ -1,8 +1,8 @@
 import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage, WAMessageUpdate } from "baileys";
 import type Delegate from "../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../Msg.types.js";
-import type { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
-import type { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_SugarSender } from "./internals/IWhatsSocket.sugarsender.js";
 
 interface IWhatsSocket_SendingMsgsOnly_Module {
   /**
@@ -187,7 +187,7 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * Prefer this module over raw sending methods since it handles
    * formatting, throttling, and common WhatsApp-specific quirks.
    */
-  Send: WhatsSocket_Submodule_SugarSender;
+  Send: IWhatsSocket_Submodule_SugarSender;
 
   /**
    * Receive module for handling incoming messages and events.
@@ -196,7 +196,7 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * should be wired to it under the hood. Use it when you need fine-grained
    * control over incoming raw events.
    */
-  Receive: WhatsSocket_Submodule_Receiver;
+  Receive: IWhatsSocket_Submodule_Receiver;
 
   /**
    * Establishes the socket connection and starts the client.

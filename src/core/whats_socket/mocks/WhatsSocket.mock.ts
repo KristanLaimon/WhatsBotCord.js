@@ -3,6 +3,8 @@ import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from ".
 import Delegate from "../../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types.js";
+import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_SugarSender } from "../internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
 import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
@@ -12,7 +14,9 @@ import type { MsgServiceSocketMessageSentMock } from "./types.js";
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
-  minimumMilisecondsDelayBetweenMsgs: number;
+  minimumMilisecondsDelayBetweenMsgs?: number;
+  customReceiver?: IWhatsSocket_Submodule_Receiver;
+  customSugarSender?: IWhatsSocket_Submodule_SugarSender;
 };
 
 export type WhatsSocketMockSendingMsgOptions = {
@@ -34,13 +38,16 @@ export default class WhatsSocketMock implements IWhatsSocket {
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
   ownJID: string = "ownIDMock" + WhatsappIndividualIdentifier;
 
-  Send: WhatsSocket_Submodule_SugarSender = new WhatsSocket_Submodule_SugarSender(this);
-  Receive: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver(this);
+  Send: IWhatsSocket_Submodule_SugarSender;
+  Receive: IWhatsSocket_Submodule_Receiver;
 
   private _senderQueue: WhatsSocketSenderQueue_SubModule;
 
   constructor(options?: WhatsSocketMockOptions) {
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
+
+    this.Send = options?.customSugarSender ?? new WhatsSocket_Submodule_SugarSender(this);
+    this.Receive = options?.customReceiver ?? new WhatsSocket_Submodule_Receiver(this);
 
     //Thanks js, this is never needed on another languages... ☠️
     this._SendRaw = this._SendRaw.bind(this);

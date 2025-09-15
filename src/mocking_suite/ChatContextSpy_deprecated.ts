@@ -1,17 +1,18 @@
 import { type ChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import type { ChatContextContactRes, ChatContextUbication, IChatContext } from "../core/bot/internals/IChatContext.js";
-import type { ChatContextGroupData, WhatsSocketReceiverError } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
-import { WhatsSocketReceiverMsgError } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type {
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
-} from "../core/whats_socket/internals/WhatsSocket.sugarsenders.js";
+} from "../core/whats_socket/internals/IWhatsSocket.sugarsender.js";
+import type { ChatContextGroupData, WhatsSocketReceiverError } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
+import { WhatsSocketReceiverMsgError } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
 import type { SenderType } from "../Msg.types.js";
 import { MsgType } from "../Msg.types.js";
+import type { ChatContextSpyWhatsMsg } from "./WhatsSocket.receiver.mockingsuite.js";
 
 function CreateSuccessWhatsMsg(participantId: string | null, chatId: string): WhatsappMessage {
   const toReturn: WhatsappMessage = {
@@ -25,12 +26,10 @@ function CreateSuccessWhatsMsg(participantId: string | null, chatId: string): Wh
   return toReturn;
 }
 
-export type ChatContextSpyWhatsMsg = {
-  rawMsg: WhatsappMessage;
-  options?: WhatsMsgSenderSendingOptions | WhatsMsgSenderSendingOptionsMINIMUM;
-};
-
 //TODO: Put all this logic inside SugarSender CLASS, use original chatcontext, is not necessary to make a ChatContextSpy
+/***
+ * @deprecated do not use this anymore
+ */
 export default class ChatContextSpy implements IChatContext {
   public readonly FixedOriginalParticipantId: string | null;
   public readonly FixedChatId: string;
@@ -82,14 +81,13 @@ export default class ChatContextSpy implements IChatContext {
     const toSend = this._queuedContent.shift()!;
     const actualMsg_msgType = MsgHelper_FullMsg_GetMsgType(toSend.rawMsg);
 
-    const thereAreOptions = !!_localOptions || toSend.options || !!this.Config;
+    const thereAreOptions = !!_localOptions || toSend || !!this.Config;
     if (thereAreOptions) {
       //Overriding priority
       const options: Partial<ChatContextConfig> = {
         //#1 first global default from MockChat options
         ...this.Config,
         //#2 second, from the msg itself
-        ...toSend.options,
         //#3 from this method
         ..._localOptions,
       };
@@ -138,115 +136,115 @@ export default class ChatContextSpy implements IChatContext {
   }
 
   //==== testing ====
-  SendImg(imagePath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  SendImg(_imagePath: string, _options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendImgWithCaption(imagePath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  SendImgWithCaption(_imagePath: string, _caption: string, _options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendImgFromBuffer(imagePath: Buffer, extensionType: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  SendImgFromBuffer(_imagePath: Buffer, _extensionType: string, _options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
   SendImgFromBufferWithCaption(
-    imagePath: Buffer,
-    extensionType: string,
-    caption: string,
-    options?: WhatsMsgSenderSendingOptions
+    _imagePath: Buffer,
+    _extensionType: string,
+    _caption: string,
+    _options?: WhatsMsgSenderSendingOptions
   ): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendReactEmojiTo(msgToReactTo: WhatsappMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendReactEmojiTo(_msgToReactTo: WhatsappMessage, _emojiStr: string, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendReactEmojiToInitialMsg(emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendReactEmojiToInitialMsg(_emojiStr: string, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  Ok(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  Ok(_options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  Loading(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  Loading(_options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  Fail(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  Fail(_options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendSticker(_stickerUrlSource: string | Buffer, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendAudio(audioSource: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendAudio(_audioSource: string, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendAudioFromBuffer(audioSource: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendAudioFromBuffer(_audioSource: Buffer, _formatFile: string, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendVideo(videoPath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  SendVideo(_videoPath: string, _options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendVideoWithCaption(videoPath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  SendVideoWithCaption(_videoPath: string, _caption: string, _options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendVideoFromBuffer(videoBuffer: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  SendVideoFromBuffer(_videoBuffer: Buffer, _formatFile: string, _options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
   SendVideoFromBufferWithCaption(
-    videoBuffer: Buffer,
-    caption: string,
-    formatFile: string,
-    options?: WhatsMsgSenderSendingOptions
+    _videoBuffer: Buffer,
+    _caption: string,
+    _formatFile: string,
+    _options?: WhatsMsgSenderSendingOptions
   ): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
   SendPoll(
-    pollTitle: string,
-    selections: string[],
-    pollParams: WhatsMsgPollOptions,
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
+    _pollTitle: string,
+    _selections: string[],
+    _pollParams: WhatsMsgPollOptions,
+    _options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendUbication(degreesLatitude: number, degreesLongitude: number, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendUbication(_degreesLatitude: number, _degreesLongitude: number, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
   SendUbicationWithDescription(
-    degreesLatitude: number,
-    degreesLongitude: number,
-    ubicationName: string,
-    moreInfoAddress: string,
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
+    _degreesLatitude: number,
+    _degreesLongitude: number,
+    _ubicationName: string,
+    _moreInfoAddress: string,
+    _options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
   SendContact(
-    contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
+    _contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
+    _options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendDocument(docPath: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendDocument(_docPath: string, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
-  SendDocumentWithCustomName(docPath: string, fileNameToDisplay: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+  SendDocumentWithCustomName(_docPath: string, _fileNameToDisplay: string, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
   SendDocumentFromBuffer(
-    docBuffer: Buffer,
-    fileNameToDisplayWithoutExt: string,
-    extensionFileTypeOnly: string,
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
+    _docBuffer: Buffer,
+    _fileNameToDisplayWithoutExt: string,
+    _extensionFileTypeOnly: string,
+    _options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
     throw new Error("Method not implemented.");
   }
 
   WaitMultimedia(
-    msgTypeToWaitFor: MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio,
-    localOptions?: Partial<ChatContextConfig>
+    _msgTypeToWaitFor: MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio,
+    _localOptions?: Partial<ChatContextConfig>
   ): Promise<Buffer | null> {
     throw new Error("Method not implemented.");
   }
-  WaitUbication(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextUbication | null> {
+  WaitUbication(_localOptions?: Partial<ChatContextConfig>): Promise<ChatContextUbication | null> {
     throw new Error("Method not implemented.");
   }
-  WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | null> {
+  WaitContact(_localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | null> {
     throw new Error("Method not implemented.");
   }
   FetchGroupData(): Promise<ChatContextGroupData | null> {
