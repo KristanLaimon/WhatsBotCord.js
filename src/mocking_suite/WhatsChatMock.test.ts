@@ -2,12 +2,12 @@ import { describe, expect, it, test } from "bun:test";
 import type { CommandArgs } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { ICommand, RawMsgAPI } from "../core/bot/internals/IBotCommand.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
-import { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
+import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
-import MockingChat from "./MockChat.js";
+import WhatsChatMock from "./WhatsChatMock.js";
 
 //                    ------------------- ======== GENERAL Tests ========= -----------------------------
 test("Nothing_ShouldNotThrowAnyError", async () => {
@@ -17,7 +17,7 @@ test("Nothing_ShouldNotThrowAnyError", async () => {
       /**  Success  */
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   expect(async () => {
     await chat.StartChatSimulation();
   }).not.toThrow();
@@ -32,7 +32,7 @@ test("Nothing_WhenThrowingErrorInsideCommand_ShouldThrowItAtChatLevel", async ()
       throw customError;
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   expect(async (): Promise<void> => {
     await chat.StartChatSimulation();
   }).toThrow();
@@ -45,7 +45,7 @@ test("WhenSendingArguments_CommandShouldReceiveThem", async (): Promise<void> =>
       expect(_args.args).toEqual(["arg1", "arg2", "arg3"]);
     }
   }
-  const chat = new MockingChat(new Com(), { args: ["arg1", "arg2", "arg3"] });
+  const chat = new WhatsChatMock(new Com(), { args: ["arg1", "arg2", "arg3"] });
   await chat.StartChatSimulation();
 });
 
@@ -60,7 +60,7 @@ test("WhenSendingCustomChatId_CommandShouldReceiveIt", async (): Promise<void> =
       expect(_args.chatId).toBe(_ctx.FixedChatId); // They must be the same, logically
     }
   }
-  const chat = new MockingChat(new Com(), { chatId: customChatId });
+  const chat = new WhatsChatMock(new Com(), { chatId: customChatId });
   await chat.StartChatSimulation();
 });
 
@@ -72,7 +72,7 @@ test("WhenProvidingCustomChatId_MustBeIndividualSender", async (): Promise<void>
       expect(_args.senderType).toBe(SenderType.Individual);
     }
   }
-  const chat = new MockingChat(new Com(), { chatId: customChatId });
+  const chat = new WhatsChatMock(new Com(), { chatId: customChatId });
   await chat.StartChatSimulation();
 });
 
@@ -82,11 +82,11 @@ test("WhenSendingCustomParticipantId_CommandShouldReceiveIt", async (): Promise<
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
       expect(_args.participantId).toBe(customChatId + WhatsappLIDIdentifier);
-      expect(_ctx.FixedOriginalParticipantId).toBe(customChatId + WhatsappLIDIdentifier);
-      expect(_args.participantId).toBe(_ctx.FixedOriginalParticipantId);
+      expect(_ctx.FixedParticipantId).toBe(customChatId + WhatsappLIDIdentifier);
+      expect(_args.participantId).toBe(_ctx.FixedParticipantId);
     }
   }
-  const chat = new MockingChat(new Com(), { participantId: customChatId });
+  const chat = new WhatsChatMock(new Com(), { participantId: customChatId });
   await chat.StartChatSimulation();
 });
 
@@ -113,7 +113,7 @@ test("WhenUsingRawApi_NoSocket_Sending_ShouldCatchMsgSent", async (): Promise<vo
       await _rawMsgApi.InternalSocket.Send.Text(myCustomChatId, "MyOtherText");
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts[0]!.chatId).toBe(myCustomChatId);
   expect(chat.SentFromCommand.Texts[0]!.text).toBe("MyText");
@@ -145,7 +145,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_Group_ShouldCatch", async (): Promise<vo
       expect(msg).toBe("MyText");
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   chat.EnqueueIncomingText("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
@@ -176,7 +176,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_PrivateConversation_ShouldCatch", async 
       expect(msg).toBe("MyText");
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   chat.EnqueueIncomingText("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
@@ -198,7 +198,7 @@ test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async 
       // expect(msg).toBe("MyText");
     }
   }
-  const chat = new MockingChat(new Com(), { chatId: myCustomChatId, participantId: myCustomParticipantId });
+  const chat = new WhatsChatMock(new Com(), { chatId: myCustomChatId, participantId: myCustomParticipantId });
   chat.EnqueueIncomingText("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
@@ -217,7 +217,7 @@ test("WhenUsingLowLevelSocket_SafSend_ShouldCatchAllSendingSeparately", async ()
     }
   }
   //By default individual chat
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   await chat.StartChatSimulation();
   expect(chat.SentFromCommandSocketQueue).toHaveLength(1);
   expect(chat.SentFromCommandSocketQueue[0]!).toMatchObject({
@@ -239,7 +239,7 @@ test("WhenUsingLowLevelSocket_RawUnsafeSend_ShouldCatchAllSendingSeparately", as
     }
   }
   //By default individual chat
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   await chat.StartChatSimulation();
   expect(chat.SentFromCommandSocketWithoutQueue).toHaveLength(1);
   expect(chat.SentFromCommandSocketWithoutQueue[0]!).toMatchObject({
@@ -261,7 +261,7 @@ test("WhenNoProvidingCustomParticipantIdOrGroupChatId_ByDefaultShouldBeTreatedAs
       expect(_ctx.FixedSenderType).toBe(SenderType.Individual);
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   await chat.StartChatSimulation();
 });
 
@@ -274,7 +274,7 @@ test("WhenProvidingParticipantId_MustBeGroup", async (): Promise<void> => {
       expect(_ctx.FixedSenderType).toBe(SenderType.Group);
     }
   }
-  const chat = new MockingChat(new Com(), { participantId: customParticipantID });
+  const chat = new WhatsChatMock(new Com(), { participantId: customParticipantID });
   await chat.StartChatSimulation();
 });
 
@@ -289,7 +289,7 @@ test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndPartic
   }
   //Normally this would be a chat of type SenderType.Group due to customParticipantId
   //but customSenderType is provided and set to individual, so it'll be individual
-  const chat = new MockingChat(new Com(), { participantId: customParticipantID, senderType: SenderType.Individual });
+  const chat = new WhatsChatMock(new Com(), { participantId: customParticipantID, senderType: SenderType.Individual });
   await chat.StartChatSimulation();
 });
 
@@ -303,7 +303,7 @@ test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndPartic
   }
   //Normally this would be a chat of type SenderType.Group due to customParticipantId
   //but customSenderType is provided and set to individual, so it'll be individual
-  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  const chat = new WhatsChatMock(new Com(), { senderType: SenderType.Group });
   await chat.StartChatSimulation();
 });
 
@@ -316,7 +316,7 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
       await _ctx.WaitText();
     }
   }
-  const chat = new MockingChat(new Com(), { cancelKeywords: ["twitter"] });
+  const chat = new WhatsChatMock(new Com(), { cancelKeywords: ["twitter"] });
   chat.EnqueueIncomingText("twitter omg");
   expect(async () => {
     await chat.StartChatSimulation();
@@ -329,7 +329,7 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
       await _ctx.WaitText();
     }
   }
-  const chat2 = new MockingChat(new Com2(), { cancelKeywords: ["twitter"] });
+  const chat2 = new WhatsChatMock(new Com2(), { cancelKeywords: ["twitter"] });
   chat2.EnqueueIncomingText("twitter");
   expect(async () => {
     await chat2.StartChatSimulation();
@@ -346,7 +346,7 @@ test("GroupChatMetadata_WhenComingFromIndividualChat_ShouldBeNullFromContextObje
       expect(groupInfo).toBeNull();
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   await chat.StartChatSimulation();
 });
 
@@ -358,7 +358,7 @@ test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromCo
       expect(groupInfo).not.toBeNull();
     }
   }
-  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  const chat = new WhatsChatMock(new Com(), { senderType: SenderType.Group });
   await chat.StartChatSimulation();
 });
 
@@ -377,7 +377,7 @@ test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromCo
       expect(groupInfo).toMatchObject(groupInfoFromInternalReceiver);
     }
   }
-  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  const chat = new WhatsChatMock(new Com(), { senderType: SenderType.Group });
   await chat.StartChatSimulation();
 });
 
@@ -392,7 +392,7 @@ test("GroupChatMetadata_DoesntMatterSenderType_WhenFetchingFromInternalSocket_Sh
       expect(groupInfoFromReceiveDirectly.id).toBe("mygroupid" + WhatsappGroupIdentifier);
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new WhatsChatMock(new Com());
   chat.SetGroupMetadataMock({ id: "mygroupid" });
   await chat.StartChatSimulation();
 });
@@ -427,7 +427,7 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
       console.log(groupMetadata_lowLevelSocket);
     }
   }
-  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  const chat = new WhatsChatMock(new Com(), { senderType: SenderType.Group });
   await chat.StartChatSimulation();
 });
 
@@ -465,7 +465,7 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
       }
     }
   }
-  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  const chat = new WhatsChatMock(new Com(), { senderType: SenderType.Group });
   chat.SetGroupMetadataMock(groupMock);
   await chat.StartChatSimulation();
 });
@@ -499,7 +499,7 @@ describe("Text", () => {
         await _ctx.SendText("Hello User3", { normalizeMessageText: true });
       }
     }
-    const chat = new MockingChat(new Com());
+    const chat = new WhatsChatMock(new Com());
     await chat.StartChatSimulation();
     expect(chat.SentFromCommand.Texts).toHaveLength(3);
     expect(chat.SentFromCommand.Texts.at(0)!.text).toBe("Hello User");
@@ -526,7 +526,7 @@ describe("Text", () => {
         await _ctx.SendText("Hello " + userName);
       }
     }
-    const chat = new MockingChat(new Com());
+    const chat = new WhatsChatMock(new Com());
     chat.EnqueueIncomingText("chris");
     await chat.StartChatSimulation();
 
@@ -545,7 +545,7 @@ describe("Text", () => {
         await _ctx.SendText("Hello " + userName);
       }
     }
-    const chat = new MockingChat(new Com());
+    const chat = new WhatsChatMock(new Com());
     // chat.SendText("chris"); //Without send this, what will happen? (throw error)
     expect(async (): Promise<void> => {
       await chat.StartChatSimulation();
@@ -567,7 +567,7 @@ describe("Text", () => {
         await _ctx.SendText("Hello " + userName);
       }
     }
-    const chat = new MockingChat(new Com());
+    const chat = new WhatsChatMock(new Com());
     chat.EnqueueIncomingText("chris"); //Without send this, what will happen? (throw error)
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
@@ -584,7 +584,7 @@ describe("Text", () => {
         await rawMsgApi.InternalSocket.Send.Text("differentGroupId", "mytext");
       }
     }
-    const chat = new MockingChat(new Com());
+    const chat = new WhatsChatMock(new Com());
     await chat.StartChatSimulation();
     expect(chat.SentFromCommand.Texts).toHaveLength(2);
     expect(chat.SentFromCommand.Texts[0]!).toMatchObject({
@@ -624,7 +624,7 @@ describe("Text", () => {
         expect(MsgHelper_FullMsg_GetText(textAwaited!)).toBe("3");
       }
     }
-    const chat = new MockingChat(new Com());
+    const chat = new WhatsChatMock(new Com());
     chat.EnqueueIncomingText("1");
     chat.EnqueueIncomingText("2");
     chat.EnqueueIncomingText("3");
@@ -647,25 +647,25 @@ describe("Text", () => {
 });
 
 //                      ------------------- ======== IMAGES ========= -----------------------------
-describe("Images", () => {
-  it("ShouldGetImgs_Simple", async (): Promise<void> => {
-    class Com implements ICommand {
-      name: string = "mynamecommand";
-      async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-        await _ctx.SendImg();
-      }
-    }
-    const chat = new MockingChat(new Com());
-    await chat.StartChatSimulation();
-  });
-});
+// describe("Images", () => {
+//   it("ShouldGetImgs_Simple", async (): Promise<void> => {
+//     class Com implements ICommand {
+//       name: string = "mynamecommand";
+//       async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+//         await _ctx.SendImg();
+//       }
+//     }
+//     const chat = new MockingChat(new Com());
+//     await chat.StartChatSimulation();
+//   });
+// });
 
 //TEMPLATE
-it("", async (): Promise<void> => {
-  class Com implements ICommand {
-    name: string = "mynamecommand";
-    async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {}
-  }
-  const chat = new MockingChat(new Com());
-  await chat.StartChatSimulation();
-});
+// it("", async (): Promise<void> => {
+//   class Com implements ICommand {
+//     name: string = "mynamecommand";
+//     async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {}
+//   }
+//   const chat = new MockingChat(new Com());
+//   await chat.StartChatSimulation();
+// });

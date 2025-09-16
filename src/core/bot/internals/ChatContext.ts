@@ -53,7 +53,7 @@ export class ChatContext implements IChatContext {
    */
   private _internalReceive: IWhatsSocket_Submodule_Receiver;
 
-  public readonly FixedOriginalParticipantId: string | null;
+  public readonly FixedParticipantId: string | null;
 
   public readonly FixedChatId: string;
 
@@ -88,7 +88,7 @@ export class ChatContext implements IChatContext {
     config: ChatContextConfig
   ) {
     this.Config = config;
-    this.FixedOriginalParticipantId = originalSenderID;
+    this.FixedParticipantId = originalSenderID;
     this._internalSend = senderDependency;
     this._internalReceive = receiverDependency;
     this.FixedChatId = fixedChatId;
@@ -262,13 +262,13 @@ export class ChatContext implements IChatContext {
           "[FATAL ERROR] on ChatContext.WaitMsg: ChatContext Obj received a non valid WhatsappMessage as parameter (couldn't identify sender type)"
         );
       case SenderType.Group:
-        if (!this.FixedOriginalParticipantId) {
+        if (!this.FixedParticipantId) {
           throw new Error(
             "[FATAL ERROR]: This shouldn't happen at all. Couldn't find group participant from group msg!... Report this bug as a github issue please."
           );
         }
         try {
-          return await this._internalReceive.WaitUntilNextRawMsgFromUserIDInGroup(this.FixedOriginalParticipantId, this.FixedChatId, expectedType, {
+          return await this._internalReceive.WaitUntilNextRawMsgFromUserIDInGroup(this.FixedParticipantId, this.FixedChatId, expectedType, {
             ...this.Config,
             ...localOptions,
           });

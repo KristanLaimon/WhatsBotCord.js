@@ -13,6 +13,7 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Testing/Mocking](#whatsbotcordjs-mocking--testing)
 - [Configuration](#configuration)
 - [Contributing](#contributing)
 - [License](#license)
@@ -207,6 +208,130 @@ bot.Start();
 ```
 
 Then in chat you can easily use @everyone and bot will mention everyone, like discord!
+
+# WhatsBotCord.js Mocking & Testing
+
+You can simulate a full WhatsApp command interaction locally, without touching your real bot or changing any command code. This is perfect for testing, learning, or automating responses.
+
+To do so, import from this library "WhatsChatMock" object, and you can use it as following:
+
+## Getting Started with WhatsChatMock
+
+_WhatsChatMock_ lets you mock a chat environment so your command behaves as if it’s running live.
+
+## Simplest usage
+
+```js
+// Test framework agnostic example using WhatsChatMock
+import { it } from "your-testing-framework-of-choice";
+import type { CommandArgs, IChatContext, ICommand, RawMsgAPI } from "whatsbotcord";
+import { WhatsChatMock } from "whatsbotcord";
+
+it("retrieves user input correctly", async () => {
+  class Com implements ICommand {
+    name = "mynamecommand";
+
+    async run(ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      await ctx.SendText("Hello User");
+      await ctx.SendText("What's your name?");
+
+      // Wait for user input
+      const userName = await ctx.WaitText({ cancelKeywords: ["hello", "world"] }); //Returns: "chris"
+      await ctx.SendText("Hello " + userName);
+    }
+  }
+
+  // Create a mock chat for the command
+  const chat = new WhatsChatMock(new Com());
+
+  // Simulate user sending "chris"
+  chat.EnqueueIncomingText("chris");
+
+  // Start the simulation
+  await chat.StartChatSimulation();
+
+  // Inspect results
+  console.log(chat.SentFromCommand.Texts); // [{text:"Hello User"}, {text: "What's your name?"}, {text:"Hello chris"}]
+  console.log(chat.WaitedFromCommand); // [{cancelKeywords:["hello","world"]}]
+});
+```
+
+> Notes:
+
+- EnqueueIncomingText() simulates user messages.
+- WaitText() can optionally take cancelKeywords or timeout parameters.
+
+## Advanced example
+
+This example demonstrates full configuration and more complex interactions.
+
+```js
+// Test framework agnostic example using WhatsChatMock
+import { describe, it } from "your-testing-framework-of-choice";
+import type { CommandArgs, IChatContext, ICommand, RawMsgAPI, WhatsappMessage } from "whatsbotcord";
+import { MsgHelpers, MsgType, SenderType, WhatsChatMock } from "whatsbotcord";
+
+// Example command implementation
+class MyCommand implements ICommand {
+  name = "command";
+
+  async run(ctx: IChatContext, _rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+    console.log("Args:", args.args); // ["argument1", "argument2"]
+    console.log("Chat ID:", ctx.FixedChatId); // "myCustomChatId!@g.us"
+    console.log("Participant ID:", ctx.FixedParticipantId); // "myCustomParticipantId!@whatsapp.es"
+
+    // Ask for user's name
+    await ctx.SendText("What's your name?");
+    const name = await ctx.WaitText({ timeoutSeconds: 3 });
+
+    if (name) await ctx.SendText(`Hello ${name}. Nice to meet you`);
+    else await ctx.SendText("You didn't respond in 3 seconds..");
+
+    // Ask for favorite programming language
+    await ctx.SendText("What's your favorite programming language?");
+    const response: WhatsappMessage | null = await ctx.WaitMsg(MsgType.Text);
+
+    if (response) {
+      const language = MsgHelpers.FullMsg_GetText(response);
+      if (language) await ctx.SendText(`Oh, your favorite language is: ${language}`);
+    } else {
+      await ctx.SendText("You didn't respond in 3 seconds.");
+    }
+  }
+}
+
+// Test suite
+describe("WhatsChatMock Example", () => {
+  it("Simulates user interaction with MyCommand", async () => {
+    const chat = new WhatsChatMock(new MyCommand(), {
+      args: ["argument1", "argument2"],
+      botSettings: { commandPrefix: "!" },
+      cancelKeywords: ["cancel"],
+      chatContextConfig: { timeoutSeconds: 3 },
+      chatId: "myCustomChatId!@g.us",
+      participantId: "myCustomParticipantId!@whatsapp.es",
+      msgType: MsgType.Text,
+      senderType: SenderType.Individual,
+    });
+
+    // Simulate user responses
+    chat.EnqueueIncomingText("chris"); // Response to name question
+    chat.EnqueueIncomingText("typescript"); // Response to favorite language question
+
+    await chat.StartChatSimulation();
+
+    console.log("Messages sent by command:", chat.SentFromCommand.Texts);
+    console.log("Messages command waited for:", chat.WaitedFromCommand);
+  });
+});
+```
+
+Advanced Notes:
+
+- SentFromCommand: All messages your command sent. Useful for assertions.
+- WaitedFromCommand: Logs every WaitText/WaitMsg call.
+- chatId / participantId allow custom IDs to simulate groups or individual chats.
+- Default timeout for Wait\*() is 3 seconds, can be overridden per command.
 
 # Documentation
 

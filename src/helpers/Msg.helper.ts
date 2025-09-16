@@ -1,7 +1,7 @@
 import { type WAMessage, type proto } from "baileys";
 import { MsgType, SenderType } from "../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
-import { FoundQuotedMsg } from "../core/bot/internals/CommandsSearcher.types.js";
+import type { FoundQuotedMsg } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 
 /**

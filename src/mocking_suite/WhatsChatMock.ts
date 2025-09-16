@@ -42,7 +42,7 @@ export type MockingChatParams = {
  * await mock.StartChatSimulation();
  * ```
  */
-export default class MockingChat {
+export default class WhatsChatMock {
   public ParticipantId?: string;
   public ChatId: string;
 

@@ -57,7 +57,7 @@ export interface IChatContext {
    *
    * **Immutable**: set only in the constructor.
    */
-  readonly FixedOriginalParticipantId: string | null;
+  readonly FixedParticipantId: string | null;
 
   /**
    * The WhatsApp chat ID this session is permanently bound to.
