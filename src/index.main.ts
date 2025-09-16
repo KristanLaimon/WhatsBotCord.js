@@ -1,4 +1,5 @@
-import Bot, { type ChatContext, type CommandArgs, type RawMsgAPI, CommandType, ICommand, SenderType } from "src/index.js";
+import type { ICommand } from "src/index.js";
+import Bot, { type ChatContext, type CommandArgs, type RawMsgAPI, CommandType, SenderType } from "src/index.js";
 
 // =============== EveryoneTag.ts ================
 class PingCommand implements ICommand {
