@@ -77,6 +77,7 @@ console.log(str);
 //#1 TODO: Create testing toolkit for users to simulate chats with these commands!
 //TODO: (IMPORTANT) fix testing toolkit, all spy logic should be inside WhatsSocket_Submodule_Receiver and WhatsSocket_Submodule_SugarSender
 //      ✅[X]: Need to extract WhatsSocket_Submodule_Receiver into an interface and extract WhatsSocket_Submodule_SugarSender into an interface
+//      [ ]: Expose configuration to change GroupMetadata!
 //      [ ]: Need to create a WhatsSocket_Submodule_Receiver mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
 //          [ ]: Do it per send*() type
 //      [ ]: Need to create a WhatsSocket_Submodule_SugarSender mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)

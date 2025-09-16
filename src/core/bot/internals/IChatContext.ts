@@ -1,10 +1,11 @@
 import type { MsgType, SenderType } from "../../../Msg.types.js";
-import type { ChatContextGroupData } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 import type {
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
-} from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
+} from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
+import type { ChatContextGroupData } from "../../whats_socket/internals/WhatsSocket.receiver.js";
+
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import type { ChatContextConfig } from "./ChatContext.js";
 

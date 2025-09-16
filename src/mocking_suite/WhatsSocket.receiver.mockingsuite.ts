@@ -15,12 +15,13 @@ export type ChatContextSpyWhatsMsg = {
   rawMsg: WhatsappMessage;
 };
 
+export type WhatsSocketReceiverMsgWaited = { chatId: string; partipantId: string | null; options?: Partial<ChatContextConfig> };
+
 export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWhatsSocket_Submodule_Receiver {
   private _queueWait: ChatContextSpyWhatsMsg[] = [];
 
   //=================================================== Spy External Methods ==================================================
-  //                                                           Text
-  public Waited_Text: Array<{ options: Partial<ChatContextConfig> }> = [];
+  public Waited: WhatsSocketReceiverMsgWaited[] = [];
   //===========================================================================================================================
 
   public AddWaitMsg(toAdd: ChatContextSpyWhatsMsg) {
@@ -72,13 +73,10 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
     }
 
     //TODO: Implement per msg type
-    if (_localOptions) {
-      switch (actualMsg_msgType) {
-        case MsgType.Text:
-          this.Waited_Text.push({ options: _localOptions });
-          break;
-      }
-    }
+    // if (_localOptions) {
+    // switch (actualMsg_msgType) {
+    // case MsgType.Text:
+    this.Waited.push({ options: _localOptions, chatId: chatId, partipantId: participantId });
 
     return toSend.rawMsg;
   }

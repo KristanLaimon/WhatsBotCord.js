@@ -4,8 +4,9 @@ import { autobind } from "../../helpers/Decorators.helper.js";
 import { MsgHelper_ExtractQuotedMsgInfo, MsgHelper_FullMsg_GetText } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
 import { type SenderType, MsgType } from "../../Msg.types.js";
-import { type WhatsSocket_Submodule_Receiver, WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
-import type { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
+import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js";
@@ -105,8 +106,8 @@ export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
   onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void | Promise<void>>;
   onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
 };
-export type WhatsBotSender = WhatsSocket_Submodule_SugarSender;
-export type WhatsBotReceiver = WhatsSocket_Submodule_Receiver;
+export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
+export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
 
 export type BotMiddleWareFunct = (

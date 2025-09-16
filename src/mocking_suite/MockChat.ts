@@ -3,11 +3,13 @@ import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
 import type { ICommand } from "../core/bot/internals/IBotCommand.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
+import type { WhatsSocketMockMsgSent } from "../core/whats_socket/mocks/types.js";
 import WhatsSocketMock from "../core/whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { ChatContext, MsgType, SenderType } from "../index.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
+import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 
@@ -22,6 +24,23 @@ export type MockingChatParams = {
   cancelKeywords?: string[];
 };
 
+/**
+ * MockingChat is a helper utility designed to simulate a full WhatsApp chat session
+ * against a given {@link ICommand}.
+ *
+ * It provides:
+ * - Mocked **receiver**, **sender**, and **socket** modules for message flow control.
+ * - Facilities to enqueue fake user messages (`SimulateTextSending`).
+ * - Accessors to inspect messages that were sent/queued by the command under test.
+ * - A fully configured {@link ChatContext} spy object for realistic command execution.
+ *
+ * Usage:
+ * ```ts
+ * const mock = new MockingChat(myCommand, { customParticipantId: "12345" });
+ * mock.SimulateTextSending("hello");
+ * await mock.StartChatSimulation();
+ * ```
+ */
 export default class MockingChat {
   private _constructorConfig?: MockingChatParams;
   private _participantIdFromConstructor?: string;
@@ -32,13 +51,18 @@ export default class MockingChat {
   private _sugarSenderMock: WhatsSocket_Submodule_SugarSender_MockingSuite;
   private _mockSocket: WhatsSocketMock;
 
-  public get WaitedFromCommand() {
-    return {
-      //From whatssocket_sugarsender
-      Texts: this._receiverMock.Waited_Text,
-    };
+  /**
+   * All messages "waited" (consumed) from the mocked receiver.
+   * Useful to check what input the command attempted to consume.
+   */
+  public get WaitedFromCommand(): WhatsSocketReceiverMsgWaited[] {
+    return this._receiverMock.Waited;
   }
 
+  /**
+   * All messages sent via the sugar-sender mock.
+   * These are usually text responses triggered by the command logic.
+   */
   public get SentFromCommand() {
     return {
       //From whatssocket_receiver
@@ -46,19 +70,65 @@ export default class MockingChat {
     };
   }
 
+  /**
+   * Messages that were sent **through the queue** using the mocked socket.
+   * This simulates queued delivery (e.g., internal socket enqueuing).
+   */
+  public get SentFromCommandSocketQueue(): WhatsSocketMockMsgSent[] {
+    return this._mockSocket.SentMessagesThroughQueue;
+  }
+
+  /**
+   * Messages that were sent **directly without queueing** using the mocked socket.
+   * This simulates "raw" delivery. ()
+   */
+  public get SentFromCommandSocketWithoutQueue(): WhatsSocketMockMsgSent[] {
+    return this._mockSocket.SentMessagesThroughRaw;
+  }
+
+  /**
+   * Creates a new mock chat simulation environment for a given command.
+   *
+   * @param commandToTest - The {@link ICommand} instance to test.
+   * @param additionalOptions - Optional parameters that customize chat setup,
+   *   such as `customChatId`, `customParticipantId`, `args`, or `senderType`.
+   *
+   * Behavior:
+   * - If `customParticipantId` is provided, a group chat ID is assumed unless overridden.
+   * - Otherwise, defaults to a private one-to-one chat.
+   * - Automatically ensures correct WhatsApp LID suffixes for IDs.
+   */
   constructor(commandToTest: ICommand, additionalOptions?: MockingChatParams) {
     this._command = commandToTest;
 
-    this._participantIdFromConstructor = additionalOptions?.customParticipantId;
-    //Explanation:
-    //If msg comes with customParticipantId (that's how whatsapp works),
-    //it means it MUST come from a group chat, so lets use a group chat by default if
-    //dev didn't provided
-    if (additionalOptions?.customParticipantId && !additionalOptions.customChatId) {
-      this._chatIdFromConstructor = "fakeChatIdGroup" + WhatsappGroupIdentifier;
+    //GROUP CHAT MSG
+    if (additionalOptions?.customParticipantId) {
+      if (!additionalOptions?.customParticipantId?.endsWith(WhatsappLIDIdentifier)) {
+        this._participantIdFromConstructor = additionalOptions.customParticipantId + WhatsappLIDIdentifier;
+      } else {
+        this._participantIdFromConstructor = additionalOptions.customParticipantId;
+      }
+      if (!additionalOptions.customChatId) {
+        this._chatIdFromConstructor = "fakeChatIdGroup" + WhatsappGroupIdentifier;
+      } else {
+        if (!additionalOptions.customChatId.endsWith(WhatsappGroupIdentifier)) {
+          this._chatIdFromConstructor = additionalOptions.customChatId + WhatsappGroupIdentifier;
+        } else {
+          this._chatIdFromConstructor = additionalOptions.customChatId;
+        }
+      }
+      //INDIVIDUAL MSG
     } else {
-      //Otherwise, if dev provided a customChatId, use it, otherwise, treat this as an individual chat
-      this._chatIdFromConstructor = additionalOptions?.customChatId ?? "fakeChatIdFromUser" + WhatsappIndividualIdentifier;
+      // this._participantIdFromConstructor;
+      if (!additionalOptions?.customChatId) {
+        this._chatIdFromConstructor = "fakePrivateChatWithUserId" + WhatsappIndividualIdentifier;
+      } else {
+        if (!additionalOptions.customChatId.endsWith(WhatsappIndividualIdentifier)) {
+          this._chatIdFromConstructor = additionalOptions.customChatId + WhatsappIndividualIdentifier;
+        } else {
+          this._chatIdFromConstructor = additionalOptions.customChatId;
+        }
+      }
     }
     this._constructorConfig = additionalOptions;
 
@@ -88,12 +158,31 @@ export default class MockingChat {
     this._chatContextSpy = chatContext;
   }
 
+  /**
+   * Simulates the sending of a text message into the mocked chat.
+   * This enqueues the message into the mocked receiver, making it
+   * available for the command to "consume" during execution.
+   *
+   * @param textToEnqueue - The message content to simulate.
+   * @param options - Allows overriding the sender pushName (WhatsApp display name).
+   */
   @autobind
-  public SendText(textToEnqueue: string, options?: { customSenderWhatsUsername?: string }): void {
+  public EnqueueIncomingText(textToEnqueue: string, options?: { customSenderWhatsUsername?: string }): void {
     const txtMsg: WhatsappMessage = this._createTxtMsg(textToEnqueue, { customSenderWhatsUsername: options?.customSenderWhatsUsername });
     this._receiverMock.AddWaitMsg({ rawMsg: txtMsg });
   }
 
+  /**
+   * Starts the simulation by executing the command under test with the mocked context
+   * and sending all queued msgs with this class EnqueueIncoming*() methods.
+   *
+   * Use it to start your test with your command
+   *
+   * This method:
+   * - Creates a fake invocation of the command (`!commandName`).
+   * - Injects mocked sender/receiver/socket modules into the execution context.
+   * - Runs the command's `run` method as if in a real bot environment.
+   */
   @autobind
   public async StartChatSimulation(): Promise<void> {
     // const receiver: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver();
@@ -121,6 +210,14 @@ export default class MockingChat {
     );
   }
 
+  /**
+   * Creates the minimal base structure of a WhatsApp message object.
+   *
+   * @param id - Message unique identifier.
+   * @param timestamp - Unix timestamp (seconds).
+   * @param pushName - Display name of the sender.
+   * @returns A partially filled {@link WhatsappMessage}.
+   */
   @autobind
   private __createBaseMessage(id: string, timestamp: number, pushName: string): WhatsappMessage {
     return {
@@ -146,6 +243,13 @@ export default class MockingChat {
     };
   }
 
+  /**
+   * Creates a fake WhatsApp text message.
+   *
+   * @param textToIncludeInMsg - The text content of the message.
+   * @param options - Allows overriding the sender pushName (WhatsApp display name).
+   * @returns A complete {@link WhatsappMessage} with conversation text set.
+   */
   @autobind
   private _createTxtMsg(textToIncludeInMsg: string, options?: { customSenderWhatsUsername?: string }): WhatsappMessage {
     const timestamp = Math.floor(Date.now() / 1000);

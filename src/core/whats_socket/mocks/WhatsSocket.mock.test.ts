@@ -34,7 +34,7 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.SentMessagesThroughQueue.length).toBe(3);
 
     //Of course, socketMock.SentMessagesThroughRaw will have 3 elements as well, the enqueue calls Raw method when finishes!
-    expect(socketMock.SentMessagesThroughRaw.length).toBe(3);
+    expect(socketMock.SentMessagesThroughRaw.length).toBe(0);
   });
 
   it("Clear_WhenSocketMockHasBeenUseALot_ShouldCleanItself", async () => {
@@ -55,7 +55,6 @@ describe("WhatsSocketMock Generally", () => {
     expect(socketMock.SentMessagesThroughRaw).toHaveLength(0);
     await socketMock._SendSafe(`chatIdtest${WhatsappGroupIdentifier}`, { text: "Hello world" });
     expect(socketMock.SentMessagesThroughQueue).toHaveLength(1);
-    expect(socketMock.SentMessagesThroughRaw).toHaveLength(1);
 
     socketMock.ClearMock();
 

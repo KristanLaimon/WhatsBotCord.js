@@ -15,13 +15,21 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   //=================================================== Spy External Methods ==================================================
   //                                                          Text
   public SentMessages_Text: Array<{
+    chatId: string;
     text: string;
     options?: WhatsMsgSenderSendingOptions;
   }> = [];
+
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    this.SentMessages_Text.push({ text: text, options: options });
+    this.SentMessages_Text.push({ text: text, options: options, chatId: chatId });
     return CreateSuccessWhatsMsg(null, chatId);
   }
+
+  //                                                          Img
+  public async Image(_chatId: string, _imageOptions: WhatsMsgMediaOptions, _options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+    throw new Error("Method not implemented.");
+  }
+
   //===========================================================================================================================
 
   public ClearMocks(): void {
@@ -29,45 +37,43 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   }
 
   // =============== to add =====================
-  public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    throw new Error("Method not implemented.");
-  }
+
   public async ReactEmojiToMsg(
-    chatId: string,
-    rawMsgToReactTo: WAMessage,
-    emojiStr: string,
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
+    _chatId: string,
+    _rawMsgToReactTo: WAMessage,
+    _emojiStr: string,
+    _options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
-  public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Sticker(_chatId: string, _stickerUrlSource: string | Buffer, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
-  public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Audio(_chatId: string, _audioParams: WhatsMsgAudioOptions, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
-  public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+  public async Video(_chatId: string, _videoParams: WhatsMsgMediaOptions, _options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
-  public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Document(_chatId: string, _docParams: WhatsMsgDocumentOptions, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
   public async Poll(
-    chatId: string,
-    pollTitle: string,
-    selections: string[],
-    pollParams: WhatsMsgPollOptions,
-    moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
+    _chatId: string,
+    _pollTitle: string,
+    _selections: string[],
+    _pollParams: WhatsMsgPollOptions,
+    _moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
-  Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  Ubication(_chatId: string, _ubicationParams: WhatsMsgUbicationOptions, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
   Contact(
-    chatId: string,
-    contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
-    options?: WhatsMsgSenderSendingOptionsMINIMUM
+    _chatId: string,
+    _contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
+    _options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }

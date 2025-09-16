@@ -1,10 +1,10 @@
 import type { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from "baileys";
 import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types.js";
 import type { IMsgServiceSocketMinimum } from "../IWhatsSocket.js";
-import type { MsgServiceSocketMessageSentMock } from "./types.js";
+import type { WhatsSocketMockMsgSent } from "./types.js";
 
 export default class WhatsSocketSocketMockMinimum implements IMsgServiceSocketMinimum {
-  public SentMessages: MsgServiceSocketMessageSentMock[] = [];
+  public SentMessages: WhatsSocketMockMsgSent[] = [];
 
   constructor() {
     this._SendSafe = this._SendSafe.bind(this);

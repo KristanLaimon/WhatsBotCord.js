@@ -7,7 +7,8 @@ import { allMockMsgs } from "src/mocks/MockManyTypesMsgs.mock";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
-import { type WhatsMsgSenderSendingOptions, WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders.js";
+import type { WhatsMsgSenderSendingOptions } from "./IWhatsSocket.sugarsender.js";
+import { WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders.js";
 
 //GUIDE to testing
 const fakeChatId = "338839029383" + WhatsappGroupIdentifier;

@@ -6,11 +6,10 @@ import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdent
 import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
-import WhatsSocketSenderQueue_SubModule from "../internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
-import type { MsgServiceSocketMessageSentMock } from "./types.js";
+import type { WhatsSocketMockMsgSent } from "./types.js";
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
@@ -41,10 +40,10 @@ export default class WhatsSocketMock implements IWhatsSocket {
   Send: IWhatsSocket_Submodule_SugarSender;
   Receive: IWhatsSocket_Submodule_Receiver;
 
-  private _senderQueue: WhatsSocketSenderQueue_SubModule;
+  // private _senderQueue: WhatsSocketSenderQueue_SubModule;
 
   constructor(options?: WhatsSocketMockOptions) {
-    this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
+    // this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
 
     this.Send = options?.customSugarSender ?? new WhatsSocket_Submodule_SugarSender(this);
     this.Receive = options?.customReceiver ?? new WhatsSocket_Submodule_Receiver(this);
@@ -58,8 +57,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.ClearMock = this.ClearMock.bind(this);
   }
 
-  public SentMessagesThroughQueue: MsgServiceSocketMessageSentMock[] = [];
-  public SentMessagesThroughRaw: MsgServiceSocketMessageSentMock[] = [];
+  public SentMessagesThroughQueue: WhatsSocketMockMsgSent[] = [];
+  public SentMessagesThroughRaw: WhatsSocketMockMsgSent[] = [];
 
   public GroupsIDTriedToFetch: string[] = [];
 
@@ -77,7 +76,16 @@ export default class WhatsSocketMock implements IWhatsSocket {
       content: content,
       miscOptions: options,
     });
-    return this._senderQueue.Enqueue(chatId_JID, content, options);
+    return {
+      message: {
+        conversation: "Mock Minimum Object WAMessage from SendSafe",
+      },
+      key: {
+        fromMe: false,
+        id: "23423423234" + WhatsappLIDIdentifier,
+        remoteJid: "falseid" + WhatsappGroupIdentifier,
+      },
+    };
   }
 
   public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
@@ -88,7 +96,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     });
     return {
       message: {
-        conversation: "Mock Minimum Object WAMessage",
+        conversation: "Mock Minimum Object WAMessage from SendRaw",
       },
       key: {
         fromMe: false,
