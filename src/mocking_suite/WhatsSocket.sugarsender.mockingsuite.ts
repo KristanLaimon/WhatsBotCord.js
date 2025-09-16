@@ -10,6 +10,17 @@ import type {
   WhatsMsgUbicationOptions,
 } from "../core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
+import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+
+function NormalizeChatId(rawChatId: string): string {
+  if (rawChatId.endsWith(WhatsappIndividualIdentifier)) return rawChatId;
+
+  if (rawChatId.endsWith(WhatsappGroupIdentifier)) {
+    return rawChatId;
+  } else {
+    return rawChatId + WhatsappGroupIdentifier;
+  }
+}
 
 export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements IWhatsSocket_Submodule_SugarSender {
   //=================================================== Spy External Methods ==================================================
@@ -19,21 +30,27 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
     text: string;
     options?: WhatsMsgSenderSendingOptions;
   }> = [];
-
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    this.SentMessages_Text.push({ text: text, options: options, chatId: chatId });
+    this.SentMessages_Text.push({ text: text, options: options, chatId: NormalizeChatId(chatId) });
     return CreateSuccessWhatsMsg(null, chatId);
   }
 
   //                                                          Img
-  public async Image(_chatId: string, _imageOptions: WhatsMsgMediaOptions, _options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    throw new Error("Method not implemented.");
+  public SentMessages_Imgs: Array<{
+    chatId: string;
+    imageOptions: WhatsMsgMediaOptions;
+    options?: WhatsMsgSenderSendingOptions;
+  }> = [];
+  public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+    this.SentMessages_Imgs.push({ chatId, imageOptions, options });
+    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
   }
 
   //===========================================================================================================================
 
   public ClearMocks(): void {
     this.SentMessages_Text = [];
+    this.SentMessages_Imgs = [];
   }
 
   // =============== to add =====================

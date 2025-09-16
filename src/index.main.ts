@@ -77,15 +77,22 @@ console.log(str);
 //#1 TODO: Create testing toolkit for users to simulate chats with these commands!
 //TODO: (IMPORTANT) fix testing toolkit, all spy logic should be inside WhatsSocket_Submodule_Receiver and WhatsSocket_Submodule_SugarSender
 //      ✅[X]: Need to extract WhatsSocket_Submodule_Receiver into an interface and extract WhatsSocket_Submodule_SugarSender into an interface
-//      [ ]: Expose configuration to change GroupMetadata!
-//      [ ]: Need to create a WhatsSocket_Submodule_Receiver mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
-//          [ ]: Do it per send*() type
+//      ✅[X]: Expose configuration to change GroupMetadata!
+//      ✅[X]: Need to create a WhatsSocket_Submodule_Receiver mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
 //      [ ]: Need to create a WhatsSocket_Submodule_SugarSender mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
 //          [ ]: Do it per send*() type
-//      [ ]: Instanciate them inside MockChat, using a real ChatContext (Delete ChatContextSpy.ts)
-//      [ ]: Expose as props, the public waited objs from Receiver
-//      [ ]: Expose as props, the public sent objs from Sender
-//      [ ]: GG
+//                ✅ [X]: Texts
+//                [ ]: Imgs
+//                [ ]: ReactEmojiToMsg
+//                [ ]: Sticker
+//                [ ]: Audio
+//                [ ]: Video
+//                [ ]: Document
+//                [ ]: Poll
+//                [ ]: Ubication
+//      ✅[X]: Instanciate them inside MockChat, using a real ChatContext (Delete ChatContextSpy.ts)
+//      ✅[X]: Expose as props, the public waited objs from Receiver
+//      ✅[X]: Expose as props, the public sent objs from Sender
 
 //#1.1 Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
 

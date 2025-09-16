@@ -575,6 +575,97 @@ describe("Text", () => {
       cancelKeywords: ["hello", "world"],
     });
   });
+
+  it("ShouldSendNormallyUsingInternalSocket", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+        await ctx.SendText("HelloWorld");
+        await rawMsgApi.InternalSocket.Send.Text("differentGroupId", "mytext");
+      }
+    }
+    const chat = new MockingChat(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Texts).toHaveLength(2);
+    expect(chat.SentFromCommand.Texts[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      text: "HelloWorld",
+      options: undefined,
+    });
+    expect(chat.SentFromCommand.Texts[1]!).toMatchObject({
+      chatId: "differentGroupId" + WhatsappGroupIdentifier,
+      text: "mytext",
+      options: undefined,
+    });
+  });
+
+  //The thanos test! for texts
+  it("ShouldWaitNormallyUsingInternalSocket", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+        //Fun fact, they all use same receiver object, InternalSocket doesn't have native methods for waiting....
+        const textAwaited_chatcontext = await ctx.WaitText({ timeoutSeconds: 1 });
+        const textAwaited_chatContextRaw = await ctx.WaitMsg(MsgType.Text, { timeoutSeconds: 2 });
+        const textAwaited = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(_args.chatId, MsgType.Text, {
+          cancelKeywords: [],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 3,
+          cancelFeedbackMsg: "cancelfeedback",
+          wrongTypeFeedbackMsg: "wronttypefeedback",
+        });
+
+        expect(textAwaited_chatcontext).toBeDefined();
+        expect(textAwaited_chatContextRaw).toBeDefined();
+        expect(textAwaited).toBeDefined();
+
+        expect(textAwaited_chatcontext).toBe("1");
+        expect(MsgHelper_FullMsg_GetText(textAwaited_chatContextRaw!)).toBe("2");
+        expect(MsgHelper_FullMsg_GetText(textAwaited!)).toBe("3");
+      }
+    }
+    const chat = new MockingChat(new Com());
+    chat.EnqueueIncomingText("1");
+    chat.EnqueueIncomingText("2");
+    chat.EnqueueIncomingText("3");
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(3);
+    expect(chat.WaitedFromCommand[0]!).toMatchObject({
+      /** and all other default config */
+      chatId: chat.ChatId,
+      options: { timeoutSeconds: 1 },
+    });
+    expect(chat.WaitedFromCommand[1]!).toMatchObject({
+      chatId: chat.ChatId,
+      options: { timeoutSeconds: 2 },
+    });
+    expect(chat.WaitedFromCommand[2]!).toMatchObject({
+      chatId: chat.ChatId,
+      options: { timeoutSeconds: 3 },
+    });
+  });
 });
 
 //                      ------------------- ======== IMAGES ========= -----------------------------
+describe("Images", () => {
+  it("ShouldGetImgs_Simple", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendImg();
+      }
+    }
+    const chat = new MockingChat(new Com());
+    await chat.StartChatSimulation();
+  });
+});
+
+//TEMPLATE
+it("", async (): Promise<void> => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {}
+  }
+  const chat = new MockingChat(new Com());
+  await chat.StartChatSimulation();
+});

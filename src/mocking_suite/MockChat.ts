@@ -43,9 +43,10 @@ export type MockingChatParams = {
  * ```
  */
 export default class MockingChat {
+  public ParticipantId?: string;
+  public ChatId: string;
+
   private _constructorConfig?: MockingChatParams;
-  private _participantIdFromConstructor?: string;
-  private _chatIdFromConstructor: string;
   private _chatContextSpy: IChatContext;
   private _command: ICommand;
   private _receiverMock: WhatsSocket_Submodule_Receiver_MockingSuite;
@@ -106,29 +107,29 @@ export default class MockingChat {
     //GROUP CHAT MSG
     if (additionalOptions?.participantId) {
       if (!additionalOptions?.participantId?.endsWith(WhatsappLIDIdentifier)) {
-        this._participantIdFromConstructor = additionalOptions.participantId + WhatsappLIDIdentifier;
+        this.ParticipantId = additionalOptions.participantId + WhatsappLIDIdentifier;
       } else {
-        this._participantIdFromConstructor = additionalOptions.participantId;
+        this.ParticipantId = additionalOptions.participantId;
       }
       if (!additionalOptions.chatId) {
-        this._chatIdFromConstructor = "fakeChatIdGroup" + WhatsappGroupIdentifier;
+        this.ChatId = "fakeChatIdGroup" + WhatsappGroupIdentifier;
       } else {
         if (!additionalOptions.chatId.endsWith(WhatsappGroupIdentifier)) {
-          this._chatIdFromConstructor = additionalOptions.chatId + WhatsappGroupIdentifier;
+          this.ChatId = additionalOptions.chatId + WhatsappGroupIdentifier;
         } else {
-          this._chatIdFromConstructor = additionalOptions.chatId;
+          this.ChatId = additionalOptions.chatId;
         }
       }
       //INDIVIDUAL MSG
     } else {
       // this._participantIdFromConstructor;
       if (!additionalOptions?.chatId) {
-        this._chatIdFromConstructor = "fakePrivateChatWithUserId" + WhatsappIndividualIdentifier;
+        this.ChatId = "fakePrivateChatWithUserId" + WhatsappIndividualIdentifier;
       } else {
         if (!additionalOptions.chatId.endsWith(WhatsappIndividualIdentifier)) {
-          this._chatIdFromConstructor = additionalOptions.chatId + WhatsappIndividualIdentifier;
+          this.ChatId = additionalOptions.chatId + WhatsappIndividualIdentifier;
         } else {
-          this._chatIdFromConstructor = additionalOptions.chatId;
+          this.ChatId = additionalOptions.chatId;
         }
       }
     }
@@ -148,8 +149,8 @@ export default class MockingChat {
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
     this._mockSocket = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock });
     const chatContext = new ChatContext(
-      this._participantIdFromConstructor ?? null,
-      this._chatIdFromConstructor,
+      this.ParticipantId ?? null,
+      this.ChatId,
       this._createTxtMsg(`!${this._command.name}`),
       this._sugarSenderMock,
       this._receiverMock,
@@ -201,19 +202,19 @@ export default class MockingChat {
           Commands: new CommandsSearcher(),
           Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextSpy.Config.cancelKeywords }),
         },
-        chatId: this._chatIdFromConstructor,
-        participantId: this._participantIdFromConstructor ?? null,
+        chatId: this.ChatId,
+        participantId: this.ParticipantId ?? null,
         msgType: this._constructorConfig?.msgType ?? MsgType.Text,
         originalRawMsg: {} as any,
         quotedMsgInfo: {} as any,
-        senderType: this._constructorConfig?.senderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual),
+        senderType: this._constructorConfig?.senderType ?? (this.ParticipantId ? SenderType.Group : SenderType.Individual),
       }
     );
   }
 
   @autobind
   public SetGroupMetadataMock(metadata: Partial<GroupMetadataInfo>) {
-    const actualSenderType = this._constructorConfig?.senderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual);
+    const actualSenderType = this._constructorConfig?.senderType ?? (this.ParticipantId ? SenderType.Group : SenderType.Individual);
     if (metadata.id) {
       let newChatId: string;
       if (actualSenderType === SenderType.Group) {
@@ -229,11 +230,11 @@ export default class MockingChat {
           newChatId = metadata.id;
         }
       }
-      this._chatIdFromConstructor = newChatId;
+      this.ChatId = newChatId;
     }
     //@ts-expect-error just a little fix... jejeje
-    this._chatContextSpy["FixedChatId"] = this._chatIdFromConstructor;
-    this._receiverMock.SetGroupMetadataMock({ ...metadata, id: this._chatIdFromConstructor });
+    this._chatContextSpy["FixedChatId"] = this.ChatId;
+    this._receiverMock.SetGroupMetadataMock({ ...metadata, id: this.ChatId });
     //With mocksocket, do not modify it, its always group
     this._mockSocket.SetGroupMetadataMock(metadata);
   }
@@ -258,8 +259,8 @@ export default class MockingChat {
   private __createBaseMessage(id: string, timestamp: number, pushName: string): WhatsappMessage {
     return {
       key: {
-        remoteJid: this._chatIdFromConstructor,
-        participant: this._participantIdFromConstructor,
+        remoteJid: this.ChatId,
+        participant: this.ParticipantId,
         fromMe: false,
         id: id,
       },
