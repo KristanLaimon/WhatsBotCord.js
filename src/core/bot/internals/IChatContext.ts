@@ -4,7 +4,7 @@ import type {
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
 } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
-import type { ChatContextGroupData } from "../../whats_socket/internals/WhatsSocket.receiver.js";
+import type { GroupMetadataInfo } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import type { ChatContextConfig } from "./ChatContext.js";
@@ -610,5 +610,5 @@ export interface IChatContext {
    * ```
    * @throws Error if there is a problem fetching group metadata.
    */
-  FetchGroupData(): Promise<ChatContextGroupData | null>;
+  FetchGroupData(): Promise<GroupMetadataInfo | null>;
 }

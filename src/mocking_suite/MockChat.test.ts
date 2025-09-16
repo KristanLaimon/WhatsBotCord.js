@@ -2,6 +2,7 @@ import { describe, expect, it, test } from "bun:test";
 import type { CommandArgs } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { ICommand, RawMsgAPI } from "../core/bot/internals/IBotCommand.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
+import { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../Msg.types.js";
@@ -59,7 +60,7 @@ test("WhenSendingCustomChatId_CommandShouldReceiveIt", async (): Promise<void> =
       expect(_args.chatId).toBe(_ctx.FixedChatId); // They must be the same, logically
     }
   }
-  const chat = new MockingChat(new Com(), { customChatId: customChatId });
+  const chat = new MockingChat(new Com(), { chatId: customChatId });
   await chat.StartChatSimulation();
 });
 
@@ -71,7 +72,7 @@ test("WhenProvidingCustomChatId_MustBeIndividualSender", async (): Promise<void>
       expect(_args.senderType).toBe(SenderType.Individual);
     }
   }
-  const chat = new MockingChat(new Com(), { customChatId: customChatId });
+  const chat = new MockingChat(new Com(), { chatId: customChatId });
   await chat.StartChatSimulation();
 });
 
@@ -85,32 +86,31 @@ test("WhenSendingCustomParticipantId_CommandShouldReceiveIt", async (): Promise<
       expect(_args.participantId).toBe(_ctx.FixedOriginalParticipantId);
     }
   }
-  const chat = new MockingChat(new Com(), { customParticipantId: customChatId });
+  const chat = new MockingChat(new Com(), { participantId: customChatId });
   await chat.StartChatSimulation();
 });
 
-//TODO: DO THIS
 //                      ------------------- ======== Raw API Testing ========= -----------------------------
 /**
  * Using chat context seems to correct easily, but commands also are provided with a RAWAPI object to interact which comes with:
- * 1. A ReceiverObject  (To wait for msgs from whatsapp)                   (it's the same obj by ref used like in ChatContext)
- * 2. A SenderObject    (To send easily msgs to whatsapp groups or chats)  (it's the same obj by ref used like in ChatContext)
+ * ✅ 1. A ReceiverObject  (To wait for msgs from whatsapp)                   (it's the same obj by ref used like in ChatContext)
+ * ✅ 2. A SenderObject    (To send easily msgs to whatsapp groups or chats)  (it's the same obj by ref used like in ChatContext)
  *
- * 3. A raw access to socket (Which you cand send msgs as well and receive them but at a low control)
+ * ✅ 3. A raw access to socket (Which you cand send msgs as well and receive them but at a low control)
  *
  * Let's check if ChatMock can catch received and sent messages from:
- * 1. ChatContext (already checked previously)
- * 2. ReceiverObject (to check)
- * 3. SenderObject (to check)
- * 4. RawSocket a mock one (to check)
+ * ✅ 1. ChatContext (already checked previously)
+ * ✅ 2. ReceiverObject (to check)
+ * ✅ 3. SenderObject (to check)
+ * ✅ 4. RawSocket a mock one (to check)
  */
 test("WhenUsingRawApi_NoSocket_Sending_ShouldCatchMsgSent", async (): Promise<void> => {
   const myCustomChatId: string = "myChatID@g.us";
   class Com implements ICommand {
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-      await _rawMsgApi.Send.Text(myCustomChatId, "MyText");
-      await _rawMsgApi.Send.Text(myCustomChatId, "MyOtherText");
+      await _rawMsgApi.InternalSocket.Send.Text(myCustomChatId, "MyText");
+      await _rawMsgApi.InternalSocket.Send.Text(myCustomChatId, "MyOtherText");
     }
   }
   const chat = new MockingChat(new Com());
@@ -128,13 +128,18 @@ test("WhenUsingRawApi_NoSocket_Receiver_Group_ShouldCatch", async (): Promise<vo
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
       //Doesn't matter if its not the same as this chatID and participantId, its mocked!
-      const msgArrived: WhatsappMessage = await _rawMsgApi.Receive.WaitUntilNextRawMsgFromUserIDInGroup(myCustomParticipantId, myCustomChatId, MsgType.Text, {
-        cancelKeywords: ["cancel"],
-        ignoreSelfMessages: true,
-        timeoutSeconds: 1,
-        cancelFeedbackMsg: "feedback",
-        wrongTypeFeedbackMsg: "wrong type!",
-      });
+      const msgArrived: WhatsappMessage = await _rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(
+        myCustomParticipantId,
+        myCustomChatId,
+        MsgType.Text,
+        {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+          cancelFeedbackMsg: "feedback",
+          wrongTypeFeedbackMsg: "wrong type!",
+        }
+      );
       const msg = MsgHelper_FullMsg_GetText(msgArrived);
       if (!msg) throw new Error("Should not be null");
       expect(msg).toBe("MyText");
@@ -155,13 +160,17 @@ test("WhenUsingRawApi_NoSocket_Receiver_PrivateConversation_ShouldCatch", async 
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
       //Doesn't matter if its not the same as this chatID and participantId, its mocked!
-      const msgArrived: WhatsappMessage = await _rawMsgApi.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(myCustomChatId, MsgType.Text, {
-        cancelKeywords: ["cancel"],
-        ignoreSelfMessages: true,
-        timeoutSeconds: 1,
-        cancelFeedbackMsg: "feedback",
-        wrongTypeFeedbackMsg: "wrong type!",
-      });
+      const msgArrived: WhatsappMessage = await _rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(
+        myCustomChatId,
+        MsgType.Text,
+        {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+          cancelFeedbackMsg: "feedback",
+          wrongTypeFeedbackMsg: "wrong type!",
+        }
+      );
       const msg = MsgHelper_FullMsg_GetText(msgArrived);
       if (!msg) throw new Error("Should not be null");
       expect(msg).toBe("MyText");
@@ -189,7 +198,7 @@ test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async 
       // expect(msg).toBe("MyText");
     }
   }
-  const chat = new MockingChat(new Com(), { customChatId: myCustomChatId, customParticipantId: myCustomParticipantId });
+  const chat = new MockingChat(new Com(), { chatId: myCustomChatId, participantId: myCustomParticipantId });
   chat.EnqueueIncomingText("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
@@ -199,14 +208,49 @@ test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async 
   expect(chat.WaitedFromCommand.at(0)!.options).toMatchObject({ timeoutSeconds: 23 });
 });
 
-// test("WhenUsingLowLevelSocket_ShouldCatchAllSendingSeparately", async (): Promise<void> => {
-// class Com implements ICommand {
-// name: string = "mynamecommand";
-// async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-// _rawMsgApi.InternalSocket;
-// }
-// }
-// });
+test("WhenUsingLowLevelSocket_SafSend_ShouldCatchAllSendingSeparately", async (): Promise<void> => {
+  const chatIdToSend: string = "myChatId";
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      await _rawMsgApi.InternalSocket._SendSafe(chatIdToSend, { text: "mytxtfromsocket" });
+    }
+  }
+  //By default individual chat
+  const chat = new MockingChat(new Com());
+  await chat.StartChatSimulation();
+  expect(chat.SentFromCommandSocketQueue).toHaveLength(1);
+  expect(chat.SentFromCommandSocketQueue[0]!).toMatchObject({
+    chatId: chatIdToSend + WhatsappGroupIdentifier,
+    content: {
+      text: "mytxtfromsocket",
+    },
+    miscOptions: undefined,
+  });
+  expect(chat.SentFromCommandSocketWithoutQueue).toHaveLength(0);
+});
+
+test("WhenUsingLowLevelSocket_RawUnsafeSend_ShouldCatchAllSendingSeparately", async (): Promise<void> => {
+  const chatIdToSend: string = "myChatId";
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      await _rawMsgApi.InternalSocket._SendRaw(chatIdToSend, { text: "mytxtfromsocket" });
+    }
+  }
+  //By default individual chat
+  const chat = new MockingChat(new Com());
+  await chat.StartChatSimulation();
+  expect(chat.SentFromCommandSocketWithoutQueue).toHaveLength(1);
+  expect(chat.SentFromCommandSocketWithoutQueue[0]!).toMatchObject({
+    chatId: chatIdToSend + WhatsappGroupIdentifier,
+    content: {
+      text: "mytxtfromsocket",
+    },
+    miscOptions: undefined,
+  });
+  expect(chat.SentFromCommandSocketQueue).toHaveLength(0);
+});
 
 //                      ------------------- ======== SenderType Testing ========= -----------------------------
 test("WhenNoProvidingCustomParticipantIdOrGroupChatId_ByDefaultShouldBeTreatedAsIndividualChat", async () => {
@@ -230,7 +274,7 @@ test("WhenProvidingParticipantId_MustBeGroup", async (): Promise<void> => {
       expect(_ctx.FixedSenderType).toBe(SenderType.Group);
     }
   }
-  const chat = new MockingChat(new Com(), { customParticipantId: customParticipantID });
+  const chat = new MockingChat(new Com(), { participantId: customParticipantID });
   await chat.StartChatSimulation();
 });
 
@@ -245,7 +289,7 @@ test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndPartic
   }
   //Normally this would be a chat of type SenderType.Group due to customParticipantId
   //but customSenderType is provided and set to individual, so it'll be individual
-  const chat = new MockingChat(new Com(), { customParticipantId: customParticipantID, customSenderType: SenderType.Individual });
+  const chat = new MockingChat(new Com(), { participantId: customParticipantID, senderType: SenderType.Individual });
   await chat.StartChatSimulation();
 });
 
@@ -259,7 +303,7 @@ test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndPartic
   }
   //Normally this would be a chat of type SenderType.Group due to customParticipantId
   //but customSenderType is provided and set to individual, so it'll be individual
-  const chat = new MockingChat(new Com(), { customSenderType: SenderType.Group });
+  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
   await chat.StartChatSimulation();
 });
 
@@ -292,6 +336,139 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
   }).toThrow();
 });
 
+//        ----------------------- ================== GroupChatMocking testing ================== -------------------------\
+test("GroupChatMetadata_WhenComingFromIndividualChat_ShouldBeNullFromContextObject", async (): Promise<void> => {
+  //By default is individual chat. Remember?
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
+      expect(groupInfo).toBeNull();
+    }
+  }
+  const chat = new MockingChat(new Com());
+  await chat.StartChatSimulation();
+});
+
+test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromContextObject", async (): Promise<void> => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
+      expect(groupInfo).not.toBeNull();
+    }
+  }
+  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  await chat.StartChatSimulation();
+});
+
+test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromContextObjectAndBeTheSameAsInternalReceiver", async (): Promise<void> => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
+      expect(groupInfo).not.toBeNull();
+      //it really doesn't matter the chatId, it gets a default mock group metadata object
+      const groupInfoFromInternalReceiver: GroupMetadataInfo | null = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
+      expect(groupInfoFromInternalReceiver).not.toBeNull();
+
+      if (!groupInfo || !groupInfoFromInternalReceiver)
+        throw Error("They should not be null, and actually be the same, they come from same receiver under the hood");
+      expect(groupInfo).toMatchObject(groupInfoFromInternalReceiver);
+    }
+  }
+  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  await chat.StartChatSimulation();
+});
+
+test("GroupChatMetadata_DoesntMatterSenderType_WhenFetchingFromInternalSocket_ShouldFetch", async (): Promise<void> => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      const groupInfoFromReceiveDirectly = await _rawMsgApi.InternalSocket.GetRawGroupMetadata("anything");
+      if (!groupInfoFromReceiveDirectly) {
+        throw new Error("Group mocking from receiver should be always available on tests, why null?");
+      }
+      expect(groupInfoFromReceiveDirectly.id).toBe("mygroupid" + WhatsappGroupIdentifier);
+    }
+  }
+  const chat = new MockingChat(new Com());
+  chat.SetGroupMetadataMock({ id: "mygroupid" });
+  await chat.StartChatSimulation();
+});
+
+test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchronizedWithSameMockGroupMock_WithoutSettingCustomMock", async (): Promise<void> => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      const groupMetadata_chatcontext = await _ctx.FetchGroupData();
+      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
+      const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
+
+      expect(groupMetadata_chatcontext).not.toBeNull();
+      expect(groupMetadata_chatcontext).toBeDefined();
+
+      expect(groupMetadata_highLevelReceiver).not.toBeNull();
+      expect(groupMetadata_highLevelReceiver).toBeDefined();
+
+      expect(groupMetadata_lowLevelSocket).toBeDefined();
+
+      if (!groupMetadata_chatcontext || !groupMetadata_highLevelReceiver || !groupMetadata_lowLevelSocket) {
+        throw new Error("All of them should be defined!");
+      }
+
+      //All 3 ids must be the same!
+      if (!(groupMetadata_chatcontext.id === groupMetadata_highLevelReceiver.id && groupMetadata_highLevelReceiver.id === groupMetadata_lowLevelSocket.id)) {
+        throw new Error("All data must have same chat Id!");
+      }
+
+      console.log(groupMetadata_chatcontext);
+      console.log(groupMetadata_highLevelReceiver);
+      console.log(groupMetadata_lowLevelSocket);
+    }
+  }
+  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  await chat.StartChatSimulation();
+});
+
+test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchronizedWithSameMockGroupMock!", async (): Promise<void> => {
+  const groupMock: Partial<GroupMetadataInfo> = {
+    id: "mygroupid",
+    members: [{ isAdmin: true, asMentionFormatted: "@xd" }],
+  };
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      const groupMetadata_chatcontext = await _ctx.FetchGroupData();
+      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
+      const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
+
+      expect(groupMetadata_chatcontext).not.toBeNull();
+      expect(groupMetadata_chatcontext).toBeDefined();
+
+      expect(groupMetadata_highLevelReceiver).not.toBeNull();
+      expect(groupMetadata_highLevelReceiver).toBeDefined();
+
+      expect(groupMetadata_lowLevelSocket).toBeDefined();
+
+      if (!groupMetadata_chatcontext || !groupMetadata_highLevelReceiver || !groupMetadata_lowLevelSocket) {
+        throw new Error("All of them should be defined!");
+      }
+
+      console.log(groupMetadata_chatcontext);
+      console.log(groupMetadata_highLevelReceiver);
+      console.log(groupMetadata_lowLevelSocket);
+
+      //All 3 ids must be the same!
+      if (!(groupMetadata_chatcontext.id === groupMetadata_highLevelReceiver.id && groupMetadata_highLevelReceiver.id === groupMetadata_lowLevelSocket.id)) {
+        throw new Error("All data must have same chat Id!");
+      }
+    }
+  }
+  const chat = new MockingChat(new Com(), { senderType: SenderType.Group });
+  chat.SetGroupMetadataMock(groupMock);
+  await chat.StartChatSimulation();
+});
 /**
  *
  *

@@ -102,7 +102,7 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
   constructor(socket: IWhatsSocket) {
     this._whatsSocket = socket;
     //DO NOT use decorator @autobind for this class, tests start to fail due to that, here has to be done manually
-    this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
+    this.FetchGroupData = this.FetchGroupData.bind(this);
     this.WaitUntilNextRawMsgFromUserIDInGroup = this.WaitUntilNextRawMsgFromUserIDInGroup.bind(this);
     this.WaitUntilNextRawMsgFromUserIdInPrivateConversation = this.WaitUntilNextRawMsgFromUserIdInPrivateConversation.bind(this);
     this._waitNextMsg = this._waitNextMsg.bind(this);
@@ -222,11 +222,11 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
     return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
 
-  public async GetGroupMetadata(chatId: string): Promise<ChatContextGroupData | null> {
+  public async FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null> {
     let res: GroupMetadata;
     try {
       //In case its a bad chatId and comes from individual msg
-      res = await this._whatsSocket.GetGroupMetadata(chatId);
+      res = await this._whatsSocket.GetRawGroupMetadata(chatId);
     } catch {
       return null;
     }
@@ -277,7 +277,7 @@ export type ParticipantInfo = {
 /**
  * Represents all relevant metadata for a WhatsApp group chat.
  */
-export type ChatContextGroupData = {
+export type GroupMetadataInfo = {
   /** Group ID */
   id: string;
   /** Sending mode of the group */

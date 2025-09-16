@@ -4,7 +4,7 @@ import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../.
 import { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
 import {
-  type ChatContextGroupData,
+  type GroupMetadataInfo,
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverHelper_isReceiverError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
@@ -349,10 +349,10 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public async FetchGroupData(): Promise<ChatContextGroupData | null> {
+  public async FetchGroupData(): Promise<GroupMetadataInfo | null> {
     if (this.FixedSenderType === SenderType.Individual) {
       return null;
     }
-    return await this._internalReceive.GetGroupMetadata(this.FixedChatId);
+    return await this._internalReceive.FetchGroupData(this.FixedChatId);
   }
 }

@@ -6,8 +6,8 @@ import { MsgType, SenderType } from "../../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
-import WhatsSocket from "./WhatsSocket.js";
 import { BaileysSocketServiceAdapter_Mock } from "./WhatsSocket.baileys.mock.js";
+import WhatsSocket from "./WhatsSocket.js";
 
 describe("Initialization", () => {
   it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {
@@ -464,7 +464,7 @@ describe("Info fetching", () => {
     });
     await ws.Start();
 
-    const group = await ws.GetGroupMetadata("123@g.us");
+    const group = await ws.GetRawGroupMetadata("123@g.us");
     expect(group.subject).toBe("Mock Group");
     expect(internalMockSocket.groupMetadata as Mock<typeof internalMockSocket.groupMetadata>).toHaveBeenCalledTimes(1);
   });

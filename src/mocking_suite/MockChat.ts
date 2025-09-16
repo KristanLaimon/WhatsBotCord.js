@@ -3,6 +3,7 @@ import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
 import type { ICommand } from "../core/bot/internals/IBotCommand.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
+import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsSocketMockMsgSent } from "../core/whats_socket/mocks/types.js";
 import WhatsSocketMock from "../core/whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
@@ -16,11 +17,11 @@ import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugars
 export type MockingChatParams = {
   chatContextConfig?: Omit<Partial<ChatContextConfig>, "cancelKeywords">;
   botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
-  customChatId?: string;
-  customParticipantId?: string;
+  chatId?: string;
+  participantId?: string;
   args?: string[];
   msgType?: MsgType;
-  customSenderType?: SenderType;
+  senderType?: SenderType;
   cancelKeywords?: string[];
 };
 
@@ -99,40 +100,39 @@ export default class MockingChat {
    * - Automatically ensures correct WhatsApp LID suffixes for IDs.
    */
   constructor(commandToTest: ICommand, additionalOptions?: MockingChatParams) {
+    this._constructorConfig = additionalOptions;
     this._command = commandToTest;
 
     //GROUP CHAT MSG
-    if (additionalOptions?.customParticipantId) {
-      if (!additionalOptions?.customParticipantId?.endsWith(WhatsappLIDIdentifier)) {
-        this._participantIdFromConstructor = additionalOptions.customParticipantId + WhatsappLIDIdentifier;
+    if (additionalOptions?.participantId) {
+      if (!additionalOptions?.participantId?.endsWith(WhatsappLIDIdentifier)) {
+        this._participantIdFromConstructor = additionalOptions.participantId + WhatsappLIDIdentifier;
       } else {
-        this._participantIdFromConstructor = additionalOptions.customParticipantId;
+        this._participantIdFromConstructor = additionalOptions.participantId;
       }
-      if (!additionalOptions.customChatId) {
+      if (!additionalOptions.chatId) {
         this._chatIdFromConstructor = "fakeChatIdGroup" + WhatsappGroupIdentifier;
       } else {
-        if (!additionalOptions.customChatId.endsWith(WhatsappGroupIdentifier)) {
-          this._chatIdFromConstructor = additionalOptions.customChatId + WhatsappGroupIdentifier;
+        if (!additionalOptions.chatId.endsWith(WhatsappGroupIdentifier)) {
+          this._chatIdFromConstructor = additionalOptions.chatId + WhatsappGroupIdentifier;
         } else {
-          this._chatIdFromConstructor = additionalOptions.customChatId;
+          this._chatIdFromConstructor = additionalOptions.chatId;
         }
       }
       //INDIVIDUAL MSG
     } else {
       // this._participantIdFromConstructor;
-      if (!additionalOptions?.customChatId) {
+      if (!additionalOptions?.chatId) {
         this._chatIdFromConstructor = "fakePrivateChatWithUserId" + WhatsappIndividualIdentifier;
       } else {
-        if (!additionalOptions.customChatId.endsWith(WhatsappIndividualIdentifier)) {
-          this._chatIdFromConstructor = additionalOptions.customChatId + WhatsappIndividualIdentifier;
+        if (!additionalOptions.chatId.endsWith(WhatsappIndividualIdentifier)) {
+          this._chatIdFromConstructor = additionalOptions.chatId + WhatsappIndividualIdentifier;
         } else {
-          this._chatIdFromConstructor = additionalOptions.customChatId;
+          this._chatIdFromConstructor = additionalOptions.chatId;
         }
       }
     }
-    this._constructorConfig = additionalOptions;
 
-    // 1. ============== Chat creation (to be able to store all msgs sent) ====================
     const chatContextConfig: ChatContextConfig = {
       cancelKeywords: this._constructorConfig?.cancelKeywords ?? ["cancel"],
       ignoreSelfMessages: this._constructorConfig?.chatContextConfig?.ignoreSelfMessages ?? true,
@@ -142,7 +142,7 @@ export default class MockingChat {
       wrongTypeFeedbackMsg:
         this._constructorConfig?.chatContextConfig?.wrongTypeFeedbackMsg ??
         "Default wrong expected type message, user has sent a msg which doesn't correspond to expected WaitMsg from command...",
-      customSenderType_Internal: additionalOptions?.customSenderType,
+      customSenderType_Internal: additionalOptions?.senderType,
     };
     this._receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
@@ -190,8 +190,9 @@ export default class MockingChat {
     await this._command.run(
       this._chatContextSpy,
       {
-        Receive: this._receiverMock,
-        Send: this._sugarSenderMock, //How to connect with InternalSocket??
+        // @deprecated: InternalSocket already contains Receive and Send objects
+        // Receive: this._receiverMock,
+        // Send: this._sugarSenderMock, //How to connect with InternalSocket??
         InternalSocket: this._mockSocket,
       },
       {
@@ -205,11 +206,46 @@ export default class MockingChat {
         msgType: this._constructorConfig?.msgType ?? MsgType.Text,
         originalRawMsg: {} as any,
         quotedMsgInfo: {} as any,
-        senderType: this._constructorConfig?.customSenderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual),
+        senderType: this._constructorConfig?.senderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual),
       }
     );
   }
 
+  @autobind
+  public SetGroupMetadataMock(metadata: Partial<GroupMetadataInfo>) {
+    const actualSenderType = this._constructorConfig?.senderType ?? (this._participantIdFromConstructor ? SenderType.Group : SenderType.Individual);
+    if (metadata.id) {
+      let newChatId: string;
+      if (actualSenderType === SenderType.Group) {
+        if (!metadata.id.endsWith(WhatsappGroupIdentifier)) {
+          newChatId = metadata.id + WhatsappGroupIdentifier;
+        } else {
+          newChatId = metadata.id;
+        }
+      } else {
+        if (!metadata.id.endsWith(WhatsappIndividualIdentifier)) {
+          newChatId = metadata.id + WhatsappIndividualIdentifier;
+        } else {
+          newChatId = metadata.id;
+        }
+      }
+      this._chatIdFromConstructor = newChatId;
+    }
+    //@ts-expect-error just a little fix... jejeje
+    this._chatContextSpy["FixedChatId"] = this._chatIdFromConstructor;
+    this._receiverMock.SetGroupMetadataMock({ ...metadata, id: this._chatIdFromConstructor });
+    //With mocksocket, do not modify it, its always group
+    this._mockSocket.SetGroupMetadataMock(metadata);
+  }
+
+  @autobind
+  public ClearMocks(): void {
+    this._receiverMock.ClearMocks();
+    this._sugarSenderMock.ClearMocks();
+    this._mockSocket.ClearMock();
+  }
+
+  //#region Private Utils
   /**
    * Creates the minimal base structure of a WhatsApp message object.
    *
@@ -261,4 +297,5 @@ export default class MockingChat {
     };
     return message;
   }
+  //#endregion
 }

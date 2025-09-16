@@ -190,7 +190,7 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
   Send: IWhatsSocket_Submodule_SugarSender;
 
   /**
-   * Receive module for handling incoming messages and events.
+   * High-level receive module for handling incoming messages and events.
    *
    * Normally you won’t call this directly—commands and event listeners
    * should be wired to it under the hood. Use it when you need fine-grained
@@ -223,5 +223,5 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * - Admin information
    * - Group settings
    */
-  GetGroupMetadata(chatId: string): Promise<GroupMetadata>;
+  GetRawGroupMetadata(chatId: string): Promise<GroupMetadata>;
 }

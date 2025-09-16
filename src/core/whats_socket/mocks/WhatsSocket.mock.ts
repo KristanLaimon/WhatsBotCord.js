@@ -1,10 +1,12 @@
-import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import type { AnyMessageContent, GroupMetadata, GroupParticipant, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
 import Delegate from "../../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../internals/IWhatsSocket.sugarsender.js";
+import type { GroupMetadataInfo, ParticipantInfo } from "../internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
@@ -53,7 +55,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this._SendSafe = this._SendSafe.bind(this);
     this.Start = this.Start.bind(this);
     this.Shutdown = this.Shutdown.bind(this);
-    this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
+    this.GetRawGroupMetadata = this.GetRawGroupMetadata.bind(this);
     this.ClearMock = this.ClearMock.bind(this);
   }
 
@@ -71,8 +73,15 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.IsOn = false;
   }
   public async _SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+    let chatIdToUse: string;
+    if (!chatId_JID.endsWith(WhatsappGroupIdentifier)) {
+      chatIdToUse = chatId_JID + WhatsappGroupIdentifier;
+    } else {
+      chatIdToUse = chatId_JID;
+    }
+
     this.SentMessagesThroughQueue.push({
-      chatId: chatId_JID,
+      chatId: chatIdToUse,
       content: content,
       miscOptions: options,
     });
@@ -89,8 +98,14 @@ export default class WhatsSocketMock implements IWhatsSocket {
   }
 
   public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+    let chatIdToUse: string;
+    if (!chatId_JID.endsWith(WhatsappGroupIdentifier)) {
+      chatIdToUse = chatId_JID + WhatsappGroupIdentifier;
+    } else {
+      chatIdToUse = chatId_JID;
+    }
     this.SentMessagesThroughRaw.push({
-      chatId: chatId_JID,
+      chatId: chatIdToUse,
       content,
       miscOptions: options,
     });
@@ -106,19 +121,59 @@ export default class WhatsSocketMock implements IWhatsSocket {
     };
   }
 
+  private _groupMetadataMock?: GroupMetadata;
+
+  @autobind
+  public SetGroupMetadataMock(groupData: Partial<GroupMetadataInfo>) {
+    let chatIdToUse: string | undefined;
+    if (groupData.id) {
+      if (!groupData.id.endsWith(WhatsappGroupIdentifier)) {
+        chatIdToUse = groupData.id + WhatsappGroupIdentifier;
+      } else {
+        chatIdToUse = groupData.id;
+      }
+    }
+    this._groupMetadataMock = {
+      id: chatIdToUse ?? "fakeIdGroup" + WhatsappGroupIdentifier,
+      addressingMode: groupData?.sendingMode === "pn" ? "pn" : "lid",
+      owner: groupData?.ownerName ?? undefined,
+      subject: groupData?.groupName ?? "GroupName",
+      desc: groupData?.groupDescription ?? undefined,
+      linkedParent: groupData?.communityIdWhereItBelongs ?? undefined,
+      restrict: groupData?.onlyAdminsCanChangeGroupSettings ?? undefined,
+      announce: groupData?.onlyAdminsCanSendMsgs ?? undefined,
+      memberAddMode: groupData?.membersCanAddOtherMembers ?? undefined,
+      joinApprovalMode: groupData?.needsRequestApprovalToJoinIn ?? undefined,
+      isCommunity: false, // not exposed in high-level
+      isCommunityAnnounce: groupData?.isCommunityAnnounceChannel ?? undefined,
+      size: groupData?.membersCount ?? undefined,
+      ephemeralDuration: groupData?.ephemeralDuration ?? undefined,
+      inviteCode: groupData?.inviteCode ?? undefined,
+      subjectTime: groupData?.lastNameChangeDateTime ?? undefined,
+      author: groupData?.author ?? undefined,
+      creation: groupData?.creationDate ?? undefined,
+      participants: groupData?.members ? groupData?.members.map(mapParticipant) : [],
+    };
+  }
+
   /**
    * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
    * @param chatId The chat ID of the group you want to get metadata from.
    * @returns A promise that resolves to the group metadata.
    */
-  public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
+  @autobind
+  public async GetRawGroupMetadata(chatId: string): Promise<GroupMetadata> {
     this.GroupsIDTriedToFetch.push(chatId);
-    return {
-      id: chatId,
-      subject: "Mock Group",
-      creation: Date.now(),
-      creator: "Some User",
-    } as any;
+    if (this._groupMetadataMock) {
+      return this._groupMetadataMock;
+    } else {
+      return {
+        id: chatId,
+        subject: "Mock Group",
+        creation: Date.now(),
+        creator: "Some User",
+      } as any;
+    }
   }
 
   public ClearMock(): void {
@@ -200,4 +255,19 @@ export default class WhatsSocketMock implements IWhatsSocket {
 
     return { rawMsg: msgToReturn, msgType, senderType };
   }
+}
+
+function mapParticipant(p: ParticipantInfo): GroupParticipant {
+  return {
+    id: p.rawId ?? "defaultId" + WhatsappLIDIdentifier, // from WhatsappIDInfo
+    name: undefined,
+    notify: undefined,
+    status: undefined,
+    verifiedName: undefined,
+    imgUrl: undefined,
+    lid: undefined,
+    isAdmin: p.isAdmin,
+    isSuperAdmin: p.isAdmin, // or undefined if you prefer
+    admin: p.isAdmin ? "admin" : null,
+  };
 }

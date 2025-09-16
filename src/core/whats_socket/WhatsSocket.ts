@@ -196,7 +196,7 @@ export default class WhatsSocket implements IWhatsSocket {
     //Thanks JavaScript ☠️
     this._SendSafe = this._SendSafe.bind(this);
     this._SendRaw = this._SendRaw.bind(this);
-    this.GetGroupMetadata = this.GetGroupMetadata.bind(this);
+    this.GetRawGroupMetadata = this.GetRawGroupMetadata.bind(this);
     this.InitializeInternalSocket = this.InitializeInternalSocket.bind(this);
     this.Start = this.Start.bind(this);
     this.Shutdown = this.Shutdown.bind(this);
@@ -358,7 +358,7 @@ export default class WhatsSocket implements IWhatsSocket {
    * @throws Will throw an error if the provided chatId is not a group chat ID
    * @returns A promise that resolves to the group metadata.
    */
-  public async GetGroupMetadata(chatId: string): Promise<GroupMetadata> {
+  public async GetRawGroupMetadata(chatId: string): Promise<GroupMetadata> {
     if (!chatId.endsWith(WhatsappGroupIdentifier))
       throw new Error("Bad args => WhatsSocket.GetGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
     return await this._socket.groupMetadata(chatId);

@@ -1,5 +1,3 @@
-import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
-import type { IWhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { IWhatsSocket } from "../../whats_socket/IWhatsSocket.js";
 import type { CommandArgs } from "./CommandsSearcher.types.js";
 import type { IChatContext } from "./IChatContext.js";
@@ -52,20 +50,5 @@ export interface ICommand {
  * `RawMsgAPI` is usually a fallback for edge cases or cross-chat operations.
  */
 export type RawMsgAPI = {
-  /**
-   * Outgoing message sender submodule.
-   *
-   * Provides low-level methods to send messages, media, reactions, etc.
-   * Requires explicit chat IDs and parameters.
-   */
-  Send: IWhatsSocket_Submodule_SugarSender;
-
-  /**
-   * Incoming message receiver submodule.
-   *
-   * Provides low-level access to incoming message events and raw data.
-   */
-  Receive: IWhatsSocket_Submodule_Receiver;
-
   InternalSocket: IWhatsSocket;
 };

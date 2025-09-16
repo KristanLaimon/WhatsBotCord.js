@@ -479,8 +479,9 @@ export default class Bot implements BotMinimalInfo {
         });
       }
       const ARG2_RawAPI: RawMsgAPI = {
-        Receive: this._socket.Receive,
-        Send: this._socket.Send,
+        // @deprecated ones: InternalSockets already have them inside!
+        // Receive: this._socket.Receive,
+        // Send: this._socket.Send,
         InternalSocket: this._socket,
       };
       const ARG3_AdditionalArgs: CommandArgs = {

@@ -1,6 +1,6 @@
 import type { MsgType } from "../../../Msg.types.js";
 import type { WhatsappMessage } from "../types.js";
-import type { ChatContextGroupData, WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver.js";
+import type { GroupMetadataInfo, WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver.js";
 
 export interface IWhatsSocket_Submodule_Receiver {
   /**
@@ -119,5 +119,5 @@ export interface IWhatsSocket_Submodule_Receiver {
    * }
    * ```
    */
-  GetGroupMetadata(chatId: string): Promise<ChatContextGroupData | null>;
+  FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null>;
 }
