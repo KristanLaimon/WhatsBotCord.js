@@ -1,14 +1,14 @@
-import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, SenderType } from "src/index.js";
+import Bot, { type ChatContext, type CommandArgs, type RawMsgAPI, CommandType, ICommand, SenderType } from "src/index.js";
 
 // =============== EveryoneTag.ts ================
-class PingCommand implements IBotCommand {
+class PingCommand implements ICommand {
   name: string = "ping";
   async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
     await chat.SendText("Pong");
   }
 }
 
-class EveryoneId implements IBotCommand {
+class EveryoneId implements ICommand {
   name: string = "everyone";
   aliases?: string[] = ["e"];
   async run(ctx: ChatContext, _: RawMsgAPI, args: CommandArgs): Promise<void> {

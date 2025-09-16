@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { ChatContext } from "./ChatContext.js";
 import CommandsSearcher, { CommandType } from "./CommandsSearcher.js";
 import type { CommandArgs } from "./CommandsSearcher.types.js";
-import type { ICommand, RawMsgAPI } from "./IBotCommand.js";
+import type { ICommand, RawMsgAPI } from "./ICommand.js";
 
 /**
  * CommandSearcher suite testing

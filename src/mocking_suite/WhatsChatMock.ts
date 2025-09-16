@@ -1,8 +1,8 @@
 import { type WhatsBotOptions, BotUtils_GenerateOptions } from "../core/bot/bot.js";
 import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
-import type { ICommand } from "../core/bot/internals/IBotCommand.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
+import type { ICommand } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsSocketMockMsgSent } from "../core/whats_socket/mocks/types.js";
 import WhatsSocketMock from "../core/whats_socket/mocks/WhatsSocket.mock.js";

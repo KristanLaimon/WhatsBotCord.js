@@ -25,7 +25,7 @@ import Bot, { type BotMiddleWareFunct } from "./bot.js";
 import type { ChatContext } from "./internals/ChatContext.js";
 import { CommandType } from "./internals/CommandsSearcher.js";
 import type { CommandArgs } from "./internals/CommandsSearcher.types.js";
-import type { ICommand, RawMsgAPI } from "./internals/IBotCommand.js";
+import type { ICommand, RawMsgAPI } from "./internals/ICommand.js";
 
 /** WOW = All finished!
  * Bot.ts Suite testing

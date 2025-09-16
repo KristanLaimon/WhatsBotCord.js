@@ -20,8 +20,8 @@ import {
 import type { BotMiddleWareFunct } from "./core/bot/bot.js";
 import type { ChatContextConfig } from "./core/bot/internals/ChatContext.js";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
-import type { ICommand, RawMsgAPI } from "./core/bot/internals/IBotCommand.js";
 import type { IChatContext } from "./core/bot/internals/IChatContext.js";
+import type { ICommand, RawMsgAPI } from "./core/bot/internals/ICommand.js";
 import type { WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "./core/whats_socket/types.js";
 export type { BotMiddleWareFunct, ChatContextConfig, CommandArgs, IChatContext, ICommand, RawMsgAPI, WhatsappMessage, WhatsSocketReceiverError };

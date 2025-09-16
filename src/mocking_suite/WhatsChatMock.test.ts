@@ -1,7 +1,7 @@
 import { describe, expect, it, test } from "bun:test";
 import type { CommandArgs } from "../core/bot/internals/CommandsSearcher.types.js";
-import type { ICommand, RawMsgAPI } from "../core/bot/internals/IBotCommand.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
+import type { ICommand, RawMsgAPI } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";

@@ -51,7 +51,7 @@ Import the library and you can use this minimal code to get started with your fi
 
 ```js
 // bot.ts
-import Whatsbotcord, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "whatsbotcord";
+import Whatsbotcord, { type ChatContext, type CommandArgs, type ICommand, type RawMsgAPI, CommandType, MsgType } from "whatsbotcord";
 
 // ========================== MAIN ==============================
 const bot = new Whatsbotcord({
@@ -83,11 +83,11 @@ is valid.
 
 ```js
 // bot.ts
-import Whatsbotcord, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType, MsgType } from "whatsbotcord";
+import Whatsbotcord, { type ChatContext, type CommandArgs, type ICommand, type RawMsgAPI, CommandType, MsgType } from "whatsbotcord";
 
 // ================== Ping.ts ======================
-// A command can be created with a class implementing IBotCommand
-class PingCommand implements IBotCommand {
+// A command can be created with a class implementing ICommand
+class PingCommand implements ICommand {
   name: string = "ping";
   description: string = "replies with pong!";
   aliases: string[] = ["p"];
@@ -173,10 +173,10 @@ Note: If you use this fetchgroup method when this command is being called from p
 Heres a real world example of how to recreate the famous "@everyone" command from discord.
 
 ```js
-import Bot, { type ChatContext, type CommandArgs, type IBotCommand, type RawMsgAPI, CommandType } from "whatsbotcord";
+import Bot, { type ChatContext, type CommandArgs, type ICommand, type RawMsgAPI, CommandType } from "whatsbotcord";
 
 // =============== EveryoneTag.ts ================
-class EveryoneTag implements IBotCommand {
+class EveryoneTag implements ICommand {
   name: string = "e";
   description: string = "replies with pong!";
   aliases: string[] = ["test"];

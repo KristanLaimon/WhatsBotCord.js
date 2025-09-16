@@ -12,8 +12,8 @@ import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocke
 import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { CommandArgs, FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
-import type { ICommand, RawMsgAPI } from "./internals/IBotCommand.js";
 import type { IChatContext } from "./internals/IChatContext.js";
+import type { ICommand, RawMsgAPI } from "./internals/ICommand.js";
 
 //Little dependency to verify that "defaulEmojiToSendOnCommandFailure" is 1 emoji length!
 const emojiSplitter = new GraphemeSplitter();
