@@ -1,7 +1,7 @@
 # Whatsbotcord.js
 
 <p align="center">
-  <img src="https://github.com/KristanLaimon/WhatsBotCord.js/blob/main/.github/media/whatsbotcordjs.png?raw=true" width="50%"/>
+  <img src="https://github.com/KristanLaimon/WhatsBotCord.js/blob/main/.github/media/whatsbotcordjs.png?raw=true" width="20%"/>
 </p>
 
 > Note: WhatsBotCord its on very early beta, not full usable yet, soon will be ready for use.
