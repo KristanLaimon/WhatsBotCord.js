@@ -1,4 +1,4 @@
-import type { ICommand } from "src/index.js";
+import type { IChatContext, ICommand } from "src/index.js";
 import Bot, { type ChatContext, type CommandArgs, type RawMsgAPI, CommandType, SenderType } from "src/index.js";
 
 // =============== EveryoneTag.ts ================
@@ -8,7 +8,6 @@ class PingCommand implements ICommand {
     await chat.SendText("Pong");
   }
 }
-
 class EveryoneId implements ICommand {
   name: string = "everyone";
   aliases?: string[] = ["e"];
@@ -25,26 +24,76 @@ class EveryoneId implements ICommand {
     const allIds = groupData.members.map((m) => m.rawId!);
     const allMentionsIds: string[] = groupData.members.map((m) => m.asMentionFormatted!);
     await ctx.SendText(allMentionsIds.join(" "), { mentionsIds: allIds });
+    await ctx.SendText(allMentionsIds.join(" "));
+    await ctx.SendText(JSON.stringify(groupData, null, 2));
+  }
+}
+
+class SendToStateCommand implements ICommand {
+  name: string = "st";
+  async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+    await ctx.Loading();
+    console.log(args.chatId);
+    if (args.args.length < 1) {
+      await ctx.SendText("You must send the txt to sent to my story!. End..");
+      await ctx.Fail();
+      return;
+    }
+    const txtToSendToStory: string = args.args.join(" ");
+    const res = await rawMsgApi.InternalSocket._SendRaw(
+      "status@broadcast",
+      { image: { url: "./test/image.png" }, caption: txtToSendToStory },
+      // { ephemeralExpiration: 86400, statusJidList: ["5216121407908@s.whatsapp.net"], statusDistribution: "contacts" }
+      { ephemeralExpiration: 86400, statusJidList: ["5216121407908@s.whatsapp.net"] }
+      // { ephemeralExpiration: 86400, statusJidList: ["136777696288768@lid"] }
+      // { ephemeralExpiration: 86400, statusDistribution: "contacts" }
+      //@136777696288768
+    );
+    console.log(res ? res.key.id : "no msg sent");
+    await ctx.SendText("Se supone que deberia funcionar. Listo");
+    await ctx.Ok();
+  }
+}
+
+class SendPrivately implements ICommand {
+  name: string = "reply";
+  async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+    const res = await rawMsgApi.InternalSocket.BaileysSocket.onWhatsApp("136777696288768@lid");
+    await ctx.SendText(JSON.stringify(res, null, 2));
   }
 }
 // ========================== MAIN ==============================
 const bot = new Bot({
-  commandPrefix: ["$", "!", "/"],
+  commandPrefix: ["$", "!", "/", "."],
   tagCharPrefix: ["@"],
   credentialsFolder: "./auth",
   loggerMode: "recommended",
 });
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
 bot.Commands.Add(new EveryoneId(), CommandType.Tag);
+bot.Commands.Add(new SendToStateCommand(), CommandType.Normal);
+bot.Commands.Add(new SendPrivately(), CommandType.Normal);
 bot.Events.onCommandNotFound.Subscribe(async (ctx, commandName) => {
   await ctx.SendText("No has enviado un comando válido, usaste: " + commandName);
 });
 bot.Settings.defaultEmojiToSendReactionOnFailureCommand = "🦊";
-bot.Start();
+await bot.Start();
 
-const str: string = "string";
+console.log(" Ended starting");
+bot.InternalSocket.BaileysSocket.ev.on("messages.upsert", async (msgUpdate) => {
+  const messages = msgUpdate.messages;
+  for (const m of messages) {
+    // Ignorar mensajes del sistema o del bot
+    if (!m.key.fromMe && m.key.remoteJid?.endsWith("@g.us")) {
+      const senderJid = m.key.participant || m.key.remoteJid;
+      console.log("Usuario que escribió en grupo:", senderJid);
+      // Guardar JID en tu base de datos si aún no lo tienes
+      // saveUserJid(senderJid);
+    }
+  }
+});
 
-console.log(str);
+// bot.InternalSocket.BaileysSocket.signalRepository.jidToSignalProtocolAddress;
 
 // ✅ Essential Testing
 /** TODO TESTING:
@@ -100,3 +149,7 @@ console.log(str);
 //#2 Docs Update:
 //    [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
 //    [ ]: Create documentation page! (with astro?)
+
+/**
+ * [ ]: Update to baileys 7.x.x!
+ */

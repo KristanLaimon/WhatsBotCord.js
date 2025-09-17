@@ -24,8 +24,7 @@ import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "./IWhatsSocket.js";
-import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types.js";
-import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock.js";
+import type { BaileysWASocket, WhatsappMessage, WhatsSocketLoggerMode } from "./types.js";
 
 export type WhatsSocketOptions = {
   /**
@@ -83,7 +82,7 @@ export type WhatsSocketOptions = {
    *
    * @note Primarily intended for testing. Use at your own risk if you override.
    */
-  ownImplementationSocketAPIWhatsapp?: IWhatsSocketServiceAdapter;
+  ownImplementationSocketAPIWhatsapp?: BaileysWASocket;
 };
 
 /**
@@ -122,12 +121,12 @@ export default class WhatsSocket implements IWhatsSocket {
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
 
   public get ownJID(): string {
-    return this._socket.user!.id;
+    return this.BaileysSocket.user!.id;
   }
 
   //=== Subcomponents ===
   //They're initialized/instantiated in "Start()"
-  private _socket!: IWhatsSocketServiceAdapter;
+  public BaileysSocket!: BaileysWASocket;
   private _senderQueue!: WhatsSocketSenderQueue_SubModule;
   /**
    * Sender module and sugar layer for sending all kinds of msgs.
@@ -150,7 +149,7 @@ export default class WhatsSocket implements IWhatsSocket {
   private _maxReconnectionRetries: number;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
-  private _customSocketImplementation?: IWhatsSocketServiceAdapter;
+  private _customSocketImplementation?: BaileysWASocket;
 
   constructor(options?: WhatsSocketOptions) {
     this._loggerMode = options?.loggerMode === "recommended" ? "silent" : options?.loggerMode ?? "silent";
@@ -212,17 +211,17 @@ export default class WhatsSocket implements IWhatsSocket {
     const { state, saveCreds } = await useMultiFileAuthState(authInfoPath);
 
     if (this._customSocketImplementation) {
-      this._socket = this._customSocketImplementation;
+      this.BaileysSocket = this._customSocketImplementation;
     } else {
       const logger = pino({ level: this._loggerMode });
       //By default uses "Baileys" library whatsapp socket API
-      this._socket = makeWASocket({
+      this.BaileysSocket = makeWASocket({
         auth: state,
         logger: logger,
         browser: Browsers.windows("Desktop"), //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
       });
     }
-    this._socket.ev.on("creds.update", saveCreds);
+    this.BaileysSocket.ev.on("creds.update", saveCreds);
 
     //== Initializing internal sub-modules ==
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
@@ -231,11 +230,11 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   public async Shutdown() {
-    await this._socket.ws.close();
+    await this.BaileysSocket.ws.close();
   }
 
   private ConfigureReconnection(): void {
-    this._socket.ev.on("connection.update", async (update) => {
+    this.BaileysSocket.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       // Show QR code if needed
@@ -247,7 +246,7 @@ export default class WhatsSocket implements IWhatsSocket {
       if (connection === "open") {
         this.ActualReconnectionRetries = 0; // reset retries
         try {
-          const groups = Object.values(await this._socket.groupFetchAllParticipating());
+          const groups = Object.values(await this.BaileysSocket.groupFetchAllParticipating());
           this.onStartupAllGroupsIn.CallAll(groups);
           if (this._loggerMode !== "silent") {
             console.log("INFO: All groups data fetched successfully");
@@ -323,7 +322,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureMessageIncoming(): void {
-    this._socket.ev.on("messages.upsert", async (messageUpdate) => {
+    this.BaileysSocket.ev.on("messages.upsert", async (messageUpdate) => {
       if (!messageUpdate.messages) return;
       for (const msg of messageUpdate.messages) {
         if (this._ignoreSelfMessages) if (!msg.message || msg.key.fromMe) continue;
@@ -339,7 +338,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureMessagesUpdates(): void {
-    this._socket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
+    this.BaileysSocket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
       if (!msgsUpdates || msgsUpdates.length === 0) return;
       for (const msgUpdate of msgsUpdates) {
         if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
@@ -361,11 +360,11 @@ export default class WhatsSocket implements IWhatsSocket {
   public async GetRawGroupMetadata(chatId: string): Promise<GroupMetadata> {
     if (!chatId.endsWith(WhatsappGroupIdentifier))
       throw new Error("Bad args => WhatsSocket.GetGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
-    return await this._socket.groupMetadata(chatId);
+    return await this.BaileysSocket.groupMetadata(chatId);
   }
 
   private ConfigureGroupsEnter(): void {
-    this._socket.ev.on("groups.upsert", async (groupsUpserted: GroupMetadata[]) => {
+    this.BaileysSocket.ev.on("groups.upsert", async (groupsUpserted: GroupMetadata[]) => {
       for (const group of groupsUpserted) {
         this.onGroupEnter.CallAll(group);
         if (this._loggerMode !== "silent") {
@@ -376,7 +375,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureGroupsUpdates(): void {
-    this._socket.ev.on("groups.update", (args) => {
+    this.BaileysSocket.ev.on("groups.update", (args) => {
       if (args.length === 0) {
         if (this._loggerMode !== "silent") {
           console.log("INFO: No group updates received.");
@@ -397,7 +396,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
-    const toReturn: proto.IWebMessageInfo | null = (await this._socket.sendMessage(chatId_JID, content, options)) ?? null;
+    const toReturn: proto.IWebMessageInfo | null = (await this.BaileysSocket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;
   }
 }

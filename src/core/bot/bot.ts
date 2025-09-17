@@ -138,7 +138,7 @@ export type BotMiddleWareFunct = (
  * ```
  */
 export default class Bot implements BotMinimalInfo {
-  private _socket: IWhatsSocket;
+  public InternalSocket: IWhatsSocket;
   private _commandSearcher: CommandsSearcher;
   private _internalMiddleware: BotMiddleWareFunct[] = [];
 
@@ -200,7 +200,7 @@ export default class Bot implements BotMinimalInfo {
    * framework (e.g., sending raw messages to specific chats).
    */
   public get SendMsg(): WhatsBotSender {
-    return this._socket.Send;
+    return this.InternalSocket.Send;
   }
 
   /**
@@ -214,7 +214,7 @@ export default class Bot implements BotMinimalInfo {
    * - Building custom listeners outside of the command framework.
    */
   public get ReceiveMsg(): WhatsBotReceiver {
-    return this._socket.Receive;
+    return this.InternalSocket.Receive;
   }
 
   /** Exposes all bot-related events that consumers can subscribe to.
@@ -239,13 +239,13 @@ export default class Bot implements BotMinimalInfo {
    */
   public get Events(): WhatsBotEvents {
     return {
-      onGroupEnter: this._socket.onGroupEnter,
-      onGroupUpdate: this._socket.onGroupUpdate,
-      onIncomingMsg: this._socket.onIncomingMsg,
-      onRestart: this._socket.onRestart,
-      onSentMessage: this._socket.onSentMessage,
-      onStartupAllGroupsIn: this._socket.onStartupAllGroupsIn,
-      onUpdateMsg: this._socket.onUpdateMsg,
+      onGroupEnter: this.InternalSocket.onGroupEnter,
+      onGroupUpdate: this.InternalSocket.onGroupUpdate,
+      onIncomingMsg: this.InternalSocket.onIncomingMsg,
+      onRestart: this.InternalSocket.onRestart,
+      onSentMessage: this.InternalSocket.onSentMessage,
+      onStartupAllGroupsIn: this.InternalSocket.onStartupAllGroupsIn,
+      onUpdateMsg: this.InternalSocket.onUpdateMsg,
       onCommandNotFound: this._onCommandNotFound,
       onMiddlewareEnd: this._onMiddlewareEnd,
     };
@@ -339,8 +339,8 @@ export default class Bot implements BotMinimalInfo {
     }
 
     this._commandSearcher = new CommandsSearcher();
-    this._socket = this.Settings.ownWhatsSocketImplementation_Internal ?? new WhatsSocket(this.Settings);
-    this._socket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
+    this.InternalSocket = this.Settings.ownWhatsSocketImplementation_Internal ?? new WhatsSocket(this.Settings);
+    this.InternalSocket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
   }
 
   /**
@@ -356,7 +356,7 @@ export default class Bot implements BotMinimalInfo {
    */
   @autobind
   public async Start(): Promise<void> {
-    return this._socket.Start();
+    return this.InternalSocket.Start();
   }
 
   /**
@@ -450,14 +450,14 @@ export default class Bot implements BotMinimalInfo {
       // 4. Can't be found after all that? its not a valid command
       if (!commandFound) {
         await this.Events.onCommandNotFound.CallAllAsync(
-          new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
+          new ChatContext(senderId, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
             cancelKeywords: this.Settings.cancelKeywords!,
             timeoutSeconds: this.Settings.timeoutSeconds!,
             ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
             wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
             cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
           }),
-          commandOrAliasNameLowerCased
+          txtFromMsg
         );
         return;
       }
@@ -470,7 +470,7 @@ export default class Bot implements BotMinimalInfo {
       if (customChatContext) {
         ARG1_ChatContext = customChatContext;
       } else {
-        ARG1_ChatContext = new ChatContext(senderId, chatId, rawMsg, this._socket.Send, this._socket.Receive, {
+        ARG1_ChatContext = new ChatContext(senderId, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
           cancelKeywords: this.Settings.cancelKeywords!,
           timeoutSeconds: this.Settings.timeoutSeconds!,
           ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
@@ -482,7 +482,7 @@ export default class Bot implements BotMinimalInfo {
         // @deprecated ones: InternalSockets already have them inside!
         // Receive: this._socket.Receive,
         // Send: this._socket.Send,
-        InternalSocket: this._socket,
+        InternalSocket: this.InternalSocket,
       };
       const ARG3_AdditionalArgs: CommandArgs = {
         args: commandArgs,

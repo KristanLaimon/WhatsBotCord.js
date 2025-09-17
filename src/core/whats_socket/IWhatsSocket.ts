@@ -3,6 +3,7 @@ import type Delegate from "../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../Msg.types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./internals/IWhatsSocket.sugarsender.js";
+import { BaileysWASocket } from "./types.js";
 
 interface IWhatsSocket_SendingMsgsOnly_Module {
   /**
@@ -174,6 +175,10 @@ export interface IWhatsSocket_EventsOnly_Module {
  * - Exposes utility methods for chat and group operations.
  */
 export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhatsSocket_EventsOnly_Module {
+  /**
+   * Most raw access to bailey socket. Use it if you know what are you doing
+   */
+  BaileysSocket: BaileysWASocket;
   /**
    * The JID (WhatsApp ID) of the connected account (e.g., "123456789@s.whatsapp.net").
    */
