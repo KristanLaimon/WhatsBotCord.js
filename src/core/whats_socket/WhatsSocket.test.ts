@@ -17,8 +17,7 @@ describe("Initialization", () => {
       ownImplementationSocketAPIWhatsapp: internalMockSocket,
     });
     await ws.Start();
-    //@ts-expect-error We're checking that private _socket property exists
-    expect(ws._socket).toMatchObject(internalMockSocket);
+    expect(ws.Socket).toMatchObject(internalMockSocket);
   });
 
   it("Instatiation_WhenUsingStartMethod_ShouldSubscribeToCredsUpdateSocket", async () => {

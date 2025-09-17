@@ -30,7 +30,8 @@ class EveryoneId implements ICommand {
 }
 
 class SendToStateCommand implements ICommand {
-  name: string = "st";
+  public readonly name: string = "status";
+  public readonly aliases?: string[] | undefined = ["st"];
   async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
     await ctx.Loading();
     console.log(args.chatId);
@@ -42,12 +43,9 @@ class SendToStateCommand implements ICommand {
     const txtToSendToStory: string = args.args.join(" ");
     const res = await rawMsgApi.InternalSocket._SendRaw(
       "status@broadcast",
-      { image: { url: "./test/image.png" }, caption: txtToSendToStory },
-      // { ephemeralExpiration: 86400, statusJidList: ["5216121407908@s.whatsapp.net"], statusDistribution: "contacts" }
-      { ephemeralExpiration: 86400, statusJidList: ["5216121407908@s.whatsapp.net"] }
-      // { ephemeralExpiration: 86400, statusJidList: ["136777696288768@lid"] }
-      // { ephemeralExpiration: 86400, statusDistribution: "contacts" }
-      //@136777696288768
+      { text: txtToSendToStory },
+      //WORKS!!
+      { statusJidList: ["5216121407908@s.whatsapp.net"], broadcast: true }
     );
     console.log(res ? res.key.id : "no msg sent");
     await ctx.SendText("Se supone que deberia funcionar. Listo");
@@ -58,8 +56,19 @@ class SendToStateCommand implements ICommand {
 class SendPrivately implements ICommand {
   name: string = "reply";
   async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
-    const res = await rawMsgApi.InternalSocket.BaileysSocket.onWhatsApp("136777696288768@lid");
-    await ctx.SendText(JSON.stringify(res, null, 2));
+    if (args.senderType === SenderType.Individual) {
+      await ctx.SendText("You must use this command from group!");
+      return;
+    }
+    if (args.args.length < 1) {
+      await ctx.SendText("You must use that command with the text to send to you!");
+      return;
+    }
+    await ctx.Loading();
+    const txtExtracted: string = args.args.join(" ");
+    const fullWhatsId: string = args.originalRawMsg.key.participantAlt!;
+    await rawMsgApi.InternalSocket.Send.Text(fullWhatsId, txtExtracted);
+    await ctx.Ok();
   }
 }
 // ========================== MAIN ==============================
@@ -78,22 +87,6 @@ bot.Events.onCommandNotFound.Subscribe(async (ctx, commandName) => {
 });
 bot.Settings.defaultEmojiToSendReactionOnFailureCommand = "🦊";
 await bot.Start();
-
-console.log(" Ended starting");
-bot.InternalSocket.BaileysSocket.ev.on("messages.upsert", async (msgUpdate) => {
-  const messages = msgUpdate.messages;
-  for (const m of messages) {
-    // Ignorar mensajes del sistema o del bot
-    if (!m.key.fromMe && m.key.remoteJid?.endsWith("@g.us")) {
-      const senderJid = m.key.participant || m.key.remoteJid;
-      console.log("Usuario que escribió en grupo:", senderJid);
-      // Guardar JID en tu base de datos si aún no lo tienes
-      // saveUserJid(senderJid);
-    }
-  }
-});
-
-// bot.InternalSocket.BaileysSocket.signalRepository.jidToSignalProtocolAddress;
 
 // ✅ Essential Testing
 /** TODO TESTING:

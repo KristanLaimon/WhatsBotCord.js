@@ -1,4 +1,11 @@
-import type { AnyMessageContent, GroupMetadata, GroupParticipant, MiscMessageGenerationOptions, WAMessage } from "baileys";
+import {
+  type AnyMessageContent,
+  type GroupMetadata,
+  type GroupParticipant,
+  type MiscMessageGenerationOptions,
+  type WAMessage,
+  WAMessageAddressingMode,
+} from "baileys";
 import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
 import Delegate from "../../../libs/Delegate.js";
@@ -135,7 +142,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     }
     this._groupMetadataMock = {
       id: chatIdToUse ?? "fakeIdGroup" + WhatsappGroupIdentifier,
-      addressingMode: groupData?.sendingMode === "pn" ? "pn" : "lid",
+      addressingMode: groupData?.sendingMode === "pn" ? WAMessageAddressingMode.PN : WAMessageAddressingMode.LID,
       owner: groupData?.ownerName ?? undefined,
       subject: groupData?.groupName ?? "GroupName",
       desc: groupData?.groupDescription ?? undefined,
