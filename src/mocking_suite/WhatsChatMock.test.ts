@@ -1,7 +1,7 @@
 import { describe, expect, it, test } from "bun:test";
 import type { CommandArgs } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
-import type { ICommand, RawMsgAPI } from "../core/bot/internals/ICommand.js";
+import type { AdditionalAPI, ICommand } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
@@ -13,7 +13,7 @@ import WhatsChatMock from "./WhatsChatMock.js";
 test("Nothing_ShouldNotThrowAnyError", async () => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       /**  Success  */
     }
   }
@@ -28,7 +28,7 @@ test("Nothing_WhenThrowingErrorInsideCommand_ShouldThrowItAtChatLevel", async ()
   const customError = { error: "im a strange error inside" };
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       throw customError;
     }
   }
@@ -41,7 +41,7 @@ test("Nothing_WhenThrowingErrorInsideCommand_ShouldThrowItAtChatLevel", async ()
 test("WhenSendingArguments_CommandShouldReceiveThem", async (): Promise<void> => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.args).toEqual(["arg1", "arg2", "arg3"]);
     }
   }
@@ -54,7 +54,7 @@ test("WhenSendingCustomChatId_CommandShouldReceiveIt", async (): Promise<void> =
   const customChatId: string = "myCustomChatID";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.chatId).toBe(customChatId + WhatsappIndividualIdentifier);
       expect(_ctx.FixedChatId).toBe(customChatId + WhatsappIndividualIdentifier);
       expect(_args.chatId).toBe(_ctx.FixedChatId); // They must be the same, logically
@@ -68,7 +68,7 @@ test("WhenProvidingCustomChatId_MustBeIndividualSender", async (): Promise<void>
   const customChatId: string = "myCustomChatID@g.us";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.senderType).toBe(SenderType.Individual);
     }
   }
@@ -80,10 +80,10 @@ test("WhenSendingCustomParticipantId_CommandShouldReceiveIt", async (): Promise<
   const customChatId: string = "custom_participant";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-      expect(_args.participantId).toBe(customChatId + WhatsappLIDIdentifier);
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+      expect(_args.participantIdLID).toBe(customChatId + WhatsappLIDIdentifier);
       expect(_ctx.FixedParticipantId).toBe(customChatId + WhatsappLIDIdentifier);
-      expect(_args.participantId).toBe(_ctx.FixedParticipantId);
+      expect(_args.participantIdLID).toBe(_ctx.FixedParticipantId);
     }
   }
   const chat = new WhatsChatMock(new Com(), { participantId: customChatId });
@@ -108,7 +108,7 @@ test("WhenUsingRawApi_NoSocket_Sending_ShouldCatchMsgSent", async (): Promise<vo
   const myCustomChatId: string = "myChatID@g.us";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       await _rawMsgApi.InternalSocket.Send.Text(myCustomChatId, "MyText");
       await _rawMsgApi.InternalSocket.Send.Text(myCustomChatId, "MyOtherText");
     }
@@ -126,7 +126,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_Group_ShouldCatch", async (): Promise<vo
   const myCustomParticipantId: string = "participatnId" + WhatsappIndividualIdentifier;
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       //Doesn't matter if its not the same as this chatID and participantId, its mocked!
       const msgArrived: WhatsappMessage = await _rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(
         myCustomParticipantId,
@@ -158,7 +158,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_PrivateConversation_ShouldCatch", async 
   // const myCustomParticipantId: string = "participatnId" + WhatsappIndividualIdentifier;
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       //Doesn't matter if its not the same as this chatID and participantId, its mocked!
       const msgArrived: WhatsappMessage = await _rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(
         myCustomChatId,
@@ -191,7 +191,7 @@ test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async 
   const myCustomParticipantId: string = "participatnId";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       //Doesn't matter if its not the same as this chatID and participantId, its mocked!
       const msg = _ctx.WaitText({ timeoutSeconds: 23 });
       if (!msg) throw new Error("Should not be null");
@@ -212,7 +212,7 @@ test("WhenUsingLowLevelSocket_SafSend_ShouldCatchAllSendingSeparately", async ()
   const chatIdToSend: string = "myChatId";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       await _rawMsgApi.InternalSocket._SendSafe(chatIdToSend, { text: "mytxtfromsocket" });
     }
   }
@@ -234,7 +234,7 @@ test("WhenUsingLowLevelSocket_RawUnsafeSend_ShouldCatchAllSendingSeparately", as
   const chatIdToSend: string = "myChatId";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       await _rawMsgApi.InternalSocket._SendRaw(chatIdToSend, { text: "mytxtfromsocket" });
     }
   }
@@ -256,7 +256,7 @@ test("WhenUsingLowLevelSocket_RawUnsafeSend_ShouldCatchAllSendingSeparately", as
 test("WhenNoProvidingCustomParticipantIdOrGroupChatId_ByDefaultShouldBeTreatedAsIndividualChat", async () => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.senderType).toBe(SenderType.Individual);
       expect(_ctx.FixedSenderType).toBe(SenderType.Individual);
     }
@@ -269,7 +269,7 @@ test("WhenProvidingParticipantId_MustBeGroup", async (): Promise<void> => {
   const customParticipantID: string = "participant@whatsapp.es";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.senderType).toBe(SenderType.Group);
       expect(_ctx.FixedSenderType).toBe(SenderType.Group);
     }
@@ -282,7 +282,7 @@ test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndPartic
   const customParticipantID: string = "participant@whatsapp.es";
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.senderType).toBe(SenderType.Individual);
       expect(_ctx.FixedSenderType).toBe(SenderType.Individual);
     }
@@ -296,7 +296,7 @@ test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndPartic
 test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndParticipantId_GroupCase", async () => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.senderType).toBe(SenderType.Group);
       expect(_ctx.FixedSenderType).toBe(SenderType.Group);
     }
@@ -312,7 +312,7 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
   // ================ With "twitter omg" ===================
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       await _ctx.WaitText();
     }
   }
@@ -325,7 +325,7 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
   //================ With "twitter" only ===================
   class Com2 implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       await _ctx.WaitText();
     }
   }
@@ -341,7 +341,7 @@ test("GroupChatMetadata_WhenComingFromIndividualChat_ShouldBeNullFromContextObje
   //By default is individual chat. Remember?
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
       expect(groupInfo).toBeNull();
     }
@@ -353,7 +353,7 @@ test("GroupChatMetadata_WhenComingFromIndividualChat_ShouldBeNullFromContextObje
 test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromContextObject", async (): Promise<void> => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
       expect(groupInfo).not.toBeNull();
     }
@@ -365,7 +365,7 @@ test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromCo
 test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromContextObjectAndBeTheSameAsInternalReceiver", async (): Promise<void> => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
       expect(groupInfo).not.toBeNull();
       //it really doesn't matter the chatId, it gets a default mock group metadata object
@@ -384,7 +384,7 @@ test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromCo
 test("GroupChatMetadata_DoesntMatterSenderType_WhenFetchingFromInternalSocket_ShouldFetch", async (): Promise<void> => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupInfoFromReceiveDirectly = await _rawMsgApi.InternalSocket.GetRawGroupMetadata("anything");
       if (!groupInfoFromReceiveDirectly) {
         throw new Error("Group mocking from receiver should be always available on tests, why null?");
@@ -400,7 +400,7 @@ test("GroupChatMetadata_DoesntMatterSenderType_WhenFetchingFromInternalSocket_Sh
 test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchronizedWithSameMockGroupMock_WithoutSettingCustomMock", async (): Promise<void> => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupMetadata_chatcontext = await _ctx.FetchGroupData();
       const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
       const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
@@ -438,7 +438,7 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
   };
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+    async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupMetadata_chatcontext = await _ctx.FetchGroupData();
       const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
       const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
@@ -493,7 +493,7 @@ describe("Text", () => {
   it("ShouldGetTextSentFromCommand", async () => {
     class Com implements ICommand {
       name: string = "mynamecommand";
-      async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
         await _ctx.SendText("Hello User");
         await _ctx.SendText("Hello User2");
         await _ctx.SendText("Hello User3", { normalizeMessageText: true });
@@ -518,7 +518,7 @@ describe("Text", () => {
     //This is supposed to be an Individual mock chat
     class Com implements ICommand {
       name: string = "mynamecommand";
-      async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
         await _ctx.SendText("Hello User");
         await _ctx.SendText("What's your name?");
         const userName: string | null = await _ctx.WaitText();
@@ -537,7 +537,7 @@ describe("Text", () => {
   it("IfNotSentAnyMessagesButWaitingThem_ShouldThrowError", async (): Promise<void> => {
     class Com implements ICommand {
       name: string = "mynamecommand";
-      async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
         await _ctx.SendText("Hello User");
         await _ctx.SendText("What's your name?");
         const userName: string | null = await _ctx.WaitText();
@@ -559,7 +559,7 @@ describe("Text", () => {
   it("WhenWaitingWithParams_ShouldRetrieveThoseParamsAsWell", async (): Promise<void> => {
     class Com implements ICommand {
       name: string = "mynamecommand";
-      async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
         await _ctx.SendText("Hello User");
         await _ctx.SendText("What's your name?");
         const userName: string | null = await _ctx.WaitText({ cancelKeywords: ["hello", "world"] });
@@ -579,7 +579,7 @@ describe("Text", () => {
   it("ShouldSendNormallyUsingInternalSocket", async (): Promise<void> => {
     class Com implements ICommand {
       name: string = "mynamecommand";
-      async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      async run(ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
         await ctx.SendText("HelloWorld");
         await rawMsgApi.InternalSocket.Send.Text("differentGroupId", "mytext");
       }
@@ -603,7 +603,7 @@ describe("Text", () => {
   it("ShouldWaitNormallyUsingInternalSocket", async (): Promise<void> => {
     class Com implements ICommand {
       name: string = "mynamecommand";
-      async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
+      async run(ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
         //Fun fact, they all use same receiver object, InternalSocket doesn't have native methods for waiting....
         const textAwaited_chatcontext = await ctx.WaitText({ timeoutSeconds: 1 });
         const textAwaited_chatContextRaw = await ctx.WaitMsg(MsgType.Text, { timeoutSeconds: 2 });

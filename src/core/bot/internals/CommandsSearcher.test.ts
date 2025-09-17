@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { ChatContext } from "./ChatContext.js";
 import CommandsSearcher, { CommandType } from "./CommandsSearcher.js";
 import type { CommandArgs } from "./CommandsSearcher.types.js";
-import type { ICommand, RawMsgAPI } from "./ICommand.js";
+import type { AdditionalAPI, ICommand } from "./ICommand.js";
 
 /**
  * CommandSearcher suite testing
@@ -27,7 +27,7 @@ class CommandIdeal implements ICommand {
   name: string = CommandIdealName;
   aliases?: string[] = CommandIdealAliases;
   description: string = "An ideal command object with all properties health";
-  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+  async run(_ctx: ChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {}
 }
 
 const CommandMinimumName = "commandminimal";
@@ -35,7 +35,7 @@ class CommandMinimum implements ICommand {
   name: string = CommandMinimumName;
   aliases?: string[];
   description: string = "An ideal command object with all properties health";
-  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+  async run(_ctx: ChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {}
 }
 
 const CommandDesnormalizedName = "DesNorMaLizEdCoMaNd";
@@ -44,7 +44,7 @@ class CommandDesnormalized implements ICommand {
   name: string = CommandDesnormalizedName;
   aliases?: string[] = CommandDesnormalizedAliases;
   description: string = "An ideal command object with all properties health";
-  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+  async run(_ctx: ChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {}
 }
 
 const idealCommandObj = new CommandIdeal();

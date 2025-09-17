@@ -1,4 +1,5 @@
 import type { IWhatsSocket } from "../../whats_socket/IWhatsSocket.js";
+import type Myself_Submodule_Status from "./ChatContext.myself.status.js";
 import type { CommandArgs } from "./CommandsSearcher.types.js";
 import type { IChatContext } from "./IChatContext.js";
 
@@ -34,21 +35,38 @@ export interface ICommand {
    *               another ChatSession object on your own.
    * @param args - Arguments passed to the command when invoked.
    */
-  run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void>;
+  run(ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void>;
 }
 
 /**
- * Low-level WhatsApp socket API.
+ * Low-level utilities and direct socket access.
  *
- * Provides direct access to the underlying send/receive submodules.
+ * Exposes internal submodules and helpers that extend beyond what
+ * `ChatContext` provides. This API is intended for **advanced use cases**
+ * where commands require broader control or functionality.
  *
- * ⚡ Use this when you need finer control over message flow:
- * - Sending across different chats without creating a new `ChatContext`.
- * - Using advanced/raw socket features that `ChatContext` does not expose.
+ * ⚡ Typical scenarios where `AdditionalAPI` is useful:
+ * - Sending messages to arbitrary chats without constructing a `ChatContext`.
+ * - Publishing statuses/stories via the `Myself.Status` submodule.
+ * - Leveraging raw socket features (`InternalSocket`) not surfaced through `ChatContext`.
  *
- * For most command logic, prefer using the `ChatContext` (high-level API).
- * `RawMsgAPI` is usually a fallback for edge cases or cross-chat operations.
+ * 🚫 For most command implementations, prefer using `ChatContext`
+ * (the higher-level abstraction). Only fall back to `AdditionalAPI`
+ * when you need cross-chat operations, raw access, or bot-wide state control.
  */
-export type RawMsgAPI = {
-  InternalSocket: IWhatsSocket;
+export type AdditionalAPI = {
+  /**
+   * Submodule for managing the bot’s own account features.
+   */
+  readonly Myself: {
+    readonly Status: Myself_Submodule_Status;
+  };
+
+  /**
+   * Direct access to the underlying WhatsApp socket implementation.
+   *
+   * ⚠️ Use with caution: bypassing `ChatContext` means you are
+   * responsible for handling errors, message formatting, and safe sending.
+   */
+  readonly InternalSocket: IWhatsSocket;
 };

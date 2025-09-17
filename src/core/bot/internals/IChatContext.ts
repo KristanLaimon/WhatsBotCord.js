@@ -59,6 +59,15 @@ export interface IChatContext {
    */
   readonly FixedParticipantId: string | null;
 
+  // /**
+  //  * All sending/updating-related metadata about yourself.
+  //  *
+  //  * - Includes Status: where you can upload to your personal status/story.
+  //  */
+  // readonly Myself: {
+  //   readonly Status: ChatContext_Submodule_Status;
+  // };
+
   /**
    * The WhatsApp chat ID this session is permanently bound to.
    *

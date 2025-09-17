@@ -1,17 +1,17 @@
-import type { IChatContext, ICommand } from "src/index.js";
-import Bot, { type ChatContext, type CommandArgs, type RawMsgAPI, CommandType, SenderType } from "src/index.js";
+import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
+import Bot, { type ChatContext, type CommandArgs, CommandType, SenderType } from "src/index.js";
 
 // =============== EveryoneTag.ts ================
 class PingCommand implements ICommand {
   name: string = "ping";
-  async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
+  async run(chat: ChatContext, _: AdditionalAPI, __: CommandArgs): Promise<void> {
     await chat.SendText("Pong");
   }
 }
 class EveryoneId implements ICommand {
   name: string = "everyone";
   aliases?: string[] = ["e"];
-  async run(ctx: ChatContext, _: RawMsgAPI, args: CommandArgs): Promise<void> {
+  async run(ctx: ChatContext, _: AdditionalAPI, args: CommandArgs): Promise<void> {
     if (args.senderType === SenderType.Individual) {
       await ctx.SendText("Este comando solo puede ser usado en grupos!");
       return;
@@ -32,7 +32,7 @@ class EveryoneId implements ICommand {
 class SendToStateCommand implements ICommand {
   public readonly name: string = "status";
   public readonly aliases?: string[] | undefined = ["st"];
-  async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+  async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
     await ctx.Loading();
     console.log(args.chatId);
     if (args.args.length < 1) {
@@ -41,13 +41,8 @@ class SendToStateCommand implements ICommand {
       return;
     }
     const txtToSendToStory: string = args.args.join(" ");
-    const res = await rawMsgApi.InternalSocket._SendRaw(
-      "status@broadcast",
-      { text: txtToSendToStory },
-      //WORKS!!
-      { statusJidList: ["5216121407908@s.whatsapp.net"], broadcast: true }
-    );
-    console.log(res ? res.key.id : "no msg sent");
+    const userId: string = args.senderType === SenderType.Individual ? args.chatId! : args.participantIdPN!;
+    await api.Myself.Status.UploadText(txtToSendToStory, [userId]);
     await ctx.SendText("Se supone que deberia funcionar. Listo");
     await ctx.Ok();
   }
@@ -55,7 +50,8 @@ class SendToStateCommand implements ICommand {
 
 class SendPrivately implements ICommand {
   name: string = "reply";
-  async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+  async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+    // await rawMsgApi
     if (args.senderType === SenderType.Individual) {
       await ctx.SendText("You must use this command from group!");
       return;
@@ -67,7 +63,7 @@ class SendPrivately implements ICommand {
     await ctx.Loading();
     const txtExtracted: string = args.args.join(" ");
     const fullWhatsId: string = args.originalRawMsg.key.participantAlt!;
-    await rawMsgApi.InternalSocket.Send.Text(fullWhatsId, txtExtracted);
+    await api.InternalSocket.Send.Text(fullWhatsId, txtExtracted);
     await ctx.Ok();
   }
 }
@@ -137,12 +133,16 @@ await bot.Start();
 //      ✅[X]: Expose as props, the public waited objs from Receiver
 //      ✅[X]: Expose as props, the public sent objs from Sender
 
-//#1.1 Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
+/**
+ * ✅ [X]: Update to baileys 7.x.x!
+ */
+
+//[ ]: Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
+
+//[ ]: Make testing for all remaining sending sugar methods
+
+//[ ]: Make testing for mocking framework deeply
 
 //#2 Docs Update:
-//    [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
-//    [ ]: Create documentation page! (with astro?)
-
-/**
- * [ ]: Update to baileys 7.x.x!
- */
+//  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
+//  [ ]: Create documentation page! (with astro?)

@@ -25,7 +25,7 @@ import Bot, { type BotMiddleWareFunct } from "./bot.js";
 import type { ChatContext } from "./internals/ChatContext.js";
 import { CommandType } from "./internals/CommandsSearcher.js";
 import type { CommandArgs } from "./internals/CommandsSearcher.types.js";
-import type { ICommand, RawMsgAPI } from "./internals/ICommand.js";
+import type { AdditionalAPI, ICommand } from "./internals/ICommand.js";
 
 /** WOW = All finished!
  * Bot.ts Suite testing
@@ -59,7 +59,7 @@ class CommandIdeal implements ICommand {
   name: string = CommandIdealName;
   aliases?: string[] = CommandIdealAliases;
   description: string = "An ideal command object with all properties health";
-  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+  async run(_ctx: ChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {}
 }
 
 const CommandMinimumName = "commandminimal";
@@ -67,7 +67,7 @@ class CommandMinimum implements ICommand {
   name: string = CommandMinimumName;
   aliases?: string[];
   description: string = "An ideal command object with all properties health";
-  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+  async run(_ctx: ChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {}
 }
 
 const CommandDesnormalizedName = "DesNorMaLizEdCoMaNd";
@@ -76,7 +76,7 @@ class CommandDesnormalized implements ICommand {
   name: string = CommandDesnormalizedName;
   aliases?: string[] = CommandDesnormalizedAliases;
   description: string = "An ideal command object with all properties health";
-  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+  async run(_ctx: ChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {}
 }
 
 /**
@@ -97,7 +97,7 @@ class VerySimpleCommand implements ICommand {
   name: string = "simple";
   aliases?: string[] | undefined = ["s"];
   description: string = "Simple command description";
-  async run(_ctx: ChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {}
+  async run(_ctx: ChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {}
 }
 
 // ========================== CREATION ============================
@@ -152,7 +152,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
       expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
       expect(args.quotedMsgInfo).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
-      expect(args.participantId).toBe(GroupMsg_SENDERID);
+      expect(args.participantIdLID).toBe(GroupMsg_SENDERID);
 
       console.log(" ==== I'm code running inside a normal command! FROM GROUP ====");
     },
@@ -184,7 +184,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
       expect(args.originalRawMsg).toMatchObject(GroupTxtMsg);
       expect(args.quotedMsgInfo).toBe(null);
       expect(args.senderType).toBe(SenderType.Group);
-      expect(args.participantId).toBe(GroupMsg_SENDERID);
+      expect(args.participantIdLID).toBe(GroupMsg_SENDERID);
 
       console.log(" ==== I'm code running inside a tag command! FROM GROUP ====");
     },
@@ -218,7 +218,7 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
 
       //Comes from private msg
       expect(args.senderType).toBe(SenderType.Individual);
-      expect(args.participantId).toBe(null);
+      expect(args.participantIdLID).toBe(null);
 
       console.log(" ==== I'm code running inside a normal command! FROM INDIVIDUAL ====");
     },
@@ -252,7 +252,7 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
 
       //Comes from private msg
       expect(args.senderType).toBe(SenderType.Individual);
-      expect(args.participantId).toBe(null);
+      expect(args.participantIdLID).toBe(null);
 
       console.log(" ==== I'm code running inside a tag command! FROM INDIVIDUAL ====");
     },

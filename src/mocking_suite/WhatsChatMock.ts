@@ -1,5 +1,6 @@
 import { type WhatsBotOptions, BotUtils_GenerateOptions } from "../core/bot/bot.js";
 import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
+import Myself_Submodule_Status from "../core/bot/internals/ChatContext.myself.status.js";
 import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
 import type { IChatContext } from "../core/bot/internals/IChatContext.js";
 import type { ICommand } from "../core/bot/internals/ICommand.js";
@@ -195,6 +196,9 @@ export default class WhatsChatMock {
         // Receive: this._receiverMock,
         // Send: this._sugarSenderMock, //How to connect with InternalSocket??
         InternalSocket: this._mockSocket,
+        Myself: {
+          Status: new Myself_Submodule_Status(this._mockSocket),
+        },
       },
       {
         args: this._constructorConfig?.args ?? [],
@@ -203,7 +207,9 @@ export default class WhatsChatMock {
           Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextSpy.Config.cancelKeywords }),
         },
         chatId: this.ChatId,
-        participantId: this.ParticipantId ?? null,
+        //TODO: ADD support for ParticipantId PN old
+        participantIdPN: "TODO: MAKE THIS PARAM CONFIGURABLE",
+        participantIdLID: this.ParticipantId ?? null,
         msgType: this._constructorConfig?.msgType ?? MsgType.Text,
         originalRawMsg: {} as any,
         quotedMsgInfo: {} as any,

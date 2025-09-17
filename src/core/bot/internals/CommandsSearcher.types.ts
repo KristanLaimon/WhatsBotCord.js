@@ -16,11 +16,19 @@ export type CommandArgs = {
   originalRawMsg: WAMessage;
 
   /**
+   * Partipant ID new @LID whatsapp version. (Modern, used on newer groups)
+   * Whatsapp ID of the user who triggered the command.
+   * Example:
+   */
+  participantIdLID: string | null;
+
+  /**
+   * Participant ID old @whatsapp.es whatsapp version. (Legacy for older groups)
    * WhatsApp ID of the user who triggered the command.
    * Example: `5216121407908@s.whatsapp.net`.
    * Undefined if the sender could not be resolved.
    */
-  participantId: string | null;
+  participantIdPN: string | null;
 
   /**
    * WhatsApp ID of the chat where the command was triggered.

@@ -10,10 +10,11 @@ import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/inter
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js";
+import Myself_Submodule_Status from "./internals/ChatContext.myself.status.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { CommandArgs, FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
 import type { IChatContext } from "./internals/IChatContext.js";
-import type { ICommand, RawMsgAPI } from "./internals/ICommand.js";
+import type { AdditionalAPI, ICommand } from "./internals/ICommand.js";
 
 //Little dependency to verify that "defaulEmojiToSendOnCommandFailure" is 1 emoji length!
 const emojiSplitter = new GraphemeSplitter();
@@ -478,11 +479,14 @@ export default class Bot implements BotMinimalInfo {
           cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
         });
       }
-      const ARG2_RawAPI: RawMsgAPI = {
+      const ARG2_AdditionalAPI: AdditionalAPI = {
         // @deprecated ones: InternalSockets already have them inside!
         // Receive: this._socket.Receive,
         // Send: this._socket.Send,
         InternalSocket: this.InternalSocket,
+        Myself: {
+          Status: new Myself_Submodule_Status(this.InternalSocket),
+        },
       };
       const ARG3_AdditionalArgs: CommandArgs = {
         args: commandArgs,
@@ -490,7 +494,8 @@ export default class Bot implements BotMinimalInfo {
         msgType: msgType,
         originalRawMsg: rawMsg,
         senderType: senderType,
-        participantId: senderId,
+        participantIdLID: senderId,
+        participantIdPN: rawMsg.key.participantAlt ?? null,
         quotedMsgInfo: quotedMsgAsArgument,
         botInfo: this,
       };
@@ -499,7 +504,7 @@ export default class Bot implements BotMinimalInfo {
           /** Chat Context */
           ARG1_ChatContext,
           /** RawAPI */
-          ARG2_RawAPI,
+          ARG2_AdditionalAPI,
           /** Command basic arguments */
           ARG3_AdditionalArgs
         );
