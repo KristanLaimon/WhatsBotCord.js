@@ -22,7 +22,7 @@ export interface ICommand {
 
   /**
    * Executes the command.
-   * @param rawMsgApi - (Low-Level API for sending and receiving methods)
+   * @param api - (Low-Level API for sending and receiving methods)
    *                Direct usage of bot's whatsapp socket, you need to provide
    *                your own whatsapp chatID and params are more explicit.
    *                *Use it if you need finer control of how msgs are sent*
@@ -35,7 +35,7 @@ export interface ICommand {
    *               another ChatSession object on your own.
    * @param args - Arguments passed to the command when invoked.
    */
-  run(ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void>;
+  run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void>;
 }
 
 /**

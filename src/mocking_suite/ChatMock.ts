@@ -43,7 +43,7 @@ export type MockingChatParams = {
  * await mock.StartChatSimulation();
  * ```
  */
-export default class WhatsChatMock {
+export default class ChatMock {
   public ParticipantId?: string;
   public ChatId: string;
 
@@ -69,7 +69,16 @@ export default class WhatsChatMock {
   public get SentFromCommand() {
     return {
       //From whatssocket_receiver
-      Texts: this._sugarSenderMock.SentMessages_Text,
+      Texts: this._sugarSenderMock.SentMessages_Texts,
+      Images: this._sugarSenderMock.SentMessages_Imgs,
+      ReactedEmojis: this._sugarSenderMock.SentMessages_ReactedEmojis,
+      Stickers: this._sugarSenderMock.SentMessages_Stickers,
+      Audios: this._sugarSenderMock.SentMessages_Audios,
+      Videos: this._sugarSenderMock.SentMessages_Videos,
+      Documents: this._sugarSenderMock.SentMessages_Documents,
+      Polls: this._sugarSenderMock.SentMessages_Polls,
+      Locations: this._sugarSenderMock.SentMessages_Locations,
+      Contacts: this._sugarSenderMock.SentMessages_Contacts,
     };
   }
 
@@ -159,7 +168,7 @@ export default class WhatsChatMock {
     );
     this._chatContextSpy = chatContext;
   }
-
+  //TODO: Do Enqueue*() per each type of msg type!, emulate
   /**
    * Simulates the sending of a text message into the mocked chat.
    * This enqueues the message into the mocked receiver, making it

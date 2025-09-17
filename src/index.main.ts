@@ -117,32 +117,25 @@ await bot.Start();
 //TODO: (IMPORTANT) fix testing toolkit, all spy logic should be inside WhatsSocket_Submodule_Receiver and WhatsSocket_Submodule_SugarSender
 //      ✅[X]: Need to extract WhatsSocket_Submodule_Receiver into an interface and extract WhatsSocket_Submodule_SugarSender into an interface
 //      ✅[X]: Expose configuration to change GroupMetadata!
-//      ✅[X]: Need to create a WhatsSocket_Submodule_Receiver mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
-//      [ ]: Need to create a WhatsSocket_Submodule_SugarSender mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
-//          [ ]: Do it per send*() type
-//                ✅ [X]: Texts
-//                [ ]: Imgs
-//                [ ]: ReactEmojiToMsg
-//                [ ]: Sticker
-//                [ ]: Audio
-//                [ ]: Video
-//                [ ]: Document
-//                [ ]: Poll
-//                [ ]: Ubication
+//      ✅[X]: Need to create a WhatsSocket_Submodule_Receiver_Mocking mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
+//      ✅[X]: Need to create a WhatsSocket_Submodule_SugarSender_Mocking mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
+//          ✅ [X]: Do it per send*() type
+//                ✅ [X]: Texts             👌[X]: Tested
+//                ✅[X]: Imgs               [ ]: Tested
+//                ✅[X]: ReactEmojiToMsg    [ ]: Tested
+//                ✅[X]: Sticker            [ ]: Tested
+//                ✅[X]: Audio              [ ]: Tested
+//                ✅[X]: Video              [ ]: Tested
+//                ✅[X]: Document           [ ]: Tested
+//                ✅[X]: Poll               [ ]: Tested
+//                ✅[X]: Ubication          [ ]: Tested
 //      ✅[X]: Instanciate them inside MockChat, using a real ChatContext (Delete ChatContextSpy.ts)
 //      ✅[X]: Expose as props, the public waited objs from Receiver
 //      ✅[X]: Expose as props, the public sent objs from Sender
-
-/**
- * ✅ [X]: Update to baileys 7.x.x!
- */
-
+// ✅ [X]: Update to baileys 7.x.x!
 // ✅ [X]: Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
-
-//✅[X]: Make testing for all remaining sending sugar methods
-
+// ✅[X]: Make testing for all remaining sending sugar methods
 //[✅]: Make testing for mocking framework deeply
-
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
 //  [ ]: Create documentation page! (with astro?)

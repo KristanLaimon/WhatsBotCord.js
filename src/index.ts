@@ -50,10 +50,10 @@ import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
 import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
 import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
 import Delegate from "./libs/Delegate.js";
-import WhatsChatMock from "./mocking_suite/WhatsChatMock.js";
+import ChatMock from "./mocking_suite/ChatMock.js";
 import { MsgType, SenderType } from "./Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types.js";
-export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsappIdType, WhatsChatMock, WhatsSocket, WhatsSocketReceiverMsgError };
+export { ChatContext, ChatMock, CommandType, Delegate, MsgType, SenderType, WhatsappIdType, WhatsSocket, WhatsSocketReceiverMsgError };
 
 // === Helpers ===
 /**

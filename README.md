@@ -216,7 +216,7 @@ To do so, import from this library "WhatsChatMock" object, and you can use it as
 
 ## Getting Started with WhatsChatMock
 
-_WhatsChatMock_ lets you mock a chat environment so your command behaves as if it’s running live.
+_ChatMock_ lets you mock a chat environment so your command behaves as if it’s running live.
 
 ## Simplest usage
 
@@ -224,7 +224,7 @@ _WhatsChatMock_ lets you mock a chat environment so your command behaves as if i
 // Test framework agnostic example using WhatsChatMock
 import { it } from "your-testing-framework-of-choice";
 import type { CommandArgs, IChatContext, ICommand, RawMsgAPI } from "whatsbotcord";
-import { WhatsChatMock } from "whatsbotcord";
+import { ChatMock } from "whatsbotcord";
 
 it("retrieves user input correctly", async () => {
   class Com implements ICommand {
@@ -241,7 +241,7 @@ it("retrieves user input correctly", async () => {
   }
 
   // Create a mock chat for the command
-  const chat = new WhatsChatMock(new Com());
+  const chat = new ChatMock(new Com());
 
   // Simulate user sending "chris"
   chat.EnqueueIncomingText("chris");
@@ -268,7 +268,7 @@ This example demonstrates full configuration and more complex interactions.
 // Test framework agnostic example using WhatsChatMock
 import { describe, it } from "your-testing-framework-of-choice";
 import type { CommandArgs, IChatContext, ICommand, RawMsgAPI, WhatsappMessage } from "whatsbotcord";
-import { MsgHelpers, MsgType, SenderType, WhatsChatMock } from "whatsbotcord";
+import { MsgHelpers, MsgType, SenderType, ChatMock } from "whatsbotcord";
 
 // Example command implementation
 class MyCommand implements ICommand {
@@ -302,7 +302,7 @@ class MyCommand implements ICommand {
 // Test suite
 describe("WhatsChatMock Example", () => {
   it("Simulates user interaction with MyCommand", async () => {
-    const chat = new WhatsChatMock(new MyCommand(), {
+    const chat = new ChatMock(new MyCommand(), {
       args: ["argument1", "argument2"],
       botSettings: { commandPrefix: "!" },
       cancelKeywords: ["cancel"],
