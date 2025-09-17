@@ -406,7 +406,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   addressText: "NY, USA"
    * }, { sendRawWithoutEnqueue: true });
    */
-  Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null>;
+  Location(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null>;
 
   /**
    * Sends a contact card (vCard) to a specific chat.

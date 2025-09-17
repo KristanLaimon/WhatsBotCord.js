@@ -7,7 +7,12 @@ import { allMockMsgs } from "src/mocks/MockManyTypesMsgs.mock";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
-import type { WhatsMsgSenderSendingOptions } from "./IWhatsSocket.sugarsender.js";
+import type {
+  WhatsMsgPollOptions,
+  WhatsMsgSenderSendingOptions,
+  WhatsMsgSenderSendingOptionsMINIMUM,
+  WhatsMsgUbicationOptions,
+} from "./IWhatsSocket.sugarsender.js";
 import { WhatsSocket_Submodule_SugarSender } from "./WhatsSocket.sugarsenders.js";
 
 //GUIDE to testing
@@ -112,7 +117,6 @@ describe("Text", () => {
 });
 
 // ================================= IMAGE ===================================
-//TODO: Image on 09 september!
 const DEFAULT_MIMETYPE = "application/octet-stream";
 describe("Image", () => {
   //HERE START (read test guide at the start of this file!)
@@ -1463,5 +1467,724 @@ describe("Document", () => {
       },
       undefined
     );
+  });
+});
+
+describe("Poll", () => {
+  let mockSocket: WhatsSocketMock;
+  let sender: WhatsSocket_Submodule_SugarSender;
+  let sendSafeSpy: Mock<typeof WhatsSocketMock.prototype._SendSafe>;
+
+  beforeEach(() => {
+    mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
+    sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+    sendSafeSpy = spyOn(mockSocket, "_SendSafe");
+  });
+
+  afterEach(() => {
+    sendSafeSpy.mockRestore();
+  });
+
+  // Normal usage (No errors)
+  it("WhenSendingSimplestPollWithSingleSelect_ShouldSendIt", async () => {
+    const pollTitle = "Favorite Color";
+    const selections = ["Red", "Blue", "Green"];
+    const pollParams: WhatsMsgPollOptions = { withMultiSelect: false };
+
+    await sender.Poll(fakeChatId, pollTitle, selections, pollParams);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        poll: {
+          name: pollTitle,
+          values: selections,
+          selectableCount: 3,
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  it("WhenSendingSimplestPollWithMultiSelect_ShouldSendIt", async () => {
+    const pollTitle = "Favorite Hobbies";
+    const selections = ["Reading", "Gaming", "Sports"];
+    const pollParams: WhatsMsgPollOptions = { withMultiSelect: true };
+
+    await sender.Poll(fakeChatId, pollTitle, selections, pollParams);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        poll: {
+          name: pollTitle,
+          values: selections,
+          selectableCount: 3,
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  it("WhenSendingPollWithAdditionalParams_ShouldSendIt", async () => {
+    const pollTitle = "Best Food";
+    const selections = ["Pizza", "Burger", "Salad"];
+    const pollParams: WhatsMsgPollOptions = {
+      withMultiSelect: true,
+      normalizeTitleText: false,
+      normalizeOptionsText: false,
+    };
+    const moreOptions: WhatsMsgSenderSendingOptions = {
+      mentionsIds: ["idperson1" + WhatsappGroupIdentifier, "idperson2" + WhatsappGroupIdentifier],
+    };
+
+    await sender.Poll(fakeChatId, pollTitle, selections, pollParams, moreOptions);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        poll: {
+          name: pollTitle,
+          values: selections,
+          selectableCount: 3,
+        },
+        mentions: moreOptions.mentionsIds,
+      },
+      moreOptions
+    );
+  });
+
+  it("WhenSendingPollWithNormalizeParams_ShouldNormalizeTitleAndOptions", async () => {
+    const pollTitle = "   Favorite  \n Game   ";
+    const selections = ["  Chess  \n", "\n  Checkers  ", "   Go   \n"];
+    const pollParams: WhatsMsgPollOptions = {
+      withMultiSelect: false,
+      normalizeTitleText: true,
+      normalizeOptionsText: true,
+    };
+
+    await sender.Poll(fakeChatId, pollTitle, selections, pollParams);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        poll: {
+          name: Str_NormalizeLiteralString(pollTitle),
+          values: selections.map((opt) => Str_NormalizeLiteralString(opt)),
+          selectableCount: 3,
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  // Error handling
+  it("WhenSendingPollWithNoSelections_ShouldThrowError", async () => {
+    const pollTitle = "Test Poll";
+    const selections: string[] = [];
+    const pollParams: WhatsMsgPollOptions = { withMultiSelect: false };
+
+    await expect(async () => {
+      await sender.Poll(fakeChatId, pollTitle, selections, pollParams);
+    }).toThrow("WhatsSocketSugarSender.Poll() received less than 1 options or greather than 12, must be in range 1-12. Received: 0 options...");
+  });
+
+  it("WhenSendingPollWithMoreThan12Selections_ShouldThrowError", async () => {
+    const pollTitle = "Test Poll";
+    const selections = Array(13)
+      .fill("Option")
+      .map((opt, i) => `${opt} ${i + 1}`);
+    const pollParams: WhatsMsgPollOptions = { withMultiSelect: true };
+
+    await expect(async () => {
+      await sender.Poll(fakeChatId, pollTitle, selections, pollParams);
+    }).toThrow("WhatsSocketSugarSender.Poll() received less than 1 options or greather than 12, must be in range 1-12. Received: 13 options...");
+  });
+
+  it("WhenSendingPollWithEmptyTitle_ShouldNotThrowError", async () => {
+    const pollTitle = "";
+    const selections = ["Option 1", "Option 2"];
+    const pollParams: WhatsMsgPollOptions = { withMultiSelect: false };
+
+    await expect(async () => {
+      await sender.Poll(fakeChatId, pollTitle, selections, pollParams);
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        poll: {
+          name: "",
+          values: selections,
+          selectableCount: 2, // Single select
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+  });
+
+  it("WhenSendingPollWithEmptySelections_ShouldThrowError", async () => {
+    const pollTitle = "Test Poll";
+    const selections = ["Option 1", ""];
+    const pollParams: WhatsMsgPollOptions = { withMultiSelect: true };
+
+    await expect(async () => {
+      await sender.Poll(fakeChatId, pollTitle, selections, pollParams);
+    }).toThrow();
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+
+    expect(sendSafeSpy).toHaveBeenCalledTimes(0);
+  });
+});
+
+describe("Location", () => {
+  let mockSocket: WhatsSocketMock;
+  let sender: WhatsSocket_Submodule_SugarSender;
+  let sendSafeSpy: Mock<typeof WhatsSocketMock.prototype._SendSafe>;
+  let sendRawSpy: Mock<typeof WhatsSocketMock.prototype._SendRaw>;
+
+  beforeEach(() => {
+    mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
+    sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+    sendSafeSpy = spyOn(mockSocket, "_SendSafe");
+    sendRawSpy = spyOn(mockSocket, "_SendRaw");
+  });
+
+  afterEach(() => {
+    sendSafeSpy.mockRestore();
+    sendRawSpy.mockRestore();
+  });
+
+  // Normal usage (No errors)
+  it("WhenSendingSimplestLocation_ShouldSendIt", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: 40.7128,
+      degreesLongitude: -74.006,
+    };
+
+    await sender.Location(fakeChatId, ubicationParams);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        location: {
+          degreesLatitude: 40.7128,
+          degreesLongitude: -74.006,
+          name: undefined,
+          address: undefined,
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingLocationWithAllParams_ShouldSendIt", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: 51.5074,
+      degreesLongitude: -0.1278,
+      name: "Big Ben",
+      addressText: "Westminster, London",
+    };
+    const options: WhatsMsgSenderSendingOptionsMINIMUM = {
+      mentionsIds: ["idperson1" + WhatsappGroupIdentifier, "idperson2" + WhatsappGroupIdentifier],
+      sendRawWithoutEnqueue: false,
+    };
+
+    await sender.Location(fakeChatId, ubicationParams, options);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        location: {
+          degreesLatitude: 51.5074,
+          degreesLongitude: -0.1278,
+          name: "Big Ben",
+          address: "Westminster, London",
+        },
+        mentions: options.mentionsIds,
+      },
+      options
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingLocationWithSendRawWithoutEnqueue_ShouldUseRawSend", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: 34.0522,
+      degreesLongitude: -118.2437,
+      name: "Los Angeles",
+    };
+    const options: WhatsMsgSenderSendingOptionsMINIMUM = {
+      sendRawWithoutEnqueue: true,
+    };
+
+    await sender.Location(fakeChatId, ubicationParams, options);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0); // Raw send bypasses queue
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).toHaveBeenCalledTimes(1);
+    expect(sendRawSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        location: {
+          degreesLatitude: 34.0522,
+          degreesLongitude: -118.2437,
+          name: "Los Angeles",
+          address: undefined,
+        },
+        mentions: undefined,
+      },
+      options
+    );
+  });
+
+  it("WhenSendingLocationWithMiscOptions_ShouldPassThemThrough", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: -33.8688,
+      degreesLongitude: 151.2093,
+    };
+    const options: WhatsMsgSenderSendingOptionsMINIMUM = {
+      mentionsIds: ["idperson1" + WhatsappGroupIdentifier],
+      timestamp: new Date("2025-09-17T15:00:00Z"),
+      ephemeralExpiration: 86400,
+    };
+
+    await sender.Location(fakeChatId, ubicationParams, options);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        location: {
+          degreesLatitude: -33.8688,
+          degreesLongitude: 151.2093,
+          name: undefined,
+          address: undefined,
+        },
+        mentions: options.mentionsIds,
+      },
+      options
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  // Error handling
+  it("WhenSendingLocationWithInvalidLatitude_ShouldThrowError", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: 91, // Invalid latitude
+      degreesLongitude: 0,
+    };
+
+    await expect(async () => {
+      await sender.Location(fakeChatId, ubicationParams);
+    }).toThrow(
+      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+    );
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingLocationWithInvalidLongitude_ShouldThrowError", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: 0,
+      degreesLongitude: -181, // Invalid longitude
+    };
+
+    await expect(async () => {
+      await sender.Location(fakeChatId, ubicationParams);
+    }).toThrow(
+      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+    );
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingLocationWithNonNumericLatitude_ShouldThrowError", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: "invalid" as any, // Non-numeric latitude
+      degreesLongitude: 0,
+    };
+
+    await expect(async () => {
+      await sender.Location(fakeChatId, ubicationParams);
+    }).toThrow(
+      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+    );
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingLocationWithNonNumericLongitude_ShouldThrowError", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: 0,
+      degreesLongitude: null as any, // Non-numeric longitude
+    };
+
+    await expect(async () => {
+      await sender.Location(fakeChatId, ubicationParams);
+    }).toThrow(
+      `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+    );
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingLocationWithEdgeCaseCoordinates_ShouldSendIt", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: 90, // Edge case: max latitude
+      degreesLongitude: -180, // Edge case: min longitude
+      name: "North Pole",
+      addressText: "Arctic Ocean",
+    };
+
+    await expect(async () => {
+      await sender.Location(fakeChatId, ubicationParams);
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        location: {
+          degreesLatitude: 90,
+          degreesLongitude: -180,
+          name: "North Pole",
+          address: "Arctic Ocean",
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingLocationWithNegativeEdgeCaseCoordinates_ShouldSendIt", async () => {
+    const ubicationParams: WhatsMsgUbicationOptions = {
+      degreesLatitude: -90, // Edge case: min latitude
+      degreesLongitude: 180, // Edge case: max longitude
+      name: "South Pole",
+      addressText: "Antarctica",
+    };
+
+    await expect(async () => {
+      await sender.Location(fakeChatId, ubicationParams);
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        location: {
+          degreesLatitude: -90,
+          degreesLongitude: 180,
+          name: "South Pole",
+          address: "Antarctica",
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("Contact", () => {
+  let mockSocket: WhatsSocketMock;
+  let sender: WhatsSocket_Submodule_SugarSender;
+  let sendSafeSpy: Mock<typeof WhatsSocketMock.prototype._SendSafe>;
+  let sendRawSpy: Mock<typeof WhatsSocketMock.prototype._SendRaw>;
+
+  beforeEach(() => {
+    mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0, maxQueueLimit: 10 });
+    sender = new WhatsSocket_Submodule_SugarSender(mockSocket);
+    sendSafeSpy = spyOn(mockSocket, "_SendSafe");
+    sendRawSpy = spyOn(mockSocket, "_SendRaw");
+  });
+
+  afterEach(() => {
+    sendSafeSpy.mockRestore();
+    sendRawSpy.mockRestore();
+  });
+
+  // Normal usage (No errors)
+  it("WhenSendingSingleContact_ShouldSendIt", async () => {
+    const contact = { name: "John Doe", phone: "1234567890" };
+    const expectedVCard = `BEGIN:VCARD
+VERSION:3.0
+FN:John Doe
+TEL;type=CELL;type=VOICE;waid=1234567890:1234567890
+END:VCARD`;
+
+    await sender.Contact(fakeChatId, contact);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        contacts: {
+          displayName: "John Doe",
+          contacts: [{ vcard: expectedVCard }],
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingMultipleContacts_ShouldSendIt", async () => {
+    const contacts = [
+      { name: "Alice Smith", phone: "2345678901" },
+      { name: "Bob Jones", phone: "3456789012" },
+    ];
+    const expectedVCards = contacts.map(
+      (c) => `BEGIN:VCARD
+VERSION:3.0
+FN:${c.name}
+TEL;type=CELL;type=VOICE;waid=${c.phone}:${c.phone}
+END:VCARD`
+    );
+
+    await sender.Contact(fakeChatId, contacts);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        contacts: {
+          displayName: "2 contacts",
+          contacts: expectedVCards.map((vc) => ({ vcard: vc })),
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingContactWithAdditionalParams_ShouldSendIt", async () => {
+    const contact = { name: "Jane Roe", phone: "4567890123" };
+    const options: WhatsMsgSenderSendingOptionsMINIMUM = {
+      mentionsIds: ["idperson1" + WhatsappGroupIdentifier, "idperson2" + WhatsappGroupIdentifier],
+      sendRawWithoutEnqueue: false,
+    };
+    const expectedVCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Jane Roe
+TEL;type=CELL;type=VOICE;waid=4567890123:4567890123
+END:VCARD`;
+
+    await sender.Contact(fakeChatId, contact, options);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        contacts: {
+          displayName: "Jane Roe",
+          contacts: [{ vcard: expectedVCard }],
+        },
+        mentions: options.mentionsIds,
+      },
+      options
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingContactWithSendRawWithoutEnqueue_ShouldUseRawSend", async () => {
+    const contact = { name: "Mike Brown", phone: "5678901234" };
+    const options: WhatsMsgSenderSendingOptionsMINIMUM = {
+      sendRawWithoutEnqueue: true,
+    };
+    const expectedVCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Mike Brown
+TEL;type=CELL;type=VOICE;waid=5678901234:5678901234
+END:VCARD`;
+
+    await sender.Contact(fakeChatId, contact, options);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0); // Raw send bypasses queue
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).toHaveBeenCalledTimes(1);
+    expect(sendRawSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        contacts: {
+          displayName: "Mike Brown",
+          contacts: [{ vcard: expectedVCard }],
+        },
+        mentions: undefined,
+      },
+      options
+    );
+  });
+
+  it("WhenSendingContactWithMiscOptions_ShouldPassThemThrough", async () => {
+    const contact = { name: "Sarah Green", phone: "6789012345" };
+    const options: WhatsMsgSenderSendingOptionsMINIMUM = {
+      mentionsIds: ["idperson1" + WhatsappGroupIdentifier],
+      timestamp: new Date("2025-09-17T15:00:00Z"),
+      ephemeralExpiration: 86400,
+    };
+    const expectedVCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Sarah Green
+TEL;type=CELL;type=VOICE;waid=6789012345:6789012345
+END:VCARD`;
+
+    await sender.Contact(fakeChatId, contact, options);
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        contacts: {
+          displayName: "Sarah Green",
+          contacts: [{ vcard: expectedVCard }],
+        },
+        mentions: options.mentionsIds,
+      },
+      options
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  // Error handling
+  it("WhenSendingContactWithMissingName_ShouldThrowError", async () => {
+    const contact = { name: "", phone: "1234567890" };
+
+    await expect(async () => {
+      await sender.Contact(fakeChatId, contact);
+    }).toThrow("Invalid contact: name and phone are required");
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingContactWithMissingPhone_ShouldThrowError", async () => {
+    const contact = { name: "John Doe", phone: "" };
+
+    await expect(async () => {
+      await sender.Contact(fakeChatId, contact);
+    }).toThrow("Invalid contact: name and phone are required");
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingMultipleContactsWithOneInvalid_ShouldThrowError", async () => {
+    const contacts = [
+      { name: "Alice Smith", phone: "2345678901" },
+      { name: "Bob Jones", phone: "" }, // Invalid: empty phone
+    ];
+
+    await expect(async () => {
+      await sender.Contact(fakeChatId, contacts);
+    }).toThrow("Invalid contact: name and phone are required");
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(0);
+    expect(sendSafeSpy).not.toHaveBeenCalled();
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  // Edge cases
+  it("WhenSendingContactWithMinimalValidInput_ShouldSendIt", async () => {
+    const contact = { name: "A", phone: "1" };
+    const expectedVCard = `BEGIN:VCARD
+VERSION:3.0
+FN:A
+TEL;type=CELL;type=VOICE;waid=1:1
+END:VCARD`;
+
+    await expect(async () => {
+      await sender.Contact(fakeChatId, contact);
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        contacts: {
+          displayName: "A",
+          contacts: [{ vcard: expectedVCard }],
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
+  });
+
+  it("WhenSendingMultipleContactsWithMinimalValidInput_ShouldSendIt", async () => {
+    const contacts = [
+      { name: "A", phone: "1" },
+      { name: "B", phone: "2" },
+    ];
+    const expectedVCards = contacts.map(
+      (c) => `BEGIN:VCARD
+VERSION:3.0
+FN:${c.name}
+TEL;type=CELL;type=VOICE;waid=${c.phone}:${c.phone}
+END:VCARD`
+    );
+
+    await expect(async () => {
+      await sender.Contact(fakeChatId, contacts);
+    }).not.toThrow();
+
+    expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
+    expect(sendSafeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSafeSpy).toHaveBeenLastCalledWith(
+      fakeChatId,
+      {
+        contacts: {
+          displayName: "2 contacts",
+          contacts: expectedVCards.map((vc) => ({ vcard: vc })),
+        },
+        mentions: undefined,
+      },
+      undefined
+    );
+    expect(sendRawSpy).not.toHaveBeenCalled();
   });
 });

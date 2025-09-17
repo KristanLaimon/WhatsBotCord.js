@@ -254,7 +254,7 @@ it("Poll_WhenUsingSendPoll_ShouldCorrectlyUseSugarSenderPoll", async (): Promise
 
 it("Ubication_WhenSendingUbicationWithoutExtraInfo_ShouldCorrectlyUseSugarenderUbication", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const sendUbicationSenderSpy: Mock<typeof sender.Ubication> = spyOn(sender, "Ubication");
+  const sendUbicationSenderSpy: Mock<typeof sender.Location> = spyOn(sender, "Location");
   const latitude: number = 80;
   const longitude: number = -120;
   expect(async (): Promise<void> => {
@@ -270,7 +270,7 @@ it("Ubication_WhenSendingUbicationWithoutExtraInfo_ShouldCorrectlyUseSugarenderU
 
 it("Ubication_WhenSendingUbicationWithExtraInfo_ShouldCorrectlyUseSugaSenderUbication", async (): Promise<void> => {
   const { chat, sender } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const sendUbicationSenderSpy: Mock<typeof sender.Ubication> = spyOn(sender, "Ubication");
+  const sendUbicationSenderSpy: Mock<typeof sender.Location> = spyOn(sender, "Location");
   const latitude: number = 80;
   const longitude: number = -120;
   expect(async (): Promise<void> => {

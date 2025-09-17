@@ -1,5 +1,5 @@
 import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
-import Bot, { type ChatContext, type CommandArgs, CommandType, SenderType } from "src/index.js";
+import WhatsbotCord, { type ChatContext, type CommandArgs, CommandType, SenderType } from "src/index.js";
 
 // =============== EveryoneTag.ts ================
 class PingCommand implements ICommand {
@@ -68,7 +68,7 @@ class SendPrivately implements ICommand {
   }
 }
 // ========================== MAIN ==============================
-const bot = new Bot({
+const bot = new WhatsbotCord({
   commandPrefix: ["$", "!", "/", "."],
   tagCharPrefix: ["@"],
   credentialsFolder: "./auth",
@@ -137,11 +137,11 @@ await bot.Start();
  * ✅ [X]: Update to baileys 7.x.x!
  */
 
-//[ ]: Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
+// ✅ [X]: Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
 
-//[ ]: Make testing for all remaining sending sugar methods
+//✅[X]: Make testing for all remaining sending sugar methods
 
-//[ ]: Make testing for mocking framework deeply
+//[✅]: Make testing for mocking framework deeply
 
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object

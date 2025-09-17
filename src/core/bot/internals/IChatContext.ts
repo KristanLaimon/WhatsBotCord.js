@@ -503,13 +503,87 @@ export interface IChatContext {
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null>;
 
-  //TODO:Needs docs
+  /**
+   * Sends a document message from a local file path.
+   *
+   * @param docPath - Absolute or relative path to the document file.
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - The document file is read from the specified path and sent as a WhatsApp document message.
+   * - MIME type is automatically detected based on the file extension using the `mime` library.
+   * - Supports all file types compatible with WhatsApp document messages (e.g., PDF, DOC, TXT).
+   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set to `true` in `options`.
+   *
+   * @example
+   * // Send a PDF document
+   * await chatContext.SendDocument("./report.pdf");
+   *
+   * @example
+   * // Send a document with mentions and immediate sending
+   * await chatContext.SendDocument("./file.txt", {
+   *   mentionsIds: ["5211234567890@s.whatsapp.net"],
+   *   sendRawWithoutEnqueue: true
+   * });
+   */
   SendDocument(docPath: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null>;
 
-  //TODO:Needs docs
+  /**
+   * Sends a document message from a local file path with a custom display name.
+   *
+   * @param docPath - Absolute or relative path to the document file.
+   * @param fileNameToDisplay - Custom name to display for the document in WhatsApp.
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - Similar to `SendDocument`, but allows specifying a custom display name for the document.
+   * - The `fileNameToDisplay` overrides the default file name derived from `docPath`.
+   * - MIME type is detected based on the file extension of `docPath`.
+   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set to `true` in `options`.
+   *
+   * @example
+   * // Send a PDF with a custom display name
+   * await chatContext.SendDocumentWithCustomName("./report.pdf", "Annual Report 2025");
+   *
+   * @example
+   * // Send a document with a custom name and additional options
+   * await chatContext.SendDocumentWithCustomName("./data.csv", "Sales Data", {
+   *   timestamp: new Date(),
+   *   ephemeralExpiration: 86400
+   * });
+   */
   SendDocumentWithCustomName(docPath: string, fileNameToDisplay: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null>;
 
-  //TODO:Needs docs
+  /**
+   * Sends a document message from a buffer with a custom display name and file extension.
+   *
+   * @param docBuffer - Document content as a `Buffer`.
+   * @param fileNameToDisplayWithoutExt - Display name for the document (without extension).
+   * @param extensionFileTypeOnly - File extension (e.g., "pdf", "docx") to determine MIME type.
+   * @param options - Optional configuration for sending the message.
+   * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
+   *
+   * @remarks
+   * - Useful for sending documents generated or downloaded dynamically without saving to disk.
+   * - The `extensionFileTypeOnly` determines the MIME type (e.g., "pdf" → "application/pdf").
+   * - The `fileNameToDisplayWithoutExt` is used as the display name, with `extensionFileTypeOnly` appended.
+   * - Uses the safe queue system unless `sendRawWithoutEnqueue` is set to `true` in `options`.
+   *
+   * @example
+   * // Send a dynamically generated PDF buffer
+   * const buf = fs.readFileSync("./document.pdf");
+   * await chatContext.SendDocumentFromBuffer(buf, "Report", "pdf");
+   *
+   * @example
+   * // Send a buffer with mentions and immediate sending
+   * const buf = Buffer.from("Sample text");
+   * await chatContext.SendDocumentFromBuffer(buf, "Note", "txt", {
+   *   mentionsIds: ["5211234567890@s.whatsapp.net"],
+   *   sendRawWithoutEnqueue: true
+   * });
+   */
   SendDocumentFromBuffer(
     docBuffer: Buffer,
     fileNameToDisplayWithoutExt: string,

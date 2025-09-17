@@ -364,6 +364,13 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
       selects = selections.map((opt) => Str_NormalizeLiteralString(opt));
     }
 
+    for (let i = 0; i < selects.length; i++) {
+      const selectionTxt = selects[i]!;
+      if (selectionTxt.trim() === "") {
+        throw new Error(`Bad Args: SugarSender.Poll(): Option ${i + 1} is empty string!, you can't send non-text options...`);
+      }
+    }
+
     return await this._getSendingMethod(moreOptions)(
       chatId,
       {
@@ -396,7 +403,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
     // }
   }
 
-  public async Ubication(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Location(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
       throw new Error(
         `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`

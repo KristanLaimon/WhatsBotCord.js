@@ -22,9 +22,25 @@ import type { ChatContextConfig } from "./core/bot/internals/ChatContext.js";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
 import type { IChatContext } from "./core/bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "./core/bot/internals/ICommand.js";
+import type { IWhatsSocket_Submodule_Receiver } from "./core/whats_socket/internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_SugarSender } from "./core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
+import type { IMsgServiceSocketMinimum, IWhatsSocket_EventsOnly_Module } from "./core/whats_socket/IWhatsSocket.js";
 import type { WhatsappMessage } from "./core/whats_socket/types.js";
-export type { AdditionalAPI, BotMiddleWareFunct, ChatContextConfig, CommandArgs, IChatContext, ICommand, WhatsappMessage, WhatsSocketReceiverError };
+export type {
+  AdditionalAPI,
+  BotMiddleWareFunct,
+  ChatContextConfig,
+  CommandArgs,
+  IChatContext,
+  ICommand,
+  IMsgServiceSocketMinimum,
+  IWhatsSocket_EventsOnly_Module,
+  IWhatsSocket_Submodule_Receiver,
+  IWhatsSocket_Submodule_SugarSender,
+  WhatsappMessage,
+  WhatsSocketReceiverError,
+};
 
 // == Runtime deps exporting ==
 import { ChatContext } from "./core/bot/internals/ChatContext.js";
@@ -32,11 +48,12 @@ import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
 import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
 import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
+import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
 import Delegate from "./libs/Delegate.js";
 import WhatsChatMock from "./mocking_suite/WhatsChatMock.js";
 import { MsgType, SenderType } from "./Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types.js";
-export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsChatMock, WhatsSocket, WhatsSocketReceiverMsgError };
+export { ChatContext, CommandType, Delegate, MsgType, SenderType, WhatsappIdType, WhatsChatMock, WhatsSocket, WhatsSocketReceiverMsgError };
 
 // === Helpers ===
 /**

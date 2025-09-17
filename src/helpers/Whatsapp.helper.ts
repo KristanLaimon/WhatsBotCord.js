@@ -1,7 +1,6 @@
 import type { WAMessage } from "baileys";
 import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
 
-//TODO: Export these types
 /**
  * Enum representing group sending modes.
  */

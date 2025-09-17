@@ -16,7 +16,7 @@ export type ChatContextSpyWhatsMsg = {
   rawMsg: WhatsappMessage;
 };
 
-export type WhatsSocketReceiverMsgWaited = { chatId: string; partipantId: string | null; options?: Partial<ChatContextConfig> };
+export type WhatsSocketReceiverMsgWaited = { waitedMsgType: MsgType; chatId: string; partipantId: string | null; options?: Partial<ChatContextConfig> };
 
 export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWhatsSocket_Submodule_Receiver {
   private _queueWait: ChatContextSpyWhatsMsg[] = [];
@@ -70,7 +70,6 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
         if (actualMsg_msgType === MsgType.Text) {
           const txt = MsgHelper_FullMsg_GetText(toSend.rawMsg);
           if (txt) {
-            //TODO: Possible problem if is 10000 chars long?, well, its for mocking purposes, so...
             const wordsLowerCased = txt.split(" ").map((word) => word.toLowerCase());
             for (const cancelWord of _localOptions.cancelKeywords) {
               if (wordsLowerCased.includes(cancelWord.toLowerCase())) {
@@ -91,11 +90,7 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
       throw new Error(`ChatContext received a msg of type ${MsgType[actualMsg_msgType]}`);
     }
 
-    //TODO: Implement per msg type
-    // if (_localOptions) {
-    // switch (actualMsg_msgType) {
-    // case MsgType.Text:
-    this.Waited.push({ options: _localOptions, chatId: chatId, partipantId: participantId });
+    this.Waited.push({ options: _localOptions, chatId: chatId, partipantId: participantId, waitedMsgType: actualMsg_msgType });
 
     return toSend.rawMsg;
   }

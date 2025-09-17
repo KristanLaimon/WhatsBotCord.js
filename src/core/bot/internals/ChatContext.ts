@@ -203,7 +203,7 @@ export class ChatContext implements IChatContext {
 
   @autobind
   public SendUbication(degreesLatitude: number, degreesLongitude: number, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Ubication(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
+    return this._internalSend.Location(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
   }
 
   @autobind
@@ -214,7 +214,7 @@ export class ChatContext implements IChatContext {
     moreInfoAddress: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Ubication(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
+    return this._internalSend.Location(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
   }
 
   @autobind

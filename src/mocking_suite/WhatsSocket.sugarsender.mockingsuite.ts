@@ -84,7 +84,7 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   ): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
-  Ubication(_chatId: string, _ubicationParams: WhatsMsgUbicationOptions, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  Location(_chatId: string, _ubicationParams: WhatsMsgUbicationOptions, _options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     throw new Error("Method not implemented.");
   }
   Contact(
