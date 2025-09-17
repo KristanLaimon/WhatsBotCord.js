@@ -33,7 +33,7 @@
     "fullcheck": "bun check && bun lint",
     "fastest": "cross-env SKIP_LONG_TESTS=true bun test",
     "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
-    "publishnpm": "bun fullcheck && bun fulltest && bun run buildonly && bun prerelease_upgrade && npm publish",
+    "npm_publish": "bun fullcheck && bun fulltest && bun run buildonly && bun prerelease_upgrade && npm publish",
     "buildonly": "tsc --project tsconfig.build.json",
     "prerelease_upgrade": "npm version prerelease --preid=beta",
     "try": "bun ./src/index.main.ts"
