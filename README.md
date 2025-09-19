@@ -545,9 +545,9 @@ Of course, chat or context object provided in commands has a lot more methods av
 - Documents
 - Polls
 - Ubication (Gps)
-- and more which are already documented in code, but im planning to create a small wiki or documentation page dedicated in the
-  future for this proyect (Until this proyect reaches 1.0.0 version, will be available). This proyect is still under
-  development.
+
+And more which are already documented in code, but I'm planning to create a small wiki or documentation page dedicated in the
+future for this proyect. Soon will be available.
 
 # Report Bugs:
 
