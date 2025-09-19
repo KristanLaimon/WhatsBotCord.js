@@ -12,6 +12,7 @@ import type {
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+import { MsgFactory_CreateText } from "./MsgsMockFactory.js";
 
 /**
  * A mocking implementation of `IWhatsSocket_Submodule_SugarSender` designed for unit testing.
@@ -34,6 +35,7 @@ import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsa
  * ```
  */
 export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements IWhatsSocket_Submodule_SugarSender {
+  private readonly UserPushNameMock = "ChatMock User";
   //=================================================== Spy External Methods ==================================================
   //                                                          Text
   /**
@@ -67,7 +69,7 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     this.SentMessages_Texts.push({ text: text, options: options, chatId: NormalizeChatId(chatId) });
     //TODO: For all create success msgs, create a realistic object msg per type, not just a generic one
-    return CreateSuccessWhatsMsg(null, chatId);
+    return MsgFactory_CreateText(chatId, null, text, { customSenderWhatsUsername: this.UserPushNameMock });
   }
 
   //                                                          Img

@@ -85,3 +85,5 @@ export function MsgFactory_CreateText(
   };
   return message;
 }
+
+// export function MsgFactory_CreateImg()
