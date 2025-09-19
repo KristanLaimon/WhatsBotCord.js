@@ -118,15 +118,25 @@ await bot.Start();
 //      ✅[X]: Need to create a WhatsSocket_Submodule_Receiver_Mocking mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
 //      ✅[X]:  to create a WhatsSocket_Submodule_SugarSender_Mocking mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
 //          ✅ [X]: Do it per send*() type
-//                ✅ [X]: Texts             👌[X]: Tested
-//                ✅[X]: Imgs                [ ]: Tested
-//                ✅[X]: ReactEmojiToMsg     [ ]: Tested
-//                ✅[X]: Sticker             [ ]: Tested
-//                ✅[X]: Audio               [ ]: Tested
-//                ✅[X]: Video               [ ]: Tested
-//                ✅[X]: Document            [ ]: Tested
-//                ✅[X]: Poll                [ ]: Tested
-//                ✅[X]: Ubication           [ ]: Tested
+//                ✅ [X]: Texts
+//                ✅[X]: Imgs
+//                ✅[X]: ReactEmojiToMsg
+//                ✅[X]: Sticker
+//                ✅[X]: Audio
+//                ✅[X]: Video
+//                ✅[X]: Document
+//                ✅[X]: Poll
+//                ✅[X]: Ubication
+//            ===            TESTING            ===
+//                ✅[X]: Texts               [ ]: Tested
+//                [ ]: Imgs                [ ]: Tested
+//                [ ]: ReactEmojiToMsg     [ ]: Tested
+//                [ ]: Sticker             [ ]: Tested
+//                [ ]: Audio               [ ]: Tested
+//                [ ]: Video               [ ]: Tested
+//                [ ]: Document            [ ]: Tested
+//                [ ]: Poll                [ ]: Tested
+//                [ ]: Ubication           [ ]: Tested
 //      ✅[X]: Instanciate them inside MockChat, using a real ChatContext (Delete ChatContextSpy.ts)
 //      ✅[X]: Expose as props, the public waited objs from Receiver
 //      ✅[X]: Expose as props, the public sent objs from Sender
@@ -146,8 +156,19 @@ await bot.Start();
 //                [ ]: Document            [ ]: Tested
 //                [ ]: Poll                [ ]: Tested
 //                [ ]: Ubication           [ ]: Tested
+//            ===            TESTING            ===
+//                [ ]: Texts               [ ]: Tested
+//                [ ]: Imgs                [ ]: Tested
+//                [ ]: ReactEmojiToMsg     [ ]: Tested
+//                [ ]: Sticker             [ ]: Tested
+//                [ ]: Audio               [ ]: Tested
+//                [ ]: Video               [ ]: Tested
+//                [ ]: Document            [ ]: Tested
+//                [ ]: Poll                [ ]: Tested
+//                [ ]: Ubication           [ ]: Tested
 //      [ ]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING
 //      [ ]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
+//      [ ]: ChatContext.mockingsuite.ts: Add TESTING
 
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
