@@ -1,6 +1,6 @@
 {
   "name": "whatsbotcord",
-  "version": "0.1.1-beta.13",
+  "version": "0.1.1",
   "author": "KristanLaimon",
   "main": "build/index.js",
   "type": "module",
@@ -35,7 +35,8 @@
     "fullcheck": "bun check && bun lint",
     "fastest": "cross-env SKIP_LONG_TESTS=true bun test",
     "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
-    "buildonly": "tsc --project tsconfig.build.json",
+    "testt": "bun ./scripts/clean_build.js",
+    "buildonly": "bun ./scripts/clean_build.js && tsc --project tsconfig.build.json",
     "build": "bun fullcheck && bun fulltest && bun run buildonly",
     "npm_publish": "bun run build && bun prerelease_upgrade && npm publish",
     "release": "release-it",
