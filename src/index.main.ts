@@ -24,8 +24,6 @@ class EveryoneId implements ICommand {
     const allIds = groupData.members.map((m) => m.rawId!);
     const allMentionsIds: string[] = groupData.members.map((m) => m.asMentionFormatted!);
     await ctx.SendText(allMentionsIds.join(" "), { mentionsIds: allIds });
-    await ctx.SendText(allMentionsIds.join(" "));
-    await ctx.SendText(JSON.stringify(groupData, null, 2));
   }
 }
 

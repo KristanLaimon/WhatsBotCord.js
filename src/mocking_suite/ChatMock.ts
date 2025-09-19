@@ -11,6 +11,7 @@ import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { ChatContext, MsgType, SenderType } from "../index.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
+import { MsgFactory_CreateText } from "./MsgsMockFactory.js";
 import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
@@ -161,7 +162,7 @@ export default class ChatMock {
     const chatContext = new ChatContext(
       this.ParticipantId ?? null,
       this.ChatId,
-      this._createTxtMsg(`!${this._command.name}`),
+      MsgFactory_CreateText(this.ChatId, this.ParticipantId, `!${this._command.name}`, { customSenderWhatsUsername: "ChatMock User" }),
       this._sugarSenderMock,
       this._receiverMock,
       chatContextConfig
@@ -179,7 +180,9 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncomingText(textToEnqueue: string, options?: { customSenderWhatsUsername?: string }): void {
-    const txtMsg: WhatsappMessage = this._createTxtMsg(textToEnqueue, { customSenderWhatsUsername: options?.customSenderWhatsUsername });
+    const txtMsg: WhatsappMessage = MsgFactory_CreateText(this.ChatId, this.ParticipantId, textToEnqueue, {
+      customSenderWhatsUsername: options?.customSenderWhatsUsername,
+    });
     this._receiverMock.AddWaitMsg({ rawMsg: txtMsg });
   }
 
@@ -260,58 +263,4 @@ export default class ChatMock {
     this._sugarSenderMock.ClearMocks();
     this._mockSocket.ClearMock();
   }
-
-  //#region Private Utils
-  /**
-   * Creates the minimal base structure of a WhatsApp message object.
-   *
-   * @param id - Message unique identifier.
-   * @param timestamp - Unix timestamp (seconds).
-   * @param pushName - Display name of the sender.
-   * @returns A partially filled {@link WhatsappMessage}.
-   */
-  @autobind
-  private __createBaseMessage(id: string, timestamp: number, pushName: string): WhatsappMessage {
-    return {
-      key: {
-        remoteJid: this.ChatId,
-        participant: this.ParticipantId,
-        fromMe: false,
-        id: id,
-      },
-      messageTimestamp: timestamp,
-      pushName: pushName,
-      broadcast: false,
-      message: {},
-      deviceListMetadata: {
-        senderKeyHash: "qprrpV5KV38MkA==",
-        senderTimestamp: "1355194316",
-        recipientKeyHash: "4gj7dwAGWE3rWw==",
-        recipientTimestamp: "1155394318",
-      },
-      deviceListMetadataVersion: 2,
-      //@ts-expect-error this is string for sure, ts is annoying with this
-      messageSecret: "j+pPQKnytgjeJuMsvrly26TrQQjTFgDauhu2Gy9XsUM=",
-    };
-  }
-
-  /**
-   * Creates a fake WhatsApp text message.
-   *
-   * @param textToIncludeInMsg - The text content of the message.
-   * @param options - Allows overriding the sender pushName (WhatsApp display name).
-   * @returns A complete {@link WhatsappMessage} with conversation text set.
-   */
-  @autobind
-  private _createTxtMsg(textToIncludeInMsg: string, options?: { customSenderWhatsUsername?: string }): WhatsappMessage {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const pushName = options?.customSenderWhatsUsername ?? "User Who Sends this msg (mock response)";
-
-    const message: WhatsappMessage = this.__createBaseMessage("5AD0EEC1D2649BF2A2EC614714B3ED11", timestamp, pushName);
-    message.message = {
-      conversation: textToIncludeInMsg,
-    };
-    return message;
-  }
-  //#endregion
 }
