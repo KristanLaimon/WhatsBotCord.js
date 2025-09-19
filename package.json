@@ -35,10 +35,9 @@
     "fullcheck": "bun check && bun lint",
     "fastest": "cross-env SKIP_LONG_TESTS=true bun test",
     "fulltest": "cross-env SKIP_LONG_TESTS=false bun test",
-    "testt": "bun ./scripts/clean_build.js",
     "buildonly": "bun ./scripts/clean_build.js && tsc --project tsconfig.build.json",
     "build": "bun fullcheck && bun fulltest && bun run buildonly",
-    "npm_publish": "bun run build && bun prerelease_upgrade && npm publish",
+    "publishnpm": "bun run build && bun prerelease_upgrade && npm publish",
     "release": "release-it",
     "prerelease_upgrade": "npm version prerelease --preid=beta",
     "try": "bun ./src/index.main.ts"

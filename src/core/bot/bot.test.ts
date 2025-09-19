@@ -136,7 +136,6 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
   const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hello",
-    description: "mock hello description",
     aliases: [],
     async run(chat, api, args) {
       expect(chat).toBeDefined();
@@ -168,7 +167,6 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMGROUP_ShouldBeSuccessfully", asyn
   const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hellotag",
-    description: "mock hello tag description",
     aliases: [],
     async run(chat, api, args) {
       expect(chat).toBeDefined();
@@ -200,7 +198,6 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMINDIVIDUAL_ShouldSuccessfully"
   const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hello",
-    description: "mock hello description",
     aliases: [],
     async run(chat, api, args) {
       expect(chat).toBeDefined();
@@ -234,7 +231,6 @@ test("Running_WhenRunningSimple_TAGCOMMAND_FROMINDIVIDUAL_ShouldBeSuccessfully",
   const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "hellotag",
-    description: "mock hello tag description",
     aliases: [],
     async run(chat, api, args) {
       expect(chat).toBeDefined();
@@ -268,7 +264,6 @@ test("Running_MsgTagWithCommandNormal_ShouldNotReceiveIt", async () => {
   const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "mycommand_normal",
-    description: "mock mycommand_normal description",
     async run(_ctx, _rawMsgApi, _args) {
       throw new Error("This command MUST NOT be executed!");
     },
@@ -283,7 +278,6 @@ test("Running_MsgNormalCommandWithTag_ShouldNotReceiveIt", async () => {
   const { bot, socket } = toolkit();
   const command: ICommand = {
     name: "mycommand_tag",
-    description: "mock mycommand_tag description",
     async run(_ctx, _rawMsgApi, _args) {
       throw new Error("This command MUST NOT be executed!");
     },
@@ -300,7 +294,6 @@ test("Running_WhenHavingTwoDifferentTypeCommandsWithSameName_ShouldRecognizeThem
   let normalCommandCalled: boolean = false;
   const commandNormal: ICommand = {
     name: "samecommand",
-    description: "mock samecomand description",
     async run(_ctx, _rawMsgApi, _args) {
       normalCommandCalled = true;
     },
@@ -308,7 +301,6 @@ test("Running_WhenHavingTwoDifferentTypeCommandsWithSameName_ShouldRecognizeThem
   let tagCommandCalled: boolean = false;
   const commandTag: ICommand = {
     name: "samecommand",
-    description: "mock samecomand description",
     async run(_ctx, _rawMsgApi, _args) {
       tagCommandCalled = true;
     },
@@ -340,7 +332,6 @@ test("Running_WhenReceivingCommandFromQuotedMsg_FROMGROUP_ShouldRecognizeQuotedM
   const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "replyto",
-    description: "mock replyto description",
     async run(_ctx, _rawMsgApi, args) {
       expect(args.quotedMsgInfo).toBeDefined();
 
@@ -361,7 +352,6 @@ test("Running_WhenReceivingCommandFromQuotedMsg_FROMINDIVIDUAL_ShouldRecognizeQu
   const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "replyto",
-    description: "mock replyto description",
     async run(_ctx, _rawMsgApi, args) {
       expect(args.quotedMsgInfo).toBeDefined();
 
@@ -382,7 +372,6 @@ test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_NORMALCOMMAND_ShouldIgnoreItA
   const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "commy",
-    description: "mock commy description",
     async run(_ctx, _rawMsgApi, _args) {},
   };
   //This works as well with tags, same logic
@@ -405,7 +394,6 @@ test("Running_WhenReceivingOnlyPrefixMsg_FROMGROUP_TAGCOMMAND_ShouldIgnoreItAndN
   const { bot, socket } = toolkit();
   const com: ICommand = {
     name: "commy",
-    description: "mock commy description",
     async run(_ctx, _rawMsgApi, _args) {},
   };
   //This works as well with tags, same logic

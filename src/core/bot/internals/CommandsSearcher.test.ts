@@ -130,7 +130,6 @@ test("Adding_WhenAddingCommandWithEmptyName_ShouldThrowError", async () => {
   const searcher = new CommandsSearcher();
   const com: ICommand = {
     name: "",
-    description: "mock description",
     async run(_ctx, _rawMsgApi, _args) {},
   };
   expect(async () => {
@@ -145,7 +144,6 @@ test("Adding_WhenAddingCommandNameWithSeparatedWords_ShouldThrowError", async ()
   const searcher = new CommandsSearcher();
   const com: ICommand = {
     name: "many word command name",
-    description: "description command description",
     async run(_, __, ___) {},
   };
   expect(async () => {
