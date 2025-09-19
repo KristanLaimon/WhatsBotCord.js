@@ -118,17 +118,17 @@ await bot.Start();
 //      ✅[X]: Need to extract WhatsSocket_Submodule_Receiver into an interface and extract WhatsSocket_Submodule_SugarSender into an interface
 //      ✅[X]: Expose configuration to change GroupMetadata!
 //      ✅[X]: Need to create a WhatsSocket_Submodule_Receiver_Mocking mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
-//      ✅[X]: Need to create a WhatsSocket_Submodule_SugarSender_Mocking mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
+//      ✅[X]:  to create a WhatsSocket_Submodule_SugarSender_Mocking mock exposing all sent msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
 //          ✅ [X]: Do it per send*() type
 //                ✅ [X]: Texts             👌[X]: Tested
-//                ✅[X]: Imgs               [ ]: Tested
-//                ✅[X]: ReactEmojiToMsg    [ ]: Tested
-//                ✅[X]: Sticker            [ ]: Tested
-//                ✅[X]: Audio              [ ]: Tested
-//                ✅[X]: Video              [ ]: Tested
-//                ✅[X]: Document           [ ]: Tested
-//                ✅[X]: Poll               [ ]: Tested
-//                ✅[X]: Ubication          [ ]: Tested
+//                ✅[X]: Imgs                [ ]: Tested
+//                ✅[X]: ReactEmojiToMsg     [ ]: Tested
+//                ✅[X]: Sticker             [ ]: Tested
+//                ✅[X]: Audio               [ ]: Tested
+//                ✅[X]: Video               [ ]: Tested
+//                ✅[X]: Document            [ ]: Tested
+//                ✅[X]: Poll                [ ]: Tested
+//                ✅[X]: Ubication           [ ]: Tested
 //      ✅[X]: Instanciate them inside MockChat, using a real ChatContext (Delete ChatContextSpy.ts)
 //      ✅[X]: Expose as props, the public waited objs from Receiver
 //      ✅[X]: Expose as props, the public sent objs from Sender
@@ -136,6 +136,21 @@ await bot.Start();
 // ✅ [X]: Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
 // ✅[X]: Make testing for all remaining sending sugar methods
 //[✅]: Make testing for mocking framework deeply
+//      [ ]: Refactor msg realistic system
+//      [ ]: ChatMock, mock sending msgs
+//          [ ]: Do it per send*() type
+//                [ ]: Texts               [ ]: Tested
+//                [ ]: Imgs                [ ]: Tested
+//                [ ]: ReactEmojiToMsg     [ ]: Tested
+//                [ ]: Sticker             [ ]: Tested
+//                [ ]: Audio               [ ]: Tested
+//                [ ]: Video               [ ]: Tested
+//                [ ]: Document            [ ]: Tested
+//                [ ]: Poll                [ ]: Tested
+//                [ ]: Ubication           [ ]: Tested
+//      [ ]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING
+//      [ ]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
+
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
 //  [ ]: Create documentation page! (with astro?)
