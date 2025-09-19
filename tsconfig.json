@@ -1,20 +1,9 @@
 {
-  "exclude": [
-    "node_modules",
-    "build",
-    "eslint.config.js",
-    "test",
-    "**/*.spec.ts"
-  ],
-  "include": [
-    "src",
-    "src/index.ts",
-  ],
+  "exclude": ["node_modules", "build", "eslint.config.js", "test", "**/*.spec.ts"],
+  "include": ["src", "src/index.ts", "docs/examples/"],
   "compilerOptions": {
     // == Library Bundling Options ==
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "module": "es2022",
     "target": "ESnext",
     "moduleDetection": "force",
@@ -35,7 +24,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
-    "baseUrl": ".",
+    "baseUrl": "."
   }
 }
 // Bundler mode

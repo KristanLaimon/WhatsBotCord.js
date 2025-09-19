@@ -48,12 +48,13 @@ import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
 import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
 import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
+import CreateCommand from "./helpers/CommandForJs.helper.js";
 import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
 import Delegate from "./libs/Delegate.js";
 import ChatMock from "./mocking_suite/ChatMock.js";
 import { MsgType, SenderType } from "./Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types.js";
-export { ChatContext, ChatMock, CommandType, Delegate, MsgType, SenderType, WhatsappIdType, WhatsSocket, WhatsSocketReceiverMsgError };
+export { ChatContext, ChatMock, CommandType, CreateCommand, Delegate, MsgType, SenderType, WhatsappIdType, WhatsSocket, WhatsSocketReceiverMsgError };
 
 // === Helpers ===
 /**

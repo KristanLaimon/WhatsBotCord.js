@@ -17,9 +17,6 @@ export interface ICommand {
   /** Optional alternative names for the command */
   aliases?: string[];
 
-  /** Short description explaining what the command does */
-  description?: string;
-
   /**
    * Executes the command.
    * @param api - (Low-Level API for sending and receiving methods)
