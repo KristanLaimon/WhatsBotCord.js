@@ -1,6 +1,5 @@
 import Whatsbotcord, { type AdditionalAPI, type CommandArgs, type IChatContext, CommandType } from "../../src/index.js";
 
-// ===================== main.ts ==============================
 const bot = new Whatsbotcord({
   commandPrefix: "!",
   tagCharPrefix: "@",

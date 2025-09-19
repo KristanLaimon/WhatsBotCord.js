@@ -42,17 +42,16 @@ bun i whatsbotcord
 ```
 
 - **_WhatsApp Account_**: You NEED an active WhatsApp account on a mobile device to scan a QR code for Web Device Login (not an official WhatsApp Business API).
-  > Warning: WhatsBotCord uses WhatsApp Web Device Login, which is not an official WhatsApp bot API. Excessive usage or spamming may result in a WhatsApp ban.
 
 ## Getting started
 
 Import the library and you can use this minimal code to get started with your first command:
 
-```js
-// bot.ts
-import Whatsbotcord, { type ChatContext, type CommandArgs, type ICommand, type RawMsgAPI, CommandType, MsgType } from "whatsbotcord";
+### Javascript
 
-// ========================== MAIN ==============================
+```js
+import Whatsbotcord, { CommandType } from "whatsbotcord";
+
 const bot = new Whatsbotcord({
   commandPrefix: "!",
   tagCharPrefix: "@",
@@ -62,8 +61,30 @@ const bot = new Whatsbotcord({
 bot.Commands.Add(
   {
     name: "ping",
-    description: "A ping pong command.",
     async run(chat, api, commandArgs) {
+      await chat.SendText("pong!");
+    },
+  },
+  CommandType.Normal
+);
+bot.Start();
+```
+
+### Typescript
+
+```ts
+import Whatsbotcord, { type AdditionalAPI, type CommandArgs, type IChatContext, CommandType } from "whatsbotcord";
+
+const bot = new Whatsbotcord({
+  commandPrefix: "!",
+  tagCharPrefix: "@",
+  credentialsFolder: "./auth",
+  loggerMode: "recommended",
+});
+bot.Commands.Add(
+  {
+    name: "ping",
+    async run(chat: IChatContext, _api: AdditionalAPI, _commandArgs: CommandArgs): Promise<void> {
       await chat.SendText("pong!");
     },
   },
@@ -74,15 +95,77 @@ bot.Start();
 
 ## More advanced usage
 
-The last example is the easiest way to start but if you want to know how to use it with more options or how
-the common worflow is when working with command check the following code.
+The last example is the easiest way to start, but commonly you will be using
+the following worflow when working with them. It shows a little more advance usage and
+a basic showcase what this library has to offer.
 
 Here it's creating a simple command that accepts an img, validates its sent from the user and send it back if
 is valid.
 
+### Javascript
+
 ```js
-// bot.ts
-import Whatsbotcord, { type ChatContext, type CommandArgs, type ICommand, type RawMsgAPI, CommandType, MsgType } from "whatsbotcord";
+import Whatsbotcord, { CommandType, CreateCommand, MsgType } from "whatsbotcord";
+
+// ================== Ping.js ======================
+const pingCommand = CreateCommand(
+  "ping",
+  async (ctx, api, args) => {
+    await ctx.SendText("Pong!");
+  },
+  { aliases: "p" }
+);
+export default pingCommand;
+
+// ========================== MAIN ==============================
+//import pingCommand from "./Ping.js";
+const bot = new Whatsbotcord({
+  //Can accept an array of prefixes or only one "!" prefix
+  commandPrefix: ["$", "!", "/"],
+  tagCharPrefix: ["@"],
+  credentialsFolder: "./auth",
+  loggerMode: "recommended",
+});
+//1. You can add commands by just instatiating them or...
+bot.Commands.Add(pingCommand, CommandType.Normal);
+//2. By declaring them directly on Add method (Example of how a command workd)
+bot.Commands.Add(
+  {
+    name: "forwardmsg",
+    description: "A simple description for my forwardmsg",
+    aliases: ["f"], //You can use !forwardmsg or !f, they are the same!
+    async run(chat, api, args) {
+      /**
+       * If user uses !forwardmsg argument1 argument2 @someone, this will be ["argument1", "argument2", "@someone]
+       * otherwise, will be a [] (empty array) if no args provided
+       */
+      const commandArgs = args.args;
+      await chat.Loading(); ///Sends an ⌛ reaction emoji to original msg that triggered this command
+      await chat.SendText("Send me a image:");
+      const imgReceived = await chat.WaitMultimedia(MsgType.Image, { timeoutSeconds: 60, wrongTypeFeedbackMsg: "Hey, send me an img, try again!" });
+      //If user has sent the expected msg of type img, this will be a buffer
+      if (imgReceived) {
+        await chat.SendText("I've received your img, Im going to send it back");
+        /* -> */ await chat.SendImgFromBufferWithCaption(imgReceived, ".png", "Im a caption");
+        //OR
+        /* -> */ await chat.SendImgFromBuffer(imgReceived, ".png");
+        await chat.Ok(); //Sends a ✅ reaction emoji to original msg
+        //Otherwise, its null
+      } else {
+        await chat.SendText("I didn't get your msg... End of command");
+        await chat.Fail(); //Sends a ❌ reaction emoji to original msg
+      }
+    },
+  },
+  CommandType.Normal
+);
+bot.Start();
+```
+
+### Typescript
+
+```ts
+import Whatsbotcord, { type AdditionalAPI, type ChatContext, type CommandArgs, type IChatContext, type ICommand, CommandType, MsgType } from "whatsbotcord";
 
 // ================== Ping.ts ======================
 // A command can be created with a class implementing ICommand
@@ -90,14 +173,14 @@ class PingCommand implements ICommand {
   name: string = "ping";
   description: string = "replies with pong!";
   aliases: string[] = ["p"];
-  async run(chat: ChatContext, api: RawMsgAPI, commandArgs: CommandArgs): Promise<void> {
+  async run(chat: ChatContext, _api: AdditionalAPI, _commandArgs: CommandArgs): Promise<void> {
     await chat.SendText("Pong!");
   }
 }
 export default PingCommand;
 
 // ========================== MAIN ==============================
-import PingCommand from "./PingComand";
+//import PingCommand from "./Ping.ts"
 const bot = new Whatsbotcord({
   //Can accept an array of prefixes or only one "!" prefix
   commandPrefix: ["$", "!", "/"],
@@ -111,17 +194,15 @@ bot.Commands.Add(new PingCommand(), CommandType.Normal);
 bot.Commands.Add(
   {
     name: "forwardmsg",
-    description: "A simple description for my forwardmsg",
     aliases: ["f"], //You can use !forwardmsg or !f, they are the same!
-    async run(chat, api, commandArgs) {
+    async run(chat: IChatContext, _api: AdditionalAPI, _args: CommandArgs) {
       /**
        * If user uses !forwardmsg argument1 argument2 @someone, this will be ["argument1", "argument2", "@someone]
        * otherwise, will be a [] (empty array) if no args provided
        */
-      const arguments: string[] = commandArgs.args;
+      // const commandArgs: string[] = args.args;
       await chat.Loading(); ///Sends an ⌛ reaction emoji to original msg that triggered this command
       await chat.SendText("Send me a image:");
-      j;
       const imgReceived = await chat.WaitMultimedia(MsgType.Image, { timeoutSeconds: 60, wrongTypeFeedbackMsg: "Hey, send me an img, try again!" });
       //If user has sent the expected msg of type img, this will be a buffer
       if (imgReceived) {
@@ -144,56 +225,77 @@ bot.Start();
 
 ## Usage with group data and tags
 
-If your command is being called/executed from a group, you can use FetchGroupData() from context object to fetch all info
-and send it.
-Its kinda tricky how @mentions works, you need to pass the ID of the user formatted in the raw txt msg and send
-his ID as an array along the options of SendText.
+You can use commands and make them usable as **_Tags_**, which are called with '@' by default. You can change this
+in _tagCharPrefix_ property option when creating your Bot option.
 
-Steps:
+Here this command recreates the famous @everyone command from Discord!
 
-- Lets say we have a user with ID: 234234234234@lid
-- You need to convert it into: @234234234234, and send it, but its plain text so far.
-- To convert it into a mention, you need to pass in the obj params {mentionIds: ["234234234234@lid"]}
-
-So you would send:
+## Javascript
 
 ```js
-await ctx.SendText("@234234234234", /** Params */ { mentionIds: ["234234234234@lid"] });
+import Bot, { CommandType, CreateCommand } from "whatsbotcord";
+
+const everyoneTag = CreateCommand(
+  //Will be used as @everyone
+  "everyone",
+  async (chat, api, args) => {
+    const res = await chat.FetchGroupData();
+    if (res) {
+      /**
+       *  In this case is easy, res comes with res.members which is an array of all members with their
+       *  respective ID ready to quote them in msg and send. This is abstracted
+       *  thanks to this library!
+       */
+      const mentions = res.members.map((m) => m.asMentionFormatted);
+      const ids = res.members.map((m) => m.rawId);
+      await chat.SendText(mentions.join(" "), { mentionsIds: ids });
+    }
+  },
+  //So it can be used like @e
+  { aliases: "e" }
+);
+
+// ========================== MAIN ==============================
+const bot = new Bot({
+  commandPrefix: ["$", "!", "/"],
+  tagCharPrefix: ["@"],
+  credentialsFolder: "./auth",
+  loggerMode: "recommended",
+});
+/** Important, must be with CommandType.Tag prop to work */
+bot.Commands.Add(everyoneTag, CommandType.Tag);
+bot.Start();
+
+/**
+ * Now on whatsapp when someone sends a msg txt "@everyone" or "@e" the
+ * command will be executed. (Of course, the bot must be part of that group
+ * in first place to even be able to respond)
+ */
 ```
 
-Yes, that means it _has to be in the same order_, first @234234234234 with index 0 of mentionsIds and so on if
-you want to mention many people at once.
+## Typescript
 
-There are helpers in this library to convert easily even from a whatsapp msg to fetch its id formatted and ID,
-you can use WhatsappHelpers (import it from whatsbordcord lib) to do it easily.
+```ts
+import type { AdditionalAPI, ChatContext, CommandArgs, ICommand } from "whatsbotcord";
+import Bot, { CommandType } from "whatsbotcord";
 
-Note: If you use this fetchgroup method when this command is being called from private chat, it will return null;
-
-Heres a real world example of how to recreate the famous "@everyone" command from discord.
-
-```js
-import Bot, { type ChatContext, type CommandArgs, type ICommand, type RawMsgAPI, CommandType } from "whatsbotcord";
-
-// =============== EveryoneTag.ts ================
 class EveryoneTag implements ICommand {
   name: string = "e";
-  description: string = "replies with pong!";
   aliases: string[] = ["test"];
-  async run(chat: ChatContext, _: RawMsgAPI, __: CommandArgs): Promise<void> {
+  async run(chat: ChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
     const res = await chat.FetchGroupData();
     if (res) {
       /**
        *  In this case is easy, res comes with res.members which is an array of all members with their
        *  respective @23423423 formatted mention and ID 234234234@lid ready to send. This is abstracted
        *  thanks to this library!
-      */
+       */
       const mentions = res.members.map((m) => m.asMentionFormatted!);
       const ids = res.members.map((m) => m.rawId!);
       await chat.SendText(mentions.join(" "), { mentionsIds: ids });
     }
   }
 }
-
 
 // ========================== MAIN ==============================
 const bot = new Bot({
@@ -204,42 +306,82 @@ const bot = new Bot({
 });
 bot.Commands.Add(new EveryoneTag(), CommandType.Tag);
 bot.Start();
-```
 
-Then in chat you can easily use @everyone and bot will mention everyone, like discord!
+/**
+ * Now on whatsapp when someone sends a msg txt "@everyone" or "@e" the
+ * command will be executed. (Of course, the bot must be part of that group
+ * in first place to even be able to respond)
+ */
+```
 
 # WhatsBotCord.js Mocking & Testing
 
-You can simulate a full WhatsApp command interaction locally, without touching your real bot or changing any command code. This is perfect for testing, learning, or automating responses.
-
-To do so, import from this library "WhatsChatMock" object, and you can use it as following:
-
-## Getting Started with WhatsChatMock
-
-_ChatMock_ lets you mock a chat environment so your command behaves as if it’s running live.
+You can simulate a full WhatsApp command interaction locally, without ever touching your real bot obj or changing any command code!
+Perfect for testing, learning, or automating responses.
+To do so, import from this library **_WhatsChatMock_** object which lets you mock a whatsapp chat environment so your command
+behaves as if it's running live.
 
 ## Simplest usage
 
+### Javascript
+
 ```js
-// Test framework agnostic example using WhatsChatMock
 import { it } from "your-testing-framework-of-choice";
-import type { CommandArgs, IChatContext, ICommand, RawMsgAPI } from "whatsbotcord";
-import { ChatMock } from "whatsbotcord";
+import { ChatMock, CreateCommand } from "whatsbotcord";
+
+const myCommand = CreateCommand(
+  /** Command name */
+  "mynamecommand",
+  /** Code to run when called */
+  async (ctx, api, args) => {
+    await ctx.SendText("Hello User");
+    await ctx.SendText("What's your name?");
+
+    // Wait for user input
+    const userName = await ctx.WaitText({ cancelKeywords: ["hello", "world"] }); //Returns: "chris"
+    await ctx.SendText("Hello " + userName);
+  },
+  /** Aditional config (no alias) */
+  { aliases: [] }
+);
 
 it("retrieves user input correctly", async () => {
-  class Com implements ICommand {
-    name = "mynamecommand";
+  // Create a mock chat for the command
+  const chat = new ChatMock(myCommand);
 
-    async run(ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-      await ctx.SendText("Hello User");
-      await ctx.SendText("What's your name?");
+  // Simulate user sending "chris"
+  chat.EnqueueIncomingText("chris");
 
-      // Wait for user input
-      const userName = await ctx.WaitText({ cancelKeywords: ["hello", "world"] }); //Returns: "chris"
-      await ctx.SendText("Hello " + userName);
-    }
+  // Start the simulation
+  await chat.StartChatSimulation();
+
+  // Inspect results
+  console.log(chat.SentFromCommand.Texts); // [{text:"Hello User"}, {text: "What's your name?"}, {text:"Hello chris"}]
+  console.log(chat.WaitedFromCommand); // [{cancelKeywords:["hello","world"]}]
+});
+```
+
+### Typescript
+
+```ts
+import { it } from "your-testing-framework-of-choice";
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "whatsbotcord";
+import { ChatMock } from "whatsbotcord";
+
+class Com implements ICommand {
+  name = "mynamecommand";
+
+  async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+    await ctx.SendText("Hello User");
+    await ctx.SendText("What's your name?");
+
+    // Wait for user input
+    const userName = await ctx.WaitText({ cancelKeywords: ["hello", "world"] }); //Returns: "chris"
+    await ctx.SendText("Hello " + userName);
   }
+}
 
+it("retrieves user input correctly", async () => {
   // Create a mock chat for the command
   const chat = new ChatMock(new Com());
 
@@ -255,26 +397,88 @@ it("retrieves user input correctly", async () => {
 });
 ```
 
-> Notes:
-
-- EnqueueIncomingText() simulates user messages.
-- WaitText() can optionally take cancelKeywords or timeout parameters.
-
 ## Advanced example
 
-This example demonstrates full configuration and more complex interactions.
+This example demonstrates full configuration and more complex interactions when mocking.
+
+### Javascript
 
 ```js
-// Test framework agnostic example using WhatsChatMock
 import { describe, it } from "your-testing-framework-of-choice";
-import type { CommandArgs, IChatContext, ICommand, RawMsgAPI, WhatsappMessage } from "whatsbotcord";
-import { MsgHelpers, MsgType, SenderType, ChatMock } from "whatsbotcord";
+import { ChatMock, CreateCommand, MsgHelpers, MsgType, SenderType } from "whatsbotcord";
+
+// For Javascript uses who need to create a command with intelissense help!
+const myCommand = CreateCommand(
+  /** Command Name */
+  "command",
+  /** run() command */
+  async (ctx, api, args) => {
+    console.log("Args:", args.args); // ["argument1", "argument2"]
+    console.log("Chat ID:", ctx.FixedChatId); // "myCustomChatId!@g.us"
+    console.log("Participant ID:", ctx.FixedParticipantId); // "myCustomParticipantId!@whatsapp.es"
+
+    // Ask for user's name
+    await ctx.SendText("What's your name?");
+    const name = await ctx.WaitText({ timeoutSeconds: 3 });
+
+    if (name) await ctx.SendText(`Hello ${name}. Nice to meet you`);
+    else await ctx.SendText("You didn't respond in 3 seconds..");
+
+    // Ask for favorite programming language
+    await ctx.SendText("What's your favorite programming language?");
+    const response = await ctx.WaitMsg(MsgType.Text);
+
+    if (response) {
+      const language = MsgHelpers.FullMsg_GetText(response);
+      if (language) await ctx.SendText(`Oh, your favorite language is: ${language}`);
+    } else {
+      await ctx.SendText("You didn't respond in 3 seconds.");
+    }
+  },
+  /** Optional params */
+  index.js{
+    aliases: ["com"],
+  }
+);
+
+// Test suite
+describe("WhatsChatMock Example", () => {
+  it("Simulates user interaction with MyCommand", async () => {
+    const chat = new ChatMock(myCommand, {
+      args: ["argument1", "argument2"],
+      botSettings: { commandPrefix: "!" },
+      cancelKeywords: ["cancel"],
+      chatContextConfig: { timeoutSeconds: 3 },
+      chatId: "myCustomChatId!@g.us",
+      participantId: "myCustomParticipantId!@whatsapp.es",
+      msgType: MsgType.Text,
+      senderType: SenderType.Individual,
+    });
+
+    // Simulate user responses
+    chat.EnqueueIncomingText("chris"); // Response to name question
+    chat.EnqueueIncomingText("typescript"); // Response to favorite language question
+
+    await chat.StartChatSimulation();
+
+    console.log("Messages sent by command:", chat.SentFromCommand.Texts);
+    console.log("Messages command waited for:", chat.WaitedFromCommand);
+  });
+});
+```
+
+### Typescript
+
+```ts
+import { describe, it } from "your-testing-framework-of-choice";
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand, WhatsappMessage } from "whatsbotcord";
+import { ChatMock, MsgHelpers, MsgType, SenderType } from "whatsbotcord";
 
 // Example command implementation
 class MyCommand implements ICommand {
   name = "command";
 
-  async run(ctx: IChatContext, _rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {
+  async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
     console.log("Args:", args.args); // ["argument1", "argument2"]
     console.log("Chat ID:", ctx.FixedChatId); // "myCustomChatId!@g.us"
     console.log("Participant ID:", ctx.FixedParticipantId); // "myCustomParticipantId!@whatsapp.es"
@@ -341,12 +545,9 @@ Of course, chat or context object provided in commands has a lot more methods av
 - Documents
 - Polls
 - Ubication (Gps)
-- and more
-  Which are already documented in code, but im planning to create a small wiki or documentation page dedicated in the
+- and more which are already documented in code, but im planning to create a small wiki or documentation page dedicated in the
   future for this proyect (Until this proyect reaches 1.0.0 version, will be available). This proyect is still under
   development.
-
-> Scan the QR code displayed in the terminal using your WhatsApp mobile app!
 
 # Report Bugs:
 
@@ -359,8 +560,7 @@ All contributions are welcomed!. You need to take into account the following:
 
 ## Setting Up Development Environment:
 
-- Ensure Bun.js 1.2.20 or greater is installed (required for tests).
-- Bun.js is used as testing framework
+- Bun.js 1.2.20 or greater, is used as testing framework for this proyect
 
 To run all tests but skipping those long time consuming tests
 
@@ -382,4 +582,24 @@ Push to your fork and submit a pull request to the main repository.
 
 # License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+MIT License
+
+Copyright (c) 2025 KristanLaimon
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
