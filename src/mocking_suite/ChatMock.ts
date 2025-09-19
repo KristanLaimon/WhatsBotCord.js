@@ -2,7 +2,6 @@ import { type WhatsBotOptions, BotUtils_GenerateOptions } from "../core/bot/bot.
 import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import Myself_Submodule_Status from "../core/bot/internals/ChatContext.myself.status.js";
 import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
-import type { IChatContext } from "../core/bot/internals/IChatContext.js";
 import type { ICommand } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsSocketMockMsgSent } from "../core/whats_socket/mocks/types.js";
@@ -11,6 +10,7 @@ import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { ChatContext, MsgType, SenderType } from "../index.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
+import ChatContext_MockingSuite from "./ChatContext.mockingsuite.js";
 import { MsgFactory_CreateText } from "./MsgsMockFactory.js";
 import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
@@ -49,7 +49,7 @@ export default class ChatMock {
   public ChatId: string;
 
   private _constructorConfig?: MockingChatParams;
-  private _chatContextSpy: IChatContext;
+  private _chatContextSpy: ChatContext_MockingSuite;
   private _command: ICommand;
   private _receiverMock: WhatsSocket_Submodule_Receiver_MockingSuite;
   private _sugarSenderMock: WhatsSocket_Submodule_SugarSender_MockingSuite;
@@ -159,7 +159,7 @@ export default class ChatMock {
     this._receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
     this._mockSocket = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock });
-    const chatContext = new ChatContext(
+    const chatContext = new ChatContext_MockingSuite(
       this.ParticipantId ?? null,
       this.ChatId,
       MsgFactory_CreateText(this.ChatId, this.ParticipantId, `!${this._command.name}`, { customSenderWhatsUsername: "ChatMock User" }),
