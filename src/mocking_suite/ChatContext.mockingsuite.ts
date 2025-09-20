@@ -67,14 +67,3 @@ export default class ChatContext_MockingSuite extends ChatContext {
     return buffertoReturn;
   }
 }
-
-// constructor(
-//   originalSenderID: string | null,
-//   fixedChatId: string,
-//   initialMsg: WhatsappMessage,
-//   senderDependency: IWhatsSocket_Submodule_SugarSender,
-//   receiverDependency: IWhatsSocket_Submodule_Receiver,
-//   config: ChatContextConfig
-// ) {
-//   super(originalSenderID, fixedChatId, initialMsg, senderDependency, receiverDependency, config);
-// }
