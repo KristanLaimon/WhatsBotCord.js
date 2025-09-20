@@ -146,7 +146,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_Group_ShouldCatch", async (): Promise<vo
     }
   }
   const chat = new ChatMock(new Com());
-  chat.EnqueueIncomingText("MyText");
+  chat.EnqueueIncoming_Text("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
   expect(chat.WaitedFromCommand).toHaveLength(1);
@@ -177,7 +177,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_PrivateConversation_ShouldCatch", async 
     }
   }
   const chat = new ChatMock(new Com());
-  chat.EnqueueIncomingText("MyText");
+  chat.EnqueueIncoming_Text("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
   expect(chat.WaitedFromCommand).toHaveLength(1);
@@ -199,7 +199,7 @@ test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async 
     }
   }
   const chat = new ChatMock(new Com(), { chatId: myCustomChatId, participantId: myCustomParticipantId });
-  chat.EnqueueIncomingText("MyText");
+  chat.EnqueueIncoming_Text("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
   expect(chat.WaitedFromCommand).toHaveLength(1);
@@ -317,7 +317,7 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
     }
   }
   const chat = new ChatMock(new Com(), { cancelKeywords: ["twitter"] });
-  chat.EnqueueIncomingText("twitter omg");
+  chat.EnqueueIncoming_Text("twitter omg");
   expect(async () => {
     await chat.StartChatSimulation();
   }).toThrow();
@@ -330,7 +330,7 @@ test("WhenUsingCancelWords_ShouldThrowError", async (): Promise<void> => {
     }
   }
   const chat2 = new ChatMock(new Com2(), { cancelKeywords: ["twitter"] });
-  chat2.EnqueueIncomingText("twitter");
+  chat2.EnqueueIncoming_Text("twitter");
   expect(async () => {
     await chat2.StartChatSimulation();
   }).toThrow();
@@ -469,6 +469,21 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
   chat.SetGroupMetadataMock(groupMock);
   await chat.StartChatSimulation();
 });
+// ====== ctx.WaitMultimedia ==========
+it("ShouldGetDefaultBufferWhenExpectingMsgIfnotBufferMockConfigured", async () => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+      const myBufferAudio: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Audio);
+      const myBufferImg: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Image);
+      const myBufferVideo: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Video);
+      const myBufferDocument: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Document);
+      const myBufferSticker: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Sticker);
+    }
+  }
+  const chat = new MockingChat(new Com());
+  await chat.StartChatSimulation();
+});
 /**
  *
  *
@@ -527,7 +542,7 @@ describe("Text", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncomingText("chris");
+    chat.EnqueueIncoming_Text("chris");
     await chat.StartChatSimulation();
 
     expect(chat.SentFromCommand.Texts).toHaveLength(3);
@@ -568,7 +583,7 @@ describe("Text", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncomingText("chris"); //Without send this, what will happen? (throw error)
+    chat.EnqueueIncoming_Text("chris"); //Without send this, what will happen? (throw error)
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
     expect(chat.WaitedFromCommand[0]!.options).toMatchObject({
@@ -625,9 +640,9 @@ describe("Text", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncomingText("1");
-    chat.EnqueueIncomingText("2");
-    chat.EnqueueIncomingText("3");
+    chat.EnqueueIncoming_Text("1");
+    chat.EnqueueIncoming_Text("2");
+    chat.EnqueueIncoming_Text("3");
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(3);
     expect(chat.WaitedFromCommand[0]!).toMatchObject({
@@ -647,18 +662,109 @@ describe("Text", () => {
 });
 
 //                      ------------------- ======== IMAGES ========= -----------------------------
-// describe("Images", () => {
-//   it("ShouldGetImgs_Simple", async (): Promise<void> => {
-//     class Com implements ICommand {
-//       name: string = "mynamecommand";
-//       async run(_ctx: IChatContext, _rawMsgApi: RawMsgAPI, _args: CommandArgs): Promise<void> {
-//         await _ctx.SendImg();
-//       }
-//     }
-//     const chat = new MockingChat(new Com());
-//     await chat.StartChatSimulation();
-//   });
-// });
+describe("Images", () => {
+  it("ShouldGetImgs_Simple_ImgPathOnly", async (): Promise<void> => {
+    const imgPath: string = "./my/img/path/correct.png";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        //broadcast true, is just anything to test all options are cached in simulation
+        await _ctx.SendImg(imgPath, { broadcast: true });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Images).toHaveLength(1);
+    expect(chat.SentFromCommand.Images[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        caption: undefined,
+        source: imgPath,
+      },
+      options: {
+        broadcast: true,
+      },
+    });
+  });
+
+  it("ShouldGetImgs_Simple_ImgPathWithCaption", async (): Promise<void> => {
+    const imgPath: string = "./my/img/path/correct.png";
+    const imgPathCaption: string = "my img path str with caption";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        //broadcast true, is just anything to test all options are cached in simulation
+        await _ctx.SendImgWithCaption(imgPath, imgPathCaption, { broadcast: false });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Images).toHaveLength(1);
+    expect(chat.SentFromCommand.Images[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        caption: imgPathCaption,
+        source: imgPath,
+      },
+      options: {
+        broadcast: false,
+      },
+    });
+  });
+
+  it("ShouldGetImgs_Simple_ImgBufferOnly", async (): Promise<void> => {
+    const imgBuffer: Buffer<ArrayBuffer> = Buffer.from("img_mock");
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        //broadcast true, is just anything to test all options are cached in simulation
+        await _ctx.SendImgFromBuffer(imgBuffer, ".png", { broadcast: true });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Images).toHaveLength(1);
+    console.log(chat.SentFromCommand.Images);
+    expect(chat.SentFromCommand.Images[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        caption: undefined,
+        formatExtension: ".png",
+        source: expect.any(Buffer),
+      },
+      options: {
+        broadcast: true,
+      },
+    });
+  });
+
+  it("ShouldGetImgs_Simple_ImgBufferWithCaption", async (): Promise<void> => {
+    const imgBuffer: Buffer<ArrayBuffer> = Buffer.from("img_mock");
+    const imgBufferCaption: string = "Img buffer caption";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        //broadcast true, is just anything to test all options are cached in simulation
+        await _ctx.SendImgFromBufferWithCaption(imgBuffer, ".png", imgBufferCaption, { broadcast: true });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Images).toHaveLength(1);
+    console.log(chat.SentFromCommand.Images);
+    expect(chat.SentFromCommand.Images[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        caption: imgBufferCaption,
+        formatExtension: ".png",
+        source: expect.any(Buffer),
+      },
+      options: {
+        broadcast: true,
+      },
+    });
+  });
+});
 
 //TEMPLATE
 // it("", async (): Promise<void> => {
