@@ -129,14 +129,14 @@ await bot.Start();
 //                ✅[X]: Ubication
 //            ===            TESTING            ===
 //                ✅[X]: Texts
-//                [ ]: Imgs
-//                [ ]: ReactEmojiToMsg
-//                [ ]: Sticker
-//                [ ]: Audio
-//                [ ]: Video
-//                [ ]: Document
-//                [ ]: Poll
-//                [ ]: Ubication
+//                [✅]: Imgs
+//                [✅]: ReactEmojiToMsg
+//                [✅]: Sticker
+//                [✅]: Audio
+//                [✅]: Video
+//                [✅]: Document
+//                [✅]: Poll
+//                [✅]: Ubication
 //      ✅[X]: Instanciate them inside MockChat, using a real ChatContext (Delete ChatContextSpy.ts)
 //      ✅[X]: Expose as props, the public waited objs from Receiver
 //      ✅[X]: Expose as props, the public sent objs from Sender
