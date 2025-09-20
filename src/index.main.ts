@@ -112,7 +112,7 @@ await bot.Start();
 // ✅[X]: Add a default emoji to send to original msgs when occurs an error (configurable on bot instatiation params!)
 
 //#1 TODO: Create testing toolkit for users to simulate chats with these commands!
-//TODO: (IMPORTANT) fix testing toolkit, all spy logic should be inside WhatsSocket_Submodule_Receiver and WhatsSocket_Submodule_SugarSender
+//✅ : (IMPORTANT) fix testing toolkit, all spy logic should be inside WhatsSocket_Submodule_Receiver and WhatsSocket_Submodule_SugarSender
 //      ✅[X]: Need to extract WhatsSocket_Submodule_Receiver into an interface and extract WhatsSocket_Submodule_SugarSender into an interface
 //      ✅[X]: Expose configuration to change GroupMetadata!
 //      ✅[X]: Need to create a WhatsSocket_Submodule_Receiver_Mocking mock exposing all waited msgs publicly (won't require a WhatsSocketMock, it won't use any real socket logic)
@@ -170,6 +170,11 @@ await bot.Start();
 //      [ ]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING
 //      [ ]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
 //      [ ]: ChatContext.mockingsuite.ts: Add TESTING
+
+// [ ]: Add documentation about bot.middleware in README.md
+// [ ]: Add documentation about bots.events in README.MD
+// [ ]: Add optional validation, not running another command while doing the command (with custom msg)
+// [ ]: Add ability to change bot settings from commands, (add Myself.Settings to AdditionalAPI obj in test)
 
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
