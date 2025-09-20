@@ -25,7 +25,9 @@ export default class ChatContext_MockingSuite extends ChatContext {
    * Internal buffer to be returned when {@link WaitMultimedia} is called.
    * Defaults to `"mock_buffer"`.
    */
-  private _waitMultimedia_BufferToReturn: Buffer = Buffer.from("mock_buffer");
+  private readonly _defaultBufferToReturn: Buffer = Buffer.from("mock_buffer");
+
+  private _queuedBufferToReturn: Buffer[] = [];
 
   /**
    * Configure the buffer that will be returned in place of a real
@@ -33,8 +35,8 @@ export default class ChatContext_MockingSuite extends ChatContext {
    *
    * @param anyBuffer - The buffer to return on next `WaitMultimedia` calls.
    */
-  public SetWaitMultiMediaBufferReturn(anyBuffer: Buffer) {
-    this._waitMultimedia_BufferToReturn = anyBuffer;
+  public EnqueueMediaBufferToReturn(anyBuffer: Buffer) {
+    this._queuedBufferToReturn.push(anyBuffer);
   }
 
   /**
@@ -42,14 +44,14 @@ export default class ChatContext_MockingSuite extends ChatContext {
    * The mock buffer is reset to `"mock_buffer"`.
    */
   public ClearMocks() {
-    this._waitMultimedia_BufferToReturn = Buffer.from("mock_buffer");
+    this._queuedBufferToReturn = [];
   }
 
   /**
    * Override of {@link ChatContext.WaitMultimedia}.
    *
    * Instead of downloading media via baileys, this returns the mock buffer
-   * set via {@link SetWaitMultiMediaBufferReturn}.
+   * set via {@link EnqueueMediaBufferToReturn}.
    *
    * @param msgTypeToWaitFor - Type of multimedia message to wait for.
    * @param localOptions - Optional filters overriding the global context config.
@@ -61,8 +63,8 @@ export default class ChatContext_MockingSuite extends ChatContext {
   ): Promise<Buffer | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(msgTypeToWaitFor, localOptions);
     if (!found) return null;
-    const buffer = this._waitMultimedia_BufferToReturn;
-    return buffer;
+    const buffertoReturn: Buffer = this._queuedBufferToReturn.length > 0 ? this._queuedBufferToReturn.shift()! : this._defaultBufferToReturn;
+    return buffertoReturn;
   }
 }
 

@@ -1,3 +1,5 @@
+import mime from "mime";
+import path from "node:path";
 import { type WhatsBotOptions, BotUtils_GenerateOptions } from "../core/bot/bot.js";
 import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import Myself_Submodule_Status from "../core/bot/internals/ChatContext.myself.status.js";
@@ -11,11 +13,20 @@ import { autobind } from "../helpers/Decorators.helper.js";
 import { ChatContext, MsgType, SenderType } from "../index.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
 import ChatContext_MockingSuite from "./ChatContext.mockingsuite.js";
-import { MsgFactory_CreateText } from "./MsgsMockFactory.js";
+import {
+  MsgFactory_Audio,
+  MsgFactory_Document,
+  MsgFactory_Image,
+  MsgFactory_Location,
+  MsgFactory_Sticker,
+  MsgFactory_Text,
+  MsgFactory_Video,
+} from "./MsgsMockFactory.js";
 import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 
+//TODO: Export this types
 export type MockingChatParams = {
   chatContextConfig?: Omit<Partial<ChatContextConfig>, "cancelKeywords">;
   botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
@@ -26,6 +37,13 @@ export type MockingChatParams = {
   senderType?: SenderType;
   cancelKeywords?: string[];
 };
+
+//TODO: Export this types
+export type MockEnqueueParamsMinimal = { pushName?: string };
+export type MockEnqueueParamsMultimediaMinimal = MockEnqueueParamsMinimal & { bufferToReturnOnWaitMultimedia?: Buffer };
+export type MockEnqueueParamsMultimedia = MockEnqueueParamsMultimediaMinimal & { caption?: string };
+export type MockEnqueueParamsDocument = MockEnqueueParamsMultimediaMinimal & { mimeType?: string };
+export type MockEnqueueParamsLocation = MockEnqueueParamsMinimal & { locationName?: string; addressDescription?: string };
 
 /**
  * MockingChat is a helper utility designed to simulate a full WhatsApp chat session
@@ -45,15 +63,15 @@ export type MockingChatParams = {
  * ```
  */
 export default class ChatMock {
-  public ParticipantId?: string;
-  public ChatId: string;
+  public readonly ParticipantId?: string;
+  public readonly ChatId: string;
 
   private _constructorConfig?: MockingChatParams;
-  private _chatContextSpy: ChatContext_MockingSuite;
+  private _chatContextMock: ChatContext_MockingSuite;
   private _command: ICommand;
   private _receiverMock: WhatsSocket_Submodule_Receiver_MockingSuite;
   private _sugarSenderMock: WhatsSocket_Submodule_SugarSender_MockingSuite;
-  private _mockSocket: WhatsSocketMock;
+  private _socketMock: WhatsSocketMock;
 
   /**
    * All messages "waited" (consumed) from the mocked receiver.
@@ -88,7 +106,7 @@ export default class ChatMock {
    * This simulates queued delivery (e.g., internal socket enqueuing).
    */
   public get SentFromCommandSocketQueue(): WhatsSocketMockMsgSent[] {
-    return this._mockSocket.SentMessagesThroughQueue;
+    return this._socketMock.SentMessagesThroughQueue;
   }
 
   /**
@@ -96,7 +114,7 @@ export default class ChatMock {
    * This simulates "raw" delivery. ()
    */
   public get SentFromCommandSocketWithoutQueue(): WhatsSocketMockMsgSent[] {
-    return this._mockSocket.SentMessagesThroughRaw;
+    return this._socketMock.SentMessagesThroughRaw;
   }
 
   /**
@@ -158,18 +176,18 @@ export default class ChatMock {
     };
     this._receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
-    this._mockSocket = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock });
+    this._socketMock = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock });
     const chatContext = new ChatContext_MockingSuite(
       this.ParticipantId ?? null,
       this.ChatId,
-      MsgFactory_CreateText(this.ChatId, this.ParticipantId, `!${this._command.name}`, { customSenderWhatsUsername: "ChatMock User" }),
+      MsgFactory_Text(this.ChatId, this.ParticipantId, `!${this._command.name}`, { pushName: "ChatMock User" }),
       this._sugarSenderMock,
       this._receiverMock,
       chatContextConfig
     );
-    this._chatContextSpy = chatContext;
+    this._chatContextMock = chatContext;
   }
-  //TODO: Do Enqueue*() per each type of msg type!, emulate
+
   /**
    * Simulates the sending of a text message into the mocked chat.
    * This enqueues the message into the mocked receiver, making it
@@ -179,11 +197,144 @@ export default class ChatMock {
    * @param options - Allows overriding the sender pushName (WhatsApp display name).
    */
   @autobind
-  public EnqueueIncomingText(textToEnqueue: string, options?: { customSenderWhatsUsername?: string }): void {
-    const txtMsg: WhatsappMessage = MsgFactory_CreateText(this.ChatId, this.ParticipantId, textToEnqueue, {
-      customSenderWhatsUsername: options?.customSenderWhatsUsername,
+  public EnqueueIncoming_Text(textToEnqueue: string, options?: MockEnqueueParamsMinimal): void {
+    const txtMsg: WhatsappMessage = MsgFactory_Text(this.ChatId, this.ParticipantId, textToEnqueue, {
+      pushName: options?.pushName,
     });
     this._receiverMock.AddWaitMsg({ rawMsg: txtMsg });
+  }
+
+  /**
+   * Simulates the sending of an image message into the mocked chat.
+   * The message is enqueued into the mocked receiver and can be consumed
+   * by the command under test.
+   *
+   * If a `bufferToReturnOnWaitMultimedia` is provided, it will override
+   * the buffer returned by {@link ChatContext.WaitMultimedia}.
+   *
+   * @param imgUrl - URL of the image to simulate.
+   * @param opts - Optional parameters such as caption, sender pushName,
+   *   and an optional mock buffer for multimedia retrieval.
+   */
+  @autobind
+  public EnqueueIncoming_Img(imgUrl: string, opts?: MockEnqueueParamsMultimedia): void {
+    const imgMsg: WhatsappMessage = MsgFactory_Image(this.ChatId, this.ParticipantId, imgUrl, {
+      caption: opts?.caption,
+      pushName: opts?.pushName,
+    });
+    if (opts?.bufferToReturnOnWaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOnWaitMultimedia);
+    }
+    this._receiverMock.AddWaitMsg({ rawMsg: imgMsg });
+  }
+
+  /**
+   * Simulates the sending of a sticker message into the mocked chat.
+   * Enqueues the message into the mocked receiver for the command to
+   * consume.
+   *
+   * If a `bufferToReturnOnWaitMultimedia` is set, that buffer will be
+   * returned during multimedia waits instead of performing a real
+   * download.
+   *
+   * @param urlSticker - URL of the sticker file (usually `.webp`).
+   * @param opts - Optional parameters like pushName and a mock buffer.
+   */
+  @autobind
+  public EnqueueIncoming_Sticker(urlSticker: string, opts?: MockEnqueueParamsMultimediaMinimal): void {
+    const stickerMsg: WhatsappMessage = MsgFactory_Sticker(this.ChatId, this.ParticipantId, urlSticker, {
+      pushName: opts?.pushName,
+    });
+    if (opts?.bufferToReturnOnWaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOnWaitMultimedia);
+    }
+    this._receiverMock.AddWaitMsg({ rawMsg: stickerMsg });
+  }
+
+  /**
+   * Simulates the sending of an audio message into the mocked chat.
+   * The message is added to the mocked receiver queue.
+   *
+   * If a mock buffer is provided, it will be used when awaiting
+   * multimedia content via {@link WaitMultimedia}.
+   *
+   * @param urlaudio - URL of the audio file to simulate.
+   * @param opts - Optional pushName and buffer override.
+   */
+  @autobind
+  public EnqueueIncoming_Audio(urlaudio: string, opts?: MockEnqueueParamsMultimediaMinimal): void {
+    const audioMsg: WhatsappMessage = MsgFactory_Audio(this.ChatId, this.ParticipantId, urlaudio, {
+      pushName: opts?.pushName,
+    });
+    if (opts?.bufferToReturnOnWaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOnWaitMultimedia);
+    }
+    this._receiverMock.AddWaitMsg({ rawMsg: audioMsg });
+  }
+
+  /**
+   * Simulates the sending of a video message into the mocked chat.
+   * This includes optional captions and sender details.
+   *
+   * If a buffer override is specified, it will be used during multimedia
+   * waits instead of fetching from the URL.
+   *
+   * @param urlVideo - URL of the video file to simulate.
+   * @param opts - Optional parameters (caption, pushName, buffer).
+   */
+  @autobind
+  public EnqueueIncoming_Video(urlVideo: string, opts?: MockEnqueueParamsMultimedia): void {
+    const videoMsg: WhatsappMessage = MsgFactory_Video(this.ChatId, this.ParticipantId, urlVideo, {
+      caption: opts?.caption,
+      pushName: opts?.pushName,
+    });
+    if (opts?.bufferToReturnOnWaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOnWaitMultimedia);
+    }
+    this._receiverMock.AddWaitMsg({ rawMsg: videoMsg });
+  }
+
+  /**
+   * Simulates the sending of a document message into the mocked chat.
+   * Enqueues the message with proper filename and mimetype resolution.
+   *
+   * A mock buffer can be attached to override multimedia waits for this
+   * document.
+   *
+   * @param urlDocument - URL of the document to simulate.
+   * @param fileName - Filename to associate with the document.
+   * @param opts - Optional mimetype, pushName, and buffer override.
+   */
+  @autobind
+  public EnqueueIncoming_Document(urlDocument: string, fileName: string, opts?: MockEnqueueParamsDocument): void {
+    const documentMsg: WhatsappMessage = MsgFactory_Document(this.ChatId, this.ParticipantId, urlDocument, {
+      fileName: fileName,
+      mimetype: opts?.mimeType ?? mime.getType(path.extname(fileName)) ?? "application/pdf",
+      pushName: opts?.pushName,
+    });
+    if (opts?.bufferToReturnOnWaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOnWaitMultimedia);
+    }
+    this._receiverMock.AddWaitMsg({ rawMsg: documentMsg });
+  }
+
+  /**
+   * Simulates the sending of a location message into the mocked chat.
+   * The message includes geographic coordinates and optional descriptive
+   * fields like name and address.
+   *
+   * @param latitude - Latitude of the location.
+   * @param longitude - Longitude of the location.
+   * @param opts - Optional location name, address description, and pushName.
+   */
+  @autobind
+  public EnqueueIncoming_Location(latitude: number, longitude: number, opts?: MockEnqueueParamsLocation): void {
+    const locationMsg: WhatsappMessage = MsgFactory_Location(this.ChatId, this.ParticipantId, latitude, longitude, {
+      pushName: opts?.pushName,
+      address: opts?.addressDescription,
+      name: opts?.locationName,
+    });
+    this._receiverMock.AddWaitMsg({ rawMsg: locationMsg });
   }
 
   /**
@@ -202,21 +353,18 @@ export default class ChatMock {
     // const receiver: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver();
     //Need to conver
     await this._command.run(
-      this._chatContextSpy,
+      this._chatContextMock,
       {
-        // @deprecated: InternalSocket already contains Receive and Send objects
-        // Receive: this._receiverMock,
-        // Send: this._sugarSenderMock, //How to connect with InternalSocket??
-        InternalSocket: this._mockSocket,
+        InternalSocket: this._socketMock,
         Myself: {
-          Status: new Myself_Submodule_Status(this._mockSocket),
+          Status: new Myself_Submodule_Status(this._socketMock),
         },
       },
       {
         args: this._constructorConfig?.args ?? [],
         botInfo: {
           Commands: new CommandsSearcher(),
-          Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextSpy.Config.cancelKeywords }),
+          Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextMock.Config.cancelKeywords }),
         },
         chatId: this.ChatId,
         //TODO: ADD support for ParticipantId PN old
@@ -230,6 +378,20 @@ export default class ChatMock {
     );
   }
 
+  /**
+   * Overrides the group metadata used in this mocked chat environment.
+   * This is useful for simulating different group states (e.g., id,
+   * subject, participants) without relying on real WhatsApp server data.
+   *
+   * Behavior:
+   * - Ensures the `id` field has the correct suffix depending on whether
+   *   the current sender type is group or individual.
+   * - Updates the `ChatId` internally and applies the metadata to the
+   *   receiver and socket mocks.
+   *
+   * @param metadata - Partial group metadata to inject into the mock
+   *   environment. If `id` is provided, it will be normalized.
+   */
   @autobind
   public SetGroupMetadataMock(metadata: Partial<GroupMetadataInfo>) {
     const actualSenderType = this._constructorConfig?.senderType ?? (this.ParticipantId ? SenderType.Group : SenderType.Individual);
@@ -248,19 +410,42 @@ export default class ChatMock {
           newChatId = metadata.id;
         }
       }
+      //@ts-expect-error just let this private access to exists.. hehehehehe
       this.ChatId = newChatId;
     }
     //@ts-expect-error just a little fix... jejeje
-    this._chatContextSpy["FixedChatId"] = this.ChatId;
+    this._chatContextMock["FixedChatId"] = this.ChatId;
     this._receiverMock.SetGroupMetadataMock({ ...metadata, id: this.ChatId });
     //With mocksocket, do not modify it, its always group
-    this._mockSocket.SetGroupMetadataMock(metadata);
+    this._socketMock.SetGroupMetadataMock(metadata);
   }
 
+  /**
+   * Resets the entire mocking environment back to its initial state.
+   * This clears:
+   * - Receiver mock state
+   * - Sugar sender mock state
+   * - Socket mock state
+   * - Chat context mock state
+   *
+   * Use this before or after each test to ensure isolation between cases.
+   */
   @autobind
   public ClearMocks(): void {
     this._receiverMock.ClearMocks();
     this._sugarSenderMock.ClearMocks();
-    this._mockSocket.ClearMock();
+    this._socketMock.ClearMock();
+    this._chatContextMock.ClearMocks();
+  }
+
+  /**
+   * Configure the buffer that will be returned in place of a real
+   * downloaded multimedia message when using "ctx.WaitMultimedia(...)".
+   *
+   * @param anyBuffer - The buffer to return on next `WaitMultimedia` calls.
+   */
+  @autobind
+  public SetWaitMsgBufferToReturnMock(anyBuffer: Buffer) {
+    this._chatContextMock.EnqueueMediaBufferToReturn(anyBuffer);
   }
 }
