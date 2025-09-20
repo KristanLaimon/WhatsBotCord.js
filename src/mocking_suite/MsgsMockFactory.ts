@@ -76,10 +76,10 @@ export function MsgFactory_Text(
   chatId: string,
   participantId: string | undefined | null,
   textToIncludeInMsg: string,
-  options?: { customSenderWhatsUsername?: string }
+  options?: { pushName?: string }
 ): WhatsappMessage {
   const timestamp = Math.floor(Date.now() / 1000);
-  const pushName = options?.customSenderWhatsUsername ?? "User Who Sends this msg (mock response)";
+  const pushName = options?.pushName ?? "User Who Sends this msg (mock response)";
 
   const message: WhatsappMessage = _createBaseMsg(chatId, participantId ?? null, "5AD0EEC1D2649BF2A2EC614714B3ED11", timestamp, pushName);
   message.message = {
@@ -289,41 +289,6 @@ export function MsgFactory_Document(
   };
   return base;
 }
-
-/**
- * Factory function to generate a mock **contact message**.
- *
- * @example
- * ```ts
- * const vcard = "BEGIN:VCARD\nVERSION:3.0\nFN:Alice\nTEL;type=CELL:+521234567890\nEND:VCARD";
- * const contactMsg = MsgFactory_Contact("123@g.us", null, "Alice", vcard);
- * ```
- *
- * @param chatId - Chat JID where the contact is sent.
- * @param participantId - JID of the sender.
- * @param displayName - Display name of the contact.
- * @param vcard - Raw vCard string representing the contact.
- * @param opts.pushName - Override sender display name.
- *
- * @returns A {@link WhatsappMessage} with a `contactMessage` payload.
- */
-export function MsgFactory_Contact(
-  chatId: string,
-  participantId: string | null | undefined,
-  displayName: string,
-  vcard: string,
-  opts?: { pushName?: string }
-): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
-  base.message = {
-    contactMessage: {
-      displayName,
-      vcard,
-    },
-  };
-  return base;
-}
-
 /**
  * Factory function to generate a mock **location message**.
  *
@@ -365,43 +330,37 @@ export function MsgFactory_Location(
 }
 
 /**
- * Factory function to generate a mock **contacts array message**.
+ * Factory function to generate a mock **contact message**.
  * Automatically builds proper vCard strings from simple
- * `{ contactName, phoneNumber }` objects.
- *
- * @example
- * ```ts
- * const contactsMsg = MsgFactory_ContactsArray("123@g.us", null, [
- *   { contactName: "Alice", phoneNumber: "+521234567890" },
- *   { contactName: "Bob", phoneNumber: "+529876543210" }
- * ]);
- * ```
+ * `{ contactName, phoneNumber }` object param.
  *
  * @param chatId - Chat JID where the contacts array is sent.
  * @param participantId - JID of the sender.
- * @param contacts - Array of simple contact definitions
- *                   (`{ contactName, phoneNumber }`) to be converted to vCards.
+ * @param contacts - Simple contact definition, name and phonenumber e.g "chris" and "5217389273" thats the same like: +52 1 738 9273
  * @param opts.pushName - Override sender display name.
  *
  * @returns A {@link WhatsappMessage} with a `contactsArrayMessage` payload.
  */
-export function MsgFactory_ContactsArray(
+export function MsgFactory_Contact(
   chatId: string,
   participantId: string | null | undefined,
-  contacts: Array<{ contactName: string; phoneNumber: string }>,
+  contacts: {
+    /**
+     * e.g "Chris"
+     */
+    contactName: string;
+    /**
+     * e.g "5217389273" thats the same like: +52 1 738 9273 for mexican numbers, check your country code.
+     */
+    phoneNumber: string;
+  },
   opts?: { pushName?: string }
 ): WhatsappMessage {
   const base = _createBaseMsg(chatId, participantId, opts?.pushName);
-
-  const converted = contacts.map(({ contactName, phoneNumber }) => {
-    const vcard = ["BEGIN:VCARD", "VERSION:3.0", `FN:${contactName}`, `TEL;type=CELL:${phoneNumber}`, "END:VCARD"].join("\n");
-
-    return { displayName: contactName, vcard };
-  });
-
+  const vcard = ["BEGIN:VCARD", "VERSION:3.0", `FN:${contacts.contactName}`, `TEL;type=CELL:${contacts.phoneNumber}`, "END:VCARD"].join("\n");
   base.message = {
     contactsArrayMessage: {
-      contacts: converted,
+      contacts: [{ displayName: contacts.contactName, vcard: vcard }],
     },
   };
   return base;
