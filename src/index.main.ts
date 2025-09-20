@@ -167,9 +167,9 @@ await bot.Start();
 //                [ ]: Document
 //                [not supported]: Poll
 //                [ ]: Ubication
-//      [ ]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING
-//      [ ]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
-//      [ ]: ChatContext.mockingsuite.ts: Add TESTING
+//      [ ]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING /** already working by many other tests around the proyect, but needs specific tests for itself */
+//      [✅]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
+//      [✅]: ChatContext.mockingsuite.ts: Add TESTING
 
 // [ ]: Add documentation about bot.middleware in README.md
 // [ ]: Add documentation about bots.events in README.MD
