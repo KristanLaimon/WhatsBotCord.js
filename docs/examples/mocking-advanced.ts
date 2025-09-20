@@ -46,8 +46,8 @@ describe("WhatsChatMock Example", () => {
     });
 
     // Simulate user responses
-    chat.EnqueueIncomingText("chris"); // Response to name question
-    chat.EnqueueIncomingText("typescript"); // Response to favorite language question
+    chat.EnqueueIncoming_Text("chris"); // Response to name question
+    chat.EnqueueIncoming_Text("typescript"); // Response to favorite language question
 
     await chat.StartChatSimulation();
 

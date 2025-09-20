@@ -20,7 +20,7 @@ it("retrieves user input correctly", async () => {
   const chat = new ChatMock(new Com());
 
   // Simulate user sending "chris"
-  chat.EnqueueIncomingText("chris");
+  chat.EnqueueIncoming_Text("chris");
 
   // Start the simulation
   await chat.StartChatSimulation();
