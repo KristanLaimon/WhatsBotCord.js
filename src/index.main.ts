@@ -128,15 +128,15 @@ await bot.Start();
 //                ✅[X]: Poll
 //                ✅[X]: Ubication
 //            ===            TESTING            ===
-//                ✅[X]: Texts               [ ]: Tested
-//                [ ]: Imgs                [ ]: Tested
-//                [ ]: ReactEmojiToMsg     [ ]: Tested
-//                [ ]: Sticker             [ ]: Tested
-//                [ ]: Audio               [ ]: Tested
-//                [ ]: Video               [ ]: Tested
-//                [ ]: Document            [ ]: Tested
-//                [ ]: Poll                [ ]: Tested
-//                [ ]: Ubication           [ ]: Tested
+//                ✅[X]: Texts
+//                [ ]: Imgs
+//                [ ]: ReactEmojiToMsg
+//                [ ]: Sticker
+//                [ ]: Audio
+//                [ ]: Video
+//                [ ]: Document
+//                [ ]: Poll
+//                [ ]: Ubication
 //      ✅[X]: Instanciate them inside MockChat, using a real ChatContext (Delete ChatContextSpy.ts)
 //      ✅[X]: Expose as props, the public waited objs from Receiver
 //      ✅[X]: Expose as props, the public sent objs from Sender
@@ -144,28 +144,29 @@ await bot.Start();
 // ✅ [X]: Expose many TODO types to src/index.js, I left pending many types to expose! to client.... add them to src/index.js
 // ✅[X]: Make testing for all remaining sending sugar methods
 //[✅]: Make testing for mocking framework deeply
-//      [ ]: Refactor msg realistic system
-//      [ ]: ChatMock, mock sending msgs
+//      ✅ [X]: Refactor msg realistic system
+//      [ ]: Make tests for refactor msg realistic system
+//      [ ]: ChatMock, mock sending msgs as user
 //          [ ]: Do it per send*() type
-//                [ ]: Texts               [ ]: Tested
-//                [ ]: Imgs                [ ]: Tested
-//                [ ]: ReactEmojiToMsg     [ ]: Tested
-//                [ ]: Sticker             [ ]: Tested
-//                [ ]: Audio               [ ]: Tested
-//                [ ]: Video               [ ]: Tested
-//                [ ]: Document            [ ]: Tested
-//                [ ]: Poll                [ ]: Tested
-//                [ ]: Ubication           [ ]: Tested
+//                [X]: Texts
+//                [X]: Imgs
+//                [doesn't apply!]: ReactEmojiToMsg
+//                [✅]: Sticker
+//                [✅]: Audio
+//                [✅]: Video
+//                [✅]: Document
+//                [not supported]: Poll
+//                [✅]: Ubication
 //            ===            TESTING            ===
-//                [ ]: Texts               [ ]: Tested
-//                [ ]: Imgs                [ ]: Tested
-//                [ ]: ReactEmojiToMsg     [ ]: Tested
-//                [ ]: Sticker             [ ]: Tested
-//                [ ]: Audio               [ ]: Tested
-//                [ ]: Video               [ ]: Tested
-//                [ ]: Document            [ ]: Tested
-//                [ ]: Poll                [ ]: Tested
-//                [ ]: Ubication           [ ]: Tested
+//                [ ]: Texts
+//                [ ]: Imgs
+//                [doesn't apply]: ReactEmojiToMsg
+//                [ ]: Sticker
+//                [ ]: Audio
+//                [ ]: Video
+//                [ ]: Document
+//                [not supported]: Poll
+//                [ ]: Ubication
 //      [ ]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING
 //      [ ]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
 //      [ ]: ChatContext.mockingsuite.ts: Add TESTING
