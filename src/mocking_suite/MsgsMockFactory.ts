@@ -20,7 +20,7 @@ import type { WhatsappMessage } from "../core/whats_socket/types.js";
  *
  * @internal
  */
-function _createBaseMsg(chatId: string, participantId: string | null, id?: string, timestamp?: number, pushName?: string): WhatsappMessage {
+function _createBaseMsg(chatId: string, participantId: string | null | undefined, id?: string, timestamp?: number, pushName?: string): WhatsappMessage {
   return {
     key: {
       remoteJid: chatId,
@@ -72,7 +72,7 @@ function _createBaseMsg(chatId: string, participantId: string | null, id?: strin
  * @returns A complete {@link WhatsappMessage} object that represents a
  * mock text message, including metadata and content.
  */
-export function MsgFactory_CreateText(
+export function MsgFactory_Text(
   chatId: string,
   participantId: string | undefined | null,
   textToIncludeInMsg: string,
@@ -111,7 +111,7 @@ export function MsgFactory_CreateText(
  */
 export function MsgFactory_TextWithQuote(
   chatId: string,
-  participantId: string | null,
+  participantId: string | null | undefined,
   text: string,
   quoted: WhatsappMessage,
   opts?: { pushName?: string }
@@ -150,7 +150,12 @@ export function MsgFactory_TextWithQuote(
  *
  * @returns A {@link WhatsappMessage} with an `imageMessage` payload.
  */
-export function MsgFactory_Image(chatId: string, participantId: string | null, url: string, opts?: { caption?: string; pushName?: string }): WhatsappMessage {
+export function MsgFactory_Image(
+  chatId: string,
+  participantId: string | null | undefined,
+  url: string,
+  opts?: { caption?: string; pushName?: string }
+): WhatsappMessage {
   const base = _createBaseMsg(chatId, participantId, opts?.pushName);
   base.message = {
     imageMessage: {
@@ -180,7 +185,12 @@ export function MsgFactory_Image(chatId: string, participantId: string | null, u
  *
  * @returns A {@link WhatsappMessage} with a `videoMessage` payload.
  */
-export function MsgFactory_Video(chatId: string, participantId: string | null, url: string, opts?: { caption?: string; pushName?: string }): WhatsappMessage {
+export function MsgFactory_Video(
+  chatId: string,
+  participantId: string | null | undefined,
+  url: string,
+  opts?: { caption?: string; pushName?: string }
+): WhatsappMessage {
   const base = _createBaseMsg(chatId, participantId, opts?.pushName);
   base.message = {
     videoMessage: {
@@ -207,7 +217,7 @@ export function MsgFactory_Video(chatId: string, participantId: string | null, u
  *
  * @returns A {@link WhatsappMessage} with an `audioMessage` payload.
  */
-export function MsgFactory_Audio(chatId: string, participantId: string | null, url: string, opts?: { pushName?: string }): WhatsappMessage {
+export function MsgFactory_Audio(chatId: string, participantId: string | null | undefined, url: string, opts?: { pushName?: string }): WhatsappMessage {
   const base = _createBaseMsg(chatId, participantId, opts?.pushName);
   base.message = {
     audioMessage: {
@@ -233,7 +243,7 @@ export function MsgFactory_Audio(chatId: string, participantId: string | null, u
  *
  * @returns A {@link WhatsappMessage} with a `stickerMessage` payload.
  */
-export function MsgFactory_Sticker(chatId: string, participantId: string | null, url: string, opts?: { pushName?: string }): WhatsappMessage {
+export function MsgFactory_Sticker(chatId: string, participantId: string | null | undefined, url: string, opts?: { pushName?: string }): WhatsappMessage {
   const base = _createBaseMsg(chatId, participantId, opts?.pushName);
   base.message = {
     stickerMessage: {
@@ -265,7 +275,7 @@ export function MsgFactory_Sticker(chatId: string, participantId: string | null,
  */
 export function MsgFactory_Document(
   chatId: string,
-  participantId: string | null,
+  participantId: string | null | undefined,
   url: string,
   opts?: { fileName?: string; mimetype?: string; pushName?: string }
 ): WhatsappMessage {
@@ -299,7 +309,7 @@ export function MsgFactory_Document(
  */
 export function MsgFactory_Contact(
   chatId: string,
-  participantId: string | null,
+  participantId: string | null | undefined,
   displayName: string,
   vcard: string,
   opts?: { pushName?: string }
@@ -337,7 +347,7 @@ export function MsgFactory_Contact(
  */
 export function MsgFactory_Location(
   chatId: string,
-  participantId: string | null,
+  participantId: string | null | undefined,
   lat: number,
   lng: number,
   opts?: { name?: string; address?: string; pushName?: string }
@@ -377,7 +387,7 @@ export function MsgFactory_Location(
  */
 export function MsgFactory_ContactsArray(
   chatId: string,
-  participantId: string | null,
+  participantId: string | null | undefined,
   contacts: Array<{ contactName: string; phoneNumber: string }>,
   opts?: { pushName?: string }
 ): WhatsappMessage {
