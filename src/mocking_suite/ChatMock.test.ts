@@ -470,18 +470,83 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
   await chat.StartChatSimulation();
 });
 // ====== ctx.WaitMultimedia ==========
-it("ShouldGetDefaultBufferWhenExpectingMsgIfnotBufferMockConfigured", async () => {
+it("ShouldGetDefaultBufferWhenExpectingMsgIfnotBufferMockConfigured_ChatContext", async () => {
   class Com implements ICommand {
     name: string = "mynamecommand";
-    async run(ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+    async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const myBufferAudio: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Audio);
       const myBufferImg: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Image);
       const myBufferVideo: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Video);
       const myBufferDocument: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Document);
       const myBufferSticker: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Sticker);
+
+      expect(myBufferAudio).toBeDefined();
+      expect(myBufferImg).toBeDefined();
+      expect(myBufferVideo).toBeDefined();
+      expect(myBufferDocument).toBeDefined();
+      expect(myBufferSticker).toBeDefined();
+
+      expect(myBufferAudio).toBeInstanceOf(Buffer);
+      expect(myBufferImg).toBeInstanceOf(Buffer);
+      expect(myBufferVideo).toBeInstanceOf(Buffer);
+      expect(myBufferDocument).toBeInstanceOf(Buffer);
+      expect(myBufferSticker).toBeInstanceOf(Buffer);
+
+      const mockDefaultContent: string = "mock_buffer";
+      const mockDefaultBufferAsText = myBufferAudio!.toString();
+      expect(mockDefaultBufferAsText).toBe(mockDefaultContent);
+
+      expect(myBufferAudio!.toString()).toBe(mockDefaultContent);
+      expect(myBufferImg!.toString()).toBe(mockDefaultContent);
+      expect(myBufferVideo!.toString()).toBe(mockDefaultContent);
+      expect(myBufferDocument!.toString()).toBe(mockDefaultContent);
+      expect(myBufferSticker!.toString()).toBe(mockDefaultContent);
     }
   }
-  const chat = new MockingChat(new Com());
+  const chat = new ChatMock(new Com());
+  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Img("./my-img-file.jpg", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Video("./my-video-file.mp4", { buffeToReturnOn_WaitMultimedia: undefined });
+  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
+  await chat.StartChatSimulation();
+});
+
+it("ShouldGetDefaultBufferWhenExpectingMsgButBufferMockIsConfigured_ChatContext", async () => {
+  class Com implements ICommand {
+    name: string = "mynamecommand";
+    async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+      const myBufferAudio: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Audio);
+      const myBufferImg: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Image);
+      const myBufferVideo: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Video);
+      const myBufferDocument: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Document);
+      const myBufferSticker: Buffer<ArrayBufferLike> | null = await ctx.WaitMultimedia(MsgType.Sticker);
+
+      expect(myBufferAudio).toBeDefined();
+      expect(myBufferImg).toBeDefined();
+      expect(myBufferVideo).toBeDefined();
+      expect(myBufferDocument).toBeDefined();
+      expect(myBufferSticker).toBeDefined();
+
+      expect(myBufferAudio).toBeInstanceOf(Buffer);
+      expect(myBufferImg).toBeInstanceOf(Buffer);
+      expect(myBufferVideo).toBeInstanceOf(Buffer);
+      expect(myBufferDocument).toBeInstanceOf(Buffer);
+      expect(myBufferSticker).toBeInstanceOf(Buffer);
+
+      expect(myBufferAudio!.toString()).toBe("audio");
+      expect(myBufferImg!.toString()).toBe("img");
+      expect(myBufferVideo!.toString()).toBe("video");
+      expect(myBufferDocument!.toString()).toBe("document");
+      expect(myBufferSticker!.toString()).toBe("sticker");
+    }
+  }
+  const chat = new ChatMock(new Com());
+  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { buffeToReturnOn_WaitMultimedia: Buffer.from("audio") });
+  chat.EnqueueIncoming_Img("./my-img-file.jpg", { buffeToReturnOn_WaitMultimedia: Buffer.from("img") });
+  chat.EnqueueIncoming_Video("./my-video-file.mp4", { buffeToReturnOn_WaitMultimedia: Buffer.from("video") });
+  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { buffeToReturnOn_WaitMultimedia: Buffer.from("document") });
+  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { buffeToReturnOn_WaitMultimedia: Buffer.from("sticker") });
   await chat.StartChatSimulation();
 });
 /**
@@ -564,7 +629,7 @@ describe("Text", () => {
     // chat.SendText("chris"); //Without send this, what will happen? (throw error)
     expect(async (): Promise<void> => {
       await chat.StartChatSimulation();
-    }).toThrow("ChatContext is trying to wait a msg that will never arrives!... Use MockChat.Send*() to enqueue what to return!");
+    }).toThrow();
 
     expect(chat.SentFromCommand.Texts).toHaveLength(2); //Not 3,due to, it throws after second SendText on WaitText!
     expect(chat.SentFromCommand.Texts[0]!.text).toBe("Hello User");
@@ -770,8 +835,8 @@ describe("Images", () => {
 // it("", async (): Promise<void> => {
 //   class Com implements ICommand {
 //     name: string = "mynamecommand";
-//     async run(ctx: IChatContext, rawMsgApi: RawMsgAPI, args: CommandArgs): Promise<void> {}
+//     async run(ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {}
 //   }
-//   const chat = new MockingChat(new Com());
+//   const chat = new ChatMock(new Com());
 //   await chat.StartChatSimulation();
 // });

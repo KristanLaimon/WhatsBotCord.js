@@ -59,7 +59,7 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
     _localOptions?: Partial<ChatContextConfig>
   ): Promise<WhatsappMessage> {
     if (this._queueWait.length === 0) {
-      throw new Error("ChatContext is trying to wait a msg that will never arrives!... Use MockChat.Send*() to enqueue what to return!");
+      throw new Error("ChatContext is trying to wait a msg that will never arrives!... Use MockChat.EnqueueIncoming_****() to enqueue what to return!");
     }
     const toSend = this._queueWait.shift()!;
     const actualMsg_msgType = MsgHelper_FullMsg_GetMsgType(toSend.rawMsg);
@@ -87,7 +87,9 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
     }
 
     if (actualMsg_msgType !== expectedType) {
-      throw new Error(`ChatContext received a msg of type ${MsgType[actualMsg_msgType]}`);
+      throw new Error(
+        `You have received a msg of type ${MsgType[actualMsg_msgType]} when you expected of type ${MsgType[expectedType]}!, check what are you sending from MockChat.EnqueueIncoming_****() msg!, try again...`
+      );
     }
 
     this.Waited.push({ options: _localOptions, chatId: chatId, partipantId: participantId, waitedMsgType: actualMsg_msgType });
