@@ -141,7 +141,7 @@ export interface IChatContext {
   /**
    * Sends an image to a WhatsApp chat from a buffer.
    *
-   * @param imagePath - The image as a Buffer (ArrayBuffer).
+   * @param imageBuffer - The image as a Buffer (ArrayBuffer).
    * @param extensionType - The image file extension/type (e.g., "png", "jpg").
    * @param options - Optional configuration for sending the message.
    * @returns A promise that resolves to the sent WhatsApp message object, or `null` if sending fails.
@@ -150,7 +150,7 @@ export interface IChatContext {
    * - Useful when the image is generated or received dynamically and not saved on disk.
    * - This method does not include a caption. Use `SendImgFromBufferWithCaption` for captioned images.
    */
-  SendImgFromBuffer(imagePath: Buffer, extensionType: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null>;
+  SendImgFromBuffer(imageBuffer: Buffer, extensionType: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null>;
 
   /**
    * Sends an image to a WhatsApp chat from a buffer with a caption.
