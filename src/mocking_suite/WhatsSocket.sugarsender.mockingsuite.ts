@@ -67,9 +67,10 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    */
   @autobind
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    this.SentMessages_Texts.push({ text: text, options: options, chatId: NormalizeChatId(chatId) });
+    const chatIdNormalized = NormalizeChatId(chatId);
+    this.SentMessages_Texts.push({ text: text, options: options, chatId: chatIdNormalized });
     //TODO: For all create success msgs, create a realistic object msg per type, not just a generic one
-    return MsgFactory_Text(chatId, null, text, { pushName: this.UserPushNameMock });
+    return MsgFactory_Text(chatIdNormalized, null, text, { pushName: this.UserPushNameMock });
   }
 
   //                                                          Img
@@ -102,8 +103,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    */
   @autobind
   public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    this.SentMessages_Imgs.push({ chatId, imageOptions, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized = NormalizeChatId(chatId);
+    this.SentMessages_Imgs.push({ chatId: chatIdNormalized, imageOptions, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   //              ===                                          ReactEmojiToMsg                                       ===
@@ -116,7 +118,6 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
     emojiStr: string;
     options?: WhatsMsgSenderSendingOptionsMINIMUM;
   }> = [];
-
   /**
    * Simulates reacting to a message with an emoji.
    *
@@ -143,8 +144,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
     emojiStr: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WAMessage | null> {
-    this.SentMessages_ReactedEmojis.push({ chatId, emojiStr, rawMsgReactedTo: rawMsgToReactTo, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized = NormalizeChatId(chatId);
+    this.SentMessages_ReactedEmojis.push({ chatId: chatIdNormalized, emojiStr, rawMsgReactedTo: rawMsgToReactTo, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   //              ===                                          Stickers                                       ===
@@ -177,8 +179,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    */
   @autobind
   public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    this.SentMessages_Stickers.push({ chatId, stickerUrlSource, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Stickers.push({ chatId: chatIdNormalized, stickerUrlSource, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   //              ===                                          Audio                                       ===
@@ -194,24 +197,30 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    * Simulates sending an audio message to a chat.
    *
    * @param chatId - The chat ID (individual or group).
-   * @param audioParams - Options for the audio (e.g., source, ptt flag).
-   * @param options - Optional sending options.
+   * @param audioParams - Options for the audio, including:
+   *   - `source`: The audio source, either a file path or a Buffer.
+   *   - `formatExtension`: The file extension of the audio (e.g., ".mp3", ".ogg").
+   * @param options - Optional sending options (e.g., quoting a message).
    * @returns A mock `WhatsappMessage` simulating successful sending.
    *
    * @remarks
    * - Stores the sent details in `SentMessages_Audios` for test verification.
+   * - Normalizes the chat ID using `NormalizeChatId`.
+   * - Does not validate the audio content or extension; this is purely for testing.
    *
    * @example
    * ```ts
-   * const audioOpts = { source: "./voice.ogg", ptt: true };
+   * const audioOpts = { source: "./voice.ogg", formatExtension: ".ogg" };
    * await mockSender.Audio("1234567890", audioOpts);
-   * expect(mockSender.SentMessages_Audios[0].audioParams.ptt).toBe(true);
+   * expect(mockSender.SentMessages_Audios[0]!.audioParams.formatExtension).toBe(".ogg");
+   * expect(mockSender.SentMessages_Audios[0]!.audioParams.source).toBe("./voice.ogg");
    * ```
    */
   @autobind
   public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    this.SentMessages_Audios.push({ audioParams, chatId, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Audios.push({ audioParams, chatId: chatIdNormalized, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   //              ===                                          Video                                       ===
@@ -243,8 +252,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    */
   @autobind
   public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
-    this.SentMessages_Videos.push({ chatId, videoParams, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Videos.push({ chatId: chatIdNormalized, videoParams, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   /**
@@ -276,8 +286,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    */
   @autobind
   public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    this.SentMessages_Documents.push({ chatId, docParams, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Documents.push({ chatId: chatIdNormalized, docParams, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   /**
@@ -319,8 +330,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
     pollParams: WhatsMsgPollOptions,
     moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WAMessage | null> {
-    this.SentMessages_Polls.push({ chatId, moreOptions, pollParams, pollTitle, selections });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Polls.push({ chatId: chatIdNormalized, moreOptions, pollParams, pollTitle, selections });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   /**
@@ -355,8 +367,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    */
   @autobind
   public async Location(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
-    this.SentMessages_Locations.push({ chatId, ubicationParams, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Locations.push({ chatId: chatIdNormalized, ubicationParams, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
 
   /**
@@ -369,7 +382,6 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
     contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>;
     options?: WhatsMsgSenderSendingOptionsMINIMUM;
   }> = [];
-  @autobind
   /**
    * Simulates sending a contact (or contacts) message to a chat.
    *
@@ -389,13 +401,15 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
    * expect(mockSender.SentMessages_Contacts[0].contacts).toEqual(contact);
    * ```
    */
+  @autobind
   public async Contact(
     chatId: string,
     contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WAMessage | null> {
-    this.SentMessages_Contacts.push({ chatId, contacts, options });
-    return CreateSuccessWhatsMsg(null, NormalizeChatId(chatId));
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Contacts.push({ chatId: chatIdNormalized, contacts, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
   }
   //===========================================================================================================================
   /**
