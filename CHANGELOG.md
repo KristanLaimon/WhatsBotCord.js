@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.9.0...v0.9.1) (2025-09-20)
+
+### Bug Fixes
+
+* **mockingframework:** Sugarsender mock fix, it hasn't been normalizing chatids well before ([5cac66b](https://github.com/KristanLaimon/WhatsBotCord.js/commit/5cac66bde34c862d17433ca3ecfdfe13a3f51b46))
+
 ## [0.9.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.8.1...v0.9.0) (2025-09-20)
 
 ### Features
