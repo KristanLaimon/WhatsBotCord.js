@@ -175,6 +175,7 @@ await bot.Start();
 // [ ]: Add documentation about bots.events in README.MD
 // [ ]: Add optional validation, not running another command while doing the command (with custom msg)
 // [ ]: Add ability to change bot settings from commands, (add Myself.Settings to AdditionalAPI obj in test)
+// [ ]: Add FULL TESTING to ChatMock.test.ts for all this new changes! (big job)
 
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
