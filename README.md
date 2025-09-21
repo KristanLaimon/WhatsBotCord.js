@@ -3,7 +3,7 @@
 </div>
 <h1 align="center"> Whatsbotcord.js </h1>
 
-**_WhatsBotCord_** is a lightweight, TypeScript-based library for building WhatsApp bots with a Discord-inspired command system (e.g., **\_!youcommand**, **@everyone**, and _more_). Built as a wrapper around Baileys.js, it abstracts complex Baileys.js internals, providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Designed from developers to developers to create custom bots with ease.
+**_WhatsBotCord_** is a lightweight, TypeScript-based library for building WhatsApp bots with a Discord-inspired command system (e.g., **\_!yourcommand**, **@everyone**, and _more_). Built as a wrapper around Baileys.js, it abstracts complex Baileys.js internals, providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Designed from developers to developers to create custom bots with ease.
 
 > Note: WhatsBotCord its on very early beta, not full usable yet, soon will be ready for use.
 
@@ -235,8 +235,9 @@ Let's say you are using the last example !forwardmsg. Bot is expecting from you 
 image msg, but if you want to cancel it (don't want to send it anymore), just send to bot
 'cancel' and command will immediately abort.
 
-Global Config
-You can configure what words will work as cancel one, from new Bot({here in config}).
+## **Global Config**
+
+You can configure what words to use as _cancel words_ from Bot constructor config.
 
 ```js
 const bot = new WhatsbotCord({
@@ -250,7 +251,7 @@ const bot = new WhatsbotCord({
 ```
 
 Local Config
-You can override temporaly just for a "Wait\*()" method this cancelwords
+You can override temporaly just for a "Wait\*()" method which _cancel words_ to use.
 
 ```js
 const imgReceived = await chat.WaitMultimedia(MsgType.Image, {
@@ -260,8 +261,8 @@ const imgReceived = await chat.WaitMultimedia(MsgType.Image, {
 });
 ```
 
-Here, this waiting will use only \["cancelcustomword"].
-But if you use another WaitMultimedia, will fallback to global config from bot, in
+Here, this method will use only \["cancelcustomword"].
+But if you use another WaitMultimedia(...) or WaitMsg(...) method, it'll fallback to global config from bot, in
 this case will be: ["my", "cancel", "words"]
 
 ## Plugins
