@@ -91,6 +91,7 @@ const bot = new WhatsbotCord({
   credentialsFolder: "./auth",
   loggerMode: "recommended",
   delayMilisecondsBetweenMsgs: 1,
+  cancelKeywords: ["cancelcustom"],
 });
 bot.Commands.Add(new PingCommand());
 bot.Commands.Add(new EveryoneId(), CommandType.Tag);

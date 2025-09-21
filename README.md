@@ -22,12 +22,12 @@
 
 ## Features
 
-- **_Discord-Inspired Command System_**: Create commands (e.g., !hello) with a simple, familiar syntax inspired by Discord bots.
-- **_TypeScript Support_**8: Fully typed with TypeScript for robust development and autocompletion.
-- \***_Simplified Baileys Wrapper_**: Abstracts complex Baileys internals, making it easy to manage groups, individual senders, and message handling.
-- **\*Group and Individual Messaging\*\***: Seamlessly interact with WhatsApp groups and individual chats.
-- _\*\*Extensible Architecture_: Modular design for adding custom commands and functionality.
-- **_Lightweight and Performant_**: Optimized for speed and efficiency if using Bun.js (optional).
+- **Discord-Inspired Command System**: Create commands (e.g., !hello) with a simple, familiar syntax inspired by Discord bots.
+- **TypeScript Support**: Fully typed with TypeScript for robust development and autocompletion.
+- **\*_Simplified Baileys Wrapper_**: Abstracts complex Baileys internals, making it easy to manage groups, individual senders, and message handling.
+- **Group and Individual Messaging**: Seamlessly interact with WhatsApp groups and individual chats.
+- \*_Extensible Architecture_: Modular design for adding custom commands and functionality.
+- **Lightweight and Performant**: Optimized for speed and efficiency if using Bun.js (optional).
 
 ## Installation
 
@@ -99,8 +99,8 @@ The last example is the easiest way to start, but commonly you will be using
 the following worflow when working with them. It shows a little more advance usage and
 a basic showcase what this library has to offer.
 
-Here it's creating a simple command that accepts an img, validates its sent from the user and send it back if
-is valid.
+Here it's creating a simple command that accepts an img, validates its sent from the user, and send it back if
+it is valid.
 
 ### Javascript
 
@@ -128,12 +128,12 @@ const bot = new Whatsbotcord({
 });
 //1. You can add commands by just instatiating them or...
 bot.Commands.Add(pingCommand, CommandType.Normal);
-//2. By declaring them directly on Add method (Example of how a command workd)
+//2. By declaring them directly on 'Add' method
 bot.Commands.Add(
   {
     name: "forwardmsg",
     description: "A simple description for my forwardmsg",
-    aliases: ["f"], //You can use !forwardmsg or !f, they are the same!
+    aliases: ["f"], //You can use !forwardmsg or !f in chat, they are the same!
     async run(chat, api, args) {
       /**
        * If user uses !forwardmsg argument1 argument2 @someone, this will be ["argument1", "argument2", "@someone]
@@ -180,7 +180,6 @@ class PingCommand implements ICommand {
 export default PingCommand;
 
 // ========================== MAIN ==============================
-//import PingCommand from "./Ping.ts"
 const bot = new Whatsbotcord({
   //Can accept an array of prefixes or only one "!" prefix
   commandPrefix: ["$", "!", "/"],
@@ -190,7 +189,7 @@ const bot = new Whatsbotcord({
 });
 //1. You can add commands by just instatiating them or...
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
-//2. By declaring them directly on Add method (Example of how a command workd)
+//2. By declaring them directly on Add method
 bot.Commands.Add(
   {
     name: "forwardmsg",
@@ -203,7 +202,11 @@ bot.Commands.Add(
       // const commandArgs: string[] = args.args;
       await chat.Loading(); ///Sends an ⌛ reaction emoji to original msg that triggered this command
       await chat.SendText("Send me a image:");
-      const imgReceived = await chat.WaitMultimedia(MsgType.Image, { timeoutSeconds: 60, wrongTypeFeedbackMsg: "Hey, send me an img, try again!" });
+      const imgReceived = await chat.WaitMultimedia(MsgType.Image, {
+        timeoutSeconds: 60,
+        wrongTypeFeedbackMsg: "Hey, send me an img, try again!",
+        cancelKeywords: ["cancelcustomword"],
+      });
       //If user has sent the expected msg of type img, this will be a buffer
       if (imgReceived) {
         await chat.SendText("I've received your img, Im going to send it back");
@@ -223,6 +226,44 @@ bot.Commands.Add(
 bot.Start();
 ```
 
+# Cancelling long commands
+
+If you have long worflows commands, user can cancel them using specific
+**cancel words**, by default are "cancel" (english) and "cancelar" (spanish).
+
+Let's say you are using the last example !forwardmsg. Bot is expecting from you to send him a
+image msg, but if you want to cancel it (don't want to send it anymore), just send to bot
+'cancel' and command will immediately abort.
+
+Global Config
+You can configure what words will work as cancel one, from new Bot({here in config}).
+
+```js
+const bot = new WhatsbotCord({
+  commandPrefix: ["$", "!", "/", "."],
+  credentialsFolder: "./auth",
+  loggerMode: "recommended",
+  delayMilisecondsBetweenMsgs: 1,
+  cancelKeywords: ["my", "cancel", "words"], //Here
+});
+// ... more code
+```
+
+Local Config
+You can override temporaly just for a "Wait\*()" method this cancelwords
+
+```js
+const imgReceived = await chat.WaitMultimedia(MsgType.Image, {
+  timeoutSeconds: 60,
+  wrongTypeFeedbackMsg: "Hey, send me an img, try again!",
+  cancelKeywords: ["cancelcustomword"],
+});
+```
+
+Here, this waiting will use only \["cancelcustomword"].
+But if you use another WaitMultimedia, will fallback to global config from bot, in
+this case will be: ["my", "cancel", "words"]
+
 ## Plugins
 
 Of course, you can use plugins to improve dinamically your bot,
@@ -237,16 +278,15 @@ is executing, leading to unexpected behavior.
 Of course,
 maybe your use case doesn't need it. But, if you need to validate
 this, you can use the following pluggin developed officially
-for this library.
+from this library.
 
 #### Javascript
 
 ```js
-import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "../../src/index.js";
+import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "whatsbotcord";
 
 const bot = new WhatsbotCord({
-  commandPrefix: ["$", "!", "/", "."],
-  delayMilisecondsBetweenMsgs: 1,
+  /** bot config */
 });
 /** your commands here with bot.Commands.Add(...) */
 bot.Use(
@@ -258,17 +298,15 @@ bot.Use(
     timeoutSecondsToForgetThem: 60 * 5,
   })
 );
-await bot.Start();
 ```
 
 #### Typescript
 
 ```ts
-import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "src/index.js";
+import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "whatsbotcord";
 
 const bot = new WhatsbotCord({
-  commandPrefix: ["$", "!", "/", "."],
-  delayMilisecondsBetweenMsgs: 1,
+  /** bot config */
 });
 
 bot.Use(
@@ -281,7 +319,6 @@ bot.Use(
     timeoutSecondsToForgetThem: 60 * 5,
   })
 );
-await bot.Start();
 ```
 
 ## Usage with group data and tags
@@ -378,8 +415,8 @@ bot.Start();
 # WhatsBotCord.js Mocking & Testing
 
 You can simulate a full WhatsApp command interaction locally, without ever touching your real bot obj or changing any command code!
-Perfect for testing, learning, or automating responses.
-To do so, import from this library **_WhatsChatMock_** object which lets you mock a whatsapp chat environment so your command
+Perfect for testing and automating responses from your commands.
+To do so, import from this library **_ChatMock_** object which lets you mock a whatsapp chat environment so your command
 behaves as if it's running live.
 
 ## Simplest usage
@@ -497,7 +534,7 @@ const myCommand = CreateCommand(
     }
   },
   /** Optional params */
-  index.js{
+  {
     aliases: ["com"],
   }
 );

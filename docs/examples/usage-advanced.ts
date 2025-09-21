@@ -30,7 +30,7 @@ const bot = new Whatsbotcord({
 });
 //1. You can add commands by just instatiating them or...
 bot.Commands.Add(new PingCommand(), CommandType.Normal);
-//2. By declaring them directly on Add method (Example of how a command workd)
+//2. By declaring them directly on Add method
 bot.Commands.Add(
   {
     name: "forwardmsg",
@@ -43,7 +43,11 @@ bot.Commands.Add(
       // const commandArgs: string[] = args.args;
       await chat.Loading(); ///Sends an ⌛ reaction emoji to original msg that triggered this command
       await chat.SendText("Send me a image:");
-      const imgReceived = await chat.WaitMultimedia(MsgType.Image, { timeoutSeconds: 60, wrongTypeFeedbackMsg: "Hey, send me an img, try again!" });
+      const imgReceived = await chat.WaitMultimedia(MsgType.Image, {
+        timeoutSeconds: 60,
+        wrongTypeFeedbackMsg: "Hey, send me an img, try again!",
+        cancelKeywords: ["cancelcustomword"],
+      });
       //If user has sent the expected msg of type img, this will be a buffer
       if (imgReceived) {
         await chat.SendText("I've received your img, Im going to send it back");
