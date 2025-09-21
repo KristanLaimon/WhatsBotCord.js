@@ -37,7 +37,7 @@
     "fulltest": "cross-env whatsbotcord_SKIP_LONG_TESTS=false bun test",
     "buildonly": "bun ./scripts/clean_build.js && tsc --project tsconfig.build.json",
     "build": "bun fullcheck && bun fulltest && bun run buildonly",
-    "release": "bun run build && release-it",
+    "release": "release-it",
     "prerelease_upgrade": "npm version prerelease --preid=beta",
     "try": "bun ./src/index.main.ts"
   },
