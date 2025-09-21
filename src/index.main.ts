@@ -148,8 +148,8 @@ await bot.Start();
 //      [ ]: Make tests for refactor msg realistic system
 //      [ ]: ChatMock, mock sending msgs as user
 //          [ ]: Do it per send*() type
-//                [X]: Texts
-//                [X]: Imgs
+//                [✅]: Texts
+//                [✅]: Imgs
 //                [doesn't apply!]: ReactEmojiToMsg
 //                [✅]: Sticker
 //                [✅]: Audio
@@ -158,7 +158,7 @@ await bot.Start();
 //                [not supported]: Poll
 //                [✅]: Ubication
 //            ===            TESTING            ===
-//                [ ]: Texts
+//                [✅]: Texts
 //                [ ]: Imgs
 //                [doesn't apply]: ReactEmojiToMsg
 //                [ ]: Sticker

@@ -728,7 +728,8 @@ describe("Text", () => {
 
 //                      ------------------- ======== IMAGES ========= -----------------------------
 describe("Images", () => {
-  it("ShouldGetImgs_Simple_ImgPathOnly", async (): Promise<void> => {
+  // Sending section
+  it("ShouldSendImgs_Simple_ImgPathOnly", async (): Promise<void> => {
     const imgPath: string = "./my/img/path/correct.png";
     class Com implements ICommand {
       name: string = "mynamecommand";
@@ -752,7 +753,7 @@ describe("Images", () => {
     });
   });
 
-  it("ShouldGetImgs_Simple_ImgPathWithCaption", async (): Promise<void> => {
+  it("ShouldSendImgs_Simple_ImgPathWithCaption", async (): Promise<void> => {
     const imgPath: string = "./my/img/path/correct.png";
     const imgPathCaption: string = "my img path str with caption";
     class Com implements ICommand {
@@ -777,7 +778,7 @@ describe("Images", () => {
     });
   });
 
-  it("ShouldGetImgs_Simple_ImgBufferOnly", async (): Promise<void> => {
+  it("ShouldSendImgs_Simple_ImgBufferOnly", async (): Promise<void> => {
     const imgBuffer: Buffer<ArrayBuffer> = Buffer.from("img_mock");
     class Com implements ICommand {
       name: string = "mynamecommand";
@@ -803,7 +804,7 @@ describe("Images", () => {
     });
   });
 
-  it("ShouldGetImgs_Simple_ImgBufferWithCaption", async (): Promise<void> => {
+  it("ShouldSendImgs_Simple_ImgBufferWithCaption", async (): Promise<void> => {
     const imgBuffer: Buffer<ArrayBuffer> = Buffer.from("img_mock");
     const imgBufferCaption: string = "Img buffer caption";
     class Com implements ICommand {
@@ -829,6 +830,136 @@ describe("Images", () => {
       },
     });
   });
+
+  //Are the same individual tests as before, but using directly Sender from socket (its the same sender obj in ChatContext and socket),
+  //so they should work the same!
+  it("AllTypesOfImgSending_ButFromSocketSending", async (): Promise<void> => {
+    const imgPathStr: string = "./my-img.png";
+
+    const imgPathWithCaptionStr: string = "./my-img-with-caption.png";
+    const imagePathCaption: string = "caption from img from path str!";
+
+    const bufferImgNoCaption: Buffer = Buffer.from("image-no-caption");
+
+    const bufferImgWithCaption: Buffer = Buffer.from("image-with-caption");
+    const bufferImgCaptionStr: string = "caption for buffered img!";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        //broadcast true, is just anything to test all options are cached in simulation
+        const img1Msg = await _rawMsgApi.InternalSocket.Send.Image(_args.chatId, { source: imgPathStr, formatExtension: ".png" }, { broadcast: true });
+        const img2Msg = await _rawMsgApi.InternalSocket.Send.Image(_args.chatId, {
+          source: imgPathWithCaptionStr,
+          caption: imagePathCaption,
+          formatExtension: ".png",
+        });
+        const img3Msg = await _rawMsgApi.InternalSocket.Send.Image(_args.chatId, { source: bufferImgNoCaption, formatExtension: ".png" });
+        const img4Msg = await _rawMsgApi.InternalSocket.Send.Image(_args.chatId, {
+          source: bufferImgWithCaption,
+          caption: bufferImgCaptionStr,
+          formatExtension: ".png",
+        });
+
+        expect(img1Msg).toBeDefined();
+        expect(img2Msg).toBeDefined();
+        expect(img3Msg).toBeDefined();
+        expect(img4Msg).toBeDefined();
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+
+    expect(chat.SentFromCommand.Images).toHaveLength(4);
+    // 1. Image from path, no caption, broadcast
+    expect(chat.SentFromCommand.Images[0]).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        source: imgPathStr,
+        formatExtension: ".png",
+      },
+      options: {
+        broadcast: true,
+      },
+    });
+
+    // 2. Image from path, with caption
+    expect(chat.SentFromCommand.Images[1]).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        source: imgPathWithCaptionStr,
+        caption: imagePathCaption,
+        formatExtension: ".png",
+      },
+    });
+
+    // 3. Image from buffer, no caption
+    expect(chat.SentFromCommand.Images[2]).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        source: bufferImgNoCaption,
+        formatExtension: ".png",
+      },
+    });
+
+    // 4. Image from buffer, with caption
+    expect(chat.SentFromCommand.Images[3]).toMatchObject({
+      chatId: chat.ChatId,
+      imageOptions: {
+        source: bufferImgWithCaption,
+        caption: bufferImgCaptionStr,
+        formatExtension: ".png",
+      },
+    });
+  });
+
+  //==== Waiting section =====
+  it("WhenWaitingImgs_WithoutMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myImg = await ctx.WaitMultimedia(MsgType.Image, { timeoutSeconds: 1 });
+        expect(myImg).toBeDefined();
+        expect(myImg).toBeInstanceOf(Buffer);
+        expect(myImg?.toString()).toBe("mock_buffer"); //Default one if not provided
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Img("./img-path-name.png");
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingImgs_WithSpecificMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myImg = await ctx.WaitMultimedia(MsgType.Image, { timeoutSeconds: 1 });
+        expect(myImg).toBeDefined();
+        expect(myImg).toBeInstanceOf(Buffer);
+        expect(myImg!.toString()).toBe("myimg_omg"); //Default one if not provided
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Img("./img-path-name.png", { buffeToReturnOn_WaitMultimedia: Buffer.from("myimg_omg") });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingImgs_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
+    //TODO: Do this
+  });
+
+  it("WhenWaitingMsgs_UsingRawSocketReceiver", async (): Promise<void> => {});
+  // it("WhenWaitingImgs_Simple_ShouldWork_WaitGenericMsg", async (): Promise<void> => {
+  //   class Com implements ICommand {
+  //     name: string = "mynamecommand";
+  //     async run(ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+  //       const myImg = ctx.wai;
+  //     }
+  //   }
+  //   const chat = new ChatMock(new Com());
+  //   await chat.StartChatSimulation();
+  // });
 });
 
 //TEMPLATE
