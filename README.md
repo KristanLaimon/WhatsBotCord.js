@@ -24,9 +24,9 @@
 
 - **Discord-Inspired Command System**: Create commands (e.g., !hello) with a simple, familiar syntax inspired by Discord bots.
 - **TypeScript Support**: Fully typed with TypeScript for robust development and autocompletion.
-- **\*_Simplified Baileys Wrapper_**: Abstracts complex Baileys internals, making it easy to manage groups, individual senders, and message handling.
+- **Simplified Baileys Wrapper**: Abstracts complex Baileys internals, making it easy to manage groups, individual senders, and message handling.
 - **Group and Individual Messaging**: Seamlessly interact with WhatsApp groups and individual chats.
-- \*_Extensible Architecture_: Modular design for adding custom commands and functionality.
+- **Extensible Architecture**: Modular design for adding custom commands and functionality.
 - **Lightweight and Performant**: Optimized for speed and efficiency if using Bun.js (optional).
 
 ## Installation
@@ -250,7 +250,8 @@ const bot = new WhatsbotCord({
 // ... more code
 ```
 
-Local Config
+## **Local Config**
+
 You can override temporaly just for a "Wait\*()" method which _cancel words_ to use.
 
 ```js
