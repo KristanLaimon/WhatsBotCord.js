@@ -332,36 +332,39 @@ export function MsgFactory_Location(
 /**
  * Factory function to generate a mock **contact message**.
  * Automatically builds proper vCard strings from simple
- * `{ contactName, phoneNumber }` object param.
+ * contact objects.
+ *
+ * Supports either a single contact or an array of contacts.
  *
  * @param chatId - Chat JID where the contacts array is sent.
  * @param participantId - JID of the sender.
- * @param contacts - Simple contact definition, name and phonenumber e.g "chris" and "5217389273" thats the same like: +52 1 738 9273
- * @param opts.pushName - Override sender display name.
+ * @param contacts - Either a single contact object or an array of contacts.
+ *                   Each contact should have:
+ *                   - `contactName`: e.g., "Chris"
+ *                   - `phoneNumber`: e.g., "5217389273" (same as +52 1 738 9273)
+ * @param opts.pushName - Optional sender display name override.
  *
  * @returns A {@link WhatsappMessage} with a `contactsArrayMessage` payload.
  */
 export function MsgFactory_Contact(
   chatId: string,
   participantId: string | null | undefined,
-  contacts: {
-    /**
-     * e.g "Chris"
-     */
-    contactName: string;
-    /**
-     * e.g "5217389273" thats the same like: +52 1 738 9273 for mexican numbers, check your country code.
-     */
-    phoneNumber: string;
-  },
+  contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
   opts?: { pushName?: string }
 ): WhatsappMessage {
   const base = _createBaseMsg(chatId, participantId, opts?.pushName);
-  const vcard = ["BEGIN:VCARD", "VERSION:3.0", `FN:${contacts.contactName}`, `TEL;type=CELL:${contacts.phoneNumber}`, "END:VCARD"].join("\n");
+
+  // Normalize to array
+  const contactsArray = Array.isArray(contacts) ? contacts : [contacts];
+
   base.message = {
     contactsArrayMessage: {
-      contacts: [{ displayName: contacts.contactName, vcard: vcard }],
+      contacts: contactsArray.map((c) => {
+        const vcard = ["BEGIN:VCARD", "VERSION:3.0", `FN:${c.name}`, `TEL;type=CELL:${c.phone}`, "END:VCARD"].join("\n");
+        return { displayName: c.name, vcard };
+      }),
     },
   };
+
   return base;
 }

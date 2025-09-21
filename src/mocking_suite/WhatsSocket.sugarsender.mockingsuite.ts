@@ -1,4 +1,6 @@
 import type { WAMessage } from "baileys";
+import mime from "mime";
+import path from "node:path";
 import type {
   IWhatsSocket_Submodule_SugarSender,
   WhatsMsgAudioOptions,
@@ -12,7 +14,16 @@ import type {
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
-import { MsgFactory_Text } from "./MsgsMockFactory.js";
+import {
+  MsgFactory_Audio,
+  MsgFactory_Contact,
+  MsgFactory_Document,
+  MsgFactory_Image,
+  MsgFactory_Location,
+  MsgFactory_Sticker,
+  MsgFactory_Text,
+  MsgFactory_Video,
+} from "./MsgsMockFactory.js";
 
 /**
  * A mocking implementation of `IWhatsSocket_Submodule_SugarSender` designed for unit testing.
@@ -35,7 +46,7 @@ import { MsgFactory_Text } from "./MsgsMockFactory.js";
  * ```
  */
 export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements IWhatsSocket_Submodule_SugarSender {
-  private readonly UserPushNameMock = "ChatMock User";
+  private readonly PushNameUserMock = "ChatMock User";
   //=================================================== Spy External Methods ==================================================
   //                                                          Text
   /**
@@ -70,7 +81,7 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
     const chatIdNormalized = NormalizeChatId(chatId);
     this.SentMessages_Texts.push({ text: text, options: options, chatId: chatIdNormalized });
     //TODO: For all create success msgs, create a realistic object msg per type, not just a generic one
-    return MsgFactory_Text(chatIdNormalized, null, text, { pushName: this.UserPushNameMock });
+    return MsgFactory_Text(chatIdNormalized, null, text, { pushName: this.PushNameUserMock });
   }
 
   //                                                          Img
@@ -105,7 +116,10 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     const chatIdNormalized = NormalizeChatId(chatId);
     this.SentMessages_Imgs.push({ chatId: chatIdNormalized, imageOptions, options });
-    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+    return MsgFactory_Image(chatIdNormalized, null, imageOptions.source.toString(), {
+      caption: imageOptions.caption,
+      pushName: this.PushNameUserMock,
+    });
   }
 
   //              ===                                          ReactEmojiToMsg                                       ===
@@ -181,7 +195,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     const chatIdNormalized: string = NormalizeChatId(chatId);
     this.SentMessages_Stickers.push({ chatId: chatIdNormalized, stickerUrlSource, options });
-    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+    return MsgFactory_Sticker(chatIdNormalized, null, stickerUrlSource.toString(), {
+      pushName: this.PushNameUserMock,
+    });
   }
 
   //              ===                                          Audio                                       ===
@@ -220,7 +236,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     const chatIdNormalized: string = NormalizeChatId(chatId);
     this.SentMessages_Audios.push({ audioParams, chatId: chatIdNormalized, options });
-    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+    return MsgFactory_Audio(chatIdNormalized, null, audioParams.source.toString(), {
+      pushName: this.PushNameUserMock,
+    });
   }
 
   //              ===                                          Video                                       ===
@@ -254,7 +272,10 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     const chatIdNormalized: string = NormalizeChatId(chatId);
     this.SentMessages_Videos.push({ chatId: chatIdNormalized, videoParams, options });
-    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+    return MsgFactory_Video(chatIdNormalized, null, videoParams.source.toString(), {
+      caption: videoParams.caption,
+      pushName: this.PushNameUserMock,
+    });
   }
 
   /**
@@ -288,7 +309,19 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     const chatIdNormalized: string = NormalizeChatId(chatId);
     this.SentMessages_Documents.push({ chatId: chatIdNormalized, docParams, options });
-    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+    if (typeof docParams.source === "string") {
+      return MsgFactory_Document(chatIdNormalized, null, docParams.source, {
+        fileName: path.basename(docParams.source),
+        mimetype: mime.getType(path.extname(docParams.source)) ?? undefined,
+        pushName: this.PushNameUserMock,
+      });
+    } else {
+      return MsgFactory_Document(chatIdNormalized, null, "./file-buffer.mock", {
+        fileName: "file-buffer.mock",
+        mimetype: undefined,
+        pushName: this.PushNameUserMock,
+      });
+    }
   }
 
   /**
@@ -369,7 +402,11 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Location(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
     const chatIdNormalized: string = NormalizeChatId(chatId);
     this.SentMessages_Locations.push({ chatId: chatIdNormalized, ubicationParams, options });
-    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+    return MsgFactory_Location(chatIdNormalized, null, ubicationParams.degreesLatitude, ubicationParams.degreesLongitude, {
+      address: ubicationParams.addressText,
+      name: ubicationParams.name,
+      pushName: this.PushNameUserMock,
+    });
   }
 
   /**
@@ -409,7 +446,9 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   ): Promise<WAMessage | null> {
     const chatIdNormalized: string = NormalizeChatId(chatId);
     this.SentMessages_Contacts.push({ chatId: chatIdNormalized, contacts, options });
-    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+    return MsgFactory_Contact(chatIdNormalized, null, contacts, {
+      pushName: this.PushNameUserMock,
+    });
   }
   //===========================================================================================================================
   /**
