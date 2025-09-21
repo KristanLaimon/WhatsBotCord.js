@@ -22,6 +22,7 @@ import type { ChatContextConfig } from "./core/bot/internals/ChatContext.js";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
 import type { IChatContext } from "./core/bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "./core/bot/internals/ICommand.js";
+import type { OfficialPlugin_OneCommandPerUserAtATime_Config } from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./core/whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
@@ -37,7 +38,6 @@ import type {
 } from "./mocking_suite/ChatMock.js";
 export type {
   AdditionalAPI,
-  WhatsbotcordMiddlewareFunct as BotMiddleWareFunct,
   ChatContextConfig,
   CommandArgs,
   IChatContext,
@@ -52,14 +52,16 @@ export type {
   MockEnqueueParamsMultimedia,
   MockEnqueueParamsMultimediaMinimal,
   MockingChatParams,
+  OfficialPlugin_OneCommandPerUserAtATime_Config,
   WhatsappMessage,
+  WhatsbotcordMiddlewareFunct,
   WhatsSocketReceiverError,
 };
 
 // == Runtime deps exporting ==
 import { ChatContext } from "./core/bot/internals/ChatContext.js";
 import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
-import { OfficialPlugin_OneCommandPerUserAtATime_Config } from "./core/official_plugins/OneCommandPerUser_Plugin.js";
+import OfficialPlugin_OneCommandPerUserAtATime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
 import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
@@ -76,7 +78,7 @@ export {
   CreateCommand,
   Delegate,
   MsgType,
-  OfficialPlugin_OneCommandPerUserAtATime_Config,
+  OfficialPlugin_OneCommandPerUserAtATime,
   SenderType,
   WhatsappIdType,
   WhatsSocket,

@@ -223,6 +223,67 @@ bot.Commands.Add(
 bot.Start();
 ```
 
+## Plugins
+
+Of course, you can use plugins to improve dinamically your bot,
+either imported from other libraries or official ones.
+
+### One user per command - Plugin \[Official]
+
+Normally, if you use **_!yourcommand_** and its a long process command,
+users can send again **_!yourcommand_** (or any other) in chat while the first one
+is executing, leading to unexpected behavior.
+
+Of course,
+maybe your use case doesn't need it. But, if you need to validate
+this, you can use the following pluggin developed officially
+for this library.
+
+#### Javascript
+
+```js
+import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "../../src/index.js";
+
+const bot = new WhatsbotCord({
+  commandPrefix: ["$", "!", "/", "."],
+  delayMilisecondsBetweenMsgs: 1,
+});
+/** your commands here with bot.Commands.Add(...) */
+bot.Use(
+  OfficialPlugin_OneCommandPerUserAtATime({
+    msgToSend: (info, lastCommand, actualCommand) => {
+      return `
+      You can't use !${actualCommand.name}. Wait until finish that last command ${lastCommand.name}`;
+    },
+    timeoutSecondsToForgetThem: 60 * 5,
+  })
+);
+await bot.Start();
+```
+
+#### Typescript
+
+```ts
+import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "src/index.js";
+
+const bot = new WhatsbotCord({
+  commandPrefix: ["$", "!", "/", "."],
+  delayMilisecondsBetweenMsgs: 1,
+});
+
+bot.Use(
+  OfficialPlugin_OneCommandPerUserAtATime({
+    msgToSend: (info, lastCommand, actualCommand) => {
+      return `
+      You ${info.pushName} have already started command !${lastCommand.name},
+      you can't use !${actualCommand.name}. Wait until finish that last command`;
+    },
+    timeoutSecondsToForgetThem: 60 * 5,
+  })
+);
+await bot.Start();
+```
+
 ## Usage with group data and tags
 
 You can use commands and make them usable as **_Tags_**, which are called with '@' by default. You can change this
