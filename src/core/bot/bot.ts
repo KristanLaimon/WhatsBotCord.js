@@ -1,4 +1,5 @@
 import type { WAMessage } from "baileys";
+import type { MaybePromise } from "bun";
 import GraphemeSplitter from "grapheme-splitter";
 import { autobind } from "../../helpers/Decorators.helper.js";
 import { MsgHelper_ExtractQuotedMsgInfo, MsgHelper_FullMsg_GetText } from "../../helpers/Msg.helper.js";
@@ -104,14 +105,16 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
   };
 
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
-  onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void | Promise<void>>;
   onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
+  onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void | Promise<void>>;
+  onCommandFound: Delegate<(ctx: IChatContext, commandToRun: ICommand) => MaybePromise<boolean | undefined>>;
+  onCommandFoundAfterItsExecution: Delegate<(ctx: IChatContext, commandExecuted: ICommand, ranSuccessfully: boolean) => void>;
 };
 export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
 export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
 
-export type BotMiddleWareFunct = (
+export type WhatsbotcordMiddlewareFunct = (
   bot: Bot,
   senderId: string | null,
   chatId: string,
@@ -120,6 +123,10 @@ export type BotMiddleWareFunct = (
   senderType: SenderType,
   next: () => Promise<void>
 ) => Promise<void> | void;
+
+export type WhatsbotcordPlugin = {
+  plugin: (bot: Bot) => void;
+};
 
 /**
  * Represents the main WhatsApp Bot instance.
@@ -142,7 +149,7 @@ export type BotMiddleWareFunct = (
 export default class Bot implements BotMinimalInfo {
   public InternalSocket: IWhatsSocket;
   private _commandSearcher: CommandsSearcher;
-  private _internalMiddleware: BotMiddleWareFunct[] = [];
+  private _internalMiddleware: WhatsbotcordMiddlewareFunct[] = [];
 
   /** Bot Specific Events */
   /**
@@ -156,7 +163,12 @@ export default class Bot implements BotMinimalInfo {
    * });
    * ```
    */
-  private _onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void> = new Delegate();
+  private _EVENT_onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void> = new Delegate();
+
+  private _EVENT_onCommandFound: Delegate<(ctx: IChatContext, commandToRun: ICommand) => (boolean | undefined) | Promise<boolean | undefined>> = new Delegate();
+
+  private _EVENT_onAfterCommandExecution: Delegate<(ctx: IChatContext, commandExecuted: ICommand, ranSuccessfully: boolean) => void | Promise<void>> =
+    new Delegate();
 
   /**
    * Event triggered **after the middleware chain finishes running**.
@@ -172,7 +184,7 @@ export default class Bot implements BotMinimalInfo {
    * });
    * ```
    */
-  private _onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>> = new Delegate();
+  private _EVENT_onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>> = new Delegate();
   /**
    * Current bot configuration settings.
    *
@@ -248,8 +260,10 @@ export default class Bot implements BotMinimalInfo {
       onSentMessage: this.InternalSocket.onSentMessage,
       onStartupAllGroupsIn: this.InternalSocket.onStartupAllGroupsIn,
       onUpdateMsg: this.InternalSocket.onUpdateMsg,
-      onCommandNotFound: this._onCommandNotFound,
-      onMiddlewareEnd: this._onMiddlewareEnd,
+      onCommandNotFound: this._EVENT_onCommandNotFound,
+      onMiddlewareEnd: this._EVENT_onMiddlewareEnd,
+      onCommandFound: this._EVENT_onCommandFound,
+      onCommandFoundAfterItsExecution: this._EVENT_onAfterCommandExecution,
     };
   }
 
@@ -374,7 +388,7 @@ export default class Bot implements BotMinimalInfo {
    * - Middleware can optionally call the `next()` callback to pass control to the next middleware.
    *   If `next()` is not called, subsequent middleware and command processing are skipped.
    *
-   * @param middleware - A function to handle incoming messages. The function receives:
+   * @param usePluginOrMiddleware - A function to handle incoming messages. The function receives:
    *   - `senderId` - The ID of the user who sent the message, or `null` if unknown.
    *   - `chatId` - The ID of the chat where the message was sent.
    *   - `rawMsg` - The full WhatsApp message object.
@@ -397,8 +411,13 @@ export default class Bot implements BotMinimalInfo {
    * });
    */
   @autobind
-  public Use(middleware: BotMiddleWareFunct): void {
-    this._internalMiddleware.push(middleware);
+  public Use(usePluginOrMiddleware: WhatsbotcordMiddlewareFunct | WhatsbotcordPlugin): void {
+    if (typeof usePluginOrMiddleware === "function") {
+      this._internalMiddleware.push(usePluginOrMiddleware);
+    }
+    if (typeof usePluginOrMiddleware === "object") {
+      usePluginOrMiddleware.plugin(this);
+    }
   }
 
   @autobind
@@ -411,18 +430,20 @@ export default class Bot implements BotMinimalInfo {
     senderType: SenderType
   ): Promise<void> {
     // ======== Middleware chain section ========
-    let middlewareChainSuccess: boolean = false;
-    const callMiddleware = async (index: number): Promise<void> => {
-      if (index >= this._internalMiddleware.length) {
-        middlewareChainSuccess = true;
-        return; // end of chain
-      }
-      const middleware = this._internalMiddleware[index]!;
-      await Promise.resolve(middleware(this, senderId_LID, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
-    };
-    await callMiddleware(0);
-    this.Events.onMiddlewareEnd.CallAll(middlewareChainSuccess);
-    if (!middlewareChainSuccess) return;
+    if (this._internalMiddleware.length > 0) {
+      let middlewareChainSuccess: boolean = false;
+      const callMiddleware = async (index: number): Promise<void> => {
+        if (index >= this._internalMiddleware.length) {
+          middlewareChainSuccess = true;
+          return; // end of chain
+        }
+        const middleware = this._internalMiddleware[index]!;
+        await Promise.resolve(middleware(this, senderId_LID, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
+      };
+      await callMiddleware(0);
+      this.Events.onMiddlewareEnd.CallAll(middlewareChainSuccess);
+      if (!middlewareChainSuccess) return;
+    }
 
     // ==== Main Logic =====
     if (msgType === MsgType.Text) {
@@ -469,6 +490,33 @@ export default class Bot implements BotMinimalInfo {
           txtFromMsg
         );
         return;
+      } else {
+        //Check if all commands return true or false, to alter
+        if (this.Events.onCommandFound.Length > 0) {
+          const res = await this.Events.onCommandFound.CallAllAsync(
+            new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
+              cancelKeywords: this.Settings.cancelKeywords!,
+              timeoutSeconds: this.Settings.timeoutSeconds!,
+              ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+              wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+              cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+            }),
+            commandFound
+          );
+          const shouldContinue = res.some((res) => {
+            if (typeof res === "undefined") {
+              return true;
+            }
+            if (typeof res === "boolean") {
+              return res;
+            }
+            return true;
+          });
+          if (!shouldContinue) {
+            return;
+          }
+        }
+        //Continue with workflow!
       }
 
       const quotedMsgAsArgument: FoundQuotedMsg | null = MsgHelper_ExtractQuotedMsgInfo(rawMsg);
@@ -516,6 +564,7 @@ export default class Bot implements BotMinimalInfo {
           /** Command basic arguments */
           ARG3_AdditionalArgs
         );
+        this._EVENT_onAfterCommandExecution.CallAll(ARG1_ChatContext, commandFound, true);
       } catch (e) {
         if (this.Settings.defaultEmojiToSendReactionOnFailureCommand) {
           await ARG1_ChatContext.SendReactEmojiToInitialMsg(this.Settings.defaultEmojiToSendReactionOnFailureCommand);
@@ -534,6 +583,9 @@ export default class Bot implements BotMinimalInfo {
               `Error Info: ${JSON.stringify(e, null, 2)}`
             );
         }
+
+        //TODO: Test this BOT EVENTS (all this._EVENT*** props!)
+        await this._EVENT_onAfterCommandExecution.CallAllAsync(ARG1_ChatContext, commandFound, false);
         if (!this.Settings.enableCommandSafeNet) {
           throw e;
         }

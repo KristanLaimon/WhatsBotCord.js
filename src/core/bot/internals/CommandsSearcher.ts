@@ -26,7 +26,7 @@ export default class CommandsSearcher {
     return toReturn;
   }
 
-  public Add(commandToAdd: ICommand, addCommandAsType: CommandType): void {
+  public Add(commandToAdd: ICommand, addCommandAsType: CommandType = CommandType.Normal): void {
     if (!commandToAdd.name || commandToAdd.name.trim() === "") {
       throw new Error("You can't add a command without name!");
     }

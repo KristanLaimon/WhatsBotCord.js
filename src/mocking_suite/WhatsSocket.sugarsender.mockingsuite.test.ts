@@ -286,7 +286,6 @@ describe("Sticker", () => {
       options: { ephemeralExpiration: 120 },
     });
 
-    // BUG: currently returns raw chatId, not normalized
     expect(result?.key.remoteJid).toBe(RAW_CHAT + WhatsappGroupIdentifier);
     expect(result?.key.id).toBe("success_id_message_id");
     expect(result?.key.fromMe).toBe(false);

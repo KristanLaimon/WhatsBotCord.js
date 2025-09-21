@@ -80,7 +80,6 @@ export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements I
   public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     const chatIdNormalized = NormalizeChatId(chatId);
     this.SentMessages_Texts.push({ text: text, options: options, chatId: chatIdNormalized });
-    //TODO: For all create success msgs, create a realistic object msg per type, not just a generic one
     return MsgFactory_Text(chatIdNormalized, null, text, { pushName: this.PushNameUserMock });
   }
 

@@ -1,13 +1,14 @@
 import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
-import WhatsbotCord, { type ChatContext, type CommandArgs, CommandType, SenderType } from "src/index.js";
+import WhatsbotCord, { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType } from "src/index.js";
+import OfficialPlugin_OneCommandPerUserAtAtime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 
-// =============== EveryoneTag.ts ================
 class PingCommand implements ICommand {
   name: string = "ping";
   async run(chat: ChatContext, _: AdditionalAPI, __: CommandArgs): Promise<void> {
     await chat.SendText("Pong");
   }
 }
+
 class EveryoneId implements ICommand {
   name: string = "everyone";
   aliases?: string[] = ["e"];
@@ -65,20 +66,51 @@ class SendPrivately implements ICommand {
     await ctx.Ok();
   }
 }
+
+class WaitForMsgAndSendItBack implements ICommand {
+  name: string = "img";
+  public async run(ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+    await ctx.Loading();
+    await ctx.SendText("Hi, send me an img pls");
+    const imgBuffer = await ctx.WaitMultimedia(MsgType.Image);
+    if (imgBuffer) {
+      await ctx.SendText("I have received your img, send it back to you again...");
+      await ctx.SendImgFromBufferWithCaption(imgBuffer, ".png", "Caption!");
+      await ctx.Ok();
+    } else {
+      await ctx.SendText("You took too much time to send the img. End");
+      await ctx.Fail();
+    }
+  }
+}
+
 // ========================== MAIN ==============================
 const bot = new WhatsbotCord({
   commandPrefix: ["$", "!", "/", "."],
   tagCharPrefix: ["@"],
   credentialsFolder: "./auth",
   loggerMode: "recommended",
+  delayMilisecondsBetweenMsgs: 1,
 });
-bot.Commands.Add(new PingCommand(), CommandType.Normal);
+bot.Commands.Add(new PingCommand());
 bot.Commands.Add(new EveryoneId(), CommandType.Tag);
-bot.Commands.Add(new SendToStateCommand(), CommandType.Normal);
-bot.Commands.Add(new SendPrivately(), CommandType.Normal);
-bot.Events.onCommandNotFound.Subscribe(async (ctx, commandName) => {
-  await ctx.SendText("No has enviado un comando válido, usaste: " + commandName);
-});
+bot.Commands.Add(new SendToStateCommand());
+bot.Commands.Add(new SendPrivately());
+bot.Commands.Add(new WaitForMsgAndSendItBack());
+bot.Use(
+  OfficialPlugin_OneCommandPerUserAtAtime({
+    msgToSend: (info, lastCommand, actualCommand) => {
+      return `
+      You ${info.pushName} have already started command !${lastCommand.name},
+      you can't use !${actualCommand.name}. Wait until finish that last command`;
+    },
+    timeoutSecondsToForgetThem: 60 * 5,
+  })
+);
+// bot.Events.onCommandNotFound.Subscribe(async (ctx, commandName) => {
+//   await ctx.SendText("No has enviado un comando válido, usaste: " + commandName);
+// });
+// bot.Use(OneCommandPerUser_Plugin());
 bot.Settings.defaultEmojiToSendReactionOnFailureCommand = "🦊";
 await bot.Start();
 
@@ -171,6 +203,9 @@ await bot.Start();
 //      [✅]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
 //      [✅]: ChatContext.mockingsuite.ts: Add TESTING
 
+// [ ]: Test plugin system with use()
+// [ ]: Document how to use plugins
+// [ ]: Document and test OfficialPlugin_OneCommandPerUserAtAtime
 // [✅]: Make sugarsender.mockingsuite to return realistic objects, reuse refactored MsgFactory methods used in MockChat
 // [ ]: Add documentation about bot.middleware in README.md
 // [ ]: Add documentation about bots.events in README.MD

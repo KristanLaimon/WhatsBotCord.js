@@ -51,8 +51,12 @@ export default class Delegate<functType extends (...args: any[]) => any> {
    *
    * @param args - Arguments to pass to each subscribed function.
    */
-  public CallAll(...args: Parameters<functType>): void {
-    this.functions.forEach((f) => f(...args));
+  public CallAll(...args: Parameters<functType>): Array<ReturnType<functType>> {
+    if (this.functions.length > 0) {
+      const res: Array<ReturnType<functType>> = this.functions.map((f) => f(...args));
+      return res;
+    }
+    return [];
   }
 
   /**
@@ -62,8 +66,12 @@ export default class Delegate<functType extends (...args: any[]) => any> {
    * @param args - Arguments to pass to each subscribed function.
    * @returns A promise that resolves when all functions have been called.
    */
-  public async CallAllAsync(...args: Parameters<functType>): Promise<void> {
-    await Promise.all(this.functions.map((f) => f(...args)));
+  public async CallAllAsync(...args: Parameters<functType>): Promise<Array<ReturnType<functType>>> {
+    if (this.functions.length > 0) {
+      const res: Array<ReturnType<functType>> = await Promise.all(this.functions.map((f) => f(...args)));
+      return res;
+    }
+    return [];
   }
 
   /**

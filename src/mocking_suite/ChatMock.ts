@@ -26,7 +26,6 @@ import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockin
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 
-//TODO: Export this types
 export type MockingChatParams = {
   chatContextConfig?: Omit<Partial<ChatContextConfig>, "cancelKeywords">;
   botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
@@ -39,7 +38,6 @@ export type MockingChatParams = {
   cancelKeywords?: string[];
 };
 
-//TODO: Export this types
 export type MockEnqueueParamsMinimal = { pushName?: string };
 export type MockEnqueueParamsMultimediaMinimal = MockEnqueueParamsMinimal & { buffeToReturnOn_WaitMultimedia?: Buffer };
 export type MockEnqueueParamsMultimedia = MockEnqueueParamsMultimediaMinimal & { caption?: string };
