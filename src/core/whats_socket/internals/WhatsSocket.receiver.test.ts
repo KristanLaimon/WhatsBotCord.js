@@ -47,7 +47,7 @@ it("WhenGettingBasicMsg_FROMINDIVIDUAL_ShouldReceiveItAtTheMomentBeingSent (Expe
   const senderId: string = "555123456789@s.whatsapp.net";
   const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(senderId, MsgType.Text, WAITOPTIONS);
   const userSendingMsgPromise: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(null, senderId, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
+    mockSocket.onIncomingMsg.CallAll(null, null, senderId, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
     resolve();
   });
   const waitedMsg: WhatsappMessage = await Promise.all([msgWaitingPromise, userSendingMsgPromise]).then(([waitedMsg, _void]) => waitedMsg);
@@ -60,9 +60,9 @@ it("WhenGettingBasicMsg_FROMGROUP_ShouldReceiveItAtTheMomentBeingSent (Expected 
   const receive = new WhatsSocket_Submodule_Receiver(mockSocket);
   const senderId: string = "999888777666@lid";
   const chatId: string = "123456789012345@g.us";
-  const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(senderId, chatId, MsgType.Text, WAITOPTIONS);
+  const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(senderId, null, chatId, MsgType.Text, WAITOPTIONS);
   const userFromGroupSendingMsgPromise: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(senderId, chatId, GroupTxtMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(senderId, null, chatId, GroupTxtMsg, MsgType.Text, SenderType.Group);
     resolve();
   });
   const waitedMsg: WhatsappMessage = await Promise.all([msgWaitingPromise, userFromGroupSendingMsgPromise]).then(([waitedMsg, _void]) => waitedMsg);
@@ -76,7 +76,7 @@ it("Only original sender can cancel waiting msg", async (): Promise<void> => {
 
   const originalSenderId = GroupMsg_SENDERID;
   const notRelatedSenderId = "123_NOT_RELATED_@lid";
-  const main: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(originalSenderId, GroupMsg_CHATID, MsgType.Image, {
+  const main: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(originalSenderId, null, GroupMsg_CHATID, MsgType.Image, {
     ...WAITOPTIONS,
     cancelKeywords: ["cancel", "cancelar"],
   });
@@ -104,7 +104,7 @@ it("Only original sender can cancel waiting msg", async (): Promise<void> => {
     errorMessage: "User has canceled the dialog",
   });
   expect(error?.chatId).toBe(GroupMsg_CHATID);
-  expect(error?.userId).toBe(originalSenderId); //Should be cancelled by expecting "waitedMsg" promise to be rejected
+  expect(error?.participantId_LID).toBe(originalSenderId); //Should be cancelled by expecting "waitedMsg" promise to be rejected
 });
 
 //=========================  MINIMUM FEATURE (like before) with Delays timers inside timeout time range | LONG TESTS =========================
@@ -125,7 +125,7 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMINDIVIDUAL_ShouldRece
   });
   const userActuallySendsTheMsgPromise = new Promise<void>((resolve) => {
     setTimeout(() => {
-      mockSocket.onIncomingMsg.CallAll(null, senderId, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
+      mockSocket.onIncomingMsg.CallAll(null, null, senderId, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
       resolve();
     }, secondsFromUserToSendMsgDelay * 1000);
   });
@@ -153,13 +153,13 @@ it.skipIf(skipLongTests)("WhenGettingBasicMsgWithDelay_FROMGROUP_ShouldReceiveIt
 
   const startTime: number = performance.now();
   //=============================================================
-  const msgWaitingPromise: Promise<WhatsappMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(senderId, chatId, MsgType.Text, {
+  const msgWaitingPromise: Promise<WhatsappMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(senderId, null, chatId, MsgType.Text, {
     ...WAITOPTIONS,
     timeoutSeconds: timeoutSecondsExpected,
   });
   const userActuallySendsMsgWithDelayPromise: Promise<void> = new Promise((resolve) => {
     setTimeout(() => {
-      mockSocket.onIncomingMsg.CallAll(senderId, chatId, GroupTxtMsg, MsgType.Text, SenderType.Group);
+      mockSocket.onIncomingMsg.CallAll(senderId, null, chatId, GroupTxtMsg, MsgType.Text, SenderType.Group);
       resolve();
     }, secondsFromUserToSendMsgDelay * 1000);
   });
@@ -187,18 +187,18 @@ it.skipIf(skipLongTests)("WhenGettingIncorrectMsgType_FROMGROUP_ShouldIgnoreItAn
   const chatID = "123456789012345@g.us";
 
   const startTime = performance.now();
-  const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(userID, chatID, MsgType.Text, {
+  const msgWaitingPromise: Promise<WhatsappMessage> = receive.WaitUntilNextRawMsgFromUserIDInGroup(userID, null, chatID, MsgType.Text, {
     ...WAITOPTIONS,
     timeoutSeconds,
   });
 
   //Act
   //Should not expect any of these messages (types)                                       //No. of messages sent (incorrect)
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Image, SenderType.Group); //1
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Contact, SenderType.Group); //2
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Sticker, SenderType.Group); //3
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Video, SenderType.Group); //4
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Audio, SenderType.Group); //5
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Image, SenderType.Group); //1
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Contact, SenderType.Group); //2
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Sticker, SenderType.Group); //3
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Video, SenderType.Group); //4
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Audio, SenderType.Group); //5
 
   let error: WhatsSocketReceiverError | undefined;
   try {
@@ -234,13 +234,13 @@ it.skipIf(skipLongTests)("WhenExpectingMsgAndUserSendsACancelWord_FROMGROUP_Shou
   const chatID = "123456789012345@g.us";
   const cancelWords: string[] = ["cancel", "cancelar"];
 
-  const waitingMsgPromise: Promise<WhatsappMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(userID, chatID, MsgType.Image, {
+  const waitingMsgPromise: Promise<WhatsappMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(userID, null, chatID, MsgType.Image, {
     ...WAITOPTIONS,
     cancelKeywords: cancelWords,
   });
   const msgsPromise: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group); //Wrong msg
-    mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group); //Wrong msg
+    mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group); //Wrong msg
+    mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group); //Wrong msg
     const cancelKeywordMockMsg: WhatsappMessage = {
       key: {
         fromMe: false,
@@ -252,7 +252,7 @@ it.skipIf(skipLongTests)("WhenExpectingMsgAndUserSendsACancelWord_FROMGROUP_Shou
       },
     };
     //Even though its not a MsgType.Image, socket should have priority looking for cancel words before checking type (to be able to cancel)
-    mockSocket.onIncomingMsg.CallAll(userID, chatID, cancelKeywordMockMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(userID, null, chatID, cancelKeywordMockMsg, MsgType.Text, SenderType.Group);
     resolve();
   });
 
@@ -294,16 +294,16 @@ it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP
   const userID = "999888777666@lid";
   const chatID = "123456789012345@g.us";
 
-  const waitingMsgPromise: Promise<WhatsappMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(userID, chatID, MsgType.Image, {
+  const waitingMsgPromise: Promise<WhatsappMessage> = receiver.WaitUntilNextRawMsgFromUserIDInGroup(userID, null, chatID, MsgType.Image, {
     ...WAITOPTIONS,
     timeoutSeconds: 3,
   });
 
   //Sending many wrong msgs (to simulate bad interaction from user) None of these are Images
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group);
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Sticker, SenderType.Group);
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Video, SenderType.Group);
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Ubication, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Text, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Sticker, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Video, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Ubication, SenderType.Group);
 
   let awaitedMsg: WhatsappMessage | undefined;
   let error: WhatsSocketReceiverError | undefined;
@@ -324,7 +324,7 @@ it.skipIf(skipLongTests)("WhenTimeoutExpiresAndAfterSendingGoodMsgType_FROMGROUP
   }
 
   //No user sends a correct image message (should be ignored, not waited at all)
-  mockSocket.onIncomingMsg.CallAll(userID, chatID, GroupTxtMsg, MsgType.Image, SenderType.Group);
+  mockSocket.onIncomingMsg.CallAll(userID, null, chatID, GroupTxtMsg, MsgType.Image, SenderType.Group);
   //Should continue being undefined
   expect(awaitedMsg).toBeUndefined();
   //Should not send any other msg (like feedback or any other thing)
@@ -339,7 +339,7 @@ it.skipIf(skipLongTests)(
     const receiver = new WhatsSocket_Submodule_Receiver(mockSocket);
 
     const TIMEOUT_MS: number = 3 * 1000;
-    const waiting = receiver.WaitUntilNextRawMsgFromUserIDInGroup(MockGroupTxtMsg_SENDERID, MockGroupTxtMsg_CHATID, MsgType.Image, {
+    const waiting = receiver.WaitUntilNextRawMsgFromUserIDInGroup(MockGroupTxtMsg_SENDERID, null, MockGroupTxtMsg_CHATID, MsgType.Image, {
       timeoutSeconds: TIMEOUT_MS,
       cancelKeywords: ["cancel"],
       ignoreSelfMessages: true,

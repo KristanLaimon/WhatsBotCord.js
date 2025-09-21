@@ -187,10 +187,18 @@ describe("Events/Delegates", () => {
     expect(subscriberSpy).toHaveBeenCalledTimes(1);
 
     // extract call args safely
-    const [senderId, chatId, msg, msgType, senderType] = subscriberSpy.mock.calls[0] as [string | null, string, WAMessage, MsgType, SenderType];
+    const [senderId_LID, senderId_PN, chatId, msg, msgType, senderType] = subscriberSpy.mock.calls[0] as [
+      string | null,
+      string | null,
+      string,
+      WAMessage,
+      MsgType,
+      SenderType
+    ];
 
     // Only asserts what WhatsSocket transforms
-    expect(senderId).toBeNull(); // group messages = no direct sender id
+    expect(senderId_LID).toBeNull(); // group messages = no direct sender id
+    expect(senderId_PN).toBeNull();
     expect(chatId).toBe(fakeChatId); // chat id preserved
     expect(msg).toMatchObject(fakeMessage); // received message passed along
     expect(msgType).toBe(MsgType.Text); // classification logic tested

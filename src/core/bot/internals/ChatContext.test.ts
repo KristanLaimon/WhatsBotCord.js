@@ -1,7 +1,7 @@
 import { type Mock, expect, it, spyOn, test } from "bun:test";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
-  MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
+  MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID_LID,
   MockGroupTxtMsg as GroupTxtMsg,
   MockIndividualTxtMsg_CHATID as IndividualMsg_CHATID,
   MockIndividualTxtMsg as IndividualTxtMsg,
@@ -43,12 +43,20 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
-  const chatSession = new ChatContext(GroupTxtMsg.key.participant ?? null, GroupTxtMsg.key.remoteJid!, GroupTxtMsg, senderDependency, receiverDependency, {
-    cancelKeywords: ["cancel", "cancelar"],
-    ignoreSelfMessages: true,
-    timeoutSeconds: 5,
-    wrongTypeFeedbackMsg: "❌",
-  });
+  const chatSession = new ChatContext(
+    GroupTxtMsg.key.participant ?? null,
+    GroupTxtMsg.key.participantAlt ?? null,
+    GroupTxtMsg.key.remoteJid!,
+    GroupTxtMsg,
+    senderDependency,
+    receiverDependency,
+    {
+      cancelKeywords: ["cancel", "cancelar"],
+      ignoreSelfMessages: true,
+      timeoutSeconds: 5,
+      wrongTypeFeedbackMsg: "❌",
+    }
+  );
   return {
     mockSocket: mockSocket,
     sender: senderDependency,
@@ -61,7 +69,7 @@ function GenerateLocalToolKit_ChatSession_FromIndividual() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
-  const chatSession = new ChatContext(null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, {
+  const chatSession = new ChatContext(null, null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, {
     cancelKeywords: ["cancel", "cancelar"],
     ignoreSelfMessages: true,
     timeoutSeconds: 5,
@@ -308,7 +316,7 @@ it("WaitMsg_WhenExpectingForMsg_FROMGROUP_ShouldReceiveIt", async (): Promise<vo
 
   const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
   const msging: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupTxtMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, GroupTxtMsg, MsgType.Text, SenderType.Group);
     resolve();
   });
 
@@ -327,7 +335,7 @@ it("WaitMsg_WhenExpectingForMsg_FROMINDIVIDUAL_ShouldReceiveIt", async (): Promi
 
   const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
   const msging: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
     resolve();
   });
 
@@ -348,15 +356,15 @@ it("WaitMsg_WhenGettingIncorrectMsgType_FROMGROUP_ShouldIgnoreItUntilGetExpected
   const incorrectMsg: WhatsappMessage & { INCORRECT: boolean } = { ...GroupTxtMsg, INCORRECT: true };
   const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Video);
   const msgs: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Image, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Text, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Sticker, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, incorrectMsg, MsgType.Poll, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, incorrectMsg, MsgType.Image, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, incorrectMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, incorrectMsg, MsgType.Sticker, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, incorrectMsg, MsgType.Poll, SenderType.Group);
 
     //This should be fetched from waiting process
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupTxtMsg, MsgType.Video, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, GroupTxtMsg, MsgType.Video, SenderType.Group);
     resolve();
   });
 
@@ -377,15 +385,15 @@ it("WaitMsg_WhenGettingIncorrectMsgType_FROMINDIVIDUAL_ShouldIgnoreItUntilGetExp
   const incorrectMsg: WhatsappMessage & { INCORRECT: boolean } = { ...IndividualTxtMsg, INCORRECT: true };
   const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Video);
   const msgs: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Image, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Text, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Sticker, SenderType.Group);
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, incorrectMsg, MsgType.Poll, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, incorrectMsg, MsgType.Image, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, incorrectMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, incorrectMsg, MsgType.Contact, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, incorrectMsg, MsgType.Sticker, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, incorrectMsg, MsgType.Poll, SenderType.Group);
 
     //This should be fetched from waiting process
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Video, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Video, SenderType.Group);
     resolve();
   });
 
@@ -412,9 +420,9 @@ it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMGROUP_ShouldRejectC
 
   const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
   const msg: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupTxtMsg, MsgType.Image, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, GroupTxtMsg, MsgType.Image, SenderType.Group);
     //Correct type expected!
-    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID, GroupMsg_CHATID, GroupTxtMsg, MsgType.Text, SenderType.Group);
+    mockSocket.onIncomingMsg.CallAll(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, GroupTxtMsg, MsgType.Text, SenderType.Group);
     resolve();
   });
   let res: WhatsappMessage | null = null;
@@ -438,9 +446,9 @@ it("WaitMsg_GettingUnknownErrorNotIdentifiedWhileWaiting_FROMINDIVIDUAL_ShouldRe
 
   const main: Promise<WhatsappMessage | null> = chat.WaitMsg(MsgType.Text);
   const msg: Promise<void> = new Promise<void>((resolve) => {
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Image, SenderType.Individual);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Image, SenderType.Individual);
     //Correct type expected!
-    mockSocket.onIncomingMsg.CallAll(null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
+    mockSocket.onIncomingMsg.CallAll(null, null, IndividualMsg_CHATID, IndividualTxtMsg, MsgType.Text, SenderType.Individual);
     resolve();
   });
   let res: WhatsappMessage | null = null;
@@ -459,7 +467,7 @@ it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMGROUP_ShouldIdentifyAndR
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
   const abortedWaitError: Partial<WhatsSocketReceiverError> = {
     chatId: GroupMsg_CHATID,
-    userId: GroupMsg_SENDERID,
+    participantId_LID: GroupMsg_SENDERID_LID,
     wasAbortedByUser: true,
   };
   internalWaitSpy.mockRejectedValueOnce(abortedWaitError);
@@ -481,7 +489,7 @@ it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMINDIVIDUAL_ShouldIdentif
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
   const abortedWaitError: Partial<WhatsSocketReceiverError> = {
     chatId: IndividualMsg_CHATID,
-    userId: null,
+    participantId_LID: null,
     wasAbortedByUser: true,
     errorMessage: WhatsSocketReceiverMsgError.Timeout,
   };
@@ -500,13 +508,14 @@ it("WaitMsg_GettingKnownWaitingError_RejectedByUser_FROMINDIVIDUAL_ShouldIdentif
 });
 
 //When getting wait error by timeout (not rejected by user)
-it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMGROUP_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {
+it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMGROUP_ShouldIdentifyErrorWithoutRejectItToGlobalCaller", async (): Promise<void> => {
   const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromGroup();
 
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIDInGroup");
   const abortedWaitError: WhatsSocketReceiverError = {
     chatId: GroupMsg_CHATID,
-    userId: GroupMsg_SENDERID,
+    participantId_LID: GroupMsg_SENDERID_LID,
+    participantId_PN: null,
     wasAbortedByUser: false,
     errorMessage: WhatsSocketReceiverMsgError.Timeout,
   };
@@ -521,13 +530,14 @@ it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMGROUP_ShouldIdentifyAndR
   expect(internalWaitSpy).toHaveBeenCalledTimes(1);
 });
 
-it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMINDIVIDUAL_ShouldIdentifyAndRejectThrowError", async (): Promise<void> => {
+it("WaitMsg_GettingKnownWaitingError_TimeoutExpired_FROMINDIVIDUAL_ShouldIdentifyErrorWithoutRejectItToGlobalCaller", async (): Promise<void> => {
   const { chat, receiver } = GenerateLocalToolKit_ChatSession_FromIndividual();
 
   const internalWaitSpy = spyOn(receiver, "WaitUntilNextRawMsgFromUserIdInPrivateConversation");
   const abortedWaitError: WhatsSocketReceiverError = {
     chatId: IndividualMsg_CHATID,
-    userId: null,
+    participantId_LID: null,
+    participantId_PN: null,
     wasAbortedByUser: false,
     errorMessage: WhatsSocketReceiverMsgError.Timeout,
   };
@@ -561,7 +571,7 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigIn
   };
   await chat.WaitMsg(expectedType, /** local options for this msg only */ firstChatConfig);
   expect(internalWaitSpy).toHaveBeenCalledTimes(1);
-  expect(internalWaitSpy).toHaveBeenCalledWith(GroupMsg_SENDERID, GroupMsg_CHATID, expectedType, { ...chat.Config, ...firstChatConfig });
+  expect(internalWaitSpy).toHaveBeenCalledWith(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, expectedType, { ...chat.Config, ...firstChatConfig });
 
   /// 2nd local calling
   const secondLocalConfig: Partial<ChatContextConfig> = {
@@ -569,7 +579,7 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigIn
   };
   await chat.WaitMsg(expectedType, /** local options for this msg only*/ secondLocalConfig);
   expect(internalWaitSpy).toHaveBeenCalledTimes(2);
-  let paramsCalled: ChatContextConfig = internalWaitSpy.mock.lastCall![3];
+  let paramsCalled: ChatContextConfig = internalWaitSpy.mock.lastCall![4];
   expect(paramsCalled).toBeDefined();
   //Should not be the same like last local call
   expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
@@ -579,7 +589,7 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigIn
   // Local calling without any
   await chat.WaitMsg(expectedType /**no local config*/);
   expect(internalWaitSpy).toHaveBeenCalledTimes(3);
-  paramsCalled = internalWaitSpy.mock.lastCall![3];
+  paramsCalled = internalWaitSpy.mock.lastCall![4];
   expect(paramsCalled).toBeDefined();
   expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
   expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...secondLocalConfig });

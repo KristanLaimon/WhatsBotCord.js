@@ -14,6 +14,7 @@ beforeEach(() => {
   senderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
 
   chatCtx = new ChatContext_MockingSuite(
+    "123456789@lid",
     "1234567890@s.whatsapp.net",
     "chatId@s.whatsapp.net",
     MsgFactory_Image("1234567890@s.whatsapp.net", null, "./img.png"),

@@ -82,11 +82,13 @@ test("WhenSendingCustomParticipantId_CommandShouldReceiveIt", async (): Promise<
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.participantIdLID).toBe(customChatId + WhatsappLIDIdentifier);
-      expect(_ctx.FixedParticipantId).toBe(customChatId + WhatsappLIDIdentifier);
-      expect(_args.participantIdLID).toBe(_ctx.FixedParticipantId);
+      expect(_args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+
+      expect(_ctx.FixedParticipantLID).toBe(_args.participantIdLID);
+      expect(_ctx.FixedParticipantPN).toBe(_args.participantIdPN);
     }
   }
-  const chat = new ChatMock(new Com(), { participantId: customChatId });
+  const chat = new ChatMock(new Com(), { participantId_LID: customChatId });
   await chat.StartChatSimulation();
 });
 
@@ -130,6 +132,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_Group_ShouldCatch", async (): Promise<vo
       //Doesn't matter if its not the same as this chatID and participantId, its mocked!
       const msgArrived: WhatsappMessage = await _rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(
         myCustomParticipantId,
+        null,
         myCustomChatId,
         MsgType.Text,
         {
@@ -182,7 +185,7 @@ test("WhenUsingRawApi_NoSocket_Receiver_PrivateConversation_ShouldCatch", async 
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
   expect(chat.WaitedFromCommand).toHaveLength(1);
   expect(chat.WaitedFromCommand.at(0)!.chatId).toBe(myCustomChatId);
-  expect(chat.WaitedFromCommand.at(0)?.partipantId).toBeNull();
+  expect(chat.WaitedFromCommand.at(0)?.partipantId_LID).toBeNull();
 });
 
 test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async (): Promise<void> => {
@@ -198,13 +201,13 @@ test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async 
       // expect(msg).toBe("MyText");
     }
   }
-  const chat = new ChatMock(new Com(), { chatId: myCustomChatId, participantId: myCustomParticipantId });
+  const chat = new ChatMock(new Com(), { chatId: myCustomChatId, participantId_LID: myCustomParticipantId });
   chat.EnqueueIncoming_Text("MyText");
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
   expect(chat.WaitedFromCommand).toHaveLength(1);
-  expect(chat.WaitedFromCommand.at(0)!.chatId).toBe(myCustomChatId + WhatsappGroupIdentifier);
-  expect(chat.WaitedFromCommand.at(0)!.partipantId).toBe(myCustomParticipantId + WhatsappLIDIdentifier);
+  expect(chat.WaitedFromCommand.at(0)!.chatId).toBe(myCustomChatId + WhatsappIndividualIdentifier);
+  expect(chat.WaitedFromCommand.at(0)!.partipantId_LID).toBe(myCustomParticipantId + WhatsappLIDIdentifier);
   expect(chat.WaitedFromCommand.at(0)!.options).toMatchObject({ timeoutSeconds: 23 });
 });
 
@@ -274,7 +277,7 @@ test("WhenProvidingParticipantId_MustBeGroup", async (): Promise<void> => {
       expect(_ctx.FixedSenderType).toBe(SenderType.Group);
     }
   }
-  const chat = new ChatMock(new Com(), { participantId: customParticipantID });
+  const chat = new ChatMock(new Com(), { participantId_LID: customParticipantID });
   await chat.StartChatSimulation();
 });
 
@@ -289,7 +292,7 @@ test("WhenProvidingCustomSenderType_OverridesDefaultDetectionFromChatIdAndPartic
   }
   //Normally this would be a chat of type SenderType.Group due to customParticipantId
   //but customSenderType is provided and set to individual, so it'll be individual
-  const chat = new ChatMock(new Com(), { participantId: customParticipantID, senderType: SenderType.Individual });
+  const chat = new ChatMock(new Com(), { participantId_LID: customParticipantID, senderType: SenderType.Individual });
   await chat.StartChatSimulation();
 });
 
@@ -946,20 +949,77 @@ describe("Images", () => {
   });
 
   it("WhenWaitingImgs_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
-    //TODO: Do this
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myImg = await ctx.WaitMsg(MsgType.Image, { timeoutSeconds: 1 });
+        expect(myImg).toBeDefined();
+        expect(myImg!.message?.imageMessage).toBeDefined();
+        expect(myImg!.message?.imageMessage?.url).toBe("./my-msg.png");
+        expect(myImg?.pushName).toBe("My pushname");
+      }
+    }
+
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Img("./my-msg.png", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Images).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
   });
 
-  it("WhenWaitingMsgs_UsingRawSocketReceiver", async (): Promise<void> => {});
-  // it("WhenWaitingImgs_Simple_ShouldWork_WaitGenericMsg", async (): Promise<void> => {
-  //   class Com implements ICommand {
-  //     name: string = "mynamecommand";
-  //     async run(ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
-  //       const myImg = ctx.wai;
-  //     }
-  //   }
-  //   const chat = new ChatMock(new Com());
-  //   await chat.StartChatSimulation();
-  // });
+  it("WhenWaitingMsgs_UsingRawSocketReceiver_IndividualChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myImg = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(args.chatId, MsgType.Image, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myImg).toBeDefined();
+        expect(myImg!.message?.imageMessage).toBeDefined();
+        expect(myImg!.message?.imageMessage?.url).toBe("./my-msg.png");
+        expect(myImg?.pushName).toBe("My pushname");
+      }
+    }
+
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Img("./my-msg.png", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Images).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingMsgs_UsingRawSocketReceiver_GroupChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myImg = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(args.participantIdLID!, null, args.chatId, MsgType.Image, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myImg).toBeDefined();
+        expect(myImg!.message?.imageMessage).toBeDefined();
+        expect(myImg!.message?.imageMessage?.url).toBe("./my-msg.png");
+        expect(myImg?.pushName).toBe("My pushname");
+
+        //Due to senderType: SenderType.Group config in ChatMock, by default should create this
+        expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
+        expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+
+        expect(_ctx.FixedChatId).toBe(args.chatId);
+        expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
+      }
+    }
+
+    const chat = new ChatMock(new Com(), { senderType: SenderType.Group });
+    chat.EnqueueIncoming_Img("./my-msg.png", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Images).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
 });
 
 //TEMPLATE

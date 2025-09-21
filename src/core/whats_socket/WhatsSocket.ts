@@ -111,10 +111,14 @@ export type WhatsSocketOptions = {
  */
 export default class WhatsSocket implements IWhatsSocket {
   //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events
-  public onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void> =
-    new Delegate();
-  public onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void> =
-    new Delegate();
+  public onIncomingMsg: Delegate<
+    (senderId_LID: string | null, sender_PN: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void
+  > = new Delegate();
+
+  public onUpdateMsg: Delegate<
+    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void
+  > = new Delegate();
+
   public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
   public onRestart: Delegate<() => Promise<void>> = new Delegate();
   public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
@@ -325,15 +329,16 @@ export default class WhatsSocket implements IWhatsSocket {
   private ConfigureMessageIncoming(): void {
     this.Socket.ev.on("messages.upsert", async (messageUpdate) => {
       if (!messageUpdate.messages) return;
-      for (const msg of messageUpdate.messages) {
+      for (const msgAny of messageUpdate.messages) {
+        const msg = msgAny as WhatsappMessage;
         if (this._ignoreSelfMessages) if (!msg.message || msg.key.fromMe) continue;
-
         const chatId = msg.key.remoteJid!;
-        const senderId = msg.key.participant ?? null;
+        const senderId_LID = msg.key.participant ?? null;
+        const senderId_PN = msg.key.participantAlt ?? null;
         let senderType: SenderType = SenderType.Unknown;
         if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
         if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
-        this.onIncomingMsg.CallAll(senderId, chatId, msg, MsgHelper_FullMsg_GetMsgType(msg), senderType);
+        this.onIncomingMsg.CallAll(senderId_LID, senderId_PN, chatId, msg, MsgHelper_FullMsg_GetMsgType(msg), senderType);
       }
     });
   }
@@ -341,13 +346,15 @@ export default class WhatsSocket implements IWhatsSocket {
   private ConfigureMessagesUpdates(): void {
     this.Socket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
       if (!msgsUpdates || msgsUpdates.length === 0) return;
-      for (const msgUpdate of msgsUpdates) {
+      for (const msgUpdateRaw of msgsUpdates) {
+        const msgUpdate = msgUpdateRaw as WhatsappMessage;
         if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
 
         const chatId: string = msgUpdate.key.remoteJid!;
-        const senderId: string | null = msgUpdate.key.participant ?? null;
+        const senderId_LID: string | null = msgUpdate.key.participant ?? null;
+        const senderId_PN: string | null = msgUpdate.key.participantAlt ?? null;
         const senderType: SenderType = MsgHelper_FullMsg_GetSenderType(msgUpdate);
-        this.onUpdateMsg.CallAll(senderId, chatId, msgUpdate, MsgHelper_FullMsg_GetMsgType(msgUpdate), senderType);
+        this.onUpdateMsg.CallAll(senderId_LID, senderId_PN, chatId, msgUpdate, MsgHelper_FullMsg_GetMsgType(msgUpdate), senderType);
       }
     });
   }

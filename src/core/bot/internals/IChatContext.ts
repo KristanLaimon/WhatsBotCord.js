@@ -57,7 +57,9 @@ export interface IChatContext {
    *
    * **Immutable**: set only in the constructor.
    */
-  readonly FixedParticipantId: string | null;
+  readonly FixedParticipantPN: string | null;
+
+  readonly FixedParticipantLID: string | null;
 
   // /**
   //  * All sending/updating-related metadata about yourself.

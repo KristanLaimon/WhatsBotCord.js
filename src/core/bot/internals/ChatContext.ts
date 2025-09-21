@@ -53,7 +53,9 @@ export class ChatContext implements IChatContext {
    */
   private _internalReceive: IWhatsSocket_Submodule_Receiver;
 
-  public readonly FixedParticipantId: string | null;
+  public readonly FixedParticipantPN: string | null;
+
+  public readonly FixedParticipantLID: string | null;
 
   public readonly FixedChatId: string;
 
@@ -66,7 +68,7 @@ export class ChatContext implements IChatContext {
   /**
    * Creates a new chat session bound to a specific chat and initial message.
    *
-   * @param originalSenderID - The ID of the participant that triggered this session,
+   * @param participantID_LID - The ID of the participant that triggered this session,
    *   or `null` if the origin cannot be determined.
    * @param fixedChatId - The WhatsApp chat JID this context is tied to.
    * @param initialMsg - The original message object that caused this context to spawn.
@@ -80,7 +82,8 @@ export class ChatContext implements IChatContext {
    *   single session, preventing accidental leakage between chats.
    */
   constructor(
-    originalSenderID: string | null,
+    participantID_LID: string | null,
+    participantID_PN: string | null,
     fixedChatId: string,
     initialMsg: WhatsappMessage,
     senderDependency: IWhatsSocket_Submodule_SugarSender,
@@ -88,7 +91,8 @@ export class ChatContext implements IChatContext {
     config: ChatContextConfig
   ) {
     this.Config = config;
-    this.FixedParticipantId = originalSenderID;
+    this.FixedParticipantLID = participantID_LID;
+    this.FixedParticipantPN = participantID_PN;
     this._internalSend = senderDependency;
     this._internalReceive = receiverDependency;
     this.FixedChatId = fixedChatId;
@@ -262,16 +266,22 @@ export class ChatContext implements IChatContext {
           "[FATAL ERROR] on ChatContext.WaitMsg: ChatContext Obj received a non valid WhatsappMessage as parameter (couldn't identify sender type)"
         );
       case SenderType.Group:
-        if (!this.FixedParticipantId) {
+        if (!this.FixedParticipantLID) {
           throw new Error(
             "[FATAL ERROR]: This shouldn't happen at all. Couldn't find group participant from group msg!... Report this bug as a github issue please."
           );
         }
         try {
-          return await this._internalReceive.WaitUntilNextRawMsgFromUserIDInGroup(this.FixedParticipantId, this.FixedChatId, expectedType, {
-            ...this.Config,
-            ...localOptions,
-          });
+          return await this._internalReceive.WaitUntilNextRawMsgFromUserIDInGroup(
+            this.FixedParticipantLID,
+            this.FixedParticipantPN,
+            this.FixedChatId,
+            expectedType,
+            {
+              ...this.Config,
+              ...localOptions,
+            }
+          );
         } catch (e) {
           if (WhatsSocketReceiverHelper_isReceiverError(e)) {
             if (!e.wasAbortedByUser) {

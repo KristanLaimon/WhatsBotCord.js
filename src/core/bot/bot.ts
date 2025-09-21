@@ -401,7 +401,14 @@ export default class Bot implements BotMinimalInfo {
   }
 
   @autobind
-  private async EVENT_OnMessageIncoming(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType): Promise<void> {
+  private async EVENT_OnMessageIncoming(
+    senderId_LID: string | null,
+    senderId_PN: string | null,
+    chatId: string,
+    rawMsg: WAMessage,
+    msgType: MsgType,
+    senderType: SenderType
+  ): Promise<void> {
     // ======== Middleware chain section ========
     let middlewareChainSuccess: boolean = false;
     const callMiddleware = async (index: number): Promise<void> => {
@@ -410,7 +417,7 @@ export default class Bot implements BotMinimalInfo {
         return; // end of chain
       }
       const middleware = this._internalMiddleware[index]!;
-      await Promise.resolve(middleware(senderId, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
+      await Promise.resolve(middleware(senderId_LID, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
     };
     await callMiddleware(0);
     this.Events.onMiddlewareEnd.CallAll(middlewareChainSuccess);
@@ -451,7 +458,7 @@ export default class Bot implements BotMinimalInfo {
       // 4. Can't be found after all that? its not a valid command
       if (!commandFound) {
         await this.Events.onCommandNotFound.CallAllAsync(
-          new ChatContext(senderId, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
+          new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
             cancelKeywords: this.Settings.cancelKeywords!,
             timeoutSeconds: this.Settings.timeoutSeconds!,
             ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
@@ -471,7 +478,7 @@ export default class Bot implements BotMinimalInfo {
       if (customChatContext) {
         ARG1_ChatContext = customChatContext;
       } else {
-        ARG1_ChatContext = new ChatContext(senderId, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
+        ARG1_ChatContext = new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
           cancelKeywords: this.Settings.cancelKeywords!,
           timeoutSeconds: this.Settings.timeoutSeconds!,
           ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
@@ -494,7 +501,7 @@ export default class Bot implements BotMinimalInfo {
         msgType: msgType,
         originalRawMsg: rawMsg,
         senderType: senderType,
-        participantIdLID: senderId,
+        participantIdLID: senderId_LID,
         participantIdPN: rawMsg.key.participantAlt ?? null,
         quotedMsgInfo: quotedMsgAsArgument,
         botInfo: this,

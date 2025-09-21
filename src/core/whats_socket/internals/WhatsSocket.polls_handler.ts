@@ -90,7 +90,8 @@ export default class WhatsPoll implements IWhatsPoll {
   }
 
   private async _onMessageUpsertSubcriber(
-    _senderId: string | null,
+    _userID_LID_ToWait: string | null,
+    _userID_PN_toWait: string | null,
     _chatId: string,
     rawUpdateMsg: WhatsappMessage,
     _msgType: MsgType,

@@ -45,7 +45,8 @@ export interface IWhatsSocket_Submodule_Receiver {
    * ```
    */
   WaitUntilNextRawMsgFromUserIDInGroup(
-    userIDToWait: string,
+    userID_LID_ToWait: string | null,
+    userID_PN_toWait: string | null,
     chatToWaitOnID: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions

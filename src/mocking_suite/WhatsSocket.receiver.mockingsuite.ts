@@ -16,7 +16,13 @@ export type ChatContextSpyWhatsMsg = {
   rawMsg: WhatsappMessage;
 };
 
-export type WhatsSocketReceiverMsgWaited = { waitedMsgType: MsgType; chatId: string; partipantId: string | null; options?: Partial<ChatContextConfig> };
+export type WhatsSocketReceiverMsgWaited = {
+  waitedMsgType: MsgType;
+  chatId: string;
+  partipantId_LID: string | null;
+  participantId_PN: string | null;
+  options?: Partial<ChatContextConfig>;
+};
 
 export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWhatsSocket_Submodule_Receiver {
   private _queueWait: ChatContextSpyWhatsMsg[] = [];
@@ -53,7 +59,8 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
 
   //_local Options is not used, just used in real commands, here is not necessary;
   public async WaitMsg(
-    participantId: string | null,
+    userID_LID_ToWait: string | null,
+    userID_PN_toWait: string | null,
     chatId: string,
     expectedType: MsgType,
     _localOptions?: Partial<ChatContextConfig>
@@ -76,7 +83,8 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
                 throw {
                   errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting,
                   chatId: chatId,
-                  userId: participantId,
+                  participantId_LID: userID_LID_ToWait,
+                  participantId_PN: userID_PN_toWait,
                   wasAbortedByUser: true,
                 } satisfies WhatsSocketReceiverError;
               }
@@ -92,18 +100,25 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
       );
     }
 
-    this.Waited.push({ options: _localOptions, chatId: chatId, partipantId: participantId, waitedMsgType: actualMsg_msgType });
+    this.Waited.push({
+      options: _localOptions,
+      chatId: chatId,
+      partipantId_LID: userID_LID_ToWait,
+      participantId_PN: userID_PN_toWait,
+      waitedMsgType: actualMsg_msgType,
+    });
 
     return toSend.rawMsg;
   }
 
   public WaitUntilNextRawMsgFromUserIDInGroup(
-    userIDToWait: string,
+    userID_LID_ToWait: string | null,
+    userID_PN_toWait: string | null,
     chatToWaitOnID: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
-    return this.WaitMsg(userIDToWait, chatToWaitOnID, expectedMsgType, options);
+    return this.WaitMsg(userID_LID_ToWait, userID_PN_toWait, chatToWaitOnID, expectedMsgType, options);
   }
 
   public WaitUntilNextRawMsgFromUserIdInPrivateConversation(
@@ -111,7 +126,7 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
-    return this.WaitMsg(null, userIdToWait, expectedMsgType, options);
+    return this.WaitMsg(null, null, userIdToWait, expectedMsgType, options);
   }
 
   /**

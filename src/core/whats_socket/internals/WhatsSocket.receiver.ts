@@ -17,7 +17,8 @@ import type { IWhatsSocket_Submodule_Receiver } from "./IWhatsSocket.receiver.js
  * @returns true if the message satisfies the success condition; false otherwise.
  */
 type SuccessConditionCallback = (
-  userId: string | null,
+  participantId_LID: string | null,
+  participantId_PN: string | null,
   chatId: string,
   incomingRawMsg: WhatsappMessage,
   incomingMsgType: MsgType,
@@ -58,7 +59,9 @@ export type WhatsSocketReceiverError = {
    * triggered this waiting msg.
    * Otherwise, if this comes from private chat, will be null
    */
-  userId: string | null;
+  participantId_LID: string | null;
+
+  participantId_PN: string | null;
 
   /**
    * Whatsapp chat ID where this msgError came from
@@ -85,7 +88,8 @@ export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): an
     anything !== null &&
     "errorMessage" in anything &&
     "wasAbortedByUser" in anything &&
-    "userId" in anything &&
+    "participantId_PN" in anything &&
+    "participantId_PN" in anything &&
     "chatId" in anything
   );
 }
@@ -133,11 +137,24 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           this._whatsSocket.onIncomingMsg.Unsubscribe(listener);
-          reject({ wasAbortedByUser: false, errorMessage: WhatsSocketReceiverMsgError.Timeout, chatId: cachedChatId, userId: null });
+          reject({
+            wasAbortedByUser: false,
+            errorMessage: WhatsSocketReceiverMsgError.Timeout,
+            chatId: cachedChatId,
+            participantId_LID: null,
+            participantId_PN: null,
+          });
         }, timeoutSeconds * 1000);
       };
 
-      const listener = (userId: string | null, chatId: string, msg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => {
+      const listener = (
+        participantId_LID: string | null,
+        participantId_PN: string | null,
+        chatId: string,
+        msg: WhatsappMessage,
+        msgType: MsgType,
+        senderType: SenderType
+      ) => {
         // @deprecated_line: This is supposed to be validated on param 'successConditionCallback'
         // if (msg.key.remoteJid !== chatIdToLookFor) return;
         cachedChatId = chatId;
@@ -148,7 +165,7 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
         resetTimeout();
 
         //Priority #2: Check if it fits our conditions
-        if (!successConditionCallback(userId, chatId, msg, msgType, senderType)) return;
+        if (!successConditionCallback(participantId_LID, participantId_PN, chatId, msg, msgType, senderType)) return;
 
         if (msgType === MsgType.Text) {
           //Priority #1: Check if user is trying to cancel this command
@@ -163,7 +180,13 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
                 if (cancelFeedbackMsg) {
                   this._whatsSocket.Send.Text(chatId, cancelFeedbackMsg);
                 }
-                reject({ wasAbortedByUser: true, errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting, chatId: chatId, userId: userId });
+                reject({
+                  wasAbortedByUser: true,
+                  errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting,
+                  chatId: chatId,
+                  participantId_LID: participantId_LID,
+                  participantId_PN: participantId_PN,
+                });
                 return;
               }
             }
@@ -192,17 +215,28 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
   }
 
   public async WaitUntilNextRawMsgFromUserIDInGroup(
-    userIDToWait: string,
+    userID_LID_ToWait: string | null,
+    userID_PN_toWait: string | null,
     chatToWaitOnID: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
+    if (!userID_LID_ToWait && userID_PN_toWait) {
+      throw new Error("WhatsSocket.receiver.WaitUntilRAwmsgFromUserIDInGroup(), you must provide at least one userID, either the LID or PN version");
+    }
     //@note:  ChatId validation is already done on this._waitNextMsg method
-    const conditionCallback: SuccessConditionCallback = (participantID, actualChatID, _, _actualMsgType, ___) => {
+    const conditionCallback: SuccessConditionCallback = (participantId_LIDComingFrom, participantId_PNComingFrom, actualChatID, _, _actualMsgType, ___) => {
       //#1 Comes from same group?
       if (actualChatID !== chatToWaitOnID) return false;
-      //#2 Its from the expected participant?
-      if (participantID !== userIDToWait) return false;
+      //#2 Its from the expected participant? LID format
+      if (userID_LID_ToWait) {
+        if (participantId_LIDComingFrom !== userID_LID_ToWait) return false;
+      }
+
+      //#3 Its from expected participant? PN format
+      if (userID_PN_toWait) {
+        if (participantId_PNComingFrom !== userID_PN_toWait) return false;
+      }
 
       return true;
     };
@@ -210,13 +244,19 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
   }
 
   public async WaitUntilNextRawMsgFromUserIdInPrivateConversation(
-    userIdToWait: string,
+    chatIdPrivateUserToWait: string,
     expectedMsgType: MsgType,
     options: WhatsSocketReceiverWaitOptions
   ): Promise<WhatsappMessage> {
-    //@note:  ChatId validation is already done on this._waitNextMsg method
-    const conditionCallback: SuccessConditionCallback = (_userId, actualChatId, _rawMsg, _actualMsgType, _senderType) => {
-      if (userIdToWait !== actualChatId) return false;
+    const conditionCallback: SuccessConditionCallback = (
+      _participantId_LIDComingFrom,
+      _participantId_PNComingFrom,
+      actualChatId,
+      _rawMsg,
+      _actualMsgType,
+      _senderType
+    ) => {
+      if (chatIdPrivateUserToWait !== actualChatId) return false;
       return true;
     };
     return await this._waitNextMsg(conditionCallback, expectedMsgType, options);

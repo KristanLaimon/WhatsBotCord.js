@@ -443,7 +443,7 @@ test("ErrorsHandling_WhenExecutingCommandAndGottenUnexpectedError_ShouldRespectS
   consoleLogSpy.mockRestore();
 });
 
-test.skipIf(skipLongTests)(
+test.skipIf(false)(
   "ErrorsHandling_WhenExecutingCommandAndGottenExpected_WhenRejectingByCancelKewWords_ShouldRespectSafeNetOptionAndThrowAccordingToIt",
   async () => {
     //1. Setting up
@@ -476,7 +476,8 @@ test.skipIf(skipLongTests)(
         expect(e).toMatchObject({
           chatId: MockGroupTxtMsg_CHATID,
           errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting,
-          userId: MockGroupTxtMsg_SENDERID,
+          participantId_LID: MockGroupTxtMsg_SENDERID,
+          participantId_PN: null,
           wasAbortedByUser: true,
         } satisfies WhatsSocketReceiverError);
       } else {

@@ -33,16 +33,16 @@ test("Basic_WhenInstatiating_ShouldBeTotallyEmptyMocks", () => {
 
 test("Basic_HavingManyMocksInside_SholdBeAbleToClearMocksItself", async () => {
   const sender = new WhatsSocket_Submodule_SugarSender_MockingSuite();
-  await sender.Audio(CHATID_GROUP, {} as any, {} as any);
+  await sender.Audio(CHATID_GROUP, { source: "./source.mp3" }, {} as any);
   await sender.Contact(CHATID_GROUP, {} as any, {} as any);
-  await sender.Document(CHATID_GROUP, {} as any, {} as any);
-  await sender.Image(CHATID_GROUP, {} as any, {} as any);
+  await sender.Document(CHATID_GROUP, { source: "./source.pdf" }, {} as any);
+  await sender.Image(CHATID_GROUP, { source: "./source.png" }, {} as any);
   await sender.Location(CHATID_GROUP, {} as any, {} as any);
   await sender.Poll(CHATID_GROUP, {} as any, {} as any, {} as any);
   await sender.ReactEmojiToMsg(CHATID_GROUP, {} as any, {} as any);
   await sender.Sticker(CHATID_GROUP, {} as any, {} as any);
   await sender.Text(CHATID_GROUP, {} as any, {} as any);
-  await sender.Video(CHATID_GROUP, {} as any, {} as any);
+  await sender.Video(CHATID_GROUP, { source: "./source.mp4" }, {} as any);
 
   expect(sender.SentMessages_Audios).toHaveLength(1);
   expect(sender.SentMessages_Contacts).toHaveLength(1);

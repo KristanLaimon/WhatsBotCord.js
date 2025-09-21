@@ -107,7 +107,9 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void>;
+  onIncomingMsg: Delegate<
+    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void
+  >;
 
   /**
    * Triggered when an already sent message receives an update
@@ -120,7 +122,9 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessageUpdate, msgType: MsgType, senderType: SenderType) => void>;
+  onUpdateMsg: Delegate<
+    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsgUpdate: WAMessageUpdate, msgType: MsgType, senderType: SenderType) => void
+  >;
 
   // ================= Group Events =================
 

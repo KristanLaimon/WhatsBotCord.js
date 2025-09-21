@@ -9,7 +9,7 @@ class MyCommand implements ICommand {
   async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
     console.log("Args:", args.args); // ["argument1", "argument2"]
     console.log("Chat ID:", ctx.FixedChatId); // "myCustomChatId!@g.us"
-    console.log("Participant ID:", ctx.FixedParticipantId); // "myCustomParticipantId!@whatsapp.es"
+    console.log("Participant ID:", ctx.FixedParticipantPN); // "myCustomParticipantId!@whatsapp.es"
 
     // Ask for user's name
     await ctx.SendText("What's your name?");
@@ -40,7 +40,7 @@ describe("WhatsChatMock Example", () => {
       cancelKeywords: ["cancel"],
       chatContextConfig: { timeoutSeconds: 3 },
       chatId: "myCustomChatId!@g.us",
-      participantId: "myCustomParticipantId!@whatsapp.es",
+      participantId_LID: "myCustomParticipantId!@whatsapp.es",
       msgType: MsgType.Text,
       senderType: SenderType.Individual,
     });

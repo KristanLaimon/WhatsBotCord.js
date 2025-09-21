@@ -1,5 +1,5 @@
 export enum MsgType {
-  Text,
+  Text = 1,
   Image,
   Sticker,
   Video,
@@ -12,7 +12,7 @@ export enum MsgType {
 }
 
 export enum SenderType {
-  Group,
+  Group = 1,
   Individual,
   Unknown,
 }

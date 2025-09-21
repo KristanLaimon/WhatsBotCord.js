@@ -39,8 +39,19 @@ export default class WhatsSocketMock implements IWhatsSocket {
   // ==== Interface dependencies ====
   onRestart: Delegate<() => Promise<void>> = new Delegate();
   onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
-  onIncomingMsg: Delegate<(senderId: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void> = new Delegate();
-  onUpdateMsg: Delegate<(senderId: string | null, chatId: string, rawMsgUpdate: WAMessage, msgType: MsgType, senderType: SenderType) => void> = new Delegate();
+  onIncomingMsg: Delegate<
+    (participantId_LID: string | null, participantId_PN: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void
+  > = new Delegate();
+  onUpdateMsg: Delegate<
+    (
+      participantId_LID: string | null,
+      participantId_PN: string | null,
+      chatId: string,
+      rawMsgUpdate: WAMessage,
+      msgType: MsgType,
+      senderType: SenderType
+    ) => void
+  > = new Delegate();
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
@@ -209,6 +220,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     const info = this._extractInfoFromWhatsMsg(rawMsg, options);
     await this.onIncomingMsg.CallAllAsync(
       info.rawMsg.key.participant ?? null,
+      info.rawMsg.key.participantAlt ?? null,
       info.rawMsg.key.remoteJid!,
       info.rawMsg,
       options?.customMsgType ?? info.msgType,
@@ -227,6 +239,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     const info = this._extractInfoFromWhatsMsg(rawMsg, options);
     this.onIncomingMsg.CallAll(
       info.rawMsg.key.participant ?? null,
+      info.rawMsg.key.participantAlt ?? null,
       info.rawMsg.key.remoteJid!,
       info.rawMsg,
       options?.customMsgType ?? info.msgType,

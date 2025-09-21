@@ -31,7 +31,8 @@ export type MockingChatParams = {
   chatContextConfig?: Omit<Partial<ChatContextConfig>, "cancelKeywords">;
   botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
   chatId?: string;
-  participantId?: string;
+  participantId_LID?: string;
+  participantId_PN?: string;
   args?: string[];
   msgType?: MsgType;
   senderType?: SenderType;
@@ -63,9 +64,11 @@ export type MockEnqueueParamsLocation = MockEnqueueParamsMinimal & { locationNam
  * ```
  */
 export default class ChatMock {
-  public readonly ParticipantId?: string;
+  public readonly ParticipantId_LID: string | null;
+  public readonly ParticipantId_PN: string | null;
   public readonly ChatId: string;
 
+  private readonly _senderType: SenderType;
   private _constructorConfig?: MockingChatParams;
   private _chatContextMock: ChatContext_MockingSuite;
   private _command: ICommand;
@@ -133,35 +136,23 @@ export default class ChatMock {
     this._constructorConfig = additionalOptions;
     this._command = commandToTest;
 
-    //GROUP CHAT MSG
-    if (additionalOptions?.participantId) {
-      if (!additionalOptions?.participantId?.endsWith(WhatsappLIDIdentifier)) {
-        this.ParticipantId = additionalOptions.participantId + WhatsappLIDIdentifier;
-      } else {
-        this.ParticipantId = additionalOptions.participantId;
-      }
-      if (!additionalOptions.chatId) {
-        this.ChatId = "fakeChatIdGroup" + WhatsappGroupIdentifier;
-      } else {
-        if (!additionalOptions.chatId.endsWith(WhatsappGroupIdentifier)) {
-          this.ChatId = additionalOptions.chatId + WhatsappGroupIdentifier;
-        } else {
-          this.ChatId = additionalOptions.chatId;
-        }
-      }
-      //INDIVIDUAL MSG
-    } else {
-      // this._participantIdFromConstructor;
-      if (!additionalOptions?.chatId) {
-        this.ChatId = "fakePrivateChatWithUserId" + WhatsappIndividualIdentifier;
-      } else {
-        if (!additionalOptions.chatId.endsWith(WhatsappIndividualIdentifier)) {
-          this.ChatId = additionalOptions.chatId + WhatsappIndividualIdentifier;
-        } else {
-          this.ChatId = additionalOptions.chatId;
-        }
-      }
-    }
+    // const senderTypeToMock: SenderType = additionalOptions?.senderType ?? SenderType.Individual;
+    const senderTypeToMock: SenderType = additionalOptions?.senderType ?? SenderType.Individual;
+    this._senderType = senderTypeToMock;
+    const { chatIdResolved, updatedSenderType: resolveChatIdFoundSenderType } = Constructor_ResolveChatID(additionalOptions?.chatId, this._senderType);
+    this.ChatId = chatIdResolved;
+    if (resolveChatIdFoundSenderType) this._senderType = resolveChatIdFoundSenderType;
+
+    const {
+      LID,
+      PN,
+      senderTypeUpdated: resolveParticipantsFoundSenderType,
+    } = Constructor_ResolveParticipantIds(additionalOptions?.participantId_LID, additionalOptions?.participantId_PN, this._senderType);
+    if (resolveParticipantsFoundSenderType) this._senderType = resolveParticipantsFoundSenderType;
+
+    this.ParticipantId_LID = LID;
+    this.ParticipantId_PN = PN;
+    if (additionalOptions?.senderType) this._senderType = additionalOptions?.senderType;
 
     const chatContextConfig: ChatContextConfig = {
       cancelKeywords: this._constructorConfig?.cancelKeywords ?? ["cancel"],
@@ -172,15 +163,16 @@ export default class ChatMock {
       wrongTypeFeedbackMsg:
         this._constructorConfig?.chatContextConfig?.wrongTypeFeedbackMsg ??
         "Default wrong expected type message, user has sent a msg which doesn't correspond to expected WaitMsg from command...",
-      customSenderType_Internal: additionalOptions?.senderType,
+      customSenderType_Internal: this._senderType,
     };
     this._receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
     this._socketMock = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock });
     const chatContext = new ChatContext_MockingSuite(
-      this.ParticipantId ?? null,
+      this.ParticipantId_LID,
+      this.ParticipantId_PN,
       this.ChatId,
-      MsgFactory_Text(this.ChatId, this.ParticipantId, `!${this._command.name}`, { pushName: "ChatMock User" }),
+      MsgFactory_Text(this.ChatId, this.ParticipantId_LID, `!${this._command.name}`, { pushName: "ChatMock User" }),
       this._sugarSenderMock,
       this._receiverMock,
       chatContextConfig
@@ -198,7 +190,7 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncoming_Text(textToEnqueue: string, options?: MockEnqueueParamsMinimal): void {
-    const txtMsg: WhatsappMessage = MsgFactory_Text(this.ChatId, this.ParticipantId, textToEnqueue, {
+    const txtMsg: WhatsappMessage = MsgFactory_Text(this.ChatId, this.ParticipantId_LID, textToEnqueue, {
       pushName: options?.pushName,
     });
     this._receiverMock.AddWaitMsg({ rawMsg: txtMsg });
@@ -218,7 +210,7 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncoming_Img(imgUrl: string, opts?: MockEnqueueParamsMultimedia): void {
-    const imgMsg: WhatsappMessage = MsgFactory_Image(this.ChatId, this.ParticipantId, imgUrl, {
+    const imgMsg: WhatsappMessage = MsgFactory_Image(this.ChatId, this.ParticipantId_LID, imgUrl, {
       caption: opts?.caption,
       pushName: opts?.pushName,
     });
@@ -242,7 +234,7 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncoming_Sticker(urlSticker: string, opts?: MockEnqueueParamsMultimediaMinimal): void {
-    const stickerMsg: WhatsappMessage = MsgFactory_Sticker(this.ChatId, this.ParticipantId, urlSticker, {
+    const stickerMsg: WhatsappMessage = MsgFactory_Sticker(this.ChatId, this.ParticipantId_LID, urlSticker, {
       pushName: opts?.pushName,
     });
     if (opts?.buffeToReturnOn_WaitMultimedia) {
@@ -263,7 +255,7 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncoming_Audio(urlaudio: string, opts?: MockEnqueueParamsMultimediaMinimal): void {
-    const audioMsg: WhatsappMessage = MsgFactory_Audio(this.ChatId, this.ParticipantId, urlaudio, {
+    const audioMsg: WhatsappMessage = MsgFactory_Audio(this.ChatId, this.ParticipantId_LID, urlaudio, {
       pushName: opts?.pushName,
     });
     if (opts?.buffeToReturnOn_WaitMultimedia) {
@@ -284,7 +276,7 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncoming_Video(urlVideo: string, opts?: MockEnqueueParamsMultimedia): void {
-    const videoMsg: WhatsappMessage = MsgFactory_Video(this.ChatId, this.ParticipantId, urlVideo, {
+    const videoMsg: WhatsappMessage = MsgFactory_Video(this.ChatId, this.ParticipantId_LID, urlVideo, {
       caption: opts?.caption,
       pushName: opts?.pushName,
     });
@@ -307,7 +299,7 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncoming_Document(urlDocument: string, fileName: string, opts?: MockEnqueueParamsDocument): void {
-    const documentMsg: WhatsappMessage = MsgFactory_Document(this.ChatId, this.ParticipantId, urlDocument, {
+    const documentMsg: WhatsappMessage = MsgFactory_Document(this.ChatId, this.ParticipantId_LID, urlDocument, {
       fileName: fileName,
       mimetype: opts?.mimeType ?? mime.getType(path.extname(fileName)) ?? "application/pdf",
       pushName: opts?.pushName,
@@ -329,7 +321,7 @@ export default class ChatMock {
    */
   @autobind
   public EnqueueIncoming_Location(latitude: number, longitude: number, opts?: MockEnqueueParamsLocation): void {
-    const locationMsg: WhatsappMessage = MsgFactory_Location(this.ChatId, this.ParticipantId, latitude, longitude, {
+    const locationMsg: WhatsappMessage = MsgFactory_Location(this.ChatId, this.ParticipantId_LID, latitude, longitude, {
       pushName: opts?.pushName,
       address: opts?.addressDescription,
       name: opts?.locationName,
@@ -367,13 +359,12 @@ export default class ChatMock {
           Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextMock.Config.cancelKeywords }),
         },
         chatId: this.ChatId,
-        //TODO: ADD support for ParticipantId PN old
-        participantIdPN: "TODO: MAKE THIS PARAM CONFIGURABLE",
-        participantIdLID: this.ParticipantId ?? null,
+        participantIdPN: this.ParticipantId_PN,
+        participantIdLID: this.ParticipantId_LID,
         msgType: this._constructorConfig?.msgType ?? MsgType.Text,
         originalRawMsg: {} as any,
         quotedMsgInfo: {} as any,
-        senderType: this._constructorConfig?.senderType ?? (this.ParticipantId ? SenderType.Group : SenderType.Individual),
+        senderType: this._senderType,
       }
     );
   }
@@ -394,7 +385,7 @@ export default class ChatMock {
    */
   @autobind
   public SetGroupMetadataMock(metadata: Partial<GroupMetadataInfo>) {
-    const actualSenderType = this._constructorConfig?.senderType ?? (this.ParticipantId ? SenderType.Group : SenderType.Individual);
+    const actualSenderType = this._constructorConfig?.senderType ?? (this.ParticipantId_LID ? SenderType.Group : SenderType.Individual);
     if (metadata.id) {
       let newChatId: string;
       if (actualSenderType === SenderType.Group) {
@@ -449,3 +440,91 @@ export default class ChatMock {
     this._chatContextMock.EnqueueMediaBufferToReturn(anyBuffer);
   }
 }
+
+//Constructor:
+/**
+ * If SenderType.Group case
+ * If SenderType.Individual case
+ *
+ * If provided ChatId:string
+ * If provided ParticipantId_LID: string
+ * If provided ParticipantId_PN: string
+ */
+
+function Constructor_ResolveChatID(chatId?: string, senderType?: SenderType): { chatIdResolved: string; updatedSenderType?: SenderType } {
+  //Default case if nothing provide, returns by default individual chat id (private chat);
+  const defaultIndividualChatId = "fakeUserChatPrivate" + WhatsappGroupIdentifier;
+
+  if (senderType) {
+    if (senderType === SenderType.Group) {
+      if (!chatId) {
+        return { chatIdResolved: "fakeChatId" + WhatsappGroupIdentifier };
+      }
+      if (chatId.endsWith(WhatsappGroupIdentifier)) {
+        return { chatIdResolved: chatId }; //Its correct already!
+      } else {
+        return { chatIdResolved: chatId + WhatsappGroupIdentifier }; //Let's fix it
+      }
+    }
+
+    if (senderType === SenderType.Individual) {
+      if (!chatId) {
+        return { chatIdResolved: defaultIndividualChatId };
+      }
+      if (chatId.endsWith(WhatsappIndividualIdentifier)) {
+        return { chatIdResolved: chatId };
+      } else {
+        return { chatIdResolved: chatId + WhatsappIndividualIdentifier };
+      }
+    }
+  } else if (chatId) {
+    if (chatId.endsWith(WhatsappGroupIdentifier)) {
+      return { chatIdResolved: chatId, updatedSenderType: SenderType.Group }; //Its correct already!
+    } else if (chatId.endsWith(WhatsappIndividualIdentifier)) {
+      return { chatIdResolved: chatId + WhatsappIndividualIdentifier, updatedSenderType: SenderType.Individual }; //Let's fix it
+    }
+  }
+
+  //If, for some reason, it reaches here, return default case again.
+  return { chatIdResolved: defaultIndividualChatId };
+}
+
+function Constructor_ResolveParticipantIds(
+  participantId_LID?: string,
+  participantId_PN?: string,
+  senderType?: SenderType
+): { LID: string | null; PN: string | null; senderTypeUpdated: SenderType | null } {
+  const defaultLID: string = "fakeParticipnatID" + WhatsappLIDIdentifier;
+  const defaultPN: string = "fakeParticipantID" + WhatsappIndividualIdentifier;
+
+  if (!participantId_LID && !participantId_PN && senderType === SenderType.Individual) {
+    return { LID: null, PN: null, senderTypeUpdated: null };
+  }
+
+  let LID_ToReturn: string;
+  if (participantId_LID) {
+    if (participantId_LID.endsWith(WhatsappLIDIdentifier)) {
+      LID_ToReturn = participantId_LID; //Its ok, nothing to fix
+    } else {
+      LID_ToReturn = participantId_LID + WhatsappLIDIdentifier; //Let's fix it
+    }
+  } else {
+    LID_ToReturn = defaultLID;
+  }
+
+  let PN_ToReturn: string;
+  if (participantId_PN) {
+    if (participantId_PN.endsWith(WhatsappIndividualIdentifier)) {
+      PN_ToReturn = participantId_PN; //Its ok, nothing to fix
+    } else {
+      PN_ToReturn = participantId_PN + WhatsappIndividualIdentifier; //Let's fix it
+    }
+  } else {
+    PN_ToReturn = defaultPN;
+  }
+
+  return { LID: LID_ToReturn, PN: PN_ToReturn, senderTypeUpdated: SenderType.Group };
+}
+
+// "fakeChatIdGroup" + WhatsappGroupIdentifier;
+// "fakeUserChatPrivate" + WhatsappIndividualIdentifier;

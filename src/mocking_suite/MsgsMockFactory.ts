@@ -116,7 +116,7 @@ export function MsgFactory_TextWithQuote(
   quoted: WhatsappMessage,
   opts?: { pushName?: string }
 ): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
 
   base.message = {
     extendedTextMessage: {
@@ -156,7 +156,7 @@ export function MsgFactory_Image(
   url: string,
   opts?: { caption?: string; pushName?: string }
 ): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
   base.message = {
     imageMessage: {
       url,
@@ -191,7 +191,7 @@ export function MsgFactory_Video(
   url: string,
   opts?: { caption?: string; pushName?: string }
 ): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
   base.message = {
     videoMessage: {
       url,
@@ -218,7 +218,7 @@ export function MsgFactory_Video(
  * @returns A {@link WhatsappMessage} with an `audioMessage` payload.
  */
 export function MsgFactory_Audio(chatId: string, participantId: string | null | undefined, url: string, opts?: { pushName?: string }): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
   base.message = {
     audioMessage: {
       url,
@@ -244,7 +244,7 @@ export function MsgFactory_Audio(chatId: string, participantId: string | null | 
  * @returns A {@link WhatsappMessage} with a `stickerMessage` payload.
  */
 export function MsgFactory_Sticker(chatId: string, participantId: string | null | undefined, url: string, opts?: { pushName?: string }): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
   base.message = {
     stickerMessage: {
       url,
@@ -279,7 +279,7 @@ export function MsgFactory_Document(
   url: string,
   opts?: { fileName?: string; mimetype?: string; pushName?: string }
 ): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
   base.message = {
     documentMessage: {
       url,
@@ -317,7 +317,7 @@ export function MsgFactory_Location(
   lng: number,
   opts?: { name?: string; address?: string; pushName?: string }
 ): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
   base.message = {
     locationMessage: {
       degreesLatitude: lat,
@@ -352,7 +352,7 @@ export function MsgFactory_Contact(
   contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
   opts?: { pushName?: string }
 ): WhatsappMessage {
-  const base = _createBaseMsg(chatId, participantId, opts?.pushName);
+  const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
 
   // Normalize to array
   const contactsArray = Array.isArray(contacts) ? contacts : [contacts];

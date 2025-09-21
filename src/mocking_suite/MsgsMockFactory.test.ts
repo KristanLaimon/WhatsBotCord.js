@@ -102,14 +102,14 @@ describe("MsgFactory", () => {
   });
 
   test("MsgFactory_Contact should produce vCard correctly", () => {
-    const contact = { contactName: "Chris", phoneNumber: "5217389273" };
+    const contact = { name: "Chris", phone: "5217389273" };
     const msg = MsgFactory_Contact(chatId, participant, contact);
 
     //@ts-expect-error msg object always contain this prop
-    expect(msg.message.contactsArrayMessage.contacts[0]!.displayName).toBe(contact.contactName);
+    expect(msg.message.contactsArrayMessage.contacts[0]!.displayName).toBe(contact.name);
     //@ts-expect-error msg object always contain this prop
-    expect(msg.message.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.phoneNumber);
+    expect(msg.message.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.phone);
     //@ts-expect-error msg object always contain this prop
-    expect(msg.message.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.contactName);
+    expect(msg.message.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.name);
   });
 });
