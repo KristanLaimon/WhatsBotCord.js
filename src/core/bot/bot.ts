@@ -112,6 +112,7 @@ export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
 
 export type BotMiddleWareFunct = (
+  bot: Bot,
   senderId: string | null,
   chatId: string,
   rawMsg: WAMessage,
@@ -417,7 +418,7 @@ export default class Bot implements BotMinimalInfo {
         return; // end of chain
       }
       const middleware = this._internalMiddleware[index]!;
-      await Promise.resolve(middleware(senderId_LID, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
+      await Promise.resolve(middleware(this, senderId_LID, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
     };
     await callMiddleware(0);
     this.Events.onMiddlewareEnd.CallAll(middlewareChainSuccess);

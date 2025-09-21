@@ -171,7 +171,7 @@ await bot.Start();
 //      [✅]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
 //      [✅]: ChatContext.mockingsuite.ts: Add TESTING
 
-// [ ]: Make sugarsender.mockingsuite to return realistic objects, reuse refactored MsgFactory methods used in MockChat
+// [✅]: Make sugarsender.mockingsuite to return realistic objects, reuse refactored MsgFactory methods used in MockChat
 // [ ]: Add documentation about bot.middleware in README.md
 // [ ]: Add documentation about bots.events in README.MD
 // [ ]: Add optional validation, not running another command while doing the command (with custom msg)

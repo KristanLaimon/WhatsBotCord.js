@@ -548,10 +548,10 @@ test.skipIf(skipLongTests)(
 // ================= MIDDLEWARE ==================
 test("Middleware_WhenAddingMiddleware_ShouldAddItInternally", async () => {
   const { bot, socket } = toolkit();
-  const firstLayer = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+  const firstLayer = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, ______, next) => {
     next();
   });
-  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, ______, next) => {
     await next();
   });
   bot.Use(firstLayer);
@@ -565,22 +565,22 @@ test("Middleware_WhenAddingMiddleware_ShouldAddItInternally", async () => {
 test("Middleware_WhenAddingMixedSyncAsyncMiddleWare_ShouldExecuteThemInOrder", async () => {
   const { bot, socket } = toolkit();
   const orderExecution: Array<"first" | "second" | "third" | "fourth"> = [];
-  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, ______, next) => {
     console.log("[1/4]: Running middleware layer successfully, SYNC");
     orderExecution.push("first");
     next();
   });
-  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, ______, next) => {
     console.log("[2/4]: Running middleware layer successfully, ASYNC");
     orderExecution.push("second");
     await next();
   });
-  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, ______, next) => {
     console.log("[3/4]: Running middleware layer successfully, SYNC");
     orderExecution.push("third");
     next();
   });
-  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, ______, next) => {
     console.log("[4/4]: Running middleware layer successfully, ASYNC");
     orderExecution.push("fourth");
     await next();
@@ -608,16 +608,16 @@ test("Middleware_WhenBreakingChain_ShouldNotExecuteCommandHandling", async () =>
   const { bot, socket } = toolkit();
 
   //1.1 Setting Middleware
-  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, ______, next) => {
     next();
   });
-  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, ______, next) => {
     await next();
   });
-  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, _next) => {
+  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, ______, _next) => {
     //No next()
   });
-  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, ______, next) => {
     await next();
   });
   bot.Use(firstLayerSync);
@@ -653,16 +653,16 @@ test("Middleware_WhenNOTBreakingChain_ShouldExecuteCommandHandling", async () =>
 
   //1.1 Setting middleware
   const { bot, socket } = toolkit();
-  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+  const firstLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, ______, next) => {
     next();
   });
-  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+  const secondLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, ______, next) => {
     await next();
   });
-  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, next) => {
+  const thirdLayerSync = fn<BotMiddleWareFunct>((_, __, ___, ____, _____, ______, next) => {
     next();
   });
-  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, next) => {
+  const fourthLayerAsync = fn<BotMiddleWareFunct>(async (_, __, ___, ____, _____, ______, next) => {
     await next();
   });
   bot.Use(firstLayerSync);
