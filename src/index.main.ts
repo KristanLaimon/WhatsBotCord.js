@@ -1,5 +1,5 @@
 import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
-import WhatsbotCord, { type ChatContext, type CommandArgs, ChatMock, CommandType, MsgType, SenderType } from "src/index.js";
+import WhatsbotCord, { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType } from "src/index.js";
 import OfficialPlugin_OneCommandPerUserAtAtime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 
 class PingCommand implements ICommand {
@@ -8,10 +8,6 @@ class PingCommand implements ICommand {
     await chat.SendText("Pong");
   }
 }
-
-const chat = new ChatMock(new PingCommand(), {
-  chatId: "yourchatId@whatsapp.es",
-});
 
 class EveryoneId implements ICommand {
   name: string = "everyone";
