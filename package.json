@@ -1,6 +1,6 @@
 {
   "name": "whatsbotcord",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "author": "KristanLaimon",
   "main": "build/index.js",
   "type": "module",

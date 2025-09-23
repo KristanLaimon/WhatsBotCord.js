@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.10.5](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.10.4...v0.10.5) (2025-09-23)
+
 ## [0.10.4](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.10.3...v0.10.4) (2025-09-23)
 
 ## [0.10.3](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.10.2...v0.10.3) (2025-09-21)
