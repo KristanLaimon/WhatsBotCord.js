@@ -721,15 +721,39 @@ When deciding chat type, the following order applies:
 
 ⚡ This way, you can precisely control whether your mocked context behaves like an Individual Chat or Group Chat, with or without custom participant IDs.
 
-### Groups
+So, you can see your mocked data this way:
 
-When using groups, generally they have this style of ID:
+### Typescript (In js works the same)
 
-***234234234342@g.us***
+```ts
+import { it } from "your-testing-framework-of-choice";
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "whatsbotcord";
+import { ChatMock } from "whatsbotcord";
 
-And participants have either of these styles of ID's:
+class Com implements ICommand {
+  name = "mynamecommand";
+  async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+    console.log(ctx.FixedChatId); // Default: "privateUserChatId@whatsapp.es
+    console.log(ctx.FixedParticipantLID); // "yourId@lid"
+    console.log(ctx.FixedParticipantPN); // "yourId@whatsapp.es"
 
-**_234234234243@lid_** OR/AND ***234234234234@whatsapp.es***
+    console.log(args.chatId); // Default: "privateUserChatId@whatsapp.es
+    console.log(args.participantIdLID); // "yourId@lid"
+    console.log(args.participantIdPN); // "yourId@whatsapp.es"
+    console.log(args.senderType); // SenderType.Individual
+    //Yes, they are the same either in ctx and args, the come from the same chat after all.
+  }
+}
+
+it("retrieves user input correctly", async () => {
+  const chat = new ChatMock(new PingCommand(), {
+    participantId_LID: "yourId",
+    participantId_PN: "yourId",
+    senderType: SenderType.Individual,
+  });
+  await chat.StartChatSimulation();
+});
+```
 
 # Documentation
 
