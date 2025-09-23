@@ -3,7 +3,7 @@
 </div>
 <h1 align="center"> Whatsbotcord.js </h1>
 
-**_WhatsBotCord_** is a lightweight, TypeScript-based library for building WhatsApp bots with a Discord-inspired command system (e.g., **\_!yourcommand**, **@everyone**, and _more_). Built as a wrapper around Baileys.js, it abstracts complex Baileys.js internals, providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Designed from developers to developers to create custom bots with ease.
+**_WhatsBotCord_** is a lightweight, TypeScript-based library for building WhatsApp bots with a Discord-inspired command system (e.g., **!yourcommand**, **@everyone**, and _more_). Built as a wrapper around Baileys.js, it abstracts complex Baileys.js internals, providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Designed from developers to developers to create custom bots with ease.
 
 > Note: WhatsBotCord its on very early beta, not full usable yet, soon will be ready for use.
 
@@ -282,7 +282,7 @@ maybe your use case doesn't need it. But, if you need to validate
 this, you can use the following pluggin developed officially
 from this library.
 
-#### Javascript
+#### Javascript And Typescript
 
 ```js
 import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "whatsbotcord";
@@ -296,27 +296,6 @@ bot.Use(
     msgToSend: (info, lastCommand, actualCommand) => {
       return `
       You can't use !${actualCommand.name}. Wait until finish that last command ${lastCommand.name}`;
-    },
-    timeoutSecondsToForgetThem: 60 * 5,
-  })
-);
-```
-
-#### Typescript
-
-```ts
-import WhatsbotCord, { OfficialPlugin_OneCommandPerUserAtATime } from "whatsbotcord";
-
-const bot = new WhatsbotCord({
-  /** bot config */
-});
-
-bot.Use(
-  OfficialPlugin_OneCommandPerUserAtATime({
-    msgToSend: (info, lastCommand, actualCommand) => {
-      return `
-      You ${info.pushName} have already started command !${lastCommand.name},
-      you can't use !${actualCommand.name}. Wait until finish that last command`;
     },
     timeoutSecondsToForgetThem: 60 * 5,
   })
@@ -629,12 +608,128 @@ describe("WhatsChatMock Example", () => {
 });
 ```
 
-Advanced Notes:
+## Mocking Context Behaviour
 
-- SentFromCommand: All messages your command sent. Useful for assertions.
-- WaitedFromCommand: Logs every WaitText/WaitMsg call.
-- chatId / participantId allow custom IDs to simulate groups or individual chats.
-- Default timeout for Wait\*() is 3 seconds, can be overridden per command.
+WhatsApp handles different conversation types: private chats, group chats, communities, and more.
+When writing tests, you may want to mock these contexts to simulate how your commands behave.
+
+To avoid confusion, in this documentation we’ll use:
+
+- **_Individual Chat_** → a private one-to-one chat with a user (not a group or community channel).
+
+- **_Group Chat_** → a multi-user group conversation (not community announcements).
+
+### The Basics: WhatsAapp IDs
+
+WhatsApp identifies chats and participants using specific suffixes:
+
+#### Individual Chats
+
+```bash
+123123123@whatsapp.es
+```
+
+#### Groups
+
+```bash
+123123123@g.us
+```
+
+#### Group Members Participants (Participant)
+
+Inside groups, participants may appear as:
+
+- LID (Local Identifier) — modern way:
+
+```bash
+123123123@lid
+```
+
+- PN (Phone Number) — legacy way:
+
+```bash
+123123123@whatsapp.es
+```
+
+👉 Notice how all IDs end with a specific suffix that tells you what type they are.
+
+You can freely mock these IDs to create the environment you need for testing your commands.
+
+### Mocking behaviour
+
+The type of chat your ChatMock creates depends on the options you pass:
+
+1. No Options → Defaults to Individual Chat
+
+```js
+const chat = new ChatMock(new MyCommand());
+```
+
+2. Explicit Chat Type (senderType)
+
+```js
+const chat = new ChatMock(new MyCommand(), {
+  /** ...(all other options) **/
+  senderType: SenderType.Individual, // or SenderType.Group
+});
+```
+
+Forces the mock to be the specified type.
+
+3. Explicit Chat Id
+
+```js
+const chat = new ChatMock(new PingCommand(), {
+  chatId: "yourGroupId@g.us", //or:  chatId: "yourPrivateChat@whatsapp.es"
+});
+```
+
+The suffix in chatId determines whether it’s treated as an Individual or Group chat.
+
+4. Adding Participant IDs
+
+```js
+const chat = new ChatMock(new PingCommand(), {
+  /** ...(all other options) **/
+  participantId_LID: "yourId",
+  participantId_PN: "yourId",
+});
+```
+
+Since only groups have participants, this will implicitly become a Group Chat.
+
+5. Mixing Participant IDs + Explicit Type
+
+```js
+const chat = new ChatMock(new PingCommand(), {
+  participantId_LID: "yourId",
+  participantId_PN: "yourId",
+  senderType: SenderType.Individual,
+});
+```
+
+Even if you pass participant IDs, senderType wins and forces it to be an Individual Chat.
+
+#### Priority Rules
+
+When deciding chat type, the following order applies:
+
+1. senderType → highest priority, always overrides.
+2. chatId suffix → determines type if provided.
+3. Participant IDs (participantId_LID or participantId_PN) → imply a Group Chat if no senderType.
+4. No options → defaults to Individual Chat.
+
+⚡ This way, you can precisely control whether your mocked context behaves like an Individual Chat or Group Chat, with or without custom participant IDs.
+
+### Groups
+
+When using groups, generally they have this style of ID:
+
+***234234234342@g.us***
+
+And participants have either of these styles of ID's:
+
+**_234234234243@lid_** OR/AND ***234234234234@whatsapp.es***
 
 # Documentation
 
