@@ -12,7 +12,7 @@ import { WhatsappIdType } from "../helpers/Whatsapp.helper.js";
 import { MsgType } from "../Msg.types.js";
 import { WhatsappGroupIdentifier } from "../Whatsapp.types.js";
 
-export type ChatContextSpyWhatsMsg = {
+export type WhatsSocketReceiverWaitObject = {
   rawMsg: WhatsappMessage;
 };
 
@@ -25,14 +25,23 @@ export type WhatsSocketReceiverMsgWaited = {
 };
 
 export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWhatsSocket_Submodule_Receiver {
-  private _queueWait: ChatContextSpyWhatsMsg[] = [];
+  /**
+   * Pending msgs to send to command when executed.
+   */
+  private _queueWait: WhatsSocketReceiverWaitObject[] = [];
 
+  /**
+   * Config: Actual metadata to mock when executing command (Environment mock)
+   */
   private _groupMetadataToSendMock: GroupMetadataInfo;
   public get GroupMetadataToSendMock(): GroupMetadataInfo | undefined {
     return this._groupMetadataToSendMock;
   }
 
   //=================================================== Spy External Methods ==================================================
+  /**
+   * All waited msgs from command after its execution
+   */
   public Waited: WhatsSocketReceiverMsgWaited[] = [];
   //===========================================================================================================================
 
@@ -47,7 +56,7 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
     this._groupMetadataToSendMock = GenerateDefaultGroupMetadata();
   }
 
-  public AddWaitMsg(toAdd: ChatContextSpyWhatsMsg) {
+  public AddWaitMsg(toAdd: WhatsSocketReceiverWaitObject) {
     this._queueWait.push(toAdd);
   }
 
@@ -157,7 +166,7 @@ export function GenerateDefaultGroupMetadata(chatContextData: Partial<GroupMetad
     id: "fakeChatId" + WhatsappGroupIdentifier,
     sendingMode: WhatsappIdType.Modern,
     ownerName: "John Doe",
-    groupName: "Team Awesome",
+    groupName: "DEFAULT_groupname",
     groupDescription: "A group for awesome team collaboration!",
     communityIdWhereItBelongs: null,
     onlyAdminsCanChangeGroupSettings: true,
