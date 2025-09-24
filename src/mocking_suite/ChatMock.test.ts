@@ -1283,3 +1283,1228 @@ describe("Stickers", () => {
     expect(chat.WaitedFromCommand).toHaveLength(0);
   });
 });
+
+describe("Audio", () => {
+  // Sending section
+  it("ShouldSendAudio_Simple_AudioPathOnly", async (): Promise<void> => {
+    const audioPath: string = "./my/audio/path/sample.mp3";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendAudio(audioPath, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(1);
+    expect(chat.SentFromCommand.Audios[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      audioParams: {
+        source: audioPath,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendAudio_Simple_AudioUrl", async (): Promise<void> => {
+    const audioUrl: string = "https://example.com/audio.mp3";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendAudio(audioUrl, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(1);
+    expect(chat.SentFromCommand.Audios[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      audioParams: {
+        source: audioUrl,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendAudio_Simple_AudioBufferOnly", async (): Promise<void> => {
+    const audioBuffer: Buffer<ArrayBuffer> = Buffer.from("audio_mock");
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendAudioFromBuffer(audioBuffer, "mp3", { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(1);
+    expect(chat.SentFromCommand.Audios[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      audioParams: {
+        source: expect.any(Buffer),
+        formatExtension: "mp3",
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendAudio_UsingInternalSocket_Path", async (): Promise<void> => {
+    const audioPath: string = "./my/audio/path/sample.mp3";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Audio(_args.chatId, { source: audioPath }, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(1);
+    expect(chat.SentFromCommand.Audios[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      audioParams: {
+        source: audioPath,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendAudio_UsingInternalSocket_Url", async (): Promise<void> => {
+    const audioUrl: string = "https://example.com/audio.mp3";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Audio(_args.chatId, { source: audioUrl }, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(1);
+    expect(chat.SentFromCommand.Audios[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      audioParams: {
+        source: audioUrl,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendAudio_UsingInternalSocket_Buffer", async (): Promise<void> => {
+    const audioBuffer: Buffer<ArrayBuffer> = Buffer.from("audio_mock");
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Audio(
+          _args.chatId,
+          { source: audioBuffer, formatExtension: "mp3" },
+          { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] }
+        );
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(1);
+    expect(chat.SentFromCommand.Audios[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      audioParams: {
+        source: expect.any(Buffer),
+        formatExtension: "mp3",
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  // Waiting section
+  it("WhenWaitingAudio_WithoutMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myAudio = await ctx.WaitMultimedia(MsgType.Audio, { timeoutSeconds: 1 });
+        expect(myAudio).toBeDefined();
+        expect(myAudio).toBeInstanceOf(Buffer);
+        expect(myAudio?.toString()).toBe("mock_buffer");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Audio("./audio-path-name.mp3");
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingAudio_WithSpecificMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myAudio = await ctx.WaitMultimedia(MsgType.Audio, { timeoutSeconds: 1 });
+        expect(myAudio).toBeDefined();
+        expect(myAudio).toBeInstanceOf(Buffer);
+        expect(myAudio!.toString()).toBe("myaudio_omg");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Audio("./audio-path-name.mp3", { bufferToReturnOn_WaitMultimedia: Buffer.from("myaudio_omg") });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingAudio_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myAudio = await ctx.WaitMsg(MsgType.Audio, { timeoutSeconds: 1 });
+        expect(myAudio).toBeDefined();
+        expect(myAudio!.message?.audioMessage).toBeDefined();
+        expect(myAudio!.message?.audioMessage?.url).toBe("./my-audio.mp3");
+        expect(myAudio?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Audio("./my-audio.mp3", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingAudio_UsingRawSocketReceiver_IndividualChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myAudio = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(args.chatId, MsgType.Audio, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myAudio).toBeDefined();
+        expect(myAudio!.message?.audioMessage).toBeDefined();
+        expect(myAudio!.message?.audioMessage?.url).toBe("./my-audio.mp3");
+        expect(myAudio?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Audio("./my-audio.mp3", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingAudio_UsingRawSocketReceiver_GroupChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myAudio = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(args.participantIdLID!, null, args.chatId, MsgType.Audio, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myAudio).toBeDefined();
+        expect(myAudio!.message?.audioMessage).toBeDefined();
+        expect(myAudio!.message?.audioMessage?.url).toBe("./my-audio.mp3");
+        expect(myAudio?.pushName).toBe("My pushname");
+        expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
+        expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(_ctx.FixedChatId).toBe(args.chatId);
+        expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
+      }
+    }
+    const chat = new ChatMock(new Com(), { senderType: SenderType.Group });
+    chat.EnqueueIncoming_Audio("./my-audio.mp3", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Audios).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("IfNotSentAnyAudioButWaitingThem_ShouldThrowError", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendAudio("./my/audio/path/sample.mp3");
+        const myAudio = await _ctx.WaitMultimedia(MsgType.Audio, { timeoutSeconds: 1 });
+        expect(myAudio).toBeDefined();
+      }
+    }
+    const chat = new ChatMock(new Com());
+    expect(async (): Promise<void> => {
+      await chat.StartChatSimulation();
+    }).toThrow();
+    expect(chat.SentFromCommand.Audios).toHaveLength(1);
+    expect(chat.WaitedFromCommand).toHaveLength(0);
+  });
+});
+
+describe("Video", () => {
+  // Sending section
+  it("ShouldSendVideo_Simple_VideoPathOnly", async (): Promise<void> => {
+    const videoPath: string = "./my/video/path/sample.mp4";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendVideo(videoPath, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: videoPath,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_Simple_VideoUrl", async (): Promise<void> => {
+    const videoUrl: string = "https://example.com/video.mp4";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendVideo(videoUrl, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: videoUrl,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_Simple_VideoBufferOnly", async (): Promise<void> => {
+    const videoBuffer: Buffer<ArrayBuffer> = Buffer.from("video_mock");
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendVideoFromBuffer(videoBuffer, "mp4", { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: expect.any(Buffer),
+        formatExtension: "mp4",
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_WithCaption", async (): Promise<void> => {
+    const videoPath: string = "./my/video/path/sample.mp4";
+    const caption: string = "Check out this video!";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendVideoWithCaption(videoPath, caption, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: videoPath,
+        caption: caption,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_WithCaptionFromBuffer", async (): Promise<void> => {
+    const videoBuffer: Buffer<ArrayBuffer> = Buffer.from("video_mock");
+    const caption: string = "Check out this video!";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendVideoFromBufferWithCaption(videoBuffer, caption, "mp4", { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: expect.any(Buffer),
+        caption: caption,
+        formatExtension: "mp4",
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_UsingInternalSocket_Path", async (): Promise<void> => {
+    const videoPath: string = "./my/video/path/sample.mp4";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Video(_args.chatId, { source: videoPath }, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: videoPath,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_UsingInternalSocket_Url", async (): Promise<void> => {
+    const videoUrl: string = "https://example.com/video.mp4";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Video(_args.chatId, { source: videoUrl }, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: videoUrl,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_UsingInternalSocket_Buffer", async (): Promise<void> => {
+    const videoBuffer: Buffer<ArrayBuffer> = Buffer.from("video_mock");
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Video(
+          _args.chatId,
+          { source: videoBuffer, formatExtension: "mp4" },
+          { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] }
+        );
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: expect.any(Buffer),
+        formatExtension: "mp4",
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendVideo_UsingInternalSocket_WithCaption", async (): Promise<void> => {
+    const videoPath: string = "./my/video/path/sample.mp4";
+    const caption: string = "Check out this video!";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Video(
+          _args.chatId,
+          { source: videoPath, caption: caption },
+          { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] }
+        );
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.SentFromCommand.Videos[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      videoParams: {
+        source: videoPath,
+        caption: caption,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  // Waiting section
+  it("WhenWaitingVideo_WithoutMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myVideo = await ctx.WaitMultimedia(MsgType.Video, { timeoutSeconds: 1 });
+        expect(myVideo).toBeDefined();
+        expect(myVideo).toBeInstanceOf(Buffer);
+        expect(myVideo?.toString()).toBe("mock_buffer");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Video("./video-path-name.mp4");
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingVideo_WithSpecificMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myVideo = await ctx.WaitMultimedia(MsgType.Video, { timeoutSeconds: 1 });
+        expect(myVideo).toBeDefined();
+        expect(myVideo).toBeInstanceOf(Buffer);
+        expect(myVideo!.toString()).toBe("myvideo_omg");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Video("./video-path-name.mp4", { bufferToReturnOn_WaitMultimedia: Buffer.from("myvideo_omg") });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingVideo_WithCaption_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myVideo = await ctx.WaitMultimedia(MsgType.Video, { timeoutSeconds: 1 });
+        expect(myVideo).toBeDefined();
+        expect(myVideo).toBeInstanceOf(Buffer);
+        expect(myVideo!.toString()).toBe("mock_buffer");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Video("./video-path-name.mp4", { caption: "This is a test video" });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingVideo_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myVideo = await ctx.WaitMsg(MsgType.Video, { timeoutSeconds: 1 });
+        expect(myVideo).toBeDefined();
+        expect(myVideo!.message?.videoMessage).toBeDefined();
+        expect(myVideo!.message?.videoMessage?.url).toBe("./my-video.mp4");
+        expect(myVideo!.message?.videoMessage?.caption).toBe("Test caption");
+        expect(myVideo?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Video("./my-video.mp4", { pushName: "My pushname", caption: "Test caption" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingVideo_UsingRawSocketReceiver_IndividualChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myVideo = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(args.chatId, MsgType.Video, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myVideo).toBeDefined();
+        expect(myVideo!.message?.videoMessage).toBeDefined();
+        expect(myVideo!.message?.videoMessage?.url).toBe("./my-video.mp4");
+        expect(myVideo?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Video("./my-video.mp4", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingVideo_UsingRawSocketReceiver_GroupChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myVideo = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(args.participantIdLID!, null, args.chatId, MsgType.Video, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myVideo).toBeDefined();
+        expect(myVideo!.message?.videoMessage).toBeDefined();
+        expect(myVideo!.message?.videoMessage?.url).toBe("./my-video.mp4");
+        expect(myVideo?.pushName).toBe("My pushname");
+        expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
+        expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(_ctx.FixedChatId).toBe(args.chatId);
+        expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
+      }
+    }
+    const chat = new ChatMock(new Com(), { senderType: SenderType.Group });
+    chat.EnqueueIncoming_Video("./my-video.mp4", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Videos).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("IfNotSentAnyVideoButWaitingThem_ShouldThrowError", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendVideo("./my/video/path/sample.mp4");
+        const myVideo = await _ctx.WaitMultimedia(MsgType.Video, { timeoutSeconds: 1 });
+        expect(myVideo).toBeDefined();
+      }
+    }
+    const chat = new ChatMock(new Com());
+    expect(async (): Promise<void> => {
+      await chat.StartChatSimulation();
+    }).toThrow();
+    expect(chat.SentFromCommand.Videos).toHaveLength(1);
+    expect(chat.WaitedFromCommand).toHaveLength(0);
+  });
+});
+
+describe("Document", () => {
+  // Sending section
+  it("ShouldSendDocument_Simple_DocumentPathOnly", async (): Promise<void> => {
+    const docPath: string = "./my/document/path/sample.pdf";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendDocument(docPath, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(1);
+    expect(chat.SentFromCommand.Documents[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      docParams: {
+        source: docPath,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendDocument_WithCustomName", async (): Promise<void> => {
+    const docPath: string = "./my/document/path/sample.pdf";
+    const fileNameToDisplay: string = "custom_report.pdf";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendDocumentWithCustomName(docPath, fileNameToDisplay, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(1);
+    expect(chat.SentFromCommand.Documents[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      docParams: {
+        source: docPath,
+        fileNameToDisplay: fileNameToDisplay,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendDocument_FromBuffer", async (): Promise<void> => {
+    const docBuffer: Buffer<ArrayBuffer> = Buffer.from("document_mock");
+    const fileNameToDisplayWithoutExt: string = "sample";
+    const extensionFileTypeOnly: string = "pdf";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendDocumentFromBuffer(docBuffer, fileNameToDisplayWithoutExt, extensionFileTypeOnly, {
+          broadcast: true,
+          mentionsIds: ["1234567890@s.whatsapp.net"],
+        });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(1);
+    expect(chat.SentFromCommand.Documents[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      docParams: {
+        source: expect.any(Buffer),
+        fileNameWithoutExtension: fileNameToDisplayWithoutExt,
+        formatExtension: extensionFileTypeOnly,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendDocument_UsingInternalSocket_Path", async (): Promise<void> => {
+    const docPath: string = "./my/document/path/sample.pdf";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Document(_args.chatId, { source: docPath }, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(1);
+    expect(chat.SentFromCommand.Documents[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      docParams: {
+        source: docPath,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendDocument_UsingInternalSocket_WithCustomName", async (): Promise<void> => {
+    const docPath: string = "./my/document/path/sample.pdf";
+    const fileNameToDisplay: string = "custom_report.pdf";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Document(
+          _args.chatId,
+          { source: docPath, fileNameToDisplay: fileNameToDisplay },
+          { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] }
+        );
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(1);
+    expect(chat.SentFromCommand.Documents[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      docParams: {
+        source: docPath,
+        fileNameToDisplay: fileNameToDisplay,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendDocument_UsingInternalSocket_FromBuffer", async (): Promise<void> => {
+    const docBuffer: Buffer<ArrayBuffer> = Buffer.from("document_mock");
+    const fileNameWithoutExtension: string = "sample";
+    const formatExtension: string = "pdf";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Document(
+          _args.chatId,
+          { source: docBuffer, fileNameWithoutExtension: fileNameWithoutExtension, formatExtension: formatExtension },
+          { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] }
+        );
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(1);
+    expect(chat.SentFromCommand.Documents[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      docParams: {
+        source: expect.any(Buffer),
+        fileNameWithoutExtension: fileNameWithoutExtension,
+        formatExtension: formatExtension,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  // Waiting section
+  it("WhenWaitingDocument_WithoutMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myDocument = await ctx.WaitMultimedia(MsgType.Document, { timeoutSeconds: 1 });
+        expect(myDocument).toBeDefined();
+        expect(myDocument).toBeInstanceOf(Buffer);
+        expect(myDocument?.toString()).toBe("mock_buffer");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Document("./document-path-name.pdf", "document.pdf");
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingDocument_WithSpecificMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myDocument = await ctx.WaitMultimedia(MsgType.Document, { timeoutSeconds: 1 });
+        expect(myDocument).toBeDefined();
+        expect(myDocument).toBeInstanceOf(Buffer);
+        expect(myDocument!.toString()).toBe("mydocument_omg");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Document("./document-path-name.pdf", "document.pdf", { bufferToReturnOn_WaitMultimedia: Buffer.from("mydocument_omg") });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingDocument_WithCustomMimeType_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myDocument = await ctx.WaitMultimedia(MsgType.Document, { timeoutSeconds: 1 });
+        expect(myDocument).toBeDefined();
+        expect(myDocument).toBeInstanceOf(Buffer);
+        expect(myDocument!.toString()).toBe("mock_buffer");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Document("./document-path-name.docx", "document.docx", {
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingDocument_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myDocument = await ctx.WaitMsg(MsgType.Document, { timeoutSeconds: 1 });
+        expect(myDocument).toBeDefined();
+        expect(myDocument!.message?.documentMessage).toBeDefined();
+        expect(myDocument!.message?.documentMessage?.url).toBe("./my-document.pdf");
+        expect(myDocument!.message?.documentMessage?.fileName).toBe("document.pdf");
+        expect(myDocument!.message?.documentMessage?.mimetype).toBe("application/pdf");
+        expect(myDocument?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Document("./my-document.pdf", "document.pdf", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingDocument_UsingWaitMsgGeneric_WithCustomMimeType", async (): Promise<void> => {
+    const customMime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myDocument = await ctx.WaitMsg(MsgType.Document, { timeoutSeconds: 1 });
+        expect(myDocument).toBeDefined();
+        expect(myDocument!.message?.documentMessage).toBeDefined();
+        expect(myDocument!.message?.documentMessage?.url).toBe("./my-document.docx");
+        expect(myDocument!.message?.documentMessage?.fileName).toBe("document.docx");
+        expect(myDocument!.message?.documentMessage?.mimetype).toBe(customMime);
+        expect(myDocument?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Document("./my-document.docx", "document.docx", { pushName: "My pushname", mimeType: customMime });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingDocument_UsingRawSocketReceiver_IndividualChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myDocument = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(args.chatId, MsgType.Document, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myDocument).toBeDefined();
+        expect(myDocument!.message?.documentMessage).toBeDefined();
+        expect(myDocument!.message?.documentMessage?.url).toBe("./my-document.pdf");
+        expect(myDocument!.message?.documentMessage?.fileName).toBe("document.pdf");
+        expect(myDocument!.message?.documentMessage?.mimetype).toBe("application/pdf");
+        expect(myDocument?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Document("./my-document.pdf", "document.pdf", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingDocument_UsingRawSocketReceiver_GroupChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myDocument = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(
+          args.participantIdLID!,
+          null,
+          args.chatId,
+          MsgType.Document,
+          {
+            cancelKeywords: ["cancel"],
+            ignoreSelfMessages: true,
+            timeoutSeconds: 1,
+          }
+        );
+        expect(myDocument).toBeDefined();
+        expect(myDocument!.message?.documentMessage).toBeDefined();
+        expect(myDocument!.message?.documentMessage?.url).toBe("./my-document.pdf");
+        expect(myDocument!.message?.documentMessage?.fileName).toBe("document.pdf");
+        expect(myDocument!.message?.documentMessage?.mimetype).toBe("application/pdf");
+        expect(myDocument?.pushName).toBe("My pushname");
+        expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
+        expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(_ctx.FixedChatId).toBe(args.chatId);
+        expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
+      }
+    }
+    const chat = new ChatMock(new Com(), { senderType: SenderType.Group });
+    chat.EnqueueIncoming_Document("./my-document.pdf", "document.pdf", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Documents).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("IfNotSentAnyDocumentButWaitingThem_ShouldThrowError", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendDocument("./my/document/path/sample.pdf");
+        const myDocument = await _ctx.WaitMultimedia(MsgType.Document, { timeoutSeconds: 1 });
+        expect(myDocument).toBeDefined();
+      }
+    }
+    const chat = new ChatMock(new Com());
+    expect(async (): Promise<void> => {
+      await chat.StartChatSimulation();
+    }).toThrow();
+    expect(chat.SentFromCommand.Documents).toHaveLength(1);
+    expect(chat.WaitedFromCommand).toHaveLength(0);
+  });
+});
+
+describe("Location", () => {
+  // Sending section
+  it("ShouldSendLocation_Simple", async (): Promise<void> => {
+    const degreesLatitude = 37.7749;
+    const degreesLongitude = -122.4194;
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendUbication(degreesLatitude, degreesLongitude, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Locations).toHaveLength(1);
+    expect(chat.SentFromCommand.Locations[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      ubicationParams: {
+        degreesLatitude: degreesLatitude,
+        degreesLongitude: degreesLongitude,
+        name: undefined,
+        addressText: undefined,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendLocation_WithDescription", async (): Promise<void> => {
+    const degreesLatitude = 37.7749;
+    const degreesLongitude = -122.4194;
+    const ubicationName = "San Francisco";
+    const moreInfoAddress = "California, USA";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendUbicationWithDescription(degreesLatitude, degreesLongitude, ubicationName, moreInfoAddress, {
+          broadcast: true,
+          mentionsIds: ["1234567890@s.whatsapp.net"],
+        });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Locations).toHaveLength(1);
+    expect(chat.SentFromCommand.Locations[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      ubicationParams: {
+        degreesLatitude: degreesLatitude,
+        degreesLongitude: degreesLongitude,
+        name: ubicationName,
+        addressText: moreInfoAddress,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendLocation_UsingInternalSocket_Simple", async (): Promise<void> => {
+    const degreesLatitude = 37.7749;
+    const degreesLongitude = -122.4194;
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Location(
+          _args.chatId,
+          { degreesLatitude, degreesLongitude },
+          { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] }
+        );
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Locations).toHaveLength(1);
+    expect(chat.SentFromCommand.Locations[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      ubicationParams: {
+        degreesLatitude: degreesLatitude,
+        degreesLongitude: degreesLongitude,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendLocation_UsingInternalSocket_WithDescription", async (): Promise<void> => {
+    const degreesLatitude = 37.7749;
+    const degreesLongitude = -122.4194;
+    const name = "San Francisco";
+    const addressText = "California, USA";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Location(
+          _args.chatId,
+          { degreesLatitude, degreesLongitude, name, addressText },
+          { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] }
+        );
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Locations).toHaveLength(1);
+    expect(chat.SentFromCommand.Locations[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      ubicationParams: {
+        degreesLatitude: degreesLatitude,
+        degreesLongitude: degreesLongitude,
+        name: name,
+        addressText: addressText,
+      },
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  // Waiting section
+  it("WhenWaitingLocation_Simple_ShouldWork_WaitUbication", async (): Promise<void> => {
+    const latitude = 37.7749;
+    const longitude = -122.4194;
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myLocation = await ctx.WaitUbication({ timeoutSeconds: 1 });
+        expect(myLocation).toBeDefined();
+        expect(myLocation?.degreesLatitude).toBe(latitude);
+        expect(myLocation?.degreesLongitude).toBe(longitude);
+        expect(myLocation?.thumbnailJpegBuffer).toBeNull();
+        expect(myLocation?.isLive).toBe(false);
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Location(latitude, longitude);
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingLocation_WithDescription_ShouldWork_WaitUbication", async (): Promise<void> => {
+    const latitude = 37.7749;
+    const longitude = -122.4194;
+    const locationName = "San Francisco";
+    const addressDescription = "California, USA";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myLocation = await ctx.WaitUbication({ timeoutSeconds: 1 });
+        expect(myLocation).toBeDefined();
+        expect(myLocation?.degreesLatitude).toBe(latitude);
+        expect(myLocation?.degreesLongitude).toBe(longitude);
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Location(latitude, longitude, { locationName, addressDescription });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingLocation_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
+    const latitude = 37.7749;
+    const longitude = -122.4194;
+    const locationName = "San Francisco";
+    const addressDescription = "California, USA";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myLocation = await ctx.WaitMsg(MsgType.Ubication, { timeoutSeconds: 1 });
+        expect(myLocation).toBeDefined();
+        expect(myLocation!.message?.locationMessage).toBeDefined();
+        expect(myLocation!.message?.locationMessage?.degreesLatitude).toBe(latitude);
+        expect(myLocation!.message?.locationMessage?.degreesLongitude).toBe(longitude);
+        expect(myLocation!.message?.locationMessage?.name).toBe(locationName);
+        expect(myLocation!.message?.locationMessage?.address).toBe(addressDescription);
+        expect(myLocation?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Location(latitude, longitude, { pushName: "My pushname", locationName, addressDescription });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Locations).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingLocation_UsingRawSocketReceiver_IndividualChat", async (): Promise<void> => {
+    const latitude = 37.7749;
+    const longitude = -122.4194;
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myLocation = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(args.chatId, MsgType.Ubication, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myLocation).toBeDefined();
+        expect(myLocation!.message?.locationMessage).toBeDefined();
+        expect(myLocation!.message?.locationMessage?.degreesLatitude).toBe(latitude);
+        expect(myLocation!.message?.locationMessage?.degreesLongitude).toBe(longitude);
+        expect(myLocation?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Location(latitude, longitude, { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Locations).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingLocation_UsingRawSocketReceiver_GroupChat", async (): Promise<void> => {
+    const latitude = 37.7749;
+    const longitude = -122.4194;
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myLocation = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(
+          args.participantIdLID!,
+          null,
+          args.chatId,
+          MsgType.Ubication,
+          {
+            cancelKeywords: ["cancel"],
+            ignoreSelfMessages: true,
+            timeoutSeconds: 1,
+          }
+        );
+        expect(myLocation).toBeDefined();
+        expect(myLocation!.message?.locationMessage).toBeDefined();
+        expect(myLocation!.message?.locationMessage?.degreesLatitude).toBe(latitude);
+        expect(myLocation!.message?.locationMessage?.degreesLongitude).toBe(longitude);
+        expect(myLocation?.pushName).toBe("My pushname");
+        expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
+        expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(_ctx.FixedChatId).toBe(args.chatId);
+        expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
+      }
+    }
+    const chat = new ChatMock(new Com(), { senderType: SenderType.Group });
+    chat.EnqueueIncoming_Location(latitude, longitude, { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Locations).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("IfNotSentAnyLocationButWaitingThem_ShouldThrowError", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendUbication(37.7749, -122.4194);
+        const myLocation = await _ctx.WaitUbication({ timeoutSeconds: 1 });
+        expect(myLocation).toBeDefined();
+      }
+    }
+    const chat = new ChatMock(new Com());
+    expect(async (): Promise<void> => {
+      await chat.StartChatSimulation();
+    }).toThrow();
+    expect(chat.SentFromCommand.Locations).toHaveLength(1);
+    expect(chat.WaitedFromCommand).toHaveLength(0);
+  });
+});

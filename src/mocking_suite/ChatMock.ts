@@ -327,6 +327,8 @@ export default class ChatMock {
     this._receiverMock.AddWaitMsg({ rawMsg: locationMsg });
   }
 
+  //TODO: Create a EnqueueIncoming_Contact!
+
   /**
    * Starts the simulation by executing the command under test with the mocked context
    * and sending all queued msgs with this class EnqueueIncoming*() methods.
