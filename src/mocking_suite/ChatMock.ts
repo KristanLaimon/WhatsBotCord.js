@@ -39,7 +39,7 @@ export type MockingChatParams = {
 };
 
 export type MockEnqueueParamsMinimal = { pushName?: string };
-export type MockEnqueueParamsMultimediaMinimal = MockEnqueueParamsMinimal & { buffeToReturnOn_WaitMultimedia?: Buffer };
+export type MockEnqueueParamsMultimediaMinimal = MockEnqueueParamsMinimal & { bufferToReturnOn_WaitMultimedia?: Buffer };
 export type MockEnqueueParamsMultimedia = MockEnqueueParamsMultimediaMinimal & { caption?: string };
 export type MockEnqueueParamsDocument = MockEnqueueParamsMultimediaMinimal & { mimeType?: string };
 export type MockEnqueueParamsLocation = MockEnqueueParamsMinimal & { locationName?: string; addressDescription?: string };
@@ -212,8 +212,8 @@ export default class ChatMock {
       caption: opts?.caption,
       pushName: opts?.pushName,
     });
-    if (opts?.buffeToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.buffeToReturnOn_WaitMultimedia);
+    if (opts?.bufferToReturnOn_WaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: imgMsg });
   }
@@ -235,8 +235,8 @@ export default class ChatMock {
     const stickerMsg: WhatsappMessage = MsgFactory_Sticker(this.ChatId, this.ParticipantId_LID, urlSticker, {
       pushName: opts?.pushName,
     });
-    if (opts?.buffeToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.buffeToReturnOn_WaitMultimedia);
+    if (opts?.bufferToReturnOn_WaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: stickerMsg });
   }
@@ -256,8 +256,8 @@ export default class ChatMock {
     const audioMsg: WhatsappMessage = MsgFactory_Audio(this.ChatId, this.ParticipantId_LID, urlaudio, {
       pushName: opts?.pushName,
     });
-    if (opts?.buffeToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.buffeToReturnOn_WaitMultimedia);
+    if (opts?.bufferToReturnOn_WaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: audioMsg });
   }
@@ -278,8 +278,8 @@ export default class ChatMock {
       caption: opts?.caption,
       pushName: opts?.pushName,
     });
-    if (opts?.buffeToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.buffeToReturnOn_WaitMultimedia);
+    if (opts?.bufferToReturnOn_WaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: videoMsg });
   }
@@ -302,8 +302,8 @@ export default class ChatMock {
       mimetype: opts?.mimeType ?? mime.getType(path.extname(fileName)) ?? "application/pdf",
       pushName: opts?.pushName,
     });
-    if (opts?.buffeToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.buffeToReturnOn_WaitMultimedia);
+    if (opts?.bufferToReturnOn_WaitMultimedia) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: documentMsg });
   }
