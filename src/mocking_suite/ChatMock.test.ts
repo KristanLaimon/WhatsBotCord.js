@@ -507,11 +507,11 @@ it("ShouldGetDefaultBufferWhenExpectingMsgIfnotBufferMockConfigured_ChatContext"
     }
   }
   const chat = new ChatMock(new Com());
-  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
-  chat.EnqueueIncoming_Img("./my-img-file.jpg", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
-  chat.EnqueueIncoming_Video("./my-video-file.mp4", { buffeToReturnOn_WaitMultimedia: undefined });
-  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
-  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { buffeToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Img("./my-img-file.jpg", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Video("./my-video-file.mp4", { bufferToReturnOn_WaitMultimedia: undefined });
+  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
   await chat.StartChatSimulation();
 });
 
@@ -545,11 +545,11 @@ it("ShouldGetDefaultBufferWhenExpectingMsgButBufferMockIsConfigured_ChatContext"
     }
   }
   const chat = new ChatMock(new Com());
-  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { buffeToReturnOn_WaitMultimedia: Buffer.from("audio") });
-  chat.EnqueueIncoming_Img("./my-img-file.jpg", { buffeToReturnOn_WaitMultimedia: Buffer.from("img") });
-  chat.EnqueueIncoming_Video("./my-video-file.mp4", { buffeToReturnOn_WaitMultimedia: Buffer.from("video") });
-  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { buffeToReturnOn_WaitMultimedia: Buffer.from("document") });
-  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { buffeToReturnOn_WaitMultimedia: Buffer.from("sticker") });
+  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { bufferToReturnOn_WaitMultimedia: Buffer.from("audio") });
+  chat.EnqueueIncoming_Img("./my-img-file.jpg", { bufferToReturnOn_WaitMultimedia: Buffer.from("img") });
+  chat.EnqueueIncoming_Video("./my-video-file.mp4", { bufferToReturnOn_WaitMultimedia: Buffer.from("video") });
+  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { bufferToReturnOn_WaitMultimedia: Buffer.from("document") });
+  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { bufferToReturnOn_WaitMultimedia: Buffer.from("sticker") });
   await chat.StartChatSimulation();
 });
 /**
@@ -943,7 +943,7 @@ describe("Images", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncoming_Img("./img-path-name.png", { buffeToReturnOn_WaitMultimedia: Buffer.from("myimg_omg") });
+    chat.EnqueueIncoming_Img("./img-path-name.png", { bufferToReturnOn_WaitMultimedia: Buffer.from("myimg_omg") });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
@@ -1031,3 +1031,255 @@ describe("Images", () => {
 //   const chat = new ChatMock(new Com());
 //   await chat.StartChatSimulation();
 // });
+describe("Stickers", () => {
+  // Sending section
+  it("ShouldSendSticker_Simple_StickerPathOnly", async (): Promise<void> => {
+    const stickerPath: string = "./my/sticker/path/correct.webp";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendSticker(stickerPath, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(1);
+    expect(chat.SentFromCommand.Stickers[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      stickerUrlSource: stickerPath,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendSticker_Simple_StickerUrl", async (): Promise<void> => {
+    const stickerUrl: string = "https://example.com/sticker.webp";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendSticker(stickerUrl, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(1);
+    expect(chat.SentFromCommand.Stickers[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      stickerUrlSource: stickerUrl,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendSticker_Simple_StickerBufferOnly", async (): Promise<void> => {
+    const stickerBuffer: Buffer<ArrayBuffer> = Buffer.from("sticker_mock");
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendSticker(stickerBuffer, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(1);
+    expect(chat.SentFromCommand.Stickers[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      stickerUrlSource: expect.any(Buffer),
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendSticker_UsingInternalSocket_Path", async (): Promise<void> => {
+    const stickerPath: string = "./my/sticker/path/correct.webp";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Sticker(_args.chatId, stickerPath, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(1);
+    expect(chat.SentFromCommand.Stickers[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      stickerUrlSource: stickerPath,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendSticker_UsingInternalSocket_Url", async (): Promise<void> => {
+    const stickerUrl: string = "https://example.com/sticker.webp";
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Sticker(_args.chatId, stickerUrl, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(1);
+    expect(chat.SentFromCommand.Stickers[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      stickerUrlSource: stickerUrl,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendSticker_UsingInternalSocket_Buffer", async (): Promise<void> => {
+    const stickerBuffer: Buffer<ArrayBuffer> = Buffer.from("sticker_mock");
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Sticker(_args.chatId, stickerBuffer, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(1);
+    expect(chat.SentFromCommand.Stickers[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      stickerUrlSource: expect.any(Buffer),
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  // Waiting section
+  it("WhenWaitingStickers_WithoutMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const mySticker = await ctx.WaitMultimedia(MsgType.Sticker, { timeoutSeconds: 1 });
+        expect(mySticker).toBeDefined();
+        expect(mySticker).toBeInstanceOf(Buffer);
+        expect(mySticker?.toString()).toBe("mock_buffer");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Sticker("./sticker-path-name.webp");
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingStickers_WithSpecificMockBuffer_Simple_ShouldWork_WaitMultimedia", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const mySticker = await ctx.WaitMultimedia(MsgType.Sticker, { timeoutSeconds: 1 });
+        expect(mySticker).toBeDefined();
+        expect(mySticker).toBeInstanceOf(Buffer);
+        expect(mySticker!.toString()).toBe("mysticker_omg");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Sticker("./sticker-path-name.webp", { bufferToReturnOn_WaitMultimedia: Buffer.from("mysticker_omg") });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingStickers_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const mySticker = await ctx.WaitMsg(MsgType.Sticker, { timeoutSeconds: 1 });
+        expect(mySticker).toBeDefined();
+        expect(mySticker!.message?.stickerMessage).toBeDefined();
+        expect(mySticker!.message?.stickerMessage?.url).toBe("./my-sticker.webp");
+        expect(mySticker?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Sticker("./my-sticker.webp", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingStickers_UsingRawSocketReceiver_IndividualChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const mySticker = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(args.chatId, MsgType.Sticker, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(mySticker).toBeDefined();
+        expect(mySticker!.message?.stickerMessage).toBeDefined();
+        expect(mySticker!.message?.stickerMessage?.url).toBe("./my-sticker.webp");
+        expect(mySticker?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Sticker("./my-sticker.webp", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingStickers_UsingRawSocketReceiver_GroupChat", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const mySticker = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(
+          args.participantIdLID!,
+          null,
+          args.chatId,
+          MsgType.Sticker,
+          {
+            cancelKeywords: ["cancel"],
+            ignoreSelfMessages: true,
+            timeoutSeconds: 1,
+          }
+        );
+        expect(mySticker).toBeDefined();
+        expect(mySticker!.message?.stickerMessage).toBeDefined();
+        expect(mySticker!.message?.stickerMessage?.url).toBe("./my-sticker.webp");
+        expect(mySticker?.pushName).toBe("My pushname");
+        expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
+        expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(_ctx.FixedChatId).toBe(args.chatId);
+        expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
+      }
+    }
+    const chat = new ChatMock(new Com(), { senderType: SenderType.Group });
+    chat.EnqueueIncoming_Sticker("./my-sticker.webp", { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("IfNotSentAnyStickersButWaitingThem_ShouldThrowError", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendSticker("./my/sticker/path/correct.webp");
+        const mySticker = await _ctx.WaitMultimedia(MsgType.Sticker, { timeoutSeconds: 1 });
+        expect(mySticker).toBeDefined();
+      }
+    }
+    const chat = new ChatMock(new Com());
+    expect(async (): Promise<void> => {
+      await chat.StartChatSimulation();
+    }).toThrow();
+    expect(chat.SentFromCommand.Stickers).toHaveLength(1);
+    //Because inside command code, it throws an error while executing WaitMultimedia, so it didn't wait for any message
+    expect(chat.WaitedFromCommand).toHaveLength(0);
+  });
+});
