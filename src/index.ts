@@ -96,9 +96,9 @@ export const MsgHelpers = {
   FullMsg_GetQuotedMsgText: MsgHelper_FullMsg_GetQuotedMsgText,
   FullMsg_GetMsgType: MsgHelper_FullMsg_GetMsgType,
   FullMsg_GetText: MsgHelper_FullMsg_GetText,
-  QuotedMsg_GetText: MsgHelper_QuotedMsg_GetText,
   FullMsg_GetQuotedMsgObj: MsgHelper_FullMsg_GetQuotedMsg,
   FullMsg_GetSenderType: MsgHelper_FullMsg_GetSenderType,
+  QuotedMsg_GetText: MsgHelper_QuotedMsg_GetText,
   AnyMsg_GetMsgType: MsgHelper_ProtoMsg_GetMsgType,
 };
 
@@ -111,9 +111,9 @@ export const MsgHelpers = {
 export const WhatsappHelpers = {
   GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg,
   GetWhatsInfoFromMentionStr: WhatsappHelper_ExtractWhatsappInfoFromMention,
-  IsLidIdentifier: WhatsappHelper_isLIDIdentifier,
+  IsLIDId: WhatsappHelper_isLIDIdentifier,
   IsMentionString: WhatsappHelper_isMentionId,
-  IsIDIdentifier: WhatsappHelper_isFullWhatsappIdUser,
+  IsPNId: WhatsappHelper_isFullWhatsappIdUser,
 };
 
 /**
@@ -134,19 +134,19 @@ export const WhatsappIdentifiers = {
    *
    * @note Just for reference
    */
-  GroupIdentifier: WhatsappGroupIdentifier,
+  Group_Suffix_ID: WhatsappGroupIdentifier,
   /**
    * Identifer for local IDs. Example: "@lid"
    *
    * @note Just for reference
    */
-  LIDIdentifier: WhatsappLIDIdentifier,
+  LID_Suffix_ID: WhatsappLIDIdentifier,
   /**
    * Identifier for individual user chats. Example: "@s.whatsapp.net"
    *
    * @note Just for reference
    */
-  IndividualUserIdentifier: WhatsappIndividualIdentifier,
+  PhoneNumber_Suffix_ID: WhatsappIndividualIdentifier,
 };
 
 // === Main Default Export ===
