@@ -5,20 +5,28 @@
 
 **_WhatsBotCord_** is a lightweight, TypeScript-based library for building WhatsApp bots with a Discord-inspired command system (e.g., **!yourcommand**, **@everyone**, and _more_). Built as a wrapper around Baileys.js, it abstracts complex Baileys.js internals, providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Designed from developers to developers to create custom bots with ease.
 
-> Note: WhatsBotCord its on very early beta, not full usable yet, soon will be ready for use.
+> Note: WhatsBotCord its stable but still on beta, current api could change but not drastically. Soon there will be a 1.0.0 release and a proper documentation website.
 
 # Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
-- [Usage](#usage)
-- [Testing/Mocking](#whatsbotcordjs-mocking--testing)
-- [Configuration](#configuration)
+- [Usage](#getting-started)
+  - [Basic](#getting-started)
+  - [Advanced](#more-advanced-usage)
+  - [Canceling long commands](#cancelling-long-commands)
+  - [Events](#events)
+  - [Middleware](#middleware)
+  - [Plugins](#plugins)
+    - [OneUserPerCommand](#one-user-per-command---plugin-official)
+  - [Tags With @](#usage-with-group-data-and-tags)
+- [Testing/Mocking your commands](#whatsbotcordjs-mocking--testing)
+  - [Basic](#simplest-usage)
+  - [Advanced](#advanced-example)
+  - [Mocking Context Behaviour Config](#mocking-context-behaviour)
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
-- [Contributing](#contributing)
-- [Roadmap](#roadmap)
-- [Notes](#notes)
 
 ## Features
 
@@ -392,6 +400,80 @@ bot.Start();
  * in first place to even be able to respond)
  */
 ```
+
+# Events
+
+Bot actually have a list of curated events you can subscribe to:
+
+```js
+const bot = new Bot({
+  /** your config ***/
+});
+bot.Events.onGroupEnter.Subscribe((groupMetadata: GroupMetadata) => {
+  /** do something with groupMetadata */
+});
+bot.Events.onCommandNotFound.Subscribe((ctx: IChatContext, commandNameStrNotFound: string) => {
+  ctx.SendText("Coudn't find " + commandNameStrNotFound + "!. Try again");
+});
+//And more bot.Events.*****!
+```
+
+Which can be one of the following:
+
+- **_onGroupEnter_**: Pretty self-explanatory
+- **_onGroupUpdate_**: When a group updates its name, descripcion or members count.
+- **_onIncomingMsg_**: When a msg arrives. It's the most raw way to get a msg from whatsapp.
+- **_onRestart_**: When bot restarting itself in case of error reconnection.
+- **_onSentMessage_**: After sending a msg
+- **_onStartupAllGroupsIn_**: Pretty self-explanatory
+- **_onUpdateMsg_**: When receiving updates like "emoji reactions" on already sent emojis, etc...
+- **_onCommandNotFound_**: If user tries a command that doesn't exist, this will be executed.
+- **_onMiddlewareEnd_**: Will be executed after all middleware layers are executed successfully if any added. See [Middleware](#middleware) for more info.
+- **_onCommandFound_**: It's called when user uses a valid !command and its found, but not yet executed.
+- **_onCommandFoundAfterItsExecution_**: It's called after a valid !command has been executed (either successfully or not)
+
+# Middleware
+
+_Your bot supports optional middleware, similar to how it works in popular libraries like [Express.js](https://www.npmjs.com/package/express)_
+
+- Middleware functions run after every incoming WhatsApp message, whether it’s a valid command or not.
+
+- Middlewares are executed in the order they are added with bot.Use(...).
+
+- Each middleware receives the context of the incoming message, can run custom logic, and decides whether to continue the chain by calling next().
+
+```ts
+const bot = new WhatsbotCord({
+  commandPrefix: ["$", "!", "/", "."], // accepted command prefixes
+  tagCharPrefix: ["@"], // character(s) to tag users
+  credentialsFolder: "./auth", // session storage
+  loggerMode: "recommended", // logging level
+  delayMilisecondsBetweenMsgs: 1, // avoid spam flags
+  cancelKeywords: ["cancelcustom"], // words that cancel a flow
+});
+
+// Add a middleware
+bot.Use((bot: Bot, senderId: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType, next: () => Promise<void>) => {
+  // ✅ Custom validation, logging, or pre-processing
+  console.log(`Incoming message from ${senderId} in ${chatId}:`, rawMsg);
+
+  // Continue to the next middleware (or to command handling)
+  next();
+});
+```
+
+## Notes
+
+If you don’t call next(), the middleware chain **_stops_** and the message will not reach the next layers or even **_commands_**. This _incoming msg_ will be totally ignored and never processed through the command system.
+
+You can use this to implement features like:
+
+- Logging and analytics
+- Rate limiting / spam protection
+- Authentication & permissions
+- Custom validation rules
+
+Or any other behaviour you need to set just right before your commands executions but after the bot receives a msg.
 
 # WhatsBotCord.js Mocking & Testing
 
