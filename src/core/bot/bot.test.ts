@@ -1039,7 +1039,7 @@ test("WhenSettingDefault_Command_WithMuchTextTogetherButSeparatedFromPrefix_Shou
   expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
   expect(normalCommandCalled).toBe(true);
 
-  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@" });
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@this should be totally ignored!" });
 
   expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
   expect(normalCommandCalled).toBe(true);
@@ -1067,4 +1067,56 @@ test("WhenSettingDefault_Tag_ShouldUseIt", async () => {
 
   expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
   expect(tagCommandCalled).toBe(true);
+});
+
+test("WhenSettingDefault_Tag_WithMuchTextTogether_ShouldUseIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let normalCommandCalled: boolean = false;
+  const tag: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      console.log(_args.args);
+      expect(_args.args).toEqual(["hello", "im", "a", "user", "with", "much", "txt"]);
+      normalCommandCalled = true;
+    },
+  };
+  bot.Commands.SetDefaultTag(tag);
+  const tagRunSpy = spyOn(tag, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@hello im a user with much txt" });
+
+  expect(tagRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!this should be ignored totally" });
+
+  expect(tagRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+});
+
+test("WhenSettingDefault_Tag_WithMuchTextTogetherButSeparatedFromPrefix_ShouldUseIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let normalCommandCalled: boolean = false;
+  const tag: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      console.log(_args.args);
+      expect(_args.args).toEqual(["hello", "im", "a", "user", "with", "much", "txt"]);
+      normalCommandCalled = true;
+    },
+  };
+  bot.Commands.SetDefaultTag(tag);
+  const tagRunSpy = spyOn(tag, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@ hello im a user with much txt" });
+
+  expect(tagRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!this should be ignored totally" });
+
+  expect(tagRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
 });
