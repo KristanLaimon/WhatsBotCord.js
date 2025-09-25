@@ -1,6 +1,6 @@
 import { describe, expect, it, test } from "bun:test";
 import type { CommandArgs } from "../core/bot/internals/CommandsSearcher.types.js";
-import type { IChatContext } from "../core/bot/internals/IChatContext.js";
+import type { ChatContextContactRes, IChatContext } from "../core/bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
@@ -2505,6 +2505,241 @@ describe("Location", () => {
       await chat.StartChatSimulation();
     }).toThrow();
     expect(chat.SentFromCommand.Locations).toHaveLength(1);
+    expect(chat.WaitedFromCommand).toHaveLength(0);
+  });
+});
+
+describe("Contact", () => {
+  // Sending section
+  it("ShouldSendContact_SingleContact", async (): Promise<void> => {
+    const contact = { name: "John Doe", phone: "1234567890" };
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendContact(contact, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(1);
+    expect(chat.SentFromCommand.Contacts[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      contacts: contact,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendContact_MultipleContacts", async (): Promise<void> => {
+    const contacts = [
+      { name: "John Doe", phone: "1234567890" },
+      { name: "Jane Smith", phone: "0987654321" },
+    ];
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendContact(contacts, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(1);
+    expect(chat.SentFromCommand.Contacts[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      contacts: contacts,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendContact_UsingInternalSocket_SingleContact", async (): Promise<void> => {
+    const contact = { name: "John Doe", phone: "1234567890" };
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Contact(_args.chatId, contact, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(1);
+    expect(chat.SentFromCommand.Contacts[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      contacts: contact,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  it("ShouldSendContact_UsingInternalSocket_MultipleContacts", async (): Promise<void> => {
+    const contacts = [
+      { name: "John Doe", phone: "1234567890" },
+      { name: "Jane Smith", phone: "0987654321" },
+    ];
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await rawMsgApi.InternalSocket.Send.Contact(_args.chatId, contacts, { broadcast: true, mentionsIds: ["1234567890@s.whatsapp.net"] });
+      }
+    }
+    const chat = new ChatMock(new Com());
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(1);
+    expect(chat.SentFromCommand.Contacts[0]!).toMatchObject({
+      chatId: chat.ChatId,
+      contacts: contacts,
+      options: {
+        broadcast: true,
+        mentionsIds: ["1234567890@s.whatsapp.net"],
+      },
+    });
+  });
+
+  // Waiting section
+  it("WhenWaitingContact_SingleContact_ShouldWork_WaitContact", async (): Promise<void> => {
+    const contact = { name: "John Doe", phone: "1234567890" };
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myContact = (await ctx.WaitContact({ timeoutSeconds: 1 })) as ChatContextContactRes;
+        expect(myContact).toBeDefined();
+        expect(myContact?.name).toBe(contact.name);
+        expect(myContact?.number).toBe(contact.phone);
+        expect(myContact?.whatsappId_PN).toBe(`${contact.phone}${WhatsappIndividualIdentifier}`);
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Contact(contact, { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingContact_MultipleContacts_ShouldWork_WaitContact", async (): Promise<void> => {
+    const contacts = [
+      { name: "John Doe", phone: "1234567890" },
+      { name: "Jane Smith", phone: "0987654321" },
+    ];
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myContacts = (await ctx.WaitContact({ timeoutSeconds: 1 })) as ChatContextContactRes[];
+
+        expect(myContacts).toBeDefined();
+        expect(myContacts?.at(0)!.name).toBe(contacts[0]!.name); // Only first contact is returned
+        expect(myContacts?.at(0)!.number).toBe(contacts[0]!.phone);
+        expect(myContacts?.at(0)!.whatsappId_PN).toBe(`${contacts[0]!.phone}${WhatsappIndividualIdentifier}`);
+
+        const secondContact: ChatContextContactRes = myContacts.at(1)!;
+        expect(secondContact).toBeDefined();
+        expect(secondContact.name).toBe(contacts[1]!.name);
+        expect(secondContact.number).toBe(contacts[1]!.phone);
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Contact(contacts, { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingContact_UsingWaitMsgGeneric_ShouldFetchIt", async (): Promise<void> => {
+    const contact = { name: "John Doe", phone: "1234567890" };
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const myContact = await ctx.WaitMsg(MsgType.Contact, { timeoutSeconds: 1 });
+        expect(myContact).toBeDefined();
+        expect(myContact!.message?.contactMessage).toBeDefined();
+        expect(myContact!.message?.contactMessage?.displayName).toBe(contact.name);
+        expect(myContact!.message?.contactMessage?.vcard).toContain(`WAID=${contact.phone}`);
+        expect(myContact?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Contact(contact, { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingContact_UsingRawSocketReceiver_IndividualChat", async (): Promise<void> => {
+    const contact = { name: "John Doe", phone: "1234567890" };
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myContact = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIdInPrivateConversation(args.chatId, MsgType.Contact, {
+          cancelKeywords: ["cancel"],
+          ignoreSelfMessages: true,
+          timeoutSeconds: 1,
+        });
+        expect(myContact).toBeDefined();
+        expect(myContact!.message?.contactMessage).toBeDefined();
+        expect(myContact!.message?.contactMessage?.displayName).toBe(contact.name);
+        expect(myContact!.message?.contactMessage?.vcard).toContain(`WAID=${contact.phone}`);
+        expect(myContact?.pushName).toBe("My pushname");
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Contact(contact, { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("WhenWaitingContact_UsingRawSocketReceiver_GroupChat", async (): Promise<void> => {
+    const contact = { name: "John Doe", phone: "1234567890" };
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, rawMsgApi: AdditionalAPI, args: CommandArgs): Promise<void> {
+        const myContact = await rawMsgApi.InternalSocket.Receive.WaitUntilNextRawMsgFromUserIDInGroup(
+          args.participantIdLID!,
+          null,
+          args.chatId,
+          MsgType.Contact,
+          {
+            cancelKeywords: ["cancel"],
+            ignoreSelfMessages: true,
+            timeoutSeconds: 1,
+          }
+        );
+        expect(myContact).toBeDefined();
+        expect(myContact!.message?.contactMessage).toBeDefined();
+        expect(myContact!.message?.contactMessage?.displayName).toBe(contact.name);
+        expect(myContact!.message?.contactMessage?.vcard).toContain(`WAID=${contact.phone}`);
+        expect(myContact?.pushName).toBe("My pushname");
+        expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
+        expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(_ctx.FixedChatId).toBe(args.chatId);
+        expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
+      }
+    }
+    const chat = new ChatMock(new Com(), { senderType: SenderType.Group });
+    chat.EnqueueIncoming_Contact(contact, { pushName: "My pushname" });
+    await chat.StartChatSimulation();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(0);
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("IfNotSentAnyContactButWaitingThem_ShouldThrowError", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendContact({ name: "John Doe", phone: "1234567890" });
+        const myContact = await _ctx.WaitContact({ timeoutSeconds: 1 });
+        expect(myContact).toBeDefined();
+      }
+    }
+    const chat = new ChatMock(new Com());
+    expect(async (): Promise<void> => {
+      await chat.StartChatSimulation();
+    }).toThrow();
+    expect(chat.SentFromCommand.Contacts).toHaveLength(1);
     expect(chat.WaitedFromCommand).toHaveLength(0);
   });
 });

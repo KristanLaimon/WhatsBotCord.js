@@ -341,21 +341,35 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public async WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | null> {
-    const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Contact, localOptions);
-    if (!found) return null;
-    const contactMessage = found?.message?.contactMessage;
-    if (!contactMessage) return null;
+  public async WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | ChatContextContactRes[] | null> {
+    // Wait for a contact message
+    const message = await this.WaitMsg(MsgType.Contact, localOptions);
+    if (!message) return null;
 
-    const contactNumber = contactMessage.vcard?.match(/WAID=(\d+)/i)?.[1] || "";
+    // Handle single contact message
+    if (message.message?.contactMessage) {
+      const contact = message.message.contactMessage;
+      const number = contact.vcard?.match(/WAID=(\d+)/i)?.[1] || "";
+      return {
+        name: contact.displayName || "",
+        number,
+        whatsappId_PN: number ? `${number}${WhatsappIndividualIdentifier}` : "",
+      };
+    }
 
-    const whatsappId = contactNumber ? `${contactNumber}${WhatsappIndividualIdentifier}` : "";
+    // Handle multiple contacts message
+    if (message.message?.contactsArrayMessage?.contacts) {
+      return message.message.contactsArrayMessage.contacts.map((contact) => {
+        const number = contact.vcard?.match(/WAID=(\d+)/i)?.[1] || "";
+        return {
+          name: contact.displayName || "",
+          number,
+          whatsappId_PN: number ? `${number}${WhatsappIndividualIdentifier}` : "",
+        } satisfies ChatContextContactRes;
+      });
+    }
 
-    return {
-      name: contactMessage.displayName || "",
-      number: contactNumber,
-      whatsappId: whatsappId,
-    };
+    return null;
   }
 
   @autobind

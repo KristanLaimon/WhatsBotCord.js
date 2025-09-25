@@ -37,7 +37,7 @@ export type ChatContextContactRes = {
   number: string;
 
   /** WhatsApp ID of the contact */
-  whatsappId: string;
+  whatsappId_PN: string;
 };
 
 /**
@@ -669,7 +669,7 @@ export interface IChatContext {
    * if (contact) console.log(`Name: ${contact.name}, Number: ${contact.number}, WhatsApp ID: ${contact.whatsappId}`);
    * ```
    */
-  WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | null>;
+  WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | ChatContextContactRes[] | null>;
 
   /**
    * Fetches the group data for a specific chat.

@@ -15,6 +15,7 @@ import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdent
 import ChatContext_MockingSuite from "./ChatContext.mockingsuite.js";
 import {
   MsgFactory_Audio,
+  MsgFactory_Contact,
   MsgFactory_Document,
   MsgFactory_Image,
   MsgFactory_Location,
@@ -327,7 +328,21 @@ export default class ChatMock {
     this._receiverMock.AddWaitMsg({ rawMsg: locationMsg });
   }
 
-  //TODO: Create a EnqueueIncoming_Contact!
+  /**
+   * Simulates the contact(s) sending mdg into the mocked chat.
+   * The messaged include all contact or contacts with all mocked
+   * environment metadata included.
+   *
+   * @param contact_s - Contact or contacts array
+   * @param opts - Optional config obj: Actually including only 'pushName' prop
+   */
+  @autobind
+  public EnqueueIncoming_Contact(contact_s: { name: string; phone: string } | Array<{ name: string; phone: string }>, opts?: MockEnqueueParamsMinimal): void {
+    const contactMsg = MsgFactory_Contact(this.ChatId, this.ParticipantId_LID, contact_s, {
+      pushName: opts?.pushName,
+    });
+    this._receiverMock.AddWaitMsg({ rawMsg: contactMsg });
+  }
 
   /**
    * Starts the simulation by executing the command under test with the mocked context

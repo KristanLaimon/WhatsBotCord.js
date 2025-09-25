@@ -355,16 +355,24 @@ export function MsgFactory_Contact(
   const base = _createBaseMsg(chatId, participantId, "success_id_message_id", Date.now(), opts?.pushName);
 
   // Normalize to array
-  const contactsArray = Array.isArray(contacts) ? contacts : [contacts];
-
-  base.message = {
-    contactsArrayMessage: {
-      contacts: contactsArray.map((c) => {
-        const vcard = ["BEGIN:VCARD", "VERSION:3.0", `FN:${c.name}`, `TEL;type=CELL:${c.phone}`, "END:VCARD"].join("\n");
-        return { displayName: c.name, vcard };
-      }),
-    },
-  };
+  if (Array.isArray(contacts)) {
+    base.message = {
+      contactsArrayMessage: {
+        contacts: contacts.map((c) => {
+          const vcard = ["BEGIN:VCARD", "VERSION:3.0", `FN:${c.name}`, `TEL;type=WAID=${c.phone}`, "END:VCARD"].join("\n");
+          return { displayName: c.name, vcard };
+        }),
+      },
+    };
+  } else {
+    const vcard = ["BEGIN:VCARD", "VERSION:3.0", `FN:${contacts.name}`, `TEL;type=WAID=${contacts.phone}`, "END:VCARD"].join("\n");
+    base.message = {
+      contactMessage: {
+        displayName: contacts.name,
+        vcard: vcard,
+      },
+    };
+  }
 
   return base;
 }

@@ -130,6 +130,7 @@ export function MsgHelper_ProtoMsg_GetMsgType(generic: proto.IMessage): MsgType 
   if (generic.pollCreationMessageV3) return MsgType.Poll;
   if (generic.locationMessage) return MsgType.Ubication;
   if (generic.contactMessage) return MsgType.Contact;
+  if (generic.contactsArrayMessage) return MsgType.Contact;
   if (generic.documentMessage) return MsgType.Document;
   if (generic.conversation || generic.extendedTextMessage) return MsgType.Text;
   return MsgType.Unknown;

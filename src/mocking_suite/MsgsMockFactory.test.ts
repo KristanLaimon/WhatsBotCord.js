@@ -105,11 +105,32 @@ describe("MsgFactory", () => {
     const contact = { name: "Chris", phone: "5217389273" };
     const msg = MsgFactory_Contact(chatId, participant, contact);
 
+    expect(msg.message?.contactMessage!.displayName).toBe(contact.name);
+    expect(msg.message?.contactMessage!.vcard).toContain(contact.phone);
+    expect(msg.message?.contactMessage!.vcard).toContain(contact.name);
+
+    expect(msg.message?.contactsArrayMessage).not.toBeDefined();
+  });
+
+  test("MsgFactory_Contact should produce vCard correctly_withMany", () => {
+    const contact = { name: "Chris", phone: "5217389273" };
+    const contact2 = { name: "Chris", phone: "5217389273" };
+    const msg = MsgFactory_Contact(chatId, participant, [contact, contact2]);
+
     //@ts-expect-error msg object always contain this prop
-    expect(msg.message.contactsArrayMessage.contacts[0]!.displayName).toBe(contact.name);
+    expect(msg.message?.contactsArrayMessage.contacts[0]!.displayName).toBe(contact.name);
     //@ts-expect-error msg object always contain this prop
-    expect(msg.message.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.phone);
+    expect(msg.message?.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.phone);
     //@ts-expect-error msg object always contain this prop
-    expect(msg.message.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.name);
+    expect(msg.message?.contactsArrayMessage.contacts[0]!.vcard).toContain(contact.name);
+
+    //@ts-expect-error msg object always contain this prop
+    expect(msg.message?.contactsArrayMessage.contacts[1]!.displayName).toBe(contact2.name);
+    //@ts-expect-error msg object always contain this prop
+    expect(msg.message?.contactsArrayMessage.contacts[1]!.vcard).toContain(contact2.phone);
+    //@ts-expect-error msg object always contain this prop
+    expect(msg.message?.contactsArrayMessage.contacts[1]!.vcard).toContain(contact2.name);
+
+    expect(msg.message?.contactMessage).not.toBeDefined();
   });
 });
