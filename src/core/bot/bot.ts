@@ -467,10 +467,20 @@ export default class Bot implements BotMinimalInfo {
       if (typeof this.Settings.commandPrefix === "string" ? this.Settings.commandPrefix === prefix : this.Settings.commandPrefix?.includes(prefix)) {
         commandTypeFound = CommandType.Normal;
         commandFound = this.Commands.GetCommand(commandOrAliasNameLowerCased);
+        if (this.Commands.Defaults.Command) {
+          if (this.Commands.Defaults.Command === commandFound) {
+            commandArgs = rawArgs.filter((word) => word !== "");
+          }
+        }
         // 2. Check if is tag command
       } else if (typeof this.Settings.tagPrefix === "string" ? this.Settings.tagPrefix === prefix : this.Settings.tagPrefix?.includes(prefix)) {
         commandTypeFound = CommandType.Tag;
         commandFound = this.Commands.GetTag(commandOrAliasNameLowerCased);
+        if (this.Commands.Defaults.Tag) {
+          if (this.Commands.Defaults.Tag === commandFound) {
+            commandArgs = rawArgs.filter((word) => word !== "");
+          }
+        }
       }
       // 3. Found type of command but not with normal name? Try searching if its an alias
       if (!commandFound && commandTypeFound) {
@@ -488,21 +498,7 @@ export default class Bot implements BotMinimalInfo {
           }),
           txtFromMsg
         );
-        if (commandTypeFound === CommandType.Normal) {
-          if (this.Commands.Defaults.Command) {
-            commandFound = this.Commands.Defaults.Command;
-            commandArgs = rawArgs.filter((word) => word !== "");
-          } else {
-            return;
-          }
-        } else {
-          if (this.Commands.Defaults.Tag) {
-            commandFound = this.Commands.Defaults.Tag;
-            commandArgs = rawArgs.filter((word) => word !== "");
-          } else {
-            return;
-          }
-        }
+        return;
       } else {
         //Check if all commands return true or false, to alter
         if (this.Events.onCommandFound.Length > 0) {
