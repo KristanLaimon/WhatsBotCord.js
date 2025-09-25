@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.10.5...v0.11.0) (2025-09-25)
+
+### Features
+
+* Now commands can access to bot settings and commands metadata ([30fd82a](https://github.com/KristanLaimon/WhatsBotCord.js/commit/30fd82af6e81f604c9edb39601272e1cf5cb6734))
+
+### Bug Fixes
+
+* Adding bot settings support inside commands for mocking framework ([818fc87](https://github.com/KristanLaimon/WhatsBotCord.js/commit/818fc87feae8e17fd92b4f3d54df0c9251219dda))
+* Fixes typescript type compiler complaints with imports ([4170755](https://github.com/KristanLaimon/WhatsBotCord.js/commit/4170755bac84a7018df0b04c98a9b83e272a335f))
+
 ## [0.10.5](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.10.4...v0.10.5) (2025-09-23)
 
 ## [0.10.4](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.10.3...v0.10.4) (2025-09-23)
