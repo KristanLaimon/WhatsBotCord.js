@@ -925,3 +925,146 @@ test("WhenNotUsingDefaultEmojiOnCommandFailure_ShouldNotSendIt", async (): Promi
     // });
   }
 });
+// ===========================================================
+
+test("WhenSendingOnlyCommandPrefix_ShouldIgnoreIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let normalCommandCalled: boolean = false;
+
+  const commandNormal: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      normalCommandCalled = true;
+    },
+  };
+
+  bot.Commands.Add(commandNormal, CommandType.Normal);
+  const normalCommandRunSpy = spyOn(commandNormal, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(0);
+  expect(normalCommandCalled).toBe(false);
+});
+
+test("WhenSendingOnlyTagPrefix_ShouldIgnoreIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let tagCommandCancelled: boolean = false;
+
+  const commandNormal: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      tagCommandCancelled = true;
+    },
+  };
+
+  bot.Commands.Add(commandNormal, CommandType.Tag);
+  const tagCommandRunSpy = spyOn(commandNormal, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@" });
+
+  expect(tagCommandRunSpy).toHaveBeenCalledTimes(0);
+  expect(tagCommandCancelled).toBe(false);
+});
+
+test("WhenSettingDefault_Command_ShouldUseIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let normalCommandCalled: boolean = false;
+  const commandNormal: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      normalCommandCalled = true;
+    },
+  };
+  bot.Commands.SetDefaultCommand(commandNormal);
+  const normalCommandRunSpy = spyOn(commandNormal, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+});
+
+test("WhenSettingDefault_Command_WithMuchTextTogether_ShouldUseIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let normalCommandCalled: boolean = false;
+  const commandNormal: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      console.log(_args.args);
+      expect(_args.args).toEqual(["hello", "im", "a", "user", "not", "command"]);
+      normalCommandCalled = true;
+    },
+  };
+  bot.Commands.SetDefaultCommand(commandNormal);
+  const normalCommandRunSpy = spyOn(commandNormal, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!hello im a user not command" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+});
+
+test("WhenSettingDefault_Command_WithMuchTextTogetherButSeparatedFromPrefix_ShouldUseIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let normalCommandCalled: boolean = false;
+  const commandNormal: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      console.log(_args.args);
+      expect(_args.args).toEqual(["hello", "im", "a", "user", "not", "command"]);
+      normalCommandCalled = true;
+    },
+  };
+  bot.Commands.SetDefaultCommand(commandNormal);
+  const normalCommandRunSpy = spyOn(commandNormal, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "! hello im a user not command" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
+  expect(normalCommandCalled).toBe(true);
+});
+
+test("WhenSettingDefault_Tag_ShouldUseIt", async () => {
+  const { bot, socket } = toolkit();
+
+  let tagCommandCalled: boolean = false;
+  const commandNormal: ICommand = {
+    name: "samecommand",
+    async run(_ctx, _rawMsgApi, _args) {
+      tagCommandCalled = true;
+    },
+  };
+  bot.Commands.SetDefaultTag(commandNormal);
+  const normalCommandRunSpy = spyOn(commandNormal, "run");
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(0);
+  expect(tagCommandCalled).toBe(false);
+
+  await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "@" });
+
+  expect(normalCommandRunSpy).toHaveBeenCalledTimes(1);
+  expect(tagCommandCalled).toBe(true);
+});

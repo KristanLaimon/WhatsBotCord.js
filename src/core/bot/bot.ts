@@ -37,7 +37,7 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
      * @example
      * tagCharPrefix: ['@', '#'] // bot reacts to both "@bot" and "#bot"
      */
-    tagCharPrefix?: string | string[];
+    tagPrefix?: string | string[];
 
     /**
      * Character(s) used to prefix commands.
@@ -456,9 +456,8 @@ export default class Bot implements BotMinimalInfo {
       if (rawArgs.length === 0) {
         return;
       }
-
       const commandOrAliasNameLowerCased: string = rawArgs.at(0)!.toLowerCase();
-      const commandArgs: string[] = rawArgs.length > 1 ? rawArgs.slice(1) : [];
+      let commandArgs: string[] = rawArgs.length > 1 ? rawArgs.slice(1) : [];
 
       // === Check if command, then what type ===
       const prefix: string = txtFromMsgHealthy[0]!;
@@ -469,7 +468,7 @@ export default class Bot implements BotMinimalInfo {
         commandTypeFound = CommandType.Normal;
         commandFound = this.Commands.GetCommand(commandOrAliasNameLowerCased);
         // 2. Check if is tag command
-      } else if (typeof this.Settings.tagCharPrefix === "string" ? this.Settings.tagCharPrefix === prefix : this.Settings.tagCharPrefix?.includes(prefix)) {
+      } else if (typeof this.Settings.tagPrefix === "string" ? this.Settings.tagPrefix === prefix : this.Settings.tagPrefix?.includes(prefix)) {
         commandTypeFound = CommandType.Tag;
         commandFound = this.Commands.GetTag(commandOrAliasNameLowerCased);
       }
@@ -489,7 +488,21 @@ export default class Bot implements BotMinimalInfo {
           }),
           txtFromMsg
         );
-        return;
+        if (commandTypeFound === CommandType.Normal) {
+          if (this.Commands.Defaults.Command) {
+            commandFound = this.Commands.Defaults.Command;
+            commandArgs = rawArgs.filter((word) => word !== "");
+          } else {
+            return;
+          }
+        } else {
+          if (this.Commands.Defaults.Tag) {
+            commandFound = this.Commands.Defaults.Tag;
+            commandArgs = rawArgs.filter((word) => word !== "");
+          } else {
+            return;
+          }
+        }
       } else {
         //Check if all commands return true or false, to alter
         if (this.Events.onCommandFound.Length > 0) {
@@ -604,7 +617,7 @@ export function BotUtils_GenerateOptions(options?: Partial<WhatsBotOptions>): Wh
     maxReconnectionRetries: options?.maxReconnectionRetries ?? 5,
     senderQueueMaxLimit: options?.senderQueueMaxLimit ?? 20,
     commandPrefix: typeof options?.commandPrefix === "string" ? [options.commandPrefix] : options?.commandPrefix ?? ["!"],
-    tagCharPrefix: typeof options?.tagCharPrefix === "string" ? [options.tagCharPrefix] : options?.tagCharPrefix ?? ["@"],
+    tagPrefix: typeof options?.tagPrefix === "string" ? [options.tagPrefix] : options?.tagPrefix ?? ["@"],
     cancelFeedbackMsg: options?.cancelFeedbackMsg ?? "canceled ❌ (Default Message: Change me using Bot constructor params options)",
     cancelKeywords: options?.cancelKeywords ?? ["cancel", "cancelar", "para", "stop"],
     timeoutSeconds: options?.timeoutSeconds ?? 30,

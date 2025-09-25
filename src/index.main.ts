@@ -215,6 +215,7 @@ await bot.Start();
 // [✅]: Add ability to change bot settings from commands, (add Myself.Settings to AdditionalAPI obj in test)
 //      [ ]: Needs testing I guess
 // [✅]: Add FULL TESTING to ChatMock.test.ts for all this new changes! (big job)
+// [ ]: Add event or command to set when someone @quotes this bot
 
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object

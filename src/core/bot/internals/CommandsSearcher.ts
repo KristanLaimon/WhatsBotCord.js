@@ -13,6 +13,26 @@ export type CommandEntry = {
 export default class CommandsSearcher {
   private _normalCommands: Map<string, ICommand> = new Map();
   private _tagCommands: Map<string, ICommand> = new Map();
+  /**
+   * If provided no command (or not found).
+   * This should be executed instead. A global command
+   */
+  private _defaultCommand?: ICommand;
+  private _defaultTag?: ICommand;
+
+  public get Defaults() {
+    return {
+      Command: this._defaultCommand,
+      Tag: this._defaultTag,
+    };
+  }
+
+  public SetDefaultCommand(commandDefault: ICommand): void {
+    this._defaultCommand = commandDefault;
+  }
+  public SetDefaultTag(commandDefault: ICommand): void {
+    this._defaultTag = commandDefault;
+  }
 
   public get NormalCommands(): CommandEntry[] {
     const toReturn: CommandEntry[] = [];
@@ -40,7 +60,7 @@ export default class CommandsSearcher {
 
     // Check if a command with the same name already exists
     if (mapToStoreInto.has(commandNameLowercase)) {
-      throw new Error(`Command of type "${CommandType[addCommandAsType]}" with name '${commandNameLowercase}' already exists!`);
+      throw new Error(`Bad Args: CommandsSearcher => Command of type "${CommandType[addCommandAsType]}" with name '${commandNameLowercase}' already exists!`);
     }
 
     // Normalize metadata
