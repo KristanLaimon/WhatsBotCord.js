@@ -87,7 +87,7 @@ class WaitForMsgAndSendItBack implements ICommand {
 // ========================== MAIN ==============================
 const bot = new WhatsbotCord({
   commandPrefix: ["$", "!", "/", "."],
-  tagCharPrefix: ["@"],
+  tagPrefix: ["@"],
   credentialsFolder: "./auth",
   loggerMode: "recommended",
   delayMilisecondsBetweenMsgs: 1,

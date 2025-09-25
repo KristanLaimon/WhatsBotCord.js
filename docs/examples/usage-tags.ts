@@ -22,7 +22,7 @@ class EveryoneTag implements ICommand {
 // ========================== MAIN ==============================
 const bot = new Bot({
   commandPrefix: ["$", "!", "/"],
-  tagCharPrefix: ["@"],
+  tagPrefix: ["@"],
   credentialsFolder: "./auth",
   loggerMode: "recommended",
 });

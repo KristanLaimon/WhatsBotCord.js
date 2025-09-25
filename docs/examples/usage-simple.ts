@@ -2,7 +2,7 @@ import Whatsbotcord, { type AdditionalAPI, type CommandArgs, type IChatContext, 
 
 const bot = new Whatsbotcord({
   commandPrefix: "!",
-  tagCharPrefix: "@",
+  tagPrefix: "@",
   credentialsFolder: "./auth",
   loggerMode: "recommended",
 });

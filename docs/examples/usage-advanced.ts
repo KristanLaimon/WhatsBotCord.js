@@ -24,7 +24,7 @@ export default PingCommand;
 const bot = new Whatsbotcord({
   //Can accept an array of prefixes or only one "!" prefix
   commandPrefix: ["$", "!", "/"],
-  tagCharPrefix: ["@"],
+  tagPrefix: ["@"],
   credentialsFolder: "./auth",
   loggerMode: "recommended",
 });
