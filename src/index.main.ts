@@ -1,5 +1,5 @@
 import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
-import WhatsbotCord, { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType } from "src/index.js";
+import { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType, default as WhatsbotCord } from "src/index.js";
 import OfficialPlugin_OneCommandPerUserAtAtime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 
 class PingCommand implements ICommand {
@@ -93,6 +93,7 @@ const bot = new WhatsbotCord({
   delayMilisecondsBetweenMsgs: 1,
   cancelKeywords: ["cancelcustom"],
 });
+
 bot.Commands.Add(new PingCommand());
 bot.Commands.Add(new EveryoneId(), CommandType.Tag);
 bot.Commands.Add(new SendToStateCommand());
