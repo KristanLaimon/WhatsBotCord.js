@@ -15,6 +15,15 @@
     "type": "git",
     "url": "git+https://github.com/KristanLaimon/WhatsBotCord.js.git"
   },
+  "keywords": [
+    "whatsapp",
+    "baileys.js",
+    "bot",
+    "discord",
+    "automation",
+    "commands",
+    "command"
+  ],
   "devDependencies": {
     "@eslint/js": "^9.34.0",
     "@eslint/json": "^0.13.2",
