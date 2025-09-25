@@ -359,19 +359,25 @@ export default class ChatMock {
   public async StartChatSimulation(): Promise<void> {
     // const receiver: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver();
     //Need to conver
+    const botCommandsSearcher = new CommandsSearcher();
+    const botSettings = BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextMock.Config.cancelKeywords });
     await this._command.run(
       this._chatContextMock,
       {
         InternalSocket: this._socketMock,
         Myself: {
           Status: new Myself_Submodule_Status(this._socketMock),
+          Bot: {
+            Commands: botCommandsSearcher,
+            Settings: botSettings,
+          },
         },
       },
       {
         args: this._constructorConfig?.args ?? [],
         botInfo: {
-          Commands: new CommandsSearcher(),
-          Settings: BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextMock.Config.cancelKeywords }),
+          Commands: botCommandsSearcher,
+          Settings: botSettings,
         },
         chatId: this.ChatId,
         participantIdPN: this.ParticipantId_PN,
