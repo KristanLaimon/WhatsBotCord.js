@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.12.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.11.0...v0.12.0) (2025-09-25)
+
+### Features
+
+* Adding default fallback command or tag to CommandSearcher + docs ([894e55b](https://github.com/KristanLaimon/WhatsBotCord.js/commit/894e55bbfc728047bf686e43e98c2c1af98801b6))
+* Bot adds default command (!) and/or default tag (@) to execute if not found as command setting methods ([dd1970a](https://github.com/KristanLaimon/WhatsBotCord.js/commit/dd1970a4de803e5feec63cd85fad2e1e1fb7481e))
+
+### Bug Fixes
+
+* Improves usage of fallbacks inside bot OnMessageIncoming ([8f1e1ae](https://github.com/KristanLaimon/WhatsBotCord.js/commit/8f1e1ae1474e070fe0521302a3940d28ddfa1ea7))
+
 ## [0.11.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.10.5...v0.11.0) (2025-09-25)
 
 ### Features
