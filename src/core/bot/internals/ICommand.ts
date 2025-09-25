@@ -1,4 +1,5 @@
 import type { IWhatsSocket } from "../../whats_socket/IWhatsSocket.js";
+import { BotMinimalInfo } from "../bot.js";
 import type Myself_Submodule_Status from "./ChatContext.myself.status.js";
 import type { CommandArgs } from "./CommandsSearcher.types.js";
 import type { IChatContext } from "./IChatContext.js";
@@ -57,6 +58,7 @@ export type AdditionalAPI = {
    */
   readonly Myself: {
     readonly Status: Myself_Submodule_Status;
+    readonly Bot: BotMinimalInfo;
   };
 
   /**

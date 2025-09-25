@@ -542,6 +542,7 @@ export default class Bot implements BotMinimalInfo {
         InternalSocket: this.InternalSocket,
         Myself: {
           Status: new Myself_Submodule_Status(this.InternalSocket),
+          Bot: this,
         },
       };
       const ARG3_AdditionalArgs: CommandArgs = {

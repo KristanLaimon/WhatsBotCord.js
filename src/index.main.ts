@@ -192,27 +192,28 @@ await bot.Start();
 //                [✅]: Ubication
 //            ===            TESTING            ===
 //                [✅]: Texts
-//                [ ]: Imgs
+//                [✅]: Imgs
 //                [doesn't apply]: ReactEmojiToMsg
-//                [ ]: Sticker
-//                [ ]: Audio
-//                [ ]: Video
-//                [ ]: Document
+//                [✅]: Sticker
+//                [✅]: Audio
+//                [✅]: Video
+//                [✅]: Document
 //                [not supported]: Poll
-//                [ ]: Ubication
-//      [ ]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING /** already working by many other tests around the proyect, but needs specific tests for itself */
+//                [✅]: Ubication
+//      [✅]: WhatsSocket.receiver.mockingsuite.ts: Add TESTING /** already working by many other tests around the proyect, but needs specific tests for itself */
 //      [✅]: WhatsSocket.sugarsender.mockingsuite.ts: Add TESTING
 //      [✅]: ChatContext.mockingsuite.ts: Add TESTING
 
 // [ ]: Test plugin system with use()
-// [ ]: Document how to use plugins
-// [ ]: Document and test OfficialPlugin_OneCommandPerUserAtAtime
+// [✅]: Document how to use plugins
+// [✅]: Document and test OfficialPlugin_OneCommandPerUserAtAtime
 // [✅]: Make sugarsender.mockingsuite to return realistic objects, reuse refactored MsgFactory methods used in MockChat
 // [ ]: Add documentation about bot.middleware in README.md
 // [ ]: Add documentation about bots.events in README.MD
-// [ ]: Add optional validation, not running another command while doing the command (with custom msg)
-// [ ]: Add ability to change bot settings from commands, (add Myself.Settings to AdditionalAPI obj in test)
-// [ ]: Add FULL TESTING to ChatMock.test.ts for all this new changes! (big job)
+// [✅]: (OfficialPlugin) Add optional validation, not running another command while doing the command (with custom msg)
+// [✅]: Add ability to change bot settings from commands, (add Myself.Settings to AdditionalAPI obj in test)
+//      [ ]: Needs testing I guess
+// [✅]: Add FULL TESTING to ChatMock.test.ts for all this new changes! (big job)
 
 //#2 Docs Update:
 //  [ ]: Source Code Documentation: Improve and document bot EVENTS!! Exon's Feedback! && Improve loggin docs, when creating bot object
