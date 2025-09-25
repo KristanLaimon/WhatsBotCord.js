@@ -1,10 +1,24 @@
 import type { ICommand } from "./ICommand.js";
-
+/**
+ * Different categories of commands supported by the searcher.
+ * - `Normal`: explicit commands that match directly.
+ * - `Tag`: commands triggered by a tag (metadata, alias, or secondary marker).
+ */
 export enum CommandType {
   Normal = "Normal",
   Tag = "Tag",
 }
 
+/**
+ * Central registry and search helper for commands.
+ *
+ * Commands are separated into two namespaces:
+ * - **Normal commands**: Standard commands invoked by name.
+ * - **Tag commands**: Commands bound to tags or metadata.
+ *
+ * A default command or tag may be defined. These act as a global fallback
+ * when no specific match is found.
+ */
 export type CommandEntry = {
   commandName: string;
   commandObj: ICommand;
@@ -14,38 +28,73 @@ export default class CommandsSearcher {
   private _normalCommands: Map<string, ICommand> = new Map();
   private _tagCommands: Map<string, ICommand> = new Map();
   /**
-   * If provided no command (or not found).
-   * This should be executed instead. A global command
+   * Optional global fallback command.
+   * Executed if no specific "normal" command is matched.
    */
   private _defaultCommand?: ICommand;
+
+  /**
+   * Optional global fallback tag command.
+   * Executed if no specific "tag" command is matched.
+   */
   private _defaultTag?: ICommand;
 
+  /**
+   * Provides access to the currently configured defaults.
+   * - `Command`: fallback normal command
+   * - `Tag`: fallback tag command
+   */
   public get Defaults() {
     return {
       Command: this._defaultCommand,
       Tag: this._defaultTag,
     };
   }
-
+  /**
+   * Registers the global fallback normal command.
+   * Used when no explicit normal command is found.
+   */
   public SetDefaultCommand(commandDefault: ICommand): void {
     this._defaultCommand = commandDefault;
   }
+  /**
+   * Registers the global fallback tag command.
+   * Used when no explicit tag command is found.
+   */
   public SetDefaultTag(commandDefault: ICommand): void {
     this._defaultTag = commandDefault;
   }
-
+  /**
+   * Returns a list of all registered normal commands.
+   * Each entry includes the command name and its implementation.
+   */
   public get NormalCommands(): CommandEntry[] {
     const toReturn: CommandEntry[] = [];
     this._normalCommands.forEach((commandObj, commandName) => toReturn.push({ commandName, commandObj }));
     return toReturn;
   }
-
+  /**
+   * Returns a list of all registered tag commands.
+   * Each entry includes the tag name and its implementation.
+   */
   public get TagCommands(): CommandEntry[] {
     const toReturn: CommandEntry[] = [];
     this._tagCommands.forEach((commandObj, commandName) => toReturn.push({ commandName, commandObj }));
     return toReturn;
   }
 
+  /**
+   * Registers a new command in the searcher.
+   *
+   * @example
+   * ```ts
+   * const searcher = new CommandsSearcher();
+   * searcher.Add({ name: "ping", execute: () => "pong" });
+   * searcher.Add({ name: "mod", execute: () => "ok" }, CommandType.Tag);
+   * ```
+   *
+   * @throws If the command name is invalid, already exists, or its aliases conflict.
+   */
   public Add(commandToAdd: ICommand, addCommandAsType: CommandType = CommandType.Normal): void {
     if (!commandToAdd.name || commandToAdd.name.trim() === "") {
       throw new Error("You can't add a command without name!");
@@ -88,10 +137,29 @@ export default class CommandsSearcher {
     mapToStoreInto.set(commandNameLowercase, commandToAdd);
   }
 
+  /**
+   * Checks whether a command exists in either namespace.
+   *
+   * @example
+   * ```ts
+   * searcher.Exists("ping"); // true
+   * searcher.Exists("unknown"); // false
+   * ```
+   */
   public Exists(commandName: string) {
     return this.GetTypeOf(commandName) !== null;
   }
 
+  /**
+   * Determines the type of a command.
+   *
+   * @example
+   * ```ts
+   * searcher.GetTypeOf("ping"); // CommandType.Normal
+   * searcher.GetTypeOf("mod");  // CommandType.Tag
+   * searcher.GetTypeOf("ghost"); // null
+   * ```
+   */
   public GetTypeOf(commandName: string): CommandType | null {
     const commandNameLowerCase: string = commandName.toLowerCase();
 
@@ -102,14 +170,49 @@ export default class CommandsSearcher {
     return null;
   }
 
+  /**
+   * Retrieves a normal command.
+   * Falls back to the default command if not found.
+   *
+   * @example
+   * ```ts
+   * searcher.GetCommand("ping"); // returns ICommand for "ping"
+   * searcher.GetCommand("unknown"); // returns default command (if set) or null
+   * ```
+   */
   public GetCommand(commandName: string): ICommand | null {
-    return this._normalCommands.get(commandName.toLowerCase()) ?? null;
+    return this._normalCommands.get(commandName.toLowerCase()) ?? this._defaultCommand ?? null;
   }
 
+  /**
+   * Retrieves a tag command.
+   * Falls back to the default tag command if not found.
+   *
+   * @example
+   * ```ts
+   * searcher.GetTag("mod"); // returns ICommand for "mod"
+   * searcher.GetTag("ghost"); // returns default tag (if set) or null
+   * ```
+   */
   public GetTag(tagName: string): ICommand | null {
-    return this._tagCommands.get(tagName.toLowerCase()) ?? null;
+    return this._tagCommands.get(tagName.toLowerCase()) ?? this._defaultTag ?? null;
   }
 
+  /**
+   * Finds a command by one of its aliases.
+   *
+   * @example
+   * ```ts
+   * searcher.Add({
+   *   name: "ban",
+   *   aliases: ["block", "remove"],
+   *   execute: () => "banned"
+   * });
+   *
+   * searcher.GetWhateverWithAlias("block", CommandType.Normal);
+   * // returns the "ban" command
+   * ```
+   */
   public GetWhateverWithAlias(possibleAlias: string, commandTypeToLookFor: CommandType): ICommand | null {
     const aliasLower = possibleAlias.toLowerCase();
 
