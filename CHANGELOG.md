@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.13.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.12.0...v0.13.0) (2025-10-01)
+
+### Features
+
+* WhatsappHelpers.GetWhatsInfoFromWhatsappID ([abab9d3](https://github.com/KristanLaimon/WhatsBotCord.js/commit/abab9d37bc36272dd58ea1d7f0feef6d14b20463))
+
 ## [0.12.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.11.0...v0.12.0) (2025-09-25)
 
 ### Features
