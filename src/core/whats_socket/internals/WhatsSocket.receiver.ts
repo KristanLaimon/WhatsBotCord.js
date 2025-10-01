@@ -1,6 +1,6 @@
 import type { GroupMetadata } from "baileys";
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
-import { type WhatsappIDInfo, WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
+import { type WhatsappIDInfo, WhatsappHelper_ExtractFromWhatsappID, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
 import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
@@ -274,7 +274,7 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
       const foundId = info.id || info.lid;
       let foundWhatsInfo: WhatsappIDInfo | null = null;
       if (foundId) {
-        foundWhatsInfo = WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(foundId);
+        foundWhatsInfo = WhatsappHelper_ExtractFromWhatsappID(foundId);
       }
       return {
         isAdmin: info.admin === "superadmin",

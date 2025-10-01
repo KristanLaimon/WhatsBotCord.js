@@ -58,10 +58,10 @@ export function WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(rawMsg: W
   if (!id) {
     throw Error("This shouldn't happen, baileys library never gives both participant and remoteJid as undefined, only one of them");
   }
-  return WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(id);
+  return WhatsappHelper_ExtractFromWhatsappID(id);
 }
 
-export function WhatsappHelper_ExtractWhatsappIdFromWhatsappRawId(whatsappIDStr: string): WhatsappIDInfo {
+export function WhatsappHelper_ExtractFromWhatsappID(whatsappIDStr: string): WhatsappIDInfo {
   const idNumbersOnly = whatsappIDStr.split("@").at(0)!;
   let whatsIdType: WhatsappIdType;
   if (WhatsappHelper_isLIDIdentifier(whatsappIDStr)) {
