@@ -1,7 +1,7 @@
 import mime from "mime";
 import path from "node:path";
 import { type WhatsBotOptions, BotUtils_GenerateOptions } from "../core/bot/bot.js";
-import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
+import type { IChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import Myself_Submodule_Status from "../core/bot/internals/ChatContext.myself.status.js";
 import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
 import type { ICommand } from "../core/bot/internals/ICommand.js";
@@ -11,7 +11,7 @@ import WhatsSocketMock from "../core/whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { ChatContext, MsgType, SenderType } from "../index.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import ChatContext_MockingSuite from "./ChatContext.mockingsuite.js";
 import {
   MsgFactory_Audio,
@@ -28,7 +28,7 @@ import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 
 export type MockingChatParams = {
-  chatContextConfig?: Omit<Partial<ChatContextConfig>, "cancelKeywords">;
+  chatContextConfig?: Omit<Partial<IChatContextConfig>, "cancelKeywords">;
   botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
   chatId?: string;
   participantId_LID?: string;
@@ -153,7 +153,7 @@ export default class ChatMock {
     this.ParticipantId_PN = PN;
     if (additionalOptions?.senderType) this._senderType = additionalOptions?.senderType;
 
-    const chatContextConfig: ChatContextConfig = {
+    const chatContextConfig: IChatContextConfig = {
       cancelKeywords: this._constructorConfig?.cancelKeywords ?? ["cancel"],
       ignoreSelfMessages: this._constructorConfig?.chatContextConfig?.ignoreSelfMessages ?? true,
       timeoutSeconds: this._constructorConfig?.chatContextConfig?.timeoutSeconds ?? 15,
@@ -416,8 +416,8 @@ export default class ChatMock {
           newChatId = metadata.id;
         }
       } else {
-        if (!metadata.id.endsWith(WhatsappIndividualIdentifier)) {
-          newChatId = metadata.id + WhatsappIndividualIdentifier;
+        if (!metadata.id.endsWith(WhatsappPhoneNumberIdentifier)) {
+          newChatId = metadata.id + WhatsappPhoneNumberIdentifier;
         } else {
           newChatId = metadata.id;
         }
@@ -492,17 +492,17 @@ function Constructor_ResolveChatID(chatId?: string, senderType?: SenderType): { 
       if (!chatId) {
         return { chatIdResolved: defaultIndividualChatId };
       }
-      if (chatId.endsWith(WhatsappIndividualIdentifier)) {
+      if (chatId.endsWith(WhatsappPhoneNumberIdentifier)) {
         return { chatIdResolved: chatId };
       } else {
-        return { chatIdResolved: chatId + WhatsappIndividualIdentifier };
+        return { chatIdResolved: chatId + WhatsappPhoneNumberIdentifier };
       }
     }
   } else if (chatId) {
     if (chatId.endsWith(WhatsappGroupIdentifier)) {
       return { chatIdResolved: chatId, updatedSenderType: SenderType.Group }; //Its correct already!
-    } else if (chatId.endsWith(WhatsappIndividualIdentifier)) {
-      return { chatIdResolved: chatId + WhatsappIndividualIdentifier, updatedSenderType: SenderType.Individual }; //Let's fix it
+    } else if (chatId.endsWith(WhatsappPhoneNumberIdentifier)) {
+      return { chatIdResolved: chatId + WhatsappPhoneNumberIdentifier, updatedSenderType: SenderType.Individual }; //Let's fix it
     }
   }
 
@@ -516,7 +516,7 @@ function Constructor_ResolveParticipantIds(
   senderType?: SenderType
 ): { LID: string | null; PN: string | null; senderTypeUpdated: SenderType | null } {
   const defaultLID: string = "fakeParticipnatID" + WhatsappLIDIdentifier;
-  const defaultPN: string = "fakeParticipantID" + WhatsappIndividualIdentifier;
+  const defaultPN: string = "fakeParticipantID" + WhatsappPhoneNumberIdentifier;
 
   if (!participantId_LID && !participantId_PN && senderType === SenderType.Individual) {
     return { LID: null, PN: null, senderTypeUpdated: null };
@@ -535,10 +535,10 @@ function Constructor_ResolveParticipantIds(
 
   let PN_ToReturn: string;
   if (participantId_PN) {
-    if (participantId_PN.endsWith(WhatsappIndividualIdentifier)) {
+    if (participantId_PN.endsWith(WhatsappPhoneNumberIdentifier)) {
       PN_ToReturn = participantId_PN; //Its ok, nothing to fix
     } else {
-      PN_ToReturn = participantId_PN + WhatsappIndividualIdentifier; //Let's fix it
+      PN_ToReturn = participantId_PN + WhatsappPhoneNumberIdentifier; //Let's fix it
     }
   } else {
     PN_ToReturn = defaultPN;

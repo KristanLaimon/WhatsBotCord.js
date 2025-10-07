@@ -2,13 +2,7 @@ import { downloadMediaMessage } from "baileys";
 import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../../../Msg.types.js";
-import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
-import {
-  type GroupMetadataInfo,
-  type WhatsSocketReceiverWaitOptions,
-  WhatsSocketReceiverHelper_isReceiverError,
-} from "../../whats_socket/internals/WhatsSocket.receiver.js";
-
+import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
 import type {
   IWhatsSocket_Submodule_SugarSender,
@@ -16,10 +10,15 @@ import type {
   WhatsMsgSenderSendingOptions,
   WhatsMsgSenderSendingOptionsMINIMUM,
 } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
+import {
+  type GroupMetadataInfo,
+  type WhatsSocketReceiverWaitOptions,
+  WhatsSocketReceiverHelper_isReceiverError,
+} from "../../whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
-import type { ChatContextContactRes, ChatContextUbication, IChatContext } from "./IChatContext.js";
+import type { ChatContextContactRes, ChatContextUbication, IChatContext, IChatContext_CloneWith_Params } from "./IChatContext.js";
 
-export type ChatContextConfig = WhatsSocketReceiverWaitOptions & {
+export type IChatContextConfig = WhatsSocketReceiverWaitOptions & {
   /**
    * Used primarly in mocking system
    */
@@ -63,7 +62,7 @@ export class ChatContext implements IChatContext {
 
   public readonly FixedSenderType: SenderType;
 
-  public Config: ChatContextConfig;
+  public Config: IChatContextConfig;
 
   /**
    * Creates a new chat session bound to a specific chat and initial message.
@@ -88,7 +87,7 @@ export class ChatContext implements IChatContext {
     initialMsg: WhatsappMessage,
     senderDependency: IWhatsSocket_Submodule_SugarSender,
     receiverDependency: IWhatsSocket_Submodule_Receiver,
-    config: ChatContextConfig
+    config: IChatContextConfig
   ) {
     this.Config = config;
     this.FixedParticipantLID = participantID_LID;
@@ -98,6 +97,55 @@ export class ChatContext implements IChatContext {
     this.FixedChatId = fixedChatId;
     this.FixedInitialMsg = initialMsg;
     this.FixedSenderType = config.customSenderType_Internal ?? MsgHelper_FullMsg_GetSenderType(this.FixedInitialMsg);
+  }
+
+  @autobind
+  public Clone(): IChatContext {
+    return new ChatContext(
+      this.FixedParticipantLID,
+      this.FixedParticipantPN,
+      this.FixedChatId,
+      this.FixedInitialMsg,
+      this._internalSend,
+      this._internalReceive,
+      this.Config
+    );
+  }
+
+  @autobind
+  public CloneButTargetedTo(params: IChatContext_CloneWith_Params): IChatContext {
+    const keysData = params.initialMsg.key;
+
+    let ID_PN: string | null = null;
+    let ID_LID: string | null = null;
+
+    //Neccesary due to how bailey.js library works. Check update to v7.0.0 on their official page to understand this
+    if (keysData.participant) {
+      if (keysData.participant.endsWith(WhatsappLIDIdentifier)) {
+        ID_LID = keysData.participant;
+      } else if (keysData.participant.endsWith(WhatsappPhoneNumberIdentifier)) {
+        ID_PN = keysData.participant;
+      }
+    }
+
+    if (keysData.participantAlt) {
+      if (keysData.participantAlt.endsWith(WhatsappLIDIdentifier)) {
+        ID_LID = keysData.participantAlt;
+      } else if (keysData.participantAlt.endsWith(WhatsappPhoneNumberIdentifier)) {
+        ID_PN = keysData.participantAlt;
+      }
+    }
+
+    //prettier-ignore
+    return new ChatContext(
+        ID_LID,
+        ID_PN,
+        params.initialMsg.key.remoteJid!,
+        params.initialMsg,
+        this._internalSend,
+        this._internalReceive,
+        params?.newConfig ?? this.Config
+      );
   }
 
   @autobind
@@ -259,7 +307,7 @@ export class ChatContext implements IChatContext {
   //============================ RECEIVING ==============================
 
   @autobind
-  public async WaitMsg(expectedType: MsgType, localOptions?: Partial<ChatContextConfig>): Promise<WhatsappMessage | null> {
+  public async WaitMsg(expectedType: MsgType, localOptions?: Partial<IChatContextConfig>): Promise<WhatsappMessage | null> {
     switch (this.FixedSenderType) {
       case SenderType.Unknown:
         throw new Error(
@@ -308,7 +356,7 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public async WaitText(localOptions?: Partial<ChatContextConfig>): Promise<string | null> {
+  public async WaitText(localOptions?: Partial<IChatContextConfig>): Promise<string | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Text, localOptions);
     if (!found) return null;
     const extractedTxtToReturn: string | null = MsgHelper_FullMsg_GetText(found);
@@ -318,7 +366,7 @@ export class ChatContext implements IChatContext {
   @autobind
   public async WaitMultimedia(
     msgTypeToWaitFor: MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio,
-    localOptions?: Partial<ChatContextConfig>
+    localOptions?: Partial<IChatContextConfig>
   ): Promise<Buffer | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(msgTypeToWaitFor, localOptions);
     if (!found) return null;
@@ -327,7 +375,7 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public async WaitUbication(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextUbication | null> {
+  public async WaitUbication(localOptions?: Partial<IChatContextConfig>): Promise<ChatContextUbication | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Ubication, localOptions);
     if (!found) return null;
     const res = found?.message?.locationMessage;
@@ -341,7 +389,7 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public async WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | ChatContextContactRes[] | null> {
+  public async WaitContact(localOptions?: Partial<IChatContextConfig>): Promise<ChatContextContactRes | ChatContextContactRes[] | null> {
     // Wait for a contact message
     const message = await this.WaitMsg(MsgType.Contact, localOptions);
     if (!message) return null;
@@ -353,7 +401,7 @@ export class ChatContext implements IChatContext {
       return {
         name: contact.displayName || "",
         number,
-        whatsappId_PN: number ? `${number}${WhatsappIndividualIdentifier}` : "",
+        whatsappId_PN: number ? `${number}${WhatsappPhoneNumberIdentifier}` : "",
       };
     }
 
@@ -364,7 +412,7 @@ export class ChatContext implements IChatContext {
         return {
           name: contact.displayName || "",
           number,
-          whatsappId_PN: number ? `${number}${WhatsappIndividualIdentifier}` : "",
+          whatsappId_PN: number ? `${number}${WhatsappPhoneNumberIdentifier}` : "",
         } satisfies ChatContextContactRes;
       });
     }

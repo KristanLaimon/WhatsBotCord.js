@@ -6,7 +6,7 @@ import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSock
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import ChatMock from "./ChatMock.js";
 
 //                    ------------------- ======== GENERAL Tests ========= -----------------------------
@@ -55,8 +55,8 @@ test("WhenSendingCustomChatId_CommandShouldReceiveIt", async (): Promise<void> =
   class Com implements ICommand {
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
-      expect(_args.chatId).toBe(customChatId + WhatsappIndividualIdentifier);
-      expect(_ctx.FixedChatId).toBe(customChatId + WhatsappIndividualIdentifier);
+      expect(_args.chatId).toBe(customChatId + WhatsappPhoneNumberIdentifier);
+      expect(_ctx.FixedChatId).toBe(customChatId + WhatsappPhoneNumberIdentifier);
       expect(_args.chatId).toBe(_ctx.FixedChatId); // They must be the same, logically
     }
   }
@@ -82,7 +82,7 @@ test("WhenSendingCustomParticipantId_CommandShouldReceiveIt", async (): Promise<
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       expect(_args.participantIdLID).toBe(customChatId + WhatsappLIDIdentifier);
-      expect(_args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+      expect(_args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
 
       expect(_ctx.FixedParticipantLID).toBe(_args.participantIdLID);
       expect(_ctx.FixedParticipantPN).toBe(_args.participantIdPN);
@@ -125,7 +125,7 @@ test("WhenUsingRawApi_NoSocket_Sending_ShouldCatchMsgSent", async (): Promise<vo
 
 test("WhenUsingRawApi_NoSocket_Receiver_Group_ShouldCatch", async (): Promise<void> => {
   const myCustomChatId: string = "customChatID" + WhatsappGroupIdentifier;
-  const myCustomParticipantId: string = "participatnId" + WhatsappIndividualIdentifier;
+  const myCustomParticipantId: string = "participatnId" + WhatsappPhoneNumberIdentifier;
   class Com implements ICommand {
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
@@ -206,7 +206,7 @@ test("WhenWaitingShouldBeTheSameChatIdAndParticipantId_UsingChatContext", async 
   await chat.StartChatSimulation();
   expect(chat.SentFromCommand.Texts).toHaveLength(0);
   expect(chat.WaitedFromCommand).toHaveLength(1);
-  expect(chat.WaitedFromCommand.at(0)!.chatId).toBe(myCustomChatId + WhatsappIndividualIdentifier);
+  expect(chat.WaitedFromCommand.at(0)!.chatId).toBe(myCustomChatId + WhatsappPhoneNumberIdentifier);
   expect(chat.WaitedFromCommand.at(0)!.partipantId_LID).toBe(myCustomParticipantId + WhatsappLIDIdentifier);
   expect(chat.WaitedFromCommand.at(0)!.options).toMatchObject({ timeoutSeconds: 23 });
 });
@@ -1007,7 +1007,7 @@ describe("Images", () => {
         //Due to senderType: SenderType.Group config in ChatMock, by default should create this
         expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
         expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
-        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
 
         expect(_ctx.FixedChatId).toBe(args.chatId);
         expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
@@ -1253,7 +1253,7 @@ describe("Stickers", () => {
         expect(mySticker?.pushName).toBe("My pushname");
         expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
         expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
-        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
         expect(_ctx.FixedChatId).toBe(args.chatId);
         expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
       }
@@ -1518,7 +1518,7 @@ describe("Audio", () => {
         expect(myAudio?.pushName).toBe("My pushname");
         expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
         expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
-        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
         expect(_ctx.FixedChatId).toBe(args.chatId);
         expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
       }
@@ -1879,7 +1879,7 @@ describe("Video", () => {
         expect(myVideo?.pushName).toBe("My pushname");
         expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
         expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
-        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
         expect(_ctx.FixedChatId).toBe(args.chatId);
         expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
       }
@@ -2211,7 +2211,7 @@ describe("Document", () => {
         expect(myDocument?.pushName).toBe("My pushname");
         expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
         expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
-        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
         expect(_ctx.FixedChatId).toBe(args.chatId);
         expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
       }
@@ -2479,7 +2479,7 @@ describe("Location", () => {
         expect(myLocation?.pushName).toBe("My pushname");
         expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
         expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
-        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
         expect(_ctx.FixedChatId).toBe(args.chatId);
         expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
       }
@@ -2611,7 +2611,7 @@ describe("Contact", () => {
         expect(myContact).toBeDefined();
         expect(myContact?.name).toBe(contact.name);
         expect(myContact?.number).toBe(contact.phone);
-        expect(myContact?.whatsappId_PN).toBe(`${contact.phone}${WhatsappIndividualIdentifier}`);
+        expect(myContact?.whatsappId_PN).toBe(`${contact.phone}${WhatsappPhoneNumberIdentifier}`);
       }
     }
     const chat = new ChatMock(new Com());
@@ -2633,7 +2633,7 @@ describe("Contact", () => {
         expect(myContacts).toBeDefined();
         expect(myContacts?.at(0)!.name).toBe(contacts[0]!.name); // Only first contact is returned
         expect(myContacts?.at(0)!.number).toBe(contacts[0]!.phone);
-        expect(myContacts?.at(0)!.whatsappId_PN).toBe(`${contacts[0]!.phone}${WhatsappIndividualIdentifier}`);
+        expect(myContacts?.at(0)!.whatsappId_PN).toBe(`${contacts[0]!.phone}${WhatsappPhoneNumberIdentifier}`);
 
         const secondContact: ChatContextContactRes = myContacts.at(1)!;
         expect(secondContact).toBeDefined();
@@ -2714,7 +2714,7 @@ describe("Contact", () => {
         expect(myContact?.pushName).toBe("My pushname");
         expect(args.chatId).toEndWith(WhatsappGroupIdentifier);
         expect(args.participantIdLID).toEndWith(WhatsappLIDIdentifier);
-        expect(args.participantIdPN).toEndWith(WhatsappIndividualIdentifier);
+        expect(args.participantIdPN).toEndWith(WhatsappPhoneNumberIdentifier);
         expect(_ctx.FixedChatId).toBe(args.chatId);
         expect(_ctx.FixedParticipantPN).toBe(args.participantIdPN);
       }

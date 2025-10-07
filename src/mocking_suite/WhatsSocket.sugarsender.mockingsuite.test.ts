@@ -7,11 +7,11 @@ import type {
   WhatsMsgUbicationOptions,
 } from "../core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 const RAW_CHAT = "fakeChat";
 const CHATID_GROUP: string = RAW_CHAT + WhatsappGroupIdentifier;
-const CHATID_INDIVIDUAL: string = RAW_CHAT + WhatsappIndividualIdentifier;
+const CHATID_INDIVIDUAL: string = RAW_CHAT + WhatsappPhoneNumberIdentifier;
 
 test("Basic_WhenInstatiating_ShouldNotThrowAnyError", () => {
   new WhatsSocket_Submodule_SugarSender_MockingSuite();
@@ -684,7 +684,7 @@ describe("Location", () => {
 describe("Contact", () => {
   const RAW_CHAT = "fakeChat";
   const CHATID_GROUP = RAW_CHAT + WhatsappGroupIdentifier;
-  const CHATID_INDIVIDUAL = RAW_CHAT + WhatsappIndividualIdentifier;
+  const CHATID_INDIVIDUAL = RAW_CHAT + WhatsappPhoneNumberIdentifier;
 
   test("should store a single contact message with normalized chatId", async () => {
     const sender = new WhatsSocket_Submodule_SugarSender_MockingSuite();

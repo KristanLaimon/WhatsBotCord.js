@@ -1,13 +1,15 @@
-import { type Mock, expect, it, spyOn, test } from "bun:test";
+import { type Mock, describe, expect, it, spyOn, test } from "bun:test";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID_LID,
   MockGroupTxtMsg as GroupTxtMsg,
   MockIndividualTxtMsg_CHATID as IndividualMsg_CHATID,
   MockIndividualTxtMsg as IndividualTxtMsg,
+  MockIndividualTxtMsg,
+  MockIndividualTxtMsg_CHATID,
 } from "../../../mocks/MockIndividualGroup.mock.js";
 import { MsgType, SenderType } from "../../../Msg.types.js";
-import { WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
 import type { WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import {
   type WhatsSocketReceiverError,
@@ -17,7 +19,7 @@ import {
 import { WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
-import { type ChatContextConfig, ChatContext } from "./ChatContext.js";
+import { type IChatContextConfig, ChatContext } from "./ChatContext.js";
 
 /**
  * ChatSession Testing Suite
@@ -36,7 +38,7 @@ import { type ChatContextConfig, ChatContext } from "./ChatContext.js";
 const CHATID: string = GroupTxtMsg.key.remoteJid!;
 const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
   sendRawWithoutEnqueue: false,
-  mentionsIds: ["testID" + WhatsappIndividualIdentifier, "testID2" + WhatsappIndividualIdentifier],
+  mentionsIds: ["testID" + WhatsappPhoneNumberIdentifier, "testID2" + WhatsappPhoneNumberIdentifier],
 };
 
 function GenerateLocalToolKit_ChatSession_FromGroup() {
@@ -562,7 +564,7 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigIn
   const expectedType = MsgType.Text;
 
   // 1st local calling
-  const firstChatConfig: ChatContextConfig = {
+  const firstChatConfig: IChatContextConfig = {
     cancelKeywords: ["mock", "cancel"],
     ignoreSelfMessages: false,
     timeoutSeconds: 100,
@@ -574,12 +576,12 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMGROUP_ShouldUseChatContextConfigIn
   expect(internalWaitSpy).toHaveBeenCalledWith(GroupMsg_SENDERID_LID, null, GroupMsg_CHATID, expectedType, { ...chat.Config, ...firstChatConfig });
 
   /// 2nd local calling
-  const secondLocalConfig: Partial<ChatContextConfig> = {
+  const secondLocalConfig: Partial<IChatContextConfig> = {
     timeoutSeconds: 100000,
   };
   await chat.WaitMsg(expectedType, /** local options for this msg only*/ secondLocalConfig);
   expect(internalWaitSpy).toHaveBeenCalledTimes(2);
-  let paramsCalled: ChatContextConfig = internalWaitSpy.mock.lastCall![4];
+  let paramsCalled: IChatContextConfig = internalWaitSpy.mock.lastCall![4];
   expect(paramsCalled).toBeDefined();
   //Should not be the same like last local call
   expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
@@ -605,7 +607,7 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseChatContextCon
   const expectedType = MsgType.Text;
 
   // 1st local calling
-  const firstChatConfig: ChatContextConfig = {
+  const firstChatConfig: IChatContextConfig = {
     cancelKeywords: ["mock", "cancel"],
     ignoreSelfMessages: false,
     timeoutSeconds: 100,
@@ -617,12 +619,12 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseChatContextCon
   expect(internalWaitSpy).toHaveBeenCalledWith(IndividualMsg_CHATID, expectedType, { ...chat.Config, ...firstChatConfig });
 
   /// 2nd local calling
-  const secondLocalConfig: Partial<ChatContextConfig> = {
+  const secondLocalConfig: Partial<IChatContextConfig> = {
     timeoutSeconds: 100000,
   };
   await chat.WaitMsg(expectedType, /** local options for this msg only*/ secondLocalConfig);
   expect(internalWaitSpy).toHaveBeenCalledTimes(2);
-  let paramsCalled: ChatContextConfig = internalWaitSpy.mock.lastCall![2];
+  let paramsCalled: IChatContextConfig = internalWaitSpy.mock.lastCall![2];
   expect(paramsCalled).toBeDefined();
   //Should not be the same like last local call
   expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
@@ -637,4 +639,103 @@ it("WhatMsg_WhenNotUsingLocalConfigParams_FROMINDIVIDUAL_ShouldUseChatContextCon
   expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...firstChatConfig });
   expect(paramsCalled).not.toMatchObject({ ...chat.Config, ...secondLocalConfig });
   expect(paramsCalled).toMatchObject(chat.Config);
+});
+
+describe("Cloning", () => {
+  test("Clone method should clone completely", () => {
+    const { chat } = GenerateLocalToolKit_ChatSession_FromIndividual();
+
+    const clonedChat = chat.Clone();
+
+    expect(chat.FixedParticipantPN).toBe(clonedChat.FixedParticipantPN);
+    expect(chat.FixedParticipantLID).toBe(clonedChat.FixedParticipantLID);
+    expect(chat.FixedChatId).toBe(clonedChat.FixedChatId);
+    expect(chat.FixedInitialMsg).toBe(clonedChat.FixedInitialMsg);
+    expect(chat.FixedSenderType).toBe(clonedChat.FixedSenderType);
+    expect(chat.Config).toEqual(clonedChat.Config);
+
+    //@ts-expect-error clonedChat its the interface version, but this case we know its concrete implementation is "Chatcontext" real object
+    expect(chat["_internalSend"]).toEqual(clonedChat["_internalSend"]);
+    //@ts-expect-error clonedChat its the interface version, but this case we know its concrete implementation is "Chatcontext" real object
+    expect(chat["_internalReceiver"]).toEqual(clonedChat["_internalReceiver"]);
+  });
+
+  test("CloneButTargetedTo should clone | FROM GROUP TO INDIVIDUAL", () => {
+    const { chat } = GenerateLocalToolKit_ChatSession_FromGroup();
+
+    const forkedChat = chat.CloneButTargetedTo({
+      initialMsg: MockIndividualTxtMsg,
+    });
+
+    expect(forkedChat.FixedChatId).toBe(MockIndividualTxtMsg_CHATID);
+    expect(forkedChat.FixedSenderType).toBe(SenderType.Individual);
+    expect(forkedChat.FixedInitialMsg).toEqual(MockIndividualTxtMsg);
+    expect(forkedChat.FixedParticipantLID).toBeNull();
+    expect(forkedChat.FixedParticipantPN).toBeNull();
+
+    // Dependencies should be the same
+    //@ts-expect-error clonedChat its the interface version, but this case we know its concrete implementation is "Chatcontext" real object
+    expect(chat["_internalSend"]).toEqual(forkedChat["_internalSend"]);
+    //@ts-expect-error clonedChat its the interface version, but this case we know its concrete implementation is "Chatcontext" real object
+    expect(chat["_internalReceiver"]).toEqual(forkedChat["_internalReceiver"]);
+  });
+
+  test("CloneButTargetedTo should clone | FROM INDIVIDUAL TO GROUP", () => {
+    const { chat } = GenerateLocalToolKit_ChatSession_FromIndividual();
+
+    const newGroupChatId = "new_group" + WhatsappGroupIdentifier;
+    const newParticipantLID = "new_participant_lid" + WhatsappLIDIdentifier;
+    const newParticipantPN = "new_participant_pn" + WhatsappPhoneNumberIdentifier;
+    const newInitialMsg = {
+      ...GroupTxtMsg,
+      key: { ...GroupTxtMsg.key, remoteJid: newGroupChatId, participant: newParticipantLID, participantAlt: newParticipantPN },
+    };
+
+    const forkedChat = chat.CloneButTargetedTo({
+      initialMsg: newInitialMsg,
+    });
+
+    expect(forkedChat.FixedChatId).toBe(newGroupChatId);
+    expect(forkedChat.FixedSenderType).toBe(SenderType.Group);
+    expect(forkedChat.FixedInitialMsg).toEqual(newInitialMsg);
+    expect(forkedChat.FixedParticipantLID).toBe(newParticipantLID);
+    expect(forkedChat.FixedParticipantPN).toBe(newParticipantPN);
+
+    // Dependencies should be the same
+    //@ts-expect-error clonedChat its the interface version, but this case we know its concrete implementation is "Chatcontext" real object
+    expect(chat["_internalSend"]).toEqual(forkedChat["_internalSend"]);
+    //@ts-expect-error clonedChat its the interface version, but this case we know its concrete implementation is "Chatcontext" real object
+    expect(chat["_internalReceiver"]).toEqual(forkedChat["_internalReceiver"]);
+  });
+
+  test("CloneButTargetedTo should use new config if provided", () => {
+    const newConfig: IChatContextConfig = {
+      cancelKeywords: ["hello"],
+      ignoreSelfMessages: true,
+      timeoutSeconds: 100,
+    };
+    const { chat } = GenerateLocalToolKit_ChatSession_FromIndividual();
+    const newIndividualChatId = "new_individual@s.whatsapp.net";
+    const newInitialMsg = { ...IndividualTxtMsg, key: { ...IndividualTxtMsg.key, remoteJid: newIndividualChatId } };
+
+    const forkedChat = chat.CloneButTargetedTo({
+      initialMsg: newInitialMsg,
+      newConfig: newConfig,
+    });
+
+    expect(forkedChat.Config.timeoutSeconds).toBe(100);
+    expect(forkedChat.Config).toEqual(newConfig); // Should inherit other properties
+  });
+
+  test("CloneButTargetedTo should reuse config if not provided", () => {
+    const { chat } = GenerateLocalToolKit_ChatSession_FromIndividual();
+    const newIndividualChatId = "new_individual@s.whatsapp.net";
+    const newInitialMsg = { ...IndividualTxtMsg, key: { ...IndividualTxtMsg.key, remoteJid: newIndividualChatId } };
+
+    const forkedChat = chat.CloneButTargetedTo({
+      initialMsg: newInitialMsg,
+    });
+
+    expect(forkedChat.Config).toEqual(chat.Config);
+  });
 });

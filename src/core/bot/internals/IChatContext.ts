@@ -7,7 +7,7 @@ import type {
 import type { GroupMetadataInfo } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 
 import type { WhatsappMessage } from "../../whats_socket/types.js";
-import type { ChatContextConfig } from "./ChatContext.js";
+import type { IChatContextConfig } from "./ChatContext.js";
 
 /**
  * Represents a location shared in a chat.
@@ -100,7 +100,7 @@ export interface IChatContext {
    * Provides toggles, timeouts, or feature flags that control
    * how the session should behave.
    */
-  Config: ChatContextConfig;
+  Config: IChatContextConfig;
 
   // ============================ SENDING ============================
   /**
@@ -608,7 +608,7 @@ export interface IChatContext {
    * else console.log("No message received within timeout");
    * ```
    */
-  WaitMsg(expectedType: MsgType, localOptions?: Partial<ChatContextConfig>): Promise<WhatsappMessage | null>;
+  WaitMsg(expectedType: MsgType, localOptions?: Partial<IChatContextConfig>): Promise<WhatsappMessage | null>;
 
   /**
    * Waits for the next text message from the original sender.
@@ -623,7 +623,7 @@ export interface IChatContext {
    * else console.log("No text message received");
    * ```
    */
-  WaitText(localOptions?: Partial<ChatContextConfig>): Promise<string | null>;
+  WaitText(localOptions?: Partial<IChatContextConfig>): Promise<string | null>;
 
   /**
    * Waits for the next multimedia message of the specified type (e.g., image, video, audio).
@@ -640,7 +640,7 @@ export interface IChatContext {
    */
   WaitMultimedia(
     msgTypeToWaitFor: MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio,
-    localOptions?: Partial<ChatContextConfig>
+    localOptions?: Partial<IChatContextConfig>
   ): Promise<Buffer | null>;
 
   /**
@@ -655,7 +655,7 @@ export interface IChatContext {
    * if (location) console.log(`Lat: ${location.degreesLatitude}, Lon: ${location.degreesLongitude}`);
    * ```
    */
-  WaitUbication(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextUbication | null>;
+  WaitUbication(localOptions?: Partial<IChatContextConfig>): Promise<ChatContextUbication | null>;
 
   /**
    * Waits for the next contact message from the original sender.
@@ -669,7 +669,7 @@ export interface IChatContext {
    * if (contact) console.log(`Name: ${contact.name}, Number: ${contact.number}, WhatsApp ID: ${contact.whatsappId}`);
    * ```
    */
-  WaitContact(localOptions?: Partial<ChatContextConfig>): Promise<ChatContextContactRes | ChatContextContactRes[] | null>;
+  WaitContact(localOptions?: Partial<IChatContextConfig>): Promise<ChatContextContactRes | ChatContextContactRes[] | null>;
 
   /**
    * Fetches the group data for a specific chat.
@@ -696,4 +696,57 @@ export interface IChatContext {
    * @throws Error if there is a problem fetching group metadata.
    */
   FetchGroupData(): Promise<GroupMetadataInfo | null>;
+
+  /**
+   * Creates a new, independent `IChatContext` instance that is a copy of the current one.
+   *
+   * This is useful for scenarios where you need to perform operations in parallel or
+   * create a new interaction flow without modifying the state of the original context.
+   * The cloned context will share the same initial configuration and properties but
+   * can be modified independently.
+   *
+   * @returns A new `IChatContext` instance.
+   */
+  Clone(): IChatContext;
+
+  /**
+   * Creates a new, independent `IChatContext` for a different chat or user.
+   *
+   * This method "forks" the current context, allowing you to reuse its underlying
+   * dependencies (like the socket connection) but aim it at a new conversation.
+   * It's ideal for scenarios like a command in a group chat needing to send a
+   * private message to a user.
+   *
+   * The original context remains unless specified.
+   *
+   * @param params - An object specifying the properties of the new target chat,
+   *   including the new chat ID and the initial message for that new context and
+   *   possible changes to create a new context if needed
+   * @returns A new, forked `IChatContext` instance bound to the specified chat.
+   *
+   * @example
+   * const privateContext = await currentGroupContext.Fork({ newSenderType: SenderType.Individual, ... });
+   * await privateContext.SendText("This is a private message.");
+   */
+  CloneButTargetedTo(params: IChatContext_CloneWith_Params): IChatContext;
 }
+/**
+ * Parameters for creating a new, retargeted `IChatContext` instance using `CloneButTargetedTo`.
+ *
+ * Useful to fork an existing ChatContext object with exactly
+ * the same functionality sending and receiving but with different
+ * chat context!
+ */
+export type IChatContext_CloneWith_Params = {
+  /**
+   * The foundational message for the new context.
+   *
+   * This message is crucial as it's used to determine the new context's properties
+   * (like sender type, chat ID) and serves as the target for all feedback emojis
+   */
+  initialMsg: WhatsappMessage;
+  /**
+   * Optional new configuration for the cloned context. If not provided, the original context's configuration is used.
+   */
+  newConfig?: IChatContextConfig;
+};

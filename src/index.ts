@@ -19,7 +19,7 @@ import {
 
 // === Types deps exporting ===
 import type { WhatsbotcordMiddlewareFunct } from "./core/bot/bot.js";
-import type { ChatContextConfig } from "./core/bot/internals/ChatContext.js";
+import type { IChatContextConfig } from "./core/bot/internals/ChatContext.js";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
 import type { IChatContext } from "./core/bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "./core/bot/internals/ICommand.js";
@@ -39,7 +39,7 @@ import type {
 } from "./mocking_suite/ChatMock.js";
 export type {
   AdditionalAPI,
-  ChatContextConfig,
+  IChatContextConfig as ChatContextConfig,
   CommandArgs,
   IChatContext,
   ICommand,
@@ -71,7 +71,7 @@ import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
 import Delegate from "./libs/Delegate.js";
 import ChatMock from "./mocking_suite/ChatMock.js";
 import { MsgType, SenderType } from "./Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "./Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./Whatsapp.types.js";
 export {
   ChatContext,
   ChatMock,
@@ -148,7 +148,7 @@ export const WhatsappIdentifiers = {
    *
    * @note Just for reference
    */
-  PhoneNumber_Suffix_ID: WhatsappIndividualIdentifier,
+  PhoneNumber_Suffix_ID: WhatsappPhoneNumberIdentifier,
 };
 
 // === Main Default Export ===

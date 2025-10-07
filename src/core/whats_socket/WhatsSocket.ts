@@ -19,7 +19,7 @@ import { GetPath } from "../../libs/BunPath.js";
 import Delegate from "../../libs/Delegate.js";
 import type { MsgType } from "../../Msg.types.js";
 import { SenderType } from "../../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../Whatsapp.types.js";
 import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
@@ -337,7 +337,7 @@ export default class WhatsSocket implements IWhatsSocket {
         const senderId_PN = msg.key.participantAlt ?? null;
         let senderType: SenderType = SenderType.Unknown;
         if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
-        if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
+        if (chatId && chatId.endsWith(WhatsappPhoneNumberIdentifier)) senderType = SenderType.Individual;
         this.onIncomingMsg.CallAll(senderId_LID, senderId_PN, chatId, msg, MsgHelper_FullMsg_GetMsgType(msg), senderType);
       }
     });

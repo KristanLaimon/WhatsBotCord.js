@@ -3,7 +3,7 @@ import type { GroupMetadata, WAMessage, WAMessageUpdate } from "baileys";
 
 import { type Mock, describe, expect, mock as fn, it, spyOn } from "bun:test";
 import { MsgType, SenderType } from "../../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../Whatsapp.types.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
 import { BaileysSocketServiceAdapter_Mock } from "./WhatsSocket.baileys.mock.js";
@@ -221,7 +221,7 @@ describe("Events/Delegates", () => {
     const mockMsg: WAMessageUpdate = {
       key: {
         fromMe: false,
-        participant: "324234234" + WhatsappIndividualIdentifier,
+        participant: "324234234" + WhatsappPhoneNumberIdentifier,
         remoteJid: fakeChatId,
       },
       update: {
@@ -347,7 +347,7 @@ describe("Reconnecting", () => {
       id: "groupMock" + WhatsappGroupIdentifier,
       addressingMode: "lid",
       owner: "Christian",
-      participants: [{ id: "testfakeid" + WhatsappIndividualIdentifier }],
+      participants: [{ id: "testfakeid" + WhatsappPhoneNumberIdentifier }],
       subject: "Group Mock Name",
     };
 

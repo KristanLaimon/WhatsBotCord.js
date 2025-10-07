@@ -13,7 +13,7 @@ import type {
 } from "../core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import {
   MsgFactory_Audio,
   MsgFactory_Contact,
@@ -505,7 +505,7 @@ function CreateSuccessWhatsMsg(participantId: string | null, chatId: string): Wh
 }
 
 function NormalizeChatId(rawChatId: string): string {
-  if (rawChatId.endsWith(WhatsappIndividualIdentifier)) return rawChatId;
+  if (rawChatId.endsWith(WhatsappPhoneNumberIdentifier)) return rawChatId;
   if (rawChatId.endsWith(WhatsappGroupIdentifier)) {
     return rawChatId;
   } else {

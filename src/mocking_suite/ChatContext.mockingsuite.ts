@@ -1,4 +1,4 @@
-import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
+import type { IChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import { ChatContext } from "../core/bot/internals/ChatContext.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import type { MsgType } from "../Msg.types.js";
@@ -59,7 +59,7 @@ export default class ChatContext_MockingSuite extends ChatContext {
    */
   public override async WaitMultimedia(
     msgTypeToWaitFor: MsgType.Image | MsgType.Sticker | MsgType.Video | MsgType.Document | MsgType.Audio,
-    localOptions?: Partial<ChatContextConfig>
+    localOptions?: Partial<IChatContextConfig>
   ): Promise<Buffer | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(msgTypeToWaitFor, localOptions);
     if (!found) return null;

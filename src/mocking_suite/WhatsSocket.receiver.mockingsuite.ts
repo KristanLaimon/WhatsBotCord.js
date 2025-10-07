@@ -1,4 +1,4 @@
-import type { ChatContextConfig } from "../core/bot/internals/ChatContext.js";
+import type { IChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../core/whats_socket/internals/IWhatsSocket.receiver.js";
 import type { WhatsSocketReceiverError } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import {
@@ -21,7 +21,7 @@ export type WhatsSocketReceiverMsgWaited = {
   chatId: string;
   partipantId_LID: string | null;
   participantId_PN: string | null;
-  options?: Partial<ChatContextConfig>;
+  options?: Partial<IChatContextConfig>;
 };
 
 export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWhatsSocket_Submodule_Receiver {
@@ -72,7 +72,7 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
     userID_PN_toWait: string | null,
     chatId: string,
     expectedType: MsgType,
-    _localOptions?: Partial<ChatContextConfig>
+    _localOptions?: Partial<IChatContextConfig>
   ): Promise<WhatsappMessage> {
     if (this._queueWait.length === 0) {
       throw new Error("ChatContext is trying to wait a msg that will never arrives!... Use MockChat.EnqueueIncoming_****() to enqueue what to return!");

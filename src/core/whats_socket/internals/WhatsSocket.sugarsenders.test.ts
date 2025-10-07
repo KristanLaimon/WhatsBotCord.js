@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterEach } from "node:test";
 import { allMockMsgs } from "src/mocks/MockManyTypesMsgs.mock";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
 import type {
   WhatsMsgPollOptions,
@@ -70,7 +70,9 @@ describe("Text", () => {
   });
 
   it("WhenSendingSimplestTxtMsgWithAdditionalParams_ShouldSendIt", async (): Promise<void> => {
-    const firstParams: WhatsMsgSenderSendingOptions = { mentionsIds: ["idperson" + WhatsappIndividualIdentifier, "idperson2" + WhatsappIndividualIdentifier] };
+    const firstParams: WhatsMsgSenderSendingOptions = {
+      mentionsIds: ["idperson" + WhatsappPhoneNumberIdentifier, "idperson2" + WhatsappPhoneNumberIdentifier],
+    };
     //first msg
     await sender.Text(fakeChatId, "First with params", firstParams);
     expect(mockSocket.SentMessagesThroughQueue).toHaveLength(1);
@@ -78,7 +80,7 @@ describe("Text", () => {
     expect(sendSafeSpy).toHaveBeenLastCalledWith(fakeChatId, { mentions: firstParams.mentionsIds, text: "First with params" }, firstParams);
 
     const secondParams: WhatsMsgSenderSendingOptions = {
-      mentionsIds: ["idpeople1" + WhatsappIndividualIdentifier, "idpeople2" + WhatsappIndividualIdentifier],
+      mentionsIds: ["idpeople1" + WhatsappPhoneNumberIdentifier, "idpeople2" + WhatsappPhoneNumberIdentifier],
     };
     await sender.Text(fakeChatId, "Second with params", secondParams);
     expect(mockSocket.SentMessagesThroughQueue).toHaveLength(2);
@@ -529,7 +531,7 @@ describe("Audio", () => {
     const audioBuffer: Buffer = Buffer.from("audio content");
     const formatExtension = "ogg";
     const options = {
-      mentionsIds: ["user1" + WhatsappIndividualIdentifier, "user2" + WhatsappIndividualIdentifier],
+      mentionsIds: ["user1" + WhatsappPhoneNumberIdentifier, "user2" + WhatsappPhoneNumberIdentifier],
     };
 
     // Execute
@@ -842,7 +844,7 @@ describe("Video", () => {
     const videoBuffer: Buffer = Buffer.from("video content");
     const formatExtension = "mov";
     const options = {
-      mentionsIds: ["user1" + WhatsappIndividualIdentifier, "user2" + WhatsappIndividualIdentifier],
+      mentionsIds: ["user1" + WhatsappPhoneNumberIdentifier, "user2" + WhatsappPhoneNumberIdentifier],
     };
 
     // Execute
@@ -1240,7 +1242,7 @@ describe("Document", () => {
     const formatExtension = "pdf";
     const fileNameWithoutExtension = "report";
     const options = {
-      mentionsIds: ["user1" + WhatsappIndividualIdentifier, "user2" + WhatsappIndividualIdentifier],
+      mentionsIds: ["user1" + WhatsappPhoneNumberIdentifier, "user2" + WhatsappPhoneNumberIdentifier],
     };
 
     // Execute

@@ -1,5 +1,5 @@
 import type { WAMessage } from "baileys";
-import { WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../Whatsapp.types.js";
+import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 
 /**
  * Enum representing group sending modes.
@@ -116,6 +116,6 @@ export function WhatsappHelper_isMentionId(numberStr: string): boolean {
  * const isValid = WhatsappHelper_isFullWhatsappIdUser('1234567890@s.whatsapp.net');
  */
 export function WhatsappHelper_isFullWhatsappIdUser(expectedWhatsappId: string): boolean {
-  const UserCompleteWhatsappIdRegex = new RegExp(`^\\d{11,16}${WhatsappIndividualIdentifier}$`);
+  const UserCompleteWhatsappIdRegex = new RegExp(`^\\d{11,16}${WhatsappPhoneNumberIdentifier}$`);
   return UserCompleteWhatsappIdRegex.test(expectedWhatsappId);
 }

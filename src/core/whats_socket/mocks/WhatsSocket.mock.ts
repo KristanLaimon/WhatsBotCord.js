@@ -10,7 +10,7 @@ import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
 import Delegate from "../../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../internals/IWhatsSocket.sugarsender.js";
 import type { GroupMetadataInfo, ParticipantInfo } from "../internals/WhatsSocket.receiver.js";
@@ -55,7 +55,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
   onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
   onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
-  ownJID: string = "ownIDMock" + WhatsappIndividualIdentifier;
+  ownJID: string = "ownIDMock" + WhatsappPhoneNumberIdentifier;
 
   Send: IWhatsSocket_Submodule_SugarSender;
   Receive: IWhatsSocket_Submodule_Receiver;

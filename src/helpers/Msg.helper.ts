@@ -1,6 +1,6 @@
 import { type WAMessage, type proto } from "baileys";
 import { MsgType, SenderType } from "../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappIndividualIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import type { FoundQuotedMsg } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 
@@ -112,7 +112,7 @@ export function MsgHelper_FullMsg_GetSenderType(rawMsg: WhatsappMessage): Sender
   const chatId: string = rawMsg.key.remoteJid!;
   let senderType: SenderType = SenderType.Unknown;
   if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
-  if (chatId && chatId.endsWith(WhatsappIndividualIdentifier)) senderType = SenderType.Individual;
+  if (chatId && chatId.endsWith(WhatsappPhoneNumberIdentifier)) senderType = SenderType.Individual;
   return senderType;
 }
 

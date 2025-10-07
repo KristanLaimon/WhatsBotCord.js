@@ -10,7 +10,7 @@ import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/interna
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
-import { type ChatContextConfig, ChatContext } from "./internals/ChatContext.js";
+import { type IChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import Myself_Submodule_Status from "./internals/ChatContext.myself.status.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
 import type { CommandArgs, FoundQuotedMsg } from "./internals/CommandsSearcher.types.js";
@@ -26,7 +26,7 @@ export type BotMinimalInfo = {
 };
 
 export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
-  Omit<Partial<ChatContextConfig>, "ignoreSelfMessages"> & {
+  Omit<Partial<IChatContextConfig>, "ignoreSelfMessages"> & {
     /**
      * Character(s) used to tag the bot in messages.
      *
