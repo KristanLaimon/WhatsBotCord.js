@@ -37,3 +37,5 @@ class MyCommand implements ICommand {
     // now you can use ctxToUserPrivateChat.SendImg() and all other familiar methods!
   }
 }
+
+new MyCommand();
