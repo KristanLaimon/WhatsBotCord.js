@@ -1,5 +1,5 @@
 import type { GroupMetadataInfo } from "../../src/core/whats_socket/internals/WhatsSocket.receiver.js";
-import type { AdditionalAPI, CommandArgs, IChatContext, ICommand, WhatsappMessage } from "../../src/index.js";
+import { type AdditionalAPI, type CommandArgs, type IChatContext, type ICommand, type WhatsappMessage } from "../../src/index.js";
 
 //Whatsapp Chat:
 /**
@@ -31,7 +31,32 @@ class MyCommand implements ICommand {
 
     //This will recognize the msg, and automatically set the context to: Individual Chat, SenderID
     //with all the same methods you already know from ctx! like ctx.SendText(), ctx.SendImage(), etc
-    const ctxToUserPrivateChat = ctx.CloneButTargetedTo({ initialMsg: privateMsgToSender! });
+    const ctxToUserPrivateChat = ctx.CloneButTargetedToIndividualChat({ initialMsg: privateMsgToSender! });
+    console.log(ctxToUserPrivateChat.FixedChatId); // SenderType.Individual
+    await ctxToUserPrivateChat.SendText("Hi! again, this is not from group any more. We can talk privately 🤫");
+    // now you can use ctxToUserPrivateChat.SendImg() and all other familiar methods!
+  }
+}
+
+new MyCommand();
+
+// 2nd. case
+class MyCommand2 implements ICommand {
+  name: string = "answerinprivate";
+  public async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+    console.log(ctx.FixedSenderType); // SenderType.Group
+    //Here chat context is attached to 'MyGroup' context, so all messages goes there and strongly attached to "!mycommand" original msg
+    //who triggered it
+
+    const groupInfo: GroupMetadataInfo | null = await ctx.FetchGroupData();
+    //If defined, means this command is being run inside a group chat.
+    // You can check it as well with args.senderType enum! (e.g SenderType.Group or SenderType.Individual)
+    if (groupInfo) {
+      ctx.SendText(`Hi to ${groupInfo.groupName}`); // Bot: Hi to 'MyGroup'
+    }
+
+    //with all the same methods you already know from ctx! like ctx.SendText(), ctx.SendImage(), etc
+    const ctxToUserPrivateChat = ctx.CloneButTargetedToIndividualChat({ userChatId: args.participantIdPN! });
     console.log(ctxToUserPrivateChat.FixedChatId); // SenderType.Individual
     await ctxToUserPrivateChat.SendText("Hi! again, this is not from group any more. We can talk privately 🤫");
     // now you can use ctxToUserPrivateChat.SendImg() and all other familiar methods!

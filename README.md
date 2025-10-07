@@ -475,6 +475,137 @@ You can use this to implement features like:
 
 Or any other behaviour you need to set just right before your commands executions but after the bot receives a msg.
 
+Of course. Here are simple, easy-to-understand TypeScript examples for your `readme.md` that correctly demonstrate how to use each cloning and retargeting method.
+
+---
+
+# Manipulating the Chat Context
+
+The `IChatContext` object (`ctx`) is your primary tool for interacting with a chat. By default, it's tied to the chat where a command was triggered. However, you can easily **clone** or **retarget** it to perform actions in other chats, start new conversations, or run tasks in parallel.
+
+Here are the different ways you can manipulate the context.
+
+---
+
+## 1. Replying Privately to a Group Command
+
+This is the most common and reliable way to switch from a group chat to a user's private chat.
+
+**The Pattern:**
+
+1.  Use the low-level API to send an "anchor" message to the user's private DM.
+2.  Use `ctx.CloneButTargetedToWithInitialMsg()` and pass in the message you just sent. This creates a new, perfectly configured context for that private chat.
+
+```typescript
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "whatsbotcord";
+
+class PrivateReplyCommand implements ICommand {
+  name: string = "myinfo";
+
+  public async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+    // This command was run in a group. Let's reply in private.
+
+    // 1. Send an initial "anchor" message directly to the user.
+    const privateMsg = await api.InternalSocket.Send.Text(
+      args.participantIdPN!, // The user's phone number ID
+      "Replying privately as you requested..."
+    );
+
+    // 2. Create a new context targeted to the private chat using the message.
+    const privateCtx = ctx.CloneButTargetedToWithInitialMsg({ initialMsg: privateMsg! });
+
+    // 3. Now, all messages sent with `privateCtx` go to the user's DMs! 🤫
+    await privateCtx.SendText(`Hi ${args.originalRawMsg.pushName}, here is your private info!`);
+    // await privateCtx.SendImage(...);
+  }
+}
+```
+
+---
+
+## 2. Starting a New Conversation from an ID
+
+Sometimes you just have a user's or group's ID and want to start talking to them.
+
+### Targeting a Private Chat
+
+If you want to message a user directly and only have their ID, use `CloneButTargetedToIndividualChat`.
+
+```typescript
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "whatsbotcord";
+
+class StartPrivateChatCommand implements ICommand {
+  name: string = "contactme";
+
+  public async run(ctx: IChatContext, _api: AdditionalAPI, args: CommandArgs): Promise<void> {
+    // Let's create a new context to talk to the user who ran the command.
+    const privateCtx: IChatContext = ctx.CloneButTargetedToIndividualChat({
+      userChatId: args.participantIdPN!, // Get the user's ID. You can send private messages only to PhoneNumbersID like. (e.g 234234234@whatsapp.es), so you can't with @lid id's
+    });
+
+    // Now we can talk to them in their private chat.
+    await privateCtx.SendText("Hello! You asked me to contact you. How can I help?");
+  }
+}
+```
+
+### Targeting a Different Group Chat
+
+If you need your bot to send a message to a _different_ group, use `CloneButTargetedToGroupChat`.
+
+```typescript
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "whatsbotcord";
+
+class AnnounceInAnotherGroupCommand implements ICommand {
+  name: string = "announce";
+
+  public async run(ctx: IChatContext, _api: AdditionalAPI, args: CommandArgs): Promise<void> {
+    //!announce Hi this is my announcement => ["Hi", "this", "is", "my", "announcement"] => "Hi this is my announcement"
+    const announcement = args.args.join(" ");
+    const targetGroupId = "1234567890@g.us"; // ID of the announcements group
+
+    // Create a new context targeted at the announcements group.
+    const announcementCtx = ctx.CloneButTargetedToGroupChat({
+      groupChatId: targetGroupId,
+    });
+
+    // Send the message to the other group.
+    await announcementCtx.SendText(`📢 Announcement: ${announcement}`);
+    await ctx.SendText("I've posted your message in the announcements group!");
+  }
+}
+```
+
+---
+
+## 3. Creating a Simple Clone
+
+If you need an identical, independent copy of the current context (for example, to run a background task without affecting your current flow), use `Clone()`.
+
+```typescript
+import type { ICommand, IChatContext, AdditionalAPI, CommandArgs } from "whatsbotcord";
+
+class ParallelTaskCommand implements ICommand {
+  name: string = "starttask";
+
+  public async run(ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+    await ctx.SendText("Starting a background task for you now...");
+
+    // Create an identical, independent copy of the context.
+    const clonedCtx = ctx.Clone();
+
+    // Use the clone for a separate, long-running task.
+    setTimeout(async () => {
+      await clonedCtx.SendText("Background task update: Still working...");
+    }, 5000); // 5 seconds later
+
+    setTimeout(async () => {
+      await clonedCtx.SendText("Background task finished! ✅");
+    }, 10000); // 10 seconds later
+  }
+}
+```
+
 # WhatsBotCord.js Mocking & Testing
 
 You can simulate a full WhatsApp command interaction locally, without ever touching your real bot obj or changing any command code!
