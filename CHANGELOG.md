@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.14.0...v0.14.1) (2025-10-07)
+
+### Bug Fixes
+
+* Fixed future bug with chatcontext not updating initialmsg when being created without initialmsg ([38db038](https://github.com/KristanLaimon/WhatsBotCord.js/commit/38db038e65e86311e02266731f9224f71184c8c8))
+
 ## [0.14.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.13.0...v0.14.0) (2025-10-07)
 
 ### Features
