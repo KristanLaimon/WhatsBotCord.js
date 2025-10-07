@@ -20,6 +20,7 @@
   - [Plugins](#plugins)
     - [OneUserPerCommand](#one-user-per-command---plugin-official)
   - [Tags With @](#usage-with-group-data-and-tags)
+  - [Manipulating the Chat Context](#manipulating-the-chat-context)
 - [Testing/Mocking your commands](#whatsbotcordjs-mocking--testing)
   - [Basic](#simplest-usage)
   - [Advanced](#advanced-example)
