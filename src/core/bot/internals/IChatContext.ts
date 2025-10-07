@@ -728,8 +728,9 @@ export interface IChatContext {
    * const privateContext = await currentGroupContext.Fork({ newSenderType: SenderType.Individual, ... });
    * await privateContext.SendText("This is a private message.");
    */
-  CloneButTargetedTo(params: IChatContext_CloneWith_Params): IChatContext;
+  CloneButTargetedTo(params: IChatContext_CloneTargetedTo_FromWhatsmsg_Params | IChatContext_CloneTargetedTo_FromIds_Params): IChatContext;
 }
+
 /**
  * Parameters for creating a new, retargeted `IChatContext` instance using `CloneButTargetedTo`.
  *
@@ -737,12 +738,12 @@ export interface IChatContext {
  * the same functionality sending and receiving but with different
  * chat context!
  */
-export type IChatContext_CloneWith_Params = {
+export type IChatContext_CloneTargetedTo_FromWhatsmsg_Params = {
   /**
    * The foundational message for the new context.
    *
    * This message is crucial as it's used to determine the new context's properties
-   * (like sender type, chat ID) and serves as the target for all feedback emojis
+   * (like sender type, chat ID, and who to respond to) and serves as the target for all feedback emojis
    */
   initialMsg: WhatsappMessage;
   /**
@@ -750,3 +751,21 @@ export type IChatContext_CloneWith_Params = {
    */
   newConfig?: IChatContextConfig;
 };
+
+//prettier-ignore
+export type IChatContext_CloneTargetedTo_FromIds_Params = 
+  {
+    senderType: SenderType.Group;
+    groupChatId: string;
+    //==========================
+    participant_PN?:string;
+    participant_LID?:string;
+    newConfig?: IChatContextConfig;
+  }
+  |
+  {
+    senderType: SenderType.Individual;
+    userChatId: string;
+    //==========================
+    newConfig?:IChatContextConfig;
+  }

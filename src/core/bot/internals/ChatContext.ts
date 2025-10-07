@@ -16,7 +16,13 @@ import {
   WhatsSocketReceiverHelper_isReceiverError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
-import type { ChatContextContactRes, ChatContextUbication, IChatContext, IChatContext_CloneWith_Params } from "./IChatContext.js";
+import type {
+  ChatContextContactRes,
+  ChatContextUbication,
+  IChatContext,
+  IChatContext_CloneTargetedTo_FromIds_Params,
+  IChatContext_CloneTargetedTo_FromWhatsmsg_Params,
+} from "./IChatContext.js";
 
 export type IChatContextConfig = WhatsSocketReceiverWaitOptions & {
   /**
@@ -113,31 +119,32 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public CloneButTargetedTo(params: IChatContext_CloneWith_Params): IChatContext {
-    const keysData = params.initialMsg.key;
+  public CloneButTargetedTo(params: IChatContext_CloneTargetedTo_FromWhatsmsg_Params | IChatContext_CloneTargetedTo_FromIds_Params): IChatContext {
+    if ("initialMsg" in params) {
+      const keysData = params.initialMsg.key;
 
-    let ID_PN: string | null = null;
-    let ID_LID: string | null = null;
+      let ID_PN: string | null = null;
+      let ID_LID: string | null = null;
 
-    //Neccesary due to how bailey.js library works. Check update to v7.0.0 on their official page to understand this
-    if (keysData.participant) {
-      if (keysData.participant.endsWith(WhatsappLIDIdentifier)) {
-        ID_LID = keysData.participant;
-      } else if (keysData.participant.endsWith(WhatsappPhoneNumberIdentifier)) {
-        ID_PN = keysData.participant;
+      //Neccesary due to how bailey.js library works. Check update to v7.0.0 on their official page to understand this
+      if (keysData.participant) {
+        if (keysData.participant.endsWith(WhatsappLIDIdentifier)) {
+          ID_LID = keysData.participant;
+        } else if (keysData.participant.endsWith(WhatsappPhoneNumberIdentifier)) {
+          ID_PN = keysData.participant;
+        }
       }
-    }
 
-    if (keysData.participantAlt) {
-      if (keysData.participantAlt.endsWith(WhatsappLIDIdentifier)) {
-        ID_LID = keysData.participantAlt;
-      } else if (keysData.participantAlt.endsWith(WhatsappPhoneNumberIdentifier)) {
-        ID_PN = keysData.participantAlt;
+      if (keysData.participantAlt) {
+        if (keysData.participantAlt.endsWith(WhatsappLIDIdentifier)) {
+          ID_LID = keysData.participantAlt;
+        } else if (keysData.participantAlt.endsWith(WhatsappPhoneNumberIdentifier)) {
+          ID_PN = keysData.participantAlt;
+        }
       }
-    }
 
-    //prettier-ignore
-    return new ChatContext(
+      //prettier-ignore
+      return new ChatContext(
         ID_LID,
         ID_PN,
         params.initialMsg.key.remoteJid!,
@@ -146,6 +153,29 @@ export class ChatContext implements IChatContext {
         this._internalReceive,
         params?.newConfig ?? this.Config
       );
+    } else {
+      if (params.senderType === SenderType.Group) {
+        return new ChatContext(
+          params.participant_LID ?? this.FixedParticipantLID,
+          params.participant_LID ?? this.FixedParticipantPN,
+          params.groupChatId,
+          this.FixedInitialMsg,
+          this._internalSend,
+          this._internalReceive,
+          params?.newConfig ?? this.Config
+        );
+      } else {
+        return new ChatContext(
+          null,
+          null,
+          params.userChatId,
+          this.FixedInitialMsg,
+          this._internalSend,
+          this._internalReceive,
+          params?.newConfig ?? this.Config
+        );
+      }
+    }
   }
 
   @autobind
