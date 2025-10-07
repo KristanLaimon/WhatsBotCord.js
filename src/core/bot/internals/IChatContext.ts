@@ -84,7 +84,7 @@ export interface IChatContext {
    * Use this when you need the message payload itself (e.g., replying,
    * quoting, or inspecting structured message content).
    */
-  readonly FixedInitialMsg: WhatsappMessage;
+  readonly FixedInitialMsg: WhatsappMessage | null;
 
   /**
    * Indicates the type of the original sender (user, group, system, etc.)
@@ -710,40 +710,54 @@ export interface IChatContext {
   Clone(): IChatContext;
 
   /**
-   * Creates a new, independent `IChatContext` for a different chat or user.
+   * Clones the context and retargets it to a specific individual chat using their ID.
    *
-   * This method "forks" the current context, allowing you to reuse its underlying
-   * dependencies (like the socket connection) but aim it at a new conversation.
-   * It's ideal for scenarios like a command in a group chat needing to send a
-   * private message to a user.
+   * This is useful for proactively starting a new conversation with a user when you
+   * only have their `userChatId`. The new context will be configured to send
+   * messages directly to that user.
    *
-   * The original context remains unless specified.
-   *
-   * @param params - An object specifying the properties of the new target chat,
-   *   including the new chat ID and the initial message for that new context and
-   *   possible changes to create a new context if needed
-   * @returns A new, forked `IChatContext` instance bound to the specified chat.
-   *
-   * @example
-   * const privateContext = await currentGroupContext.Fork({ newSenderType: SenderType.Individual, ... });
-   * await privateContext.SendText("This is a private message.");
+   * @param params - The parameters required to target the individual chat.
+   * @returns A new `IChatContext` instance targeted at the specified user's private chat.
    */
-  CloneButTargetedTo(params: IChatContext_CloneTargetedTo_FromWhatsmsg_Params | IChatContext_CloneTargetedTo_FromIds_Params): IChatContext;
+  CloneButTargetedToIndividualChat(params: IChatContext_CloneTargetedTo_FromIds_Individual_Params): IChatContext;
+
+  /**
+   * Clones the context and retargets it to a specific group chat using its ID.
+   *
+   * This method allows you to initiate actions or send messages to any group,
+   * even if the original command did not come from there. You can optionally
+   * specify a participant within that group to provide more granular context.
+   *
+   * @param params - The parameters required to target the group chat.
+   * @returns A new `IChatContext` instance targeted at the specified group.
+   */
+  CloneButTargetedToGroupChat(params: IChatContext_CloneTargetedTo_FromIds_GROUP_Params): IChatContext;
+
+  /**
+   * Clones the context and retargets it based on an existing WhatsApp message.
+   *
+   * This is the most reliable way to fork a context, as the `initialMsg` provides
+   * a perfect "anchor" containing all the necessary metadata (chat ID, sender, etc.).
+   * Its primary use case is replying privately to a user who issued a command in a group.
+   *
+   * @param params - The parameters containing the anchor message.
+   * @returns A new `IChatContext` instance accurately targeted to the chat of the initial message.
+   */
+  CloneButTargetedToWithInitialMsg(params: IChatContext_CloneTargetedTo_FromWhatsmsg_Params): IChatContext;
 }
 
 /**
- * Parameters for creating a new, retargeted `IChatContext` instance using `CloneButTargetedTo`.
+ * Parameters for creating a new, retargeted `IChatContext` from an existing message.
  *
- * Useful to fork an existing ChatContext object with exactly
- * the same functionality sending and receiving but with different
- * chat context!
+ * This method is ideal for forking a context because the `initialMsg` object
+ * provides a reliable "anchor" with all the necessary metadata to establish the new chat.
  */
 export type IChatContext_CloneTargetedTo_FromWhatsmsg_Params = {
   /**
    * The foundational message for the new context.
    *
    * This message is crucial as it's used to determine the new context's properties
-   * (like sender type, chat ID, and who to respond to) and serves as the target for all feedback emojis
+   * (like sender type, chat ID, and who to respond to) and serves as the target for all feedback emojis.
    */
   initialMsg: WhatsappMessage;
   /**
@@ -752,20 +766,46 @@ export type IChatContext_CloneTargetedTo_FromWhatsmsg_Params = {
   newConfig?: IChatContextConfig;
 };
 
+/**
+ * Parameters for cloning and targeting a context to an individual chat via their ID.
+ */
 //prettier-ignore
-export type IChatContext_CloneTargetedTo_FromIds_Params = 
+export type IChatContext_CloneTargetedTo_FromIds_Individual_Params =
   {
-    senderType: SenderType.Group;
-    groupChatId: string;
-    //==========================
-    participant_PN?:string;
-    participant_LID?:string;
-    newConfig?: IChatContextConfig;
-  }
-  |
-  {
-    senderType: SenderType.Individual;
+    /**
+     * The unique identifier (`JID`) of the user's private chat.
+     */
     userChatId: string;
     //==========================
+    /**
+     * Optional new configuration for the cloned context.
+     * If not provided, the original context's configuration is used.
+     */
     newConfig?:IChatContextConfig;
   }
+
+/**
+ * Parameters for cloning and targeting a context to a group chat via its ID.
+ */
+export type IChatContext_CloneTargetedTo_FromIds_GROUP_Params = {
+  /**
+   * The unique identifier (`JID`) of the group chat.
+   */
+  groupChatId: string;
+  //==========================
+  /**
+   * (Optional) The phone number of a specific participant within the group.
+   * Useful if the new context needs to be aware of a particular user.
+   */
+  participant_PN?: string;
+  /**
+   * (Optional) The LID (Login ID) of a specific participant within the group.
+   * An alternative identifier for a user.
+   */
+  participant_LID?: string;
+  /**
+   * Optional new configuration for the cloned context.
+   * If not provided, the original context's configuration is used.
+   */
+  newConfig?: IChatContextConfig;
+};

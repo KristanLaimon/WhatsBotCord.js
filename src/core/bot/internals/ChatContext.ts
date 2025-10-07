@@ -20,7 +20,8 @@ import type {
   ChatContextContactRes,
   ChatContextUbication,
   IChatContext,
-  IChatContext_CloneTargetedTo_FromIds_Params,
+  IChatContext_CloneTargetedTo_FromIds_GROUP_Params,
+  IChatContext_CloneTargetedTo_FromIds_Individual_Params,
   IChatContext_CloneTargetedTo_FromWhatsmsg_Params,
 } from "./IChatContext.js";
 
@@ -28,7 +29,7 @@ export type IChatContextConfig = WhatsSocketReceiverWaitOptions & {
   /**
    * Used primarly in mocking system
    */
-  customSenderType_Internal?: SenderType;
+  explicitSenderType?: SenderType;
 };
 
 /**
@@ -64,7 +65,7 @@ export class ChatContext implements IChatContext {
 
   public readonly FixedChatId: string;
 
-  public readonly FixedInitialMsg: WhatsappMessage;
+  public readonly FixedInitialMsg: WhatsappMessage | null;
 
   public readonly FixedSenderType: SenderType;
 
@@ -90,7 +91,7 @@ export class ChatContext implements IChatContext {
     participantID_LID: string | null,
     participantID_PN: string | null,
     fixedChatId: string,
-    initialMsg: WhatsappMessage,
+    initialMsg: WhatsappMessage | null,
     senderDependency: IWhatsSocket_Submodule_SugarSender,
     receiverDependency: IWhatsSocket_Submodule_Receiver,
     config: IChatContextConfig
@@ -102,7 +103,8 @@ export class ChatContext implements IChatContext {
     this._internalReceive = receiverDependency;
     this.FixedChatId = fixedChatId;
     this.FixedInitialMsg = initialMsg;
-    this.FixedSenderType = config.customSenderType_Internal ?? MsgHelper_FullMsg_GetSenderType(this.FixedInitialMsg);
+    this.FixedSenderType =
+      config.explicitSenderType ?? (this.FixedInitialMsg !== null ? MsgHelper_FullMsg_GetSenderType(this.FixedInitialMsg) : SenderType.Individual);
   }
 
   @autobind
@@ -119,32 +121,31 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public CloneButTargetedTo(params: IChatContext_CloneTargetedTo_FromWhatsmsg_Params | IChatContext_CloneTargetedTo_FromIds_Params): IChatContext {
-    if ("initialMsg" in params) {
-      const keysData = params.initialMsg.key;
+  public CloneButTargetedToWithInitialMsg(params: IChatContext_CloneTargetedTo_FromWhatsmsg_Params): IChatContext {
+    const keysData = params.initialMsg.key;
 
-      let ID_PN: string | null = null;
-      let ID_LID: string | null = null;
+    let ID_PN: string | null = null;
+    let ID_LID: string | null = null;
 
-      //Neccesary due to how bailey.js library works. Check update to v7.0.0 on their official page to understand this
-      if (keysData.participant) {
-        if (keysData.participant.endsWith(WhatsappLIDIdentifier)) {
-          ID_LID = keysData.participant;
-        } else if (keysData.participant.endsWith(WhatsappPhoneNumberIdentifier)) {
-          ID_PN = keysData.participant;
-        }
+    //Neccesary due to how bailey.js library works. Check update to v7.0.0 on their official page to understand this
+    if (keysData.participant) {
+      if (keysData.participant.endsWith(WhatsappLIDIdentifier)) {
+        ID_LID = keysData.participant;
+      } else if (keysData.participant.endsWith(WhatsappPhoneNumberIdentifier)) {
+        ID_PN = keysData.participant;
       }
+    }
 
-      if (keysData.participantAlt) {
-        if (keysData.participantAlt.endsWith(WhatsappLIDIdentifier)) {
-          ID_LID = keysData.participantAlt;
-        } else if (keysData.participantAlt.endsWith(WhatsappPhoneNumberIdentifier)) {
-          ID_PN = keysData.participantAlt;
-        }
+    if (keysData.participantAlt) {
+      if (keysData.participantAlt.endsWith(WhatsappLIDIdentifier)) {
+        ID_LID = keysData.participantAlt;
+      } else if (keysData.participantAlt.endsWith(WhatsappPhoneNumberIdentifier)) {
+        ID_PN = keysData.participantAlt;
       }
+    }
 
-      //prettier-ignore
-      return new ChatContext(
+    //prettier-ignore
+    return new ChatContext(
         ID_LID,
         ID_PN,
         params.initialMsg.key.remoteJid!,
@@ -153,29 +154,43 @@ export class ChatContext implements IChatContext {
         this._internalReceive,
         params?.newConfig ?? this.Config
       );
-    } else {
-      if (params.senderType === SenderType.Group) {
-        return new ChatContext(
-          params.participant_LID ?? this.FixedParticipantLID,
-          params.participant_LID ?? this.FixedParticipantPN,
-          params.groupChatId,
-          this.FixedInitialMsg,
-          this._internalSend,
-          this._internalReceive,
-          params?.newConfig ?? this.Config
-        );
-      } else {
-        return new ChatContext(
+  }
+
+  @autobind
+  public CloneButTargetedToIndividualChat(params: IChatContext_CloneTargetedTo_FromIds_Individual_Params): IChatContext {
+    const configCopy: IChatContextConfig = structuredClone(this.Config);
+    //Case: For individual chats
+    if (this.FixedSenderType === SenderType.Group) {
+      configCopy.explicitSenderType = SenderType.Individual;
+    }
+    //prettier-ignore
+    return new ChatContext(
           null,
           null,
           params.userChatId,
           this.FixedInitialMsg,
           this._internalSend,
           this._internalReceive,
-          params?.newConfig ?? this.Config
+          {...configCopy, ...params.newConfig}
         );
-      }
+  }
+
+  @autobind
+  public CloneButTargetedToGroupChat(params: IChatContext_CloneTargetedTo_FromIds_GROUP_Params): IChatContext {
+    const configCopy: IChatContextConfig = structuredClone(this.Config);
+    if (this.FixedSenderType === SenderType.Individual) {
+      configCopy.explicitSenderType = SenderType.Group;
     }
+    //prettier-ignore
+    return new ChatContext(
+          params.participant_LID ?? this.FixedParticipantLID,
+          params.participant_PN ?? this.FixedParticipantPN,
+          params.groupChatId,
+          this.FixedInitialMsg,
+          this._internalSend,
+          this._internalReceive,
+          {...configCopy, ...params.newConfig}
+        );
   }
 
   @autobind
@@ -215,21 +230,33 @@ export class ChatContext implements IChatContext {
 
   @autobind
   public SendReactEmojiToInitialMsg(emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    if (!this.FixedInitialMsg) {
+      throw ThrowBadFirstMsgError();
+    }
     return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, emojiStr, options);
   }
 
   @autobind
   public Ok(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    if (!this.FixedInitialMsg) {
+      throw ThrowBadFirstMsgError();
+    }
     return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "✅", options);
   }
 
   @autobind
   public Loading(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    if (!this.FixedInitialMsg) {
+      throw ThrowBadFirstMsgError();
+    }
     return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "⌛", options);
   }
 
   @autobind
   public Fail(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    if (!this.FixedInitialMsg) {
+      throw ThrowBadFirstMsgError();
+    }
     return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "❌", options);
   }
 
@@ -457,4 +484,14 @@ export class ChatContext implements IChatContext {
     }
     return await this._internalReceive.FetchGroupData(this.FixedChatId);
   }
+}
+
+function ThrowBadFirstMsgError(): Error {
+  throw new Error(
+    "ChatContext Bad usage: You probably have created a new chatcontext fork without sending any messages nor providing an initial msg trigger!!\n" +
+      "You need to do one of these two options:\n" +
+      "1. Provide an explicit first message to this forked chatcontext on ctx.CloneButTargetedTo({initialMsg: <here>}). You can get one using raw api.Send.<anything>()\n" +
+      "2. If not provided, just send a msg (anything) to chat and automatically chatcontext will be treat it as the first msg\n" +
+      "Try again.."
+  );
 }

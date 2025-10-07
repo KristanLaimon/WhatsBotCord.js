@@ -162,7 +162,7 @@ export default class ChatMock {
       wrongTypeFeedbackMsg:
         this._constructorConfig?.chatContextConfig?.wrongTypeFeedbackMsg ??
         "Default wrong expected type message, user has sent a msg which doesn't correspond to expected WaitMsg from command...",
-      customSenderType_Internal: this._senderType,
+      explicitSenderType: this._senderType,
     };
     this._receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
