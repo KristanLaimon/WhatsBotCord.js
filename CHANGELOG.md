@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.13.0...v0.14.0) (2025-10-07)
+
+### Features
+
+* **chatcontext:** Added Clone() and CloneButTargetedTo() ([25224f5](https://github.com/KristanLaimon/WhatsBotCord.js/commit/25224f5d1773d174335a5c6d107a9eb1429cff30))
+
 ## [0.13.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.12.0...v0.13.0) (2025-10-01)
 
 ### Features
