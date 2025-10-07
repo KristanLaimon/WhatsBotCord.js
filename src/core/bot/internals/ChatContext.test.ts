@@ -18,7 +18,7 @@ import { WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import { type IChatContextConfig, ChatContext } from "./ChatContext.js";
-import { IChatContext } from "./IChatContext.js";
+import type { IChatContext } from "./IChatContext.js";
 
 /**
  * ChatSession Testing Suite

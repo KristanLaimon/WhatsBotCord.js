@@ -20,3 +20,5 @@ class PrivateReplyCommand implements ICommand {
     // await privateCtx.SendImage(...);
   }
 }
+
+new PrivateReplyCommand();

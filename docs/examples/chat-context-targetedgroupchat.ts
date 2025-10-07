@@ -18,3 +18,5 @@ class AnnounceInAnotherGroupCommand implements ICommand {
     await ctx.SendText("I've posted your message in the announcements group!");
   }
 }
+
+new AnnounceInAnotherGroupCommand();

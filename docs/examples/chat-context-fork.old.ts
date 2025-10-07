@@ -31,7 +31,7 @@ class MyCommand implements ICommand {
 
     //This will recognize the msg, and automatically set the context to: Individual Chat, SenderID
     //with all the same methods you already know from ctx! like ctx.SendText(), ctx.SendImage(), etc
-    const ctxToUserPrivateChat = ctx.CloneButTargetedToIndividualChat({ initialMsg: privateMsgToSender! });
+    const ctxToUserPrivateChat = ctx.CloneButTargetedToWithInitialMsg({ initialMsg: privateMsgToSender! });
     console.log(ctxToUserPrivateChat.FixedChatId); // SenderType.Individual
     await ctxToUserPrivateChat.SendText("Hi! again, this is not from group any more. We can talk privately 🤫");
     // now you can use ctxToUserPrivateChat.SendImg() and all other familiar methods!
@@ -43,7 +43,7 @@ new MyCommand();
 // 2nd. case
 class MyCommand2 implements ICommand {
   name: string = "answerinprivate";
-  public async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+  public async run(ctx: IChatContext, _api: AdditionalAPI, args: CommandArgs): Promise<void> {
     console.log(ctx.FixedSenderType); // SenderType.Group
     //Here chat context is attached to 'MyGroup' context, so all messages goes there and strongly attached to "!mycommand" original msg
     //who triggered it
@@ -63,4 +63,4 @@ class MyCommand2 implements ICommand {
   }
 }
 
-new MyCommand();
+new MyCommand2();

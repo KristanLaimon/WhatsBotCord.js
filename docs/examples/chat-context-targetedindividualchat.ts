@@ -13,3 +13,5 @@ class StartPrivateChatCommand implements ICommand {
     await privateCtx.SendText("Hello! You asked me to contact you. How can I help?");
   }
 }
+
+new StartPrivateChatCommand();

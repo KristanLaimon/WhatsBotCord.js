@@ -1,4 +1,4 @@
-import type { ICommand, IChatContext, AdditionalAPI, CommandArgs } from "../../src/index.js";
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "../../src/index.js";
 
 class ParallelTaskCommand implements ICommand {
   name: string = "starttask";
@@ -19,3 +19,5 @@ class ParallelTaskCommand implements ICommand {
     }, 10000); // 10 seconds later
   }
 }
+
+new ParallelTaskCommand();
