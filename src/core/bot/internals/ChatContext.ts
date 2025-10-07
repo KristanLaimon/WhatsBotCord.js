@@ -65,7 +65,7 @@ export class ChatContext implements IChatContext {
 
   public readonly FixedChatId: string;
 
-  public readonly FixedInitialMsg: WhatsappMessage | null;
+  public InitialMsg: WhatsappMessage | null;
 
   public readonly FixedSenderType: SenderType;
 
@@ -102,9 +102,8 @@ export class ChatContext implements IChatContext {
     this._internalSend = senderDependency;
     this._internalReceive = receiverDependency;
     this.FixedChatId = fixedChatId;
-    this.FixedInitialMsg = initialMsg;
-    this.FixedSenderType =
-      config.explicitSenderType ?? (this.FixedInitialMsg !== null ? MsgHelper_FullMsg_GetSenderType(this.FixedInitialMsg) : SenderType.Individual);
+    this.InitialMsg = initialMsg;
+    this.FixedSenderType = config.explicitSenderType ?? (this.InitialMsg !== null ? MsgHelper_FullMsg_GetSenderType(this.InitialMsg) : SenderType.Individual);
   }
 
   @autobind
@@ -113,7 +112,7 @@ export class ChatContext implements IChatContext {
       this.FixedParticipantLID,
       this.FixedParticipantPN,
       this.FixedChatId,
-      this.FixedInitialMsg,
+      this.InitialMsg,
       this._internalSend,
       this._internalReceive,
       this.Config
@@ -168,7 +167,7 @@ export class ChatContext implements IChatContext {
           null,
           null,
           params.userChatId,
-          this.FixedInitialMsg,
+          this.InitialMsg,
           this._internalSend,
           this._internalReceive,
           {...configCopy, ...params.newConfig}
@@ -186,31 +185,42 @@ export class ChatContext implements IChatContext {
           params.participant_LID ?? this.FixedParticipantLID,
           params.participant_PN ?? this.FixedParticipantPN,
           params.groupChatId,
-          this.FixedInitialMsg,
+          this.InitialMsg,
           this._internalSend,
           this._internalReceive,
           {...configCopy, ...params.newConfig}
         );
   }
 
-  @autobind
-  public SendText(text: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Text(this.FixedChatId, text, options);
+  private async HandlePrimaryMsg(mainMsgPromise: Promise<WhatsappMessage | null>): Promise<WhatsappMessage | null> {
+    const msg: WhatsappMessage | null = await mainMsgPromise;
+    if (!msg) return null;
+    if (!this.InitialMsg) {
+      this.InitialMsg = msg;
+    }
+    return msg;
   }
 
   @autobind
-  public SendImg(imagePath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this.FixedChatId, { source: imagePath, caption: undefined }, options);
+  public SendText(text: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    return this.HandlePrimaryMsg(this._internalSend.Text(this.FixedChatId, text, options));
+  }
+
+  @autobind
+  public async SendImg(imagePath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    return this.HandlePrimaryMsg(this._internalSend.Image(this.FixedChatId, { source: imagePath, caption: undefined }, options));
   }
 
   @autobind
   public SendImgWithCaption(imagePath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this.FixedChatId, { source: imagePath, caption }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Image(this.FixedChatId, { source: imagePath, caption }, options));
   }
 
   @autobind
   public SendImgFromBuffer(imagePath: Buffer<ArrayBuffer>, extensionType: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this.FixedChatId, { source: imagePath, formatExtension: extensionType, caption: undefined }, options);
+    return this.HandlePrimaryMsg(
+      this._internalSend.Image(this.FixedChatId, { source: imagePath, formatExtension: extensionType, caption: undefined }, options)
+    );
   }
 
   @autobind
@@ -220,7 +230,7 @@ export class ChatContext implements IChatContext {
     caption: string,
     options?: WhatsMsgSenderSendingOptions
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Image(this.FixedChatId, { source: imagePath, formatExtension: extensionType, caption: caption }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Image(this.FixedChatId, { source: imagePath, formatExtension: extensionType, caption: caption }, options));
   }
 
   @autobind
@@ -230,64 +240,64 @@ export class ChatContext implements IChatContext {
 
   @autobind
   public SendReactEmojiToInitialMsg(emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    if (!this.FixedInitialMsg) {
+    if (!this.InitialMsg) {
       throw ThrowBadFirstMsgError();
     }
-    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, emojiStr, options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.InitialMsg, emojiStr, options);
   }
 
   @autobind
   public Ok(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    if (!this.FixedInitialMsg) {
+    if (!this.InitialMsg) {
       throw ThrowBadFirstMsgError();
     }
-    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "✅", options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.InitialMsg, "✅", options);
   }
 
   @autobind
   public Loading(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    if (!this.FixedInitialMsg) {
+    if (!this.InitialMsg) {
       throw ThrowBadFirstMsgError();
     }
-    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "⌛", options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.InitialMsg, "⌛", options);
   }
 
   @autobind
   public Fail(options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    if (!this.FixedInitialMsg) {
+    if (!this.InitialMsg) {
       throw ThrowBadFirstMsgError();
     }
-    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.FixedInitialMsg, "❌", options);
+    return this._internalSend.ReactEmojiToMsg(this.FixedChatId, this.InitialMsg, "❌", options);
   }
 
   @autobind
   public SendSticker(stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Sticker(this.FixedChatId, stickerUrlSource, options);
+    return this.HandlePrimaryMsg(this._internalSend.Sticker(this.FixedChatId, stickerUrlSource, options));
   }
 
   @autobind
   public SendAudio(audioSource: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Audio(this.FixedChatId, { source: audioSource }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Audio(this.FixedChatId, { source: audioSource }, options));
   }
 
   @autobind
   public SendAudioFromBuffer(audioSource: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Audio(this.FixedChatId, { source: audioSource, formatExtension: formatFile }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Audio(this.FixedChatId, { source: audioSource, formatExtension: formatFile }, options));
   }
 
   @autobind
   public SendVideo(videopath: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this.FixedChatId, { source: videopath }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Video(this.FixedChatId, { source: videopath }, options));
   }
 
   @autobind
   public SendVideoWithCaption(videoPath: string, caption: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this.FixedChatId, { source: videoPath, caption: caption }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Video(this.FixedChatId, { source: videoPath, caption: caption }, options));
   }
 
   @autobind
   public SendVideoFromBuffer(videoBuffer: Buffer, formatFile: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this.FixedChatId, { source: videoBuffer, formatExtension: formatFile }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Video(this.FixedChatId, { source: videoBuffer, formatExtension: formatFile }, options));
   }
 
   @autobind
@@ -297,7 +307,7 @@ export class ChatContext implements IChatContext {
     formatFile: string,
     options?: WhatsMsgSenderSendingOptions
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Video(this.FixedChatId, { source: videoBuffer, formatExtension: formatFile, caption: caption }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Video(this.FixedChatId, { source: videoBuffer, formatExtension: formatFile, caption: caption }, options));
   }
 
   @autobind
@@ -307,12 +317,14 @@ export class ChatContext implements IChatContext {
     pollParams: WhatsMsgPollOptions,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Poll(this.FixedChatId, pollTitle, selections, pollParams, options);
+    return this.HandlePrimaryMsg(this._internalSend.Poll(this.FixedChatId, pollTitle, selections, pollParams, options));
   }
 
   @autobind
   public SendUbication(degreesLatitude: number, degreesLongitude: number, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Location(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options);
+    return this.HandlePrimaryMsg(
+      this._internalSend.Location(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: undefined, name: undefined }, options)
+    );
   }
 
   @autobind
@@ -323,7 +335,9 @@ export class ChatContext implements IChatContext {
     moreInfoAddress: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Location(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options);
+    return this.HandlePrimaryMsg(
+      this._internalSend.Location(this.FixedChatId, { degreesLatitude, degreesLongitude, addressText: moreInfoAddress, name: ubicationName }, options)
+    );
   }
 
   @autobind
@@ -331,12 +345,12 @@ export class ChatContext implements IChatContext {
     contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Contact(this.FixedChatId, contacts, options);
+    return this.HandlePrimaryMsg(this._internalSend.Contact(this.FixedChatId, contacts, options));
   }
 
   @autobind
   public SendDocument(docPath: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
-    return this._internalSend.Document(this.FixedChatId, { source: docPath }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Document(this.FixedChatId, { source: docPath }, options));
   }
 
   @autobind
@@ -345,7 +359,7 @@ export class ChatContext implements IChatContext {
     fileNameToDisplay: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Document(this.FixedChatId, { source: docPath, fileNameToDisplay: fileNameToDisplay }, options);
+    return this.HandlePrimaryMsg(this._internalSend.Document(this.FixedChatId, { source: docPath, fileNameToDisplay: fileNameToDisplay }, options));
   }
 
   @autobind
@@ -355,11 +369,12 @@ export class ChatContext implements IChatContext {
     extensionFileTypeOnly: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
   ): Promise<WhatsappMessage | null> {
-    return this._internalSend.Document(
+    //prettier-ignore
+    return  this.HandlePrimaryMsg(this._internalSend.Document(
       this.FixedChatId,
       { source: docBuffer, fileNameWithoutExtension: fileNameToDisplayWithoutExt, formatExtension: extensionFileTypeOnly },
       options
-    );
+    ));
   }
   //============================ RECEIVING ==============================
 

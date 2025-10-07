@@ -84,7 +84,7 @@ export interface IChatContext {
    * Use this when you need the message payload itself (e.g., replying,
    * quoting, or inspecting structured message content).
    */
-  readonly FixedInitialMsg: WhatsappMessage | null;
+  readonly InitialMsg: WhatsappMessage | null;
 
   /**
    * Indicates the type of the original sender (user, group, system, etc.)

@@ -92,13 +92,13 @@ export default function OfficialPlugin_OneCommandPerUserAtATime(config: Official
 
         if (index !== -1) {
           const lastCommandInfo = activeUsers.at(index)!;
-          if (!ctx.FixedInitialMsg) {
+          if (!ctx.InitialMsg) {
             throw new Error(
               "[FATAL ERROR]: This should never happen. If it does, report it as an issue on github repo please. " +
                 "https://github.com/KristanLaimon/WhatsBotCord.js"
             );
           }
-          ctx.SendText(config.msgToSend({ pushName: ctx.FixedInitialMsg.pushName }, lastCommandInfo.command, command));
+          ctx.SendText(config.msgToSend({ pushName: ctx.InitialMsg.pushName }, lastCommandInfo.command, command));
           clearTimeout(log.timer);
           return false; // reject execution
         }

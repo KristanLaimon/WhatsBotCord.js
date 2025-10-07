@@ -673,7 +673,7 @@ describe("ChatContext Cloning Methods", () => {
       expect(clonedChat.FixedChatId).toBe(originalChat.FixedChatId);
       expect(clonedChat.FixedParticipantLID).toBe(originalChat.FixedParticipantLID);
       expect(clonedChat.FixedParticipantPN).toBe(originalChat.FixedParticipantPN);
-      expect(clonedChat.FixedInitialMsg).toBe(originalChat.FixedInitialMsg);
+      expect(clonedChat.InitialMsg).toBe(originalChat.InitialMsg);
       expect(clonedChat.Config).toEqual(originalChat.Config);
 
       // Internal dependencies should be the same instance
@@ -704,7 +704,7 @@ describe("ChatContext Cloning Methods", () => {
       const forkedChat = originalChat.CloneButTargetedToWithInitialMsg({ initialMsg: mockMsg });
 
       expect(forkedChat.FixedChatId).toBe(newChatId);
-      expect(forkedChat.FixedInitialMsg).toBe(mockMsg);
+      expect(forkedChat.InitialMsg).toBe(mockMsg);
       // It should prioritize key.participant
       expect(forkedChat.FixedParticipantPN).toBe(mockMsg.key.participant!);
       expect(forkedChat.FixedParticipantLID).toBe(mockMsg.key.participantAlt!);
@@ -747,7 +747,7 @@ describe("ChatContext Cloning Methods", () => {
 
       expect(forkedChat.FixedChatId).toBe(newIndividualChatId);
       expect(forkedChat.FixedSenderType).toBe(SenderType.Individual);
-      expect(forkedChat.FixedInitialMsg).toBe(groupChat.FixedInitialMsg); // Reuses original message
+      expect(forkedChat.InitialMsg).toBe(groupChat.InitialMsg); // Reuses original message
       // Participant IDs are cleared for individual chats
       expect(forkedChat.FixedParticipantLID).toBeNull();
       expect(forkedChat.FixedParticipantPN).toBeNull();
