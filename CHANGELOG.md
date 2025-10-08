@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.14.1...v0.15.0) (2025-10-08)
+
+### Features
+
+* Added new middleware to execute on "FOUND COMMAND" event ([af2317d](https://github.com/KristanLaimon/WhatsBotCord.js/commit/af2317d36cda52991f34db159f39851a93533b10))
+* More types availables on index.ts library for clients ([849f457](https://github.com/KristanLaimon/WhatsBotCord.js/commit/849f457023216c38d545a5da2bd8e9e98f09e4c9))
+
 ## [0.14.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.14.0...v0.14.1) (2025-10-07)
 
 ### Bug Fixes
