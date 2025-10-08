@@ -23,7 +23,10 @@ import type { IChatContextConfig } from "./core/bot/internals/ChatContext.js";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
 import type { IChatContext } from "./core/bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "./core/bot/internals/ICommand.js";
-import type { OfficialPlugin_OneCommandPerUserAtATime_Config } from "./core/official_plugins/OneCommandPerUser_Plugin.js";
+import type {
+  OfficialPlugin_OneCommandPerUserAtATime_Config,
+  OfficialPlugin_OneCommandPerUserAtATime_ContextInfo,
+} from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./core/whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
@@ -54,6 +57,7 @@ export type {
   MockEnqueueParamsMultimediaMinimal,
   MockingChatParams,
   OfficialPlugin_OneCommandPerUserAtATime_Config,
+  OfficialPlugin_OneCommandPerUserAtATime_ContextInfo,
   WhatsappMessage,
   WhatsbotcordMiddlewareFunct,
   WhatsSocketReceiverError,
