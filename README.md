@@ -435,48 +435,90 @@ Which can be one of the following:
 
 # Middleware
 
-_Your bot supports optional middleware, similar to how it works in popular libraries like [Express.js](https://www.npmjs.com/package/express)_
+Your bot supports optional middleware, similar to how it works in popular libraries like [Express.js](https://www.npmjs.com/package/express). There are two types of middleware you can use.
 
-- Middleware functions run after every incoming WhatsApp message, whether it’s a valid command or not.
+## 1. General Middleware (`bot.Use()`)
 
-- Middlewares are executed in the order they are added with bot.Use(...).
+This is the main middleware that runs on **every** raw incoming message, not checking if its valid command or not.
 
-- Each middleware receives the context of the incoming message, can run custom logic, and decides whether to continue the chain by calling next().
+- Middlewares are executed in the order they are added.
+- Each middleware receives the full context of the incoming message and decides whether to continue the chain by calling `next()`.
+
+You can use this for features that need to inspect all traffic, such as:
+
+- Global logging and analytics
+- Rate limiting / spam protection
+- Blocking users across the entire bot
 
 ```ts
 const bot = new WhatsbotCord({
-  commandPrefix: ["$", "!", "/", "."], // accepted command prefixes
-  tagCharPrefix: ["@"], // character(s) to tag users
-  credentialsFolder: "./auth", // session storage
-  loggerMode: "recommended", // logging level
-  delayMilisecondsBetweenMsgs: 1, // avoid spam flags
-  cancelKeywords: ["cancelcustom"], // words that cancel a flow
+  commandPrefix: ["$", "!", "/", "."],
+  tagPrefix: ["@"],
+  credentialsFolder: "./auth",
 });
 
-// Add a middleware
-bot.Use((bot: Bot, senderId: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType, next: () => Promise<void>) => {
-  // ✅ Custom validation, logging, or pre-processing
-  console.log(`Incoming message from ${senderId} in ${chatId}:`, rawMsg);
+// Add a general middleware for logging
+bot.Use((bot, senderId, chatId, rawMsg, msgType, senderType, next) => {
+  // ✅ This code will run for EVERY message
+  console.log(`Incoming message from ${senderId} in ${chatId}`);
 
   // Continue to the next middleware (or to command handling)
   next();
 });
 ```
 
+---
+
+## 2. Command-Specific Middleware (`bot.Use_OnCommandFound()`)
+
+This is a more targeted middleware that runs **only after a valid command is found**, but _before_ that command's `run` method is executed. This applies either for tags or commands as well.
+
+This makes it the perfect place for logic that should only apply to commands, such as:
+
+- **Permission Checks**: Is the user an admin? Do they have the right role?
+- **Command-Specific Logging**: Tracking who uses which command.
+- **Cooldowns**: Preventing a user from spamming a specific command.
+
+The function signature is similar to the general middleware but includes an extra `commandFound` parameter, which is the command object that is about to be executed.
+
+```ts
+// Register a command that should be admin-only
+bot.Commands.Add(
+  {
+    name: "ban",
+    async run(ctx) {
+      await ctx.SendText("Banning user...");
+    },
+  },
+  CommandType.Normal
+);
+
+// Add a command-specific middleware for permission checks
+bot.Use_OnCommandFound(async (bot, senderId, chatId, rawMsg, msgType, senderType, commandFound, next) => {
+  const admins = ["admin1@s.whatsapp.net", "admin2@s.whatsapp.net"];
+
+  // ✅ This code will ONLY run if a valid command is found
+
+  // Check if the command is 'ban' and if the user is an admin
+  if (commandFound.name === "ban" && !admins.includes(senderId)) {
+    // Block the command by not calling next() and send a feedback message
+    await bot.SendMsg.Text(chatId, "❌ You don't have permission to use the 'ban' command.");
+    return;
+  }
+
+  // For all other commands, or if the user has permission, continue to execute the command.
+  await next();
+});
+```
+
 ## Notes
 
-If you don’t call next(), the middleware chain **_stops_** and the message will not reach the next layers or even **_commands_**. This _incoming msg_ will be totally ignored and never processed through the command system.
+If you don’t call `next()`, the middleware chain **_stops_**.
 
-You can use this to implement features like:
+- In a general middleware, the message will not be processed for commands.
+- In a command-specific middleware, the command's `run` method **will not be executed**.
 
-- Logging and analytics
-- Rate limiting / spam protection
-- Authentication & permissions
-- Custom validation rules
-
-Or any other behaviour you need to set just right before your commands executions but after the bot receives a msg.
-
-Of course. Here are simple, easy-to-understand TypeScript examples for your `readme.md` that correctly demonstrate how to use each cloning and retargeting method.
+This gives you powerful control over your bot's message and command processing flow.
 
 ---
 
