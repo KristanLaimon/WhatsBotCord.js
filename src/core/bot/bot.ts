@@ -1,9 +1,9 @@
 import type { WAMessage } from "baileys";
-import type { MaybePromise } from "bun";
 import GraphemeSplitter from "grapheme-splitter";
 import { autobind } from "../../helpers/Decorators.helper.js";
 import { MsgHelper_ExtractQuotedMsgInfo, MsgHelper_FullMsg_GetText } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
+import { MiddlewareChain } from "../../libs/MiddlewareChain.js";
 import { type SenderType, MsgType } from "../../Msg.types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
@@ -104,12 +104,71 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
     sendErrorToChatOnFailureCommand_debug?: boolean;
   };
 
+/**
+ * Defines all events emitted by the Bot instance.
+ *
+ * This type aggregates events from the underlying WhatsApp socket
+ * (`IWhatsSocket_EventsOnly_Module`) and adds bot-specific events
+ * related to command processing and middleware execution.
+ */
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
-  onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
+  /**
+   * Fires after the main middleware chain has finished executing.
+   *
+   * This event is triggered for every incoming message that passes through
+   * the middleware pipeline.
+   *
+   * @param completedSuccessfully - `true` if the chain ran to completion
+   * (all middleware called `next()`), `false` if a middleware broke the chain.
+   */
+  onMainMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
+
+  /**
+   * Fires after the "on command found" middleware chain has finished executing.
+   *
+   * This event only triggers if a valid command was found in the message.
+   *
+   * @param completedSuccessfully - `true` if the chain ran to completion,
+   * `false` if a middleware broke the chain before command execution.
+   */
+  onFoundCommandMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>>;
+
+  /**
+   * Fires when a message is identified as a command (e.g., starts with `!`),
+   * but no matching command or alias is registered.
+   *
+   * Useful for providing "did you mean?" suggestions or a generic help message.
+   *
+   * @param ctx - The chat context of the incoming message.
+   * @param commandNameThatCouldntBeFound - The name of the command the user tried to run.
+   */
   onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void | Promise<void>>;
-  onCommandFound: Delegate<(ctx: IChatContext, commandToRun: ICommand) => MaybePromise<boolean | undefined>>;
+
+  /**
+   * Fires when a valid command is found in a message, but **before** it is executed.
+   *
+   * This serves as a pre-execution hook, ideal for logging, analytics, or
+   * dynamic permission checks that shouldn't be part of the command's core logic.
+   *
+   * @param ctx - The chat context of the incoming message.
+   * @param commandToRun - The command object that is about to be executed.
+   */
+  onCommandFound: Delegate<(ctx: IChatContext, commandToRun: ICommand) => void | Promise<void>>;
+
+  /**
+   * Fires **after** a command has been executed.
+   *
+   * This serves as a post-execution hook, useful for logging the outcome,
+   * cleaning up resources, or performing follow-up actions.
+   *
+   * @param ctx - The chat context of the incoming message.
+   * @param commandExecuted - The command object that was just run.
+   * @param ranSuccessfully - `true` if the command's `run` method completed
+   * without throwing an error, `false` otherwise.
+   */
   onCommandFoundAfterItsExecution: Delegate<(ctx: IChatContext, commandExecuted: ICommand, ranSuccessfully: boolean) => void>;
 };
+
 export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
 export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
 export type WhatsBotCommands = CommandsSearcher;
@@ -121,6 +180,17 @@ export type WhatsbotcordMiddlewareFunct = (
   rawMsg: WAMessage,
   msgType: MsgType,
   senderType: SenderType,
+  next: () => Promise<void>
+) => Promise<void> | void;
+
+export type WhatsbotcordMiddlewareFunct_OnFoundCommand = (
+  bot: Bot,
+  senderId: string | null,
+  chatId: string,
+  rawMsg: WAMessage,
+  msgType: MsgType,
+  senderType: SenderType,
+  commandFound: ICommand,
   next: () => Promise<void>
 ) => Promise<void> | void;
 
@@ -150,6 +220,7 @@ export default class Bot implements BotMinimalInfo {
   public InternalSocket: IWhatsSocket;
   private _commandSearcher: CommandsSearcher;
   private _internalMiddleware: WhatsbotcordMiddlewareFunct[] = [];
+  private _internalMiddleware_OnCommandFound: WhatsbotcordMiddlewareFunct_OnFoundCommand[] = [];
 
   /** Bot Specific Events */
   /**
@@ -165,7 +236,7 @@ export default class Bot implements BotMinimalInfo {
    */
   private _EVENT_onCommandNotFound: Delegate<(ctx: IChatContext, commandNameThatCouldntBeFound: string) => void> = new Delegate();
 
-  private _EVENT_onCommandFound: Delegate<(ctx: IChatContext, commandToRun: ICommand) => (boolean | undefined) | Promise<boolean | undefined>> = new Delegate();
+  private _EVENT_onCommandFound: Delegate<(ctx: IChatContext, commandToRun: ICommand) => void | Promise<void>> = new Delegate();
 
   private _EVENT_onAfterCommandExecution: Delegate<(ctx: IChatContext, commandExecuted: ICommand, ranSuccessfully: boolean) => void | Promise<void>> =
     new Delegate();
@@ -184,7 +255,9 @@ export default class Bot implements BotMinimalInfo {
    * });
    * ```
    */
-  private _EVENT_onMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>> = new Delegate();
+  private _EVENT_onMainMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>> = new Delegate();
+
+  private _EVENT_OnFoundCommandMiddlewareEnd: Delegate<(completedSuccessfully: boolean) => void | Promise<void>> = new Delegate();
   /**
    * Current bot configuration settings.
    *
@@ -261,9 +334,10 @@ export default class Bot implements BotMinimalInfo {
       onStartupAllGroupsIn: this.InternalSocket.onStartupAllGroupsIn,
       onUpdateMsg: this.InternalSocket.onUpdateMsg,
       onCommandNotFound: this._EVENT_onCommandNotFound,
-      onMiddlewareEnd: this._EVENT_onMiddlewareEnd,
+      onMainMiddlewareEnd: this._EVENT_onMainMiddlewareEnd,
       onCommandFound: this._EVENT_onCommandFound,
       onCommandFoundAfterItsExecution: this._EVENT_onAfterCommandExecution,
+      onFoundCommandMiddlewareEnd: this._EVENT_OnFoundCommandMiddlewareEnd,
     };
   }
 
@@ -376,38 +450,37 @@ export default class Bot implements BotMinimalInfo {
   }
 
   /**
-   * Registers a middleware function to be executed on every incoming message.
+   * Registers a middleware function or a plugin to intercept incoming messages.
    *
-   * Middleware functions are executed **before any command processing** occurs.
-   * They allow you to inspect, modify, or react to incoming messages globally.
+   * This method serves as the main entry point for extending bot functionality.
+   * Middleware is executed in registration order **before** any command processing.
    *
-   * Middleware execution:
-   * - Middleware is executed in the order it was added.
-   * - Each middleware receives the full context of the message, including sender ID,
-   *   chat ID, the raw WhatsApp message, message type, and sender type.
-   * - Middleware can optionally call the `next()` callback to pass control to the next middleware.
-   *   If `next()` is not called, subsequent middleware and command processing are skipped.
+   * ### Use as Middleware
+   * Pass a function to inspect, modify, or block messages globally. Each
+   * middleware receives a `next()` function. Call `next()` to pass control
+   * to the next middleware. If `next()` is not called, the processing chain
+   * stops, preventing subsequent middleware and commands from running.
    *
-   * @param usePluginOrMiddleware - A function to handle incoming messages. The function receives:
-   *   - `senderId` - The ID of the user who sent the message, or `null` if unknown.
-   *   - `chatId` - The ID of the chat where the message was sent.
-   *   - `rawMsg` - The full WhatsApp message object.
-   *   - `msgType` - The type of the message (e.g., text, image, video).
-   *   - `senderType` - Whether the message comes from an individual or a group participant.
-   *   - `next` - A function to call to continue to the next middleware in the chain.
+   * ### Use as a Plugin
+   * Pass an object with a `plugin` method. Plugins are ideal for encapsulating
+   * complex or reusable logic, such as registering multiple commands and listeners at once.
+   *
+   * @param usePluginOrMiddleware - The middleware function or plugin object to register.
    *
    * @example
-   * // Log every incoming message and continue to the next middleware
-   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
-   *   console.log(`Message from ${senderId} in chat ${chatId}:`, rawMsg);
-   *   next();
+   * // Middleware for logging all incoming messages
+   * bot.Use(async (bot, senderId, chatId, rawMsg, msgType, senderType, next) => {
+   * console.log(`New message in chat ${chatId}`);
+   * await next(); // Continue to the next middleware
    * });
    *
    * @example
-   * // Block messages from a specific user (do not call next)
-   * bot.Use(async (senderId, chatId, rawMsg, msgType, senderType, next) => {
-   *   if (senderId === "blockedUserId") return;
-   *   next();
+   * // Middleware to block a specific user
+   * bot.Use((bot, senderId, chatId, rawMsg, msgType, senderType, next) => {
+   * if (senderId === "user-to-block@s.whatsapp.net") {
+   * return; // Stop the chain by not calling next()
+   * }
+   * next();
    * });
    */
   @autobind
@@ -420,6 +493,38 @@ export default class Bot implements BotMinimalInfo {
     }
   }
 
+  /**
+   * Registers middleware that runs only when a valid command is found.
+   *
+   * This hook executes **after** a command has been identified but **before** the
+   * command's `run` method is called. It's the ideal place for command-specific
+   * logic like permission checks, cooldowns, or logging.
+   *
+   * Like general middleware, you must call `next()` to proceed. If `next()` is
+   * not called, the command will not be executed.
+   *
+   * @param useMiddleware - The middleware function to execute. It receives all
+   * standard message parameters, plus the `commandFound` object.
+   * @see Use for general-purpose middleware that runs on all messages.
+   *
+   * @example
+   * // Middleware to allow a command only for admins
+   * bot.Use_OnCommandFound(async (bot, senderId, chatId, rawMsg, msgType, senderType, commandFound, next) => {
+   * const admins = ["admin1@s.whatsapp.net", "admin2@s.whatsapp.net"];
+   * if (commandFound.name === "ban" && !admins.includes(senderId)) {
+   * // User is not an admin, block the command
+   * await bot.SendMsg.Text(chatId, "You don't have permission to use that command.");
+   * return;
+   * }
+   * // User has permission, proceed to execute the command
+   * await next();
+   * });
+   */
+  @autobind
+  public Use_OnCommandFound(useMiddleware: WhatsbotcordMiddlewareFunct_OnFoundCommand): void {
+    this._internalMiddleware_OnCommandFound.push(useMiddleware);
+  }
+
   @autobind
   private async EVENT_OnMessageIncoming(
     senderId_LID: string | null,
@@ -430,20 +535,10 @@ export default class Bot implements BotMinimalInfo {
     senderType: SenderType
   ): Promise<void> {
     // ======== Middleware chain section ========
-    if (this._internalMiddleware.length > 0) {
-      let middlewareChainSuccess: boolean = false;
-      const callMiddleware = async (index: number): Promise<void> => {
-        if (index >= this._internalMiddleware.length) {
-          middlewareChainSuccess = true;
-          return; // end of chain
-        }
-        const middleware = this._internalMiddleware[index]!;
-        await Promise.resolve(middleware(this, senderId_LID, chatId, rawMsg, msgType, senderType, (): Promise<void> => callMiddleware(index + 1)));
-      };
-      await callMiddleware(0);
-      this.Events.onMiddlewareEnd.CallAll(middlewareChainSuccess);
-      if (!middlewareChainSuccess) return;
-    }
+    const mainMiddleware = new MiddlewareChain(this._internalMiddleware);
+    const middlewareChainSuccess = await mainMiddleware.run(this, senderId_LID, chatId, rawMsg, msgType, senderType);
+    this.Events.onMainMiddlewareEnd.CallAll(middlewareChainSuccess);
+    if (!middlewareChainSuccess) return;
 
     // ==== Main Logic =====
     if (msgType === MsgType.Text) {
@@ -500,9 +595,8 @@ export default class Bot implements BotMinimalInfo {
         );
         return;
       } else {
-        //Check if all commands return true or false, to alter
         if (this.Events.onCommandFound.Length > 0) {
-          const res = await this.Events.onCommandFound.CallAllAsync(
+          await this.Events.onCommandFound.CallAllAsync(
             new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
               cancelKeywords: this.Settings.cancelKeywords!,
               timeoutSeconds: this.Settings.timeoutSeconds!,
@@ -512,20 +606,15 @@ export default class Bot implements BotMinimalInfo {
             }),
             commandFound
           );
-          const shouldContinue = res.some((res) => {
-            if (typeof res === "undefined") {
-              return true;
-            }
-            if (typeof res === "boolean") {
-              return res;
-            }
-            return true;
-          });
-          if (!shouldContinue) {
-            return;
-          }
         }
-        //Continue with workflow!
+
+        //2nd Middleware
+        const middlewareOnFound = new MiddlewareChain(this._internalMiddleware_OnCommandFound);
+        const shouldContinueAgain = await middlewareOnFound.run(this, senderId_LID, chatId, rawMsg, msgType, senderType, commandFound);
+        await this.Events.onFoundCommandMiddlewareEnd.CallAllAsync(shouldContinueAgain);
+        if (!shouldContinueAgain) {
+          return;
+        }
       }
 
       const quotedMsgAsArgument: FoundQuotedMsg | null = MsgHelper_ExtractQuotedMsgInfo(rawMsg);

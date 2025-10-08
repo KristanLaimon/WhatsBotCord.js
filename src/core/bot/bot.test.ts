@@ -593,7 +593,7 @@ test("Middleware_WhenAddingMixedSyncAsyncMiddleWare_ShouldExecuteThemInOrder", a
   const sub = fn((success) => {
     expect(success).toBe(true);
   });
-  bot.Events.onMiddlewareEnd.Subscribe(sub);
+  bot.Events.onMainMiddlewareEnd.Subscribe(sub);
   await socket.MockSendMsgAsync(MockGroupTxtMsg /**doesn't matter what says or type, just send something*/);
   expect(firstLayerSync).toHaveBeenCalledTimes(1);
   expect(secondLayerAsync).toHaveBeenCalledTimes(1);
@@ -637,7 +637,7 @@ test("Middleware_WhenBreakingChain_ShouldNotExecuteCommandHandling", async () =>
   const sub = fn((success: boolean) => {
     expect(success).toBe(false);
   });
-  bot.Events.onMiddlewareEnd.Subscribe(sub);
+  bot.Events.onMainMiddlewareEnd.Subscribe(sub);
 
   //Action
   bot.Start();
@@ -682,7 +682,7 @@ test("Middleware_WhenNOTBreakingChain_ShouldExecuteCommandHandling", async () =>
   const sub = fn((success: boolean) => {
     expect(success).toBe(true);
   });
-  bot.Events.onMiddlewareEnd.Subscribe(sub);
+  bot.Events.onMainMiddlewareEnd.Subscribe(sub);
 
   //2. Execute
   bot.Start();
