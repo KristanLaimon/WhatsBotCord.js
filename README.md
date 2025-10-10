@@ -458,9 +458,9 @@ const bot = new WhatsbotCord({
 });
 
 // Add a general middleware for logging
-bot.Use((bot, senderId, chatId, rawMsg, msgType, senderType, next) => {
+bot.Use((bot, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType, next) => {
   // ✅ This code will run for EVERY message
-  console.log(`Incoming message from ${senderId} in ${chatId}`);
+  console.log(`Incoming message from ${senderId_LID} in ${chatId}`);
 
   // Continue to the next middleware (or to command handling)
   next();
@@ -494,13 +494,13 @@ bot.Commands.Add(
 );
 
 // Add a command-specific middleware for permission checks
-bot.Use_OnCommandFound(async (bot, senderId, chatId, rawMsg, msgType, senderType, commandFound, next) => {
+bot.Use_OnCommandFound(async (bot, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType, commandFound, next) => {
   const admins = ["admin1@s.whatsapp.net", "admin2@s.whatsapp.net"];
 
   // ✅ This code will ONLY run if a valid command is found
 
   // Check if the command is 'ban' and if the user is an admin
-  if (commandFound.name === "ban" && !admins.includes(senderId)) {
+  if (commandFound.name === "ban" && !admins.includes(senderId_LID)) {
     // Block the command by not calling next() and send a feedback message
     await bot.SendMsg.Text(chatId, "❌ You don't have permission to use the 'ban' command.");
     return;
