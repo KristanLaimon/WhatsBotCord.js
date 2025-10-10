@@ -55,7 +55,7 @@ export default function OfficialPlugin_OneCommandPerUserAtATime(config: Official
   return {
     plugin: (bot: Bot) => {
       // The middleware now handles the check BEFORE a command runs.
-      bot.Use_OnCommandFound(async (bot, senderId_LID, chatId, rawMsg, _msgType, _senderType, commandFound, next) => {
+      bot.Use_OnCommandFound(async (bot, senderId_LID, _senderId_PN, chatId, rawMsg, _msgType, _senderType, commandFound, next) => {
         const existingLog = activeUsers.find((u) => u.chatId === chatId && u.participantId_LID === senderId_LID);
 
         // If a log exists, the user is busy. Block the new command.

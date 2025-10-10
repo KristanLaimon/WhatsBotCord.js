@@ -175,7 +175,8 @@ export type WhatsBotCommands = CommandsSearcher;
 
 export type WhatsbotcordMiddlewareFunct = (
   bot: Bot,
-  senderId: string | null,
+  senderId_LID: string | null,
+  senderId_PN: string | null,
   chatId: string,
   rawMsg: WAMessage,
   msgType: MsgType,
@@ -185,7 +186,8 @@ export type WhatsbotcordMiddlewareFunct = (
 
 export type WhatsbotcordMiddlewareFunct_OnFoundCommand = (
   bot: Bot,
-  senderId: string | null,
+  senderId_LID: string | null,
+  senderId_PN: string | null,
   chatId: string,
   rawMsg: WAMessage,
   msgType: MsgType,
@@ -536,7 +538,7 @@ export default class Bot implements BotMinimalInfo {
   ): Promise<void> {
     // ======== Middleware chain section ========
     const mainMiddleware = new MiddlewareChain(this._internalMiddleware);
-    const middlewareChainSuccess = await mainMiddleware.run(this, senderId_LID, chatId, rawMsg, msgType, senderType);
+    const middlewareChainSuccess = await mainMiddleware.run(this, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType);
     this.Events.onMainMiddlewareEnd.CallAll(middlewareChainSuccess);
     if (!middlewareChainSuccess) return;
 
@@ -610,7 +612,7 @@ export default class Bot implements BotMinimalInfo {
 
         //2nd Middleware
         const middlewareOnFound = new MiddlewareChain(this._internalMiddleware_OnCommandFound);
-        const shouldContinueAgain = await middlewareOnFound.run(this, senderId_LID, chatId, rawMsg, msgType, senderType, commandFound);
+        const shouldContinueAgain = await middlewareOnFound.run(this, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType, commandFound);
         await this.Events.onFoundCommandMiddlewareEnd.CallAllAsync(shouldContinueAgain);
         if (!shouldContinueAgain) {
           return;

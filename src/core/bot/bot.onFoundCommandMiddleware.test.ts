@@ -33,13 +33,13 @@ test("Middleware_OnCommandFound: When chain completes, should execute command", 
   const executionOrder: string[] = [];
 
   // Create mock middleware functions
-  const middleware1 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, _cId, _rMsg, _mType, _sType, cmd, next) => {
+  const middleware1 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, __, _cId, _rMsg, _mType, _sType, cmd, next) => {
     expect(cmd.name).toBe(commandToRun.name); // Ensure the correct command is passed
     executionOrder.push("middleware1");
     await next();
   });
 
-  const middleware2 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, _cId, _rMsg, _mType, _sType, cmd, next) => {
+  const middleware2 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, __, _cId, _rMsg, _mType, _sType, cmd, next) => {
     expect(cmd.name).toBe(commandToRun.name);
     executionOrder.push("middleware2");
     await next();
@@ -87,18 +87,18 @@ test("Middleware_OnCommandFound: When chain is broken, should NOT execute comman
 
   const executionOrder: string[] = [];
 
-  const middleware1 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, _cId, _rMsg, _mType, _sType, _cmd, next) => {
+  const middleware1 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, _PN, _cId, _rMsg, _mType, _sType, _cmd, next) => {
     executionOrder.push("middleware1");
     await next();
   });
 
   // This middleware will break the chain by not calling next()
-  const breakingMiddleware = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>((_bot, _sId, _cId, _rMsg, _mType, _sType, _cmd, _next) => {
+  const breakingMiddleware = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>((_bot, _sId, _PN, _cId, _rMsg, _mType, _sType, _cmd, _next) => {
     executionOrder.push("breaking-middleware");
     // No call to next() here
   });
 
-  const middleware3 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, _cId, _rMsg, _mType, _sType, _cmd, next) => {
+  const middleware3 = fn<WhatsbotcordMiddlewareFunct_OnFoundCommand>(async (_bot, _sId, _PN, _cId, _rMsg, _mType, _sType, _cmd, next) => {
     executionOrder.push("middleware3"); // This should never be reached
     await next();
   });
