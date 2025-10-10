@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.15.0...v0.16.0) (2025-10-10)
+
+### Features
+
+* Middlewares receives senderId_LID and senderId_PN format! ([22a2057](https://github.com/KristanLaimon/WhatsBotCord.js/commit/22a2057197b74f5717ac7d67776f6af787529302))
+
 ## [0.15.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.14.1...v0.15.0) (2025-10-08)
 
 ### Features
