@@ -7,6 +7,8 @@
 
 > Note: WhatsBotCord its stable but still on beta, current api could change but not drastically. Soon there will be a 1.0.0 release and a proper documentation website.
 
+**🔥 Want to know what's new?** Check out the [**latest releases**](https://github.com/KristanLaimon/WhatsBotCord.js/releases) for documentation and usage examples.
+
 # Table of Contents
 
 - [Features](#features)
@@ -31,12 +33,12 @@
 
 ## Features
 
-- **Discord-Inspired Command System**: Create commands (e.g., !hello) with a simple, familiar syntax inspired by Discord bots.
-- **TypeScript Support**: Fully typed with TypeScript for robust development and autocompletion.
-- **Simplified Baileys Wrapper**: Abstracts complex Baileys internals, making it easy to manage groups, individual senders, and message handling.
-- **Group and Individual Messaging**: Seamlessly interact with WhatsApp groups and individual chats.
-- **Extensible Architecture**: Modular design for adding custom commands and functionality.
-- **Lightweight and Performant**: Optimized for speed and efficiency if using Bun.js (optional).
+- 🤖 **Discord-Inspired Command System**: Create commands (e.g., !hello) with a simple, familiar syntax inspired by Discord bots.
+- 🔵 **TypeScript Support**: Fully typed with TypeScript for robust development and autocompletion.
+- ✨ **Simplified Baileys Wrapper**: Abstracts complex Baileys internals, making it easy to manage groups, individual senders, and message handling.
+- 💬 **Group and Individual Messaging**: Seamlessly interact with WhatsApp groups and individual chats.
+- 🧩 **Extensible Architecture**: Modular design for adding custom commands and functionality.
+- 🚀 **Lightweight and Performant**: Optimized for speed and efficiency if using Bun.js (optional).
 
 ## Installation
 
