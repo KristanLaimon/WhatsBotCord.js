@@ -14,6 +14,7 @@ import { WhatsappGroupIdentifier } from "../Whatsapp.types.js";
 
 export type WhatsSocketReceiverWaitObject = {
   rawMsg: WhatsappMessage;
+  milisecondsDelayToRespondMock?: number;
 };
 
 export type WhatsSocketReceiverMsgWaited = {
@@ -78,6 +79,7 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
       throw new Error("ChatContext is trying to wait a msg that will never arrives!... Use MockChat.EnqueueIncoming_****() to enqueue what to return!");
     }
     const toSend = this._queueWait.shift()!;
+
     const actualMsg_msgType = MsgHelper_FullMsg_GetMsgType(toSend.rawMsg);
 
     if (_localOptions) {
@@ -107,6 +109,10 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
       throw new Error(
         `You have received a msg of type ${MsgType[actualMsg_msgType]} when you expected of type ${MsgType[expectedType]}!, check what are you sending from MockChat.EnqueueIncoming_****() msg!, try again...`
       );
+    }
+
+    if (toSend.milisecondsDelayToRespondMock) {
+      await new Promise<void>((resolve) => setTimeout(resolve, toSend.milisecondsDelayToRespondMock));
     }
 
     this.Waited.push({
