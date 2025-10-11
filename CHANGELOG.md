@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.3](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.2...v0.17.3) (2025-10-11)
+
+### Bug Fixes
+
+* Added support for Enqueueing Empty text strings in mockchat enqueueing mocking framework ([e32d1d5](https://github.com/KristanLaimon/WhatsBotCord.js/commit/e32d1d59a8ab7c36a447ddeb0c0576b8614df5ef))
+
 ## [0.17.2](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.1...v0.17.2) (2025-10-11)
 
 ### Bug Fixes
