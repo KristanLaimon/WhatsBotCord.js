@@ -35,10 +35,10 @@ import type { WhatsappMessage } from "../core/whats_socket/types.js";
 export function MsgHelper_FullMsg_GetText(rawMsg: WAMessage): string | null {
   if (!rawMsg.message) return null;
   return (
-    rawMsg.message.conversation ||
-    rawMsg.message.extendedTextMessage?.text ||
-    rawMsg.message.imageMessage?.caption ||
-    rawMsg.message.videoMessage?.caption ||
+    rawMsg.message.conversation ??
+    rawMsg.message.extendedTextMessage?.text ??
+    rawMsg.message.imageMessage?.caption ??
+    rawMsg.message.videoMessage?.caption ??
     null
   );
 }
@@ -132,6 +132,7 @@ export function MsgHelper_ProtoMsg_GetMsgType(generic: proto.IMessage): MsgType 
   if (generic.contactMessage) return MsgType.Contact;
   if (generic.contactsArrayMessage) return MsgType.Contact;
   if (generic.documentMessage) return MsgType.Document;
-  if (generic.conversation || generic.extendedTextMessage) return MsgType.Text;
+  if (typeof generic.conversation === "string" || typeof generic.extendedTextMessage === "string" || generic.conversation || generic.extendedTextMessage)
+    return MsgType.Text;
   return MsgType.Unknown;
 }

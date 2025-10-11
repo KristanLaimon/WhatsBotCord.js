@@ -660,6 +660,41 @@ describe("Text", () => {
     });
   });
 
+  it("WhenWaitingWithParams_ShouldRetrieveThoseParamsAsWell", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.SendText("Hello User");
+        await _ctx.SendText("What's your name?");
+        const userName: string | null = await _ctx.WaitText({ cancelKeywords: ["hello", "world"] });
+        expect(userName).toBe("chris");
+        await _ctx.SendText("Hello " + userName);
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Text("chris"); //Without send this, what will happen? (throw error)
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+    expect(chat.WaitedFromCommand[0]!.options).toMatchObject({
+      cancelKeywords: ["hello", "world"],
+    });
+  });
+
+  it("WhenEnqueueEmptyString_ShouldNotThrowErrorAndIdentifyItAsString", async (): Promise<void> => {
+    class Com implements ICommand {
+      name: string = "mynamecommand";
+      async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const emptyText: string | null = await _ctx.WaitText({ cancelKeywords: ["hello", "world"] });
+        expect(emptyText).toBe("");
+        await _ctx.SendText("Hello " + emptyText);
+      }
+    }
+    const chat = new ChatMock(new Com());
+    chat.EnqueueIncoming_Text(""); //Without send this, what will happen? (throw error)
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
   it("ShouldSendNormallyUsingInternalSocket", async (): Promise<void> => {
     class Com implements ICommand {
       name: string = "mynamecommand";
