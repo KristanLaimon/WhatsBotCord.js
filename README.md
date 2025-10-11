@@ -790,9 +790,10 @@ describe("WhatsChatMock Example", () => {
       senderType: SenderType.Individual,
     });
 
+    const optionalDelay = 1250; //Miliseconds
     // Simulate user responses
-    chat.EnqueueIncomingText("chris"); // Response to name question
-    chat.EnqueueIncomingText("typescript"); // Response to favorite language question
+    chat.EnqueueIncomingText("chris", { delayMilisecondsToReponse: optionalDelay }); // Response to name question and optionally you can set how much time to respond!
+    chat.EnqueueIncomingText("typescript", { delayMilisecondsToReponse: optionalDelay }); // Answering question and optionally you can set how much time to respond!
 
     await chat.StartChatSimulation();
 
@@ -851,10 +852,10 @@ describe("WhatsChatMock Example", () => {
       msgType: MsgType.Text,
       senderType: SenderType.Individual,
     });
-
+    const optionalDelay: number = 1250; //Miliseconds
     // Simulate user responses
-    chat.EnqueueIncomingText("chris"); // Response to name question
-    chat.EnqueueIncomingText("typescript"); // Response to favorite language question
+    chat.EnqueueIncomingText("chris", { delayMilisecondsToReponse: optionalDelay }); // Response to name question and optionally you can set how much time to respond!
+    chat.EnqueueIncomingText("typescript", { delayMilisecondsToReponse: optionalDelay }); // Answering question and optionally you can set how much time to repond.
 
     await chat.StartChatSimulation();
 
