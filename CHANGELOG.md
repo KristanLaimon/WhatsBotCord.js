@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.17.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.16.0...v0.17.0) (2025-10-11)
+
+### Features
+
+* Adding chatmockg.sendingmsgs option to delay msgs as a real user ([2a465b3](https://github.com/KristanLaimon/WhatsBotCord.js/commit/2a465b3dbca0bb62c487f7165c3693e1bfa90d39))
+
+### Bug Fixes
+
+* Fixed bad strict acceptance results in tests from last feature chatmock ([b3dbe71](https://github.com/KristanLaimon/WhatsBotCord.js/commit/b3dbe71c14c6c2501eb6d7a0abced372811e688b))
+
 ## [0.16.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.15.0...v0.16.0) (2025-10-10)
 
 ### Features
