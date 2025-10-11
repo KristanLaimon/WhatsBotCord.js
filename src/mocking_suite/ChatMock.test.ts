@@ -2891,4 +2891,43 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const endTime = Date.now();
     expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBeTrue();
   });
+
+  // --- EDGE CASE TESTS ---
+  it("Should timeout if message delay is longer than wait timeout", async () => {
+    const command: ICommand = {
+      name: "test-timeout",
+      async run(ctx: IChatContext) {
+        // This should return null because the delay (1000ms) is longer than the timeout (500ms)
+        const result = await ctx.WaitText({ timeoutSeconds: 0.5 });
+        expect(result).toBeNull();
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Text("this message will be late", { delayMilisecondsToReponse: delay });
+
+    // We expect the command to complete successfully without throwing,
+    // because the ChatContext should gracefully handle the timeout from the receiver.
+    await chat.StartChatSimulation();
+  });
+
+  it("Should succeed if message delay is shorter than wait timeout", async () => {
+    let receivedText: string | null;
+    const command: ICommand = {
+      name: "test-success",
+      async run(ctx: IChatContext) {
+        // This should succeed because the delay (200ms) is shorter than the timeout (1000ms)
+        receivedText = await ctx.WaitText({ timeoutSeconds: 1 });
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 200;
+    chat.EnqueueIncoming_Text("this message is on time", { delayMilisecondsToReponse: delay });
+
+    await chat.StartChatSimulation();
+
+    // Verify that the command actually received the message
+    expect(receivedText!).toBeDefined();
+    expect(receivedText!).toBe("this message is on time");
+  });
 });

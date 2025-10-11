@@ -68,62 +68,85 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
   }
 
   //_local Options is not used, just used in real commands, here is not necessary;
-  public async WaitMsg(
+  public WaitMsg(
     userID_LID_ToWait: string | null,
-    userID_PN_toWait: string | null,
+    userID_PN_to_wait: string | null,
     chatId: string,
     expectedType: MsgType,
     _localOptions?: Partial<IChatContextConfig>
   ): Promise<WhatsappMessage> {
-    if (this._queueWait.length === 0) {
-      throw new Error("ChatContext is trying to wait a msg that will never arrives!... Use MockChat.EnqueueIncoming_****() to enqueue what to return!");
-    }
-    const toSend = this._queueWait.shift()!;
+    return new Promise((resolve, reject) => {
+      // Removed async from here
+      if (this._queueWait.length === 0) {
+        return reject(
+          new Error("ChatContext is trying to wait a msg that will never arrives!... Use MockChat.EnqueueIncoming_****() to enqueue what to return!")
+        );
+      }
+      const actualWaitedObjInfo = this._queueWait.shift()!;
+      const timeoutPromise = new Promise<never>((_, rejectTimeout) => {
+        if (_localOptions?.timeoutSeconds) {
+          setTimeout(() => {
+            rejectTimeout({
+              errorMessage: WhatsSocketReceiverMsgError.Timeout,
+              wasAbortedByUser: false,
+              chatId: chatId,
+              participantId_LID: userID_LID_ToWait,
+              participantId_PN: userID_PN_to_wait,
+            } satisfies WhatsSocketReceiverError);
+          }, _localOptions.timeoutSeconds * 1000);
+        }
+      });
 
-    const actualMsg_msgType = MsgHelper_FullMsg_GetMsgType(toSend.rawMsg);
+      const messageProcessingPromise = (async () => {
+        const actualMsg_msgType = MsgHelper_FullMsg_GetMsgType(actualWaitedObjInfo.rawMsg);
 
-    if (_localOptions) {
-      //Actually, only used cancelKeywords param!
-      if (_localOptions?.cancelKeywords) {
-        if (actualMsg_msgType === MsgType.Text) {
-          const txt = MsgHelper_FullMsg_GetText(toSend.rawMsg);
-          if (txt) {
-            const wordsLowerCased = txt.split(" ").map((word) => word.toLowerCase());
-            for (const cancelWord of _localOptions.cancelKeywords) {
-              if (wordsLowerCased.includes(cancelWord.toLowerCase())) {
-                throw {
-                  errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting,
-                  chatId: chatId,
-                  participantId_LID: userID_LID_ToWait,
-                  participantId_PN: userID_PN_toWait,
-                  wasAbortedByUser: true,
-                } satisfies WhatsSocketReceiverError;
+        if (actualWaitedObjInfo.milisecondsDelayToRespondMock) {
+          await new Promise((resolveDelay) => setTimeout(resolveDelay, actualWaitedObjInfo.milisecondsDelayToRespondMock));
+        }
+
+        if (_localOptions?.cancelKeywords) {
+          if (actualMsg_msgType === MsgType.Text) {
+            const txt = MsgHelper_FullMsg_GetText(actualWaitedObjInfo.rawMsg);
+            if (txt) {
+              const wordsLowerCased = txt.split(" ").map((word) => word.toLowerCase());
+              for (const cancelWord of _localOptions.cancelKeywords) {
+                if (wordsLowerCased.includes(cancelWord.toLowerCase())) {
+                  throw {
+                    errorMessage: WhatsSocketReceiverMsgError.UserCanceledWaiting,
+                    chatId: chatId,
+                    participantId_LID: userID_LID_ToWait,
+                    participantId_PN: userID_PN_to_wait,
+                    wasAbortedByUser: true,
+                  } satisfies WhatsSocketReceiverError;
+                }
               }
             }
           }
         }
+
+        if (actualMsg_msgType !== expectedType) {
+          throw new Error(
+            `You have received a msg of type ${MsgType[actualMsg_msgType]} when you expected of type ${MsgType[expectedType]}!, check what are you sending from MockChat.EnqueueIncoming_****() msg!, try again...`
+          );
+        }
+
+        this.Waited.push({
+          options: _localOptions,
+          chatId: chatId,
+          partipantId_LID: userID_LID_ToWait,
+          participantId_PN: userID_PN_to_wait,
+          waitedMsgType: actualMsg_msgType,
+        });
+
+        return actualWaitedObjInfo.rawMsg;
+      })();
+
+      try {
+        Promise.race([messageProcessingPromise, timeoutPromise]).then(resolve).catch(reject);
+      } catch (error) {
+        reject(error);
       }
-    }
-
-    if (actualMsg_msgType !== expectedType) {
-      throw new Error(
-        `You have received a msg of type ${MsgType[actualMsg_msgType]} when you expected of type ${MsgType[expectedType]}!, check what are you sending from MockChat.EnqueueIncoming_****() msg!, try again...`
-      );
-    }
-
-    if (toSend.milisecondsDelayToRespondMock) {
-      await new Promise<void>((resolve) => setTimeout(resolve, toSend.milisecondsDelayToRespondMock));
-    }
-
-    this.Waited.push({
-      options: _localOptions,
-      chatId: chatId,
-      partipantId_LID: userID_LID_ToWait,
-      participantId_PN: userID_PN_toWait,
-      waitedMsgType: actualMsg_msgType,
     });
-
-    return toSend.rawMsg;
   }
 
   public WaitUntilNextRawMsgFromUserIDInGroup(
