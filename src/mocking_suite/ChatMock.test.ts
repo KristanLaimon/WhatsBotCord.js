@@ -4,6 +4,7 @@ import type { ChatContextContactRes, IChatContext } from "../core/bot/internals/
 import type { AdditionalAPI, ICommand } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
+import { skipLongTests } from "../Envs.js";
 import { MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
@@ -2741,5 +2742,145 @@ describe("Contact", () => {
     }).toThrow();
     expect(chat.SentFromCommand.Contacts).toHaveLength(1);
     expect(chat.WaitedFromCommand).toHaveLength(0);
+  });
+});
+
+describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
+  it("Should delay text message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitText();
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Text("hello", { delayMilisecondsToReponse: delay });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+  });
+
+  it("Should delay image message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitMultimedia(MsgType.Image);
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Img("path/to/img.png", {
+      delayMilisecondsToReponse: delay,
+    });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+  });
+
+  it("Should delay sticker message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitMultimedia(MsgType.Sticker);
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Sticker("path/to/sticker.webp", {
+      delayMilisecondsToReponse: delay,
+    });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+  });
+
+  it("Should delay audio message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitMultimedia(MsgType.Audio);
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Audio("path/to/audio.mp3", {
+      delayMilisecondsToReponse: delay,
+    });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+  });
+
+  it("Should delay video message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitMultimedia(MsgType.Video);
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Video("path/to/video.mp4", {
+      delayMilisecondsToReponse: delay,
+    });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+  });
+
+  it("Should delay document message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitMultimedia(MsgType.Document);
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Document("path/to/doc.pdf", "doc.pdf", {
+      delayMilisecondsToReponse: delay,
+    });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+  });
+
+  it("Should delay location message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitUbication();
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Location(0, 0, { delayMilisecondsToReponse: delay });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+  });
+
+  it("Should delay contact message", async () => {
+    const command: ICommand = {
+      name: "test",
+      async run(ctx: IChatContext) {
+        await ctx.WaitContact();
+      },
+    };
+    const chat = new ChatMock(command);
+    const delay = 1000;
+    chat.EnqueueIncoming_Contact({ name: "test", phone: "123" }, { delayMilisecondsToReponse: delay });
+    const startTime = Date.now();
+    await chat.StartChatSimulation();
+    const endTime = Date.now();
+    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
   });
 });
