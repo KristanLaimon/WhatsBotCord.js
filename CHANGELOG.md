@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.2](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.1...v0.17.2) (2025-10-11)
+
+### Bug Fixes
+
+* Fixing edge case with last feature waiting mock with timeoutSeconds of WaitMsg (receiver.mockingsuite) ([0dd06ca](https://github.com/KristanLaimon/WhatsBotCord.js/commit/0dd06cae08e0fbb65d2b424ad34164fc92673fc5))
+
 ## [0.17.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.0...v0.17.1) (2025-10-11)
 
 ## [0.17.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.16.0...v0.17.0) (2025-10-11)
