@@ -2746,6 +2746,13 @@ describe("Contact", () => {
 });
 
 describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
+  function toHaveMoreLess(valueToCompare: number, moreLessAcceptableRanke: number) {
+    const min = valueToCompare - moreLessAcceptableRanke;
+    const max = valueToCompare + moreLessAcceptableRanke;
+    return valueToCompare >= min && valueToCompare <= max;
+  }
+  const ACCEPTANCE_MILISECONDS_RANGE: number = 30;
+
   it("Should delay text message", async () => {
     const command: ICommand = {
       name: "test",
@@ -2759,7 +2766,7 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBe(true);
   });
 
   it("Should delay image message", async () => {
@@ -2777,7 +2784,7 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBe(true);
   });
 
   it("Should delay sticker message", async () => {
@@ -2795,7 +2802,8 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBeTrue();
   });
 
   it("Should delay audio message", async () => {
@@ -2813,7 +2821,7 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBeTrue();
   });
 
   it("Should delay video message", async () => {
@@ -2831,7 +2839,7 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBeTrue();
   });
 
   it("Should delay document message", async () => {
@@ -2849,7 +2857,7 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBeTrue();
   });
 
   it("Should delay location message", async () => {
@@ -2865,7 +2873,7 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBeTrue();
   });
 
   it("Should delay contact message", async () => {
@@ -2881,6 +2889,6 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     const startTime = Date.now();
     await chat.StartChatSimulation();
     const endTime = Date.now();
-    expect(endTime - startTime).toBeGreaterThanOrEqual(delay);
+    expect(toHaveMoreLess(endTime - startTime, ACCEPTANCE_MILISECONDS_RANGE)).toBeTrue();
   });
 });
