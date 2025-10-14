@@ -7,6 +7,7 @@ import {
   type WAMessageUpdate,
   Browsers,
   DisconnectReason,
+  fetchLatestBaileysVersion,
   makeWASocket,
   useMultiFileAuthState,
 } from "baileys";
@@ -157,7 +158,7 @@ export default class WhatsSocket implements IWhatsSocket {
   private _customSocketImplementation?: IWhatsSocketServiceAdapter;
 
   constructor(options?: WhatsSocketOptions) {
-    this._loggerMode = options?.loggerMode === "recommended" ? "silent" : options?.loggerMode ?? "silent";
+    this._loggerMode = options?.loggerMode ?? "silent";
     this._credentialsFolder = options?.credentialsFolder ?? "./auth";
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
@@ -215,15 +216,17 @@ export default class WhatsSocket implements IWhatsSocket {
     const authInfoPath: string = GetPath(this._credentialsFolder);
     const { state, saveCreds } = await useMultiFileAuthState(authInfoPath);
 
+    const { version } = await fetchLatestBaileysVersion(); //1. I've added this line
     if (this._customSocketImplementation) {
       this.Socket = this._customSocketImplementation;
     } else {
-      const logger = pino({ level: this._loggerMode });
-      //By default uses "Baileys" library whatsapp socket API
+      const logger = pino({ level: this._loggerMode === "recommended" ? "silent" : this._loggerMode });
       this.Socket = makeWASocket({
+        version, //2. Then added "version" prop in Socket constructor
         auth: state,
         logger: logger,
-        browser: Browsers.windows("Desktop"), //Simulates a Windows Desktop client for a better history messages fetching (Thanks to baileys library)
+        browser: Browsers.windows("Chrome"),
+        // syncFullHistory: true,
       });
     }
     this.Socket.ev.on("creds.update", saveCreds);
@@ -244,6 +247,7 @@ export default class WhatsSocket implements IWhatsSocket {
 
       // Show QR code if needed
       if (qr) {
+        console.log("[Whatsbotcord]: ⌛ Logging in. Scan this qr code to get started!");
         console.log(encodeQr(qr, "ascii"));
       }
 
@@ -251,14 +255,17 @@ export default class WhatsSocket implements IWhatsSocket {
       if (connection === "open") {
         this.ActualReconnectionRetries = 0; // reset retries
         try {
+          if (this._loggerMode !== "silent") {
+            console.log("[Whatsbotcord]: ✅ Connected to whatsapp servers");
+          }
           const groups = Object.values(await this.Socket.groupFetchAllParticipating());
           this.onStartupAllGroupsIn.CallAll(groups);
           if (this._loggerMode !== "silent") {
-            console.log("INFO: All groups data fetched successfully");
+            console.log("[Whatsbotcord]: 💬 All groups metadata fetched successfully");
           }
         } catch (err) {
           if (this._loggerMode !== "silent") {
-            console.error("ERROR: Couldn't fetch groups", err);
+            console.error("[Whatsbotcord]:  ❌ ERROR: Couldn't fetch groups", err);
           }
         }
       }
@@ -267,23 +274,16 @@ export default class WhatsSocket implements IWhatsSocket {
       if (connection === "close") {
         const error = lastDisconnect?.error as Boom | undefined;
         const statusCode = error?.output?.statusCode;
-        // const reason = error?.output?.payload?.message;
-
-        // if (reason === "replaced") {
-        //   console.warn("WARNING: Another session has replaced this one. Not reconnecting.");
-        //   await this.Shutdown();
-        //   return;
-        // }
 
         // Only attempt to reconnect if not logged out
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         if (this._loggerMode !== "silent") {
-          console.warn("Socket closed", statusCode ? `(code: ${statusCode})` : "");
+          console.warn("[Whatsbotcord]: ❌ Socket closed", statusCode ? `(code: ${statusCode})` : "");
         }
 
         if (!shouldReconnect) {
           if (this._loggerMode !== "silent") {
-            console.error("ERROR: Socket logged out. Not reconnecting.");
+            console.error("[Whatsbotcord]: ❌ ERROR: Socket logged out. Not reconnecting.");
           }
           await this.Shutdown();
           return;
@@ -295,7 +295,7 @@ export default class WhatsSocket implements IWhatsSocket {
         // Check max retries
         if (this.ActualReconnectionRetries > this._maxReconnectionRetries) {
           if (this._loggerMode !== "silent") {
-            console.error(`ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
+            console.error(`[Whatsbotcord]: ❌ ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
           }
           await this.Shutdown();
           return;
@@ -306,18 +306,18 @@ export default class WhatsSocket implements IWhatsSocket {
 
         this._isRestarting = true;
         if (this._loggerMode !== "silent") {
-          console.log(`INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
+          console.log(`[Whatsbotcord]: ❌ INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
         }
 
         try {
           await this.Restart();
           this.onRestart.CallAll();
           if (this._loggerMode !== "silent") {
-            console.log("INFO: Socket restarted successfully!");
+            console.log("[Whatsbotcord]: ❌ INFO: Socket restarted successfully!");
           }
         } catch (err) {
           if (this._loggerMode !== "silent") {
-            console.error("ERROR: Socket restart failed", err);
+            console.error("[Whatsbotcord]: ❌ ERROR: Socket restart failed", err);
           }
         } finally {
           this._isRestarting = false;
@@ -333,8 +333,8 @@ export default class WhatsSocket implements IWhatsSocket {
         const msg = msgAny as WhatsappMessage;
         if (this._ignoreSelfMessages) if (!msg.message || msg.key.fromMe) continue;
         const chatId = msg.key.remoteJid!;
-        const senderId_LID = msg.key.participant ?? null;
-        const senderId_PN = msg.key.participantAlt ?? null;
+        const senderId_LID: string | null = msg.key.participant ?? null;
+        const senderId_PN: string | null = msg.key.participantPn ?? null;
         let senderType: SenderType = SenderType.Unknown;
         if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
         if (chatId && chatId.endsWith(WhatsappPhoneNumberIdentifier)) senderType = SenderType.Individual;
@@ -351,8 +351,8 @@ export default class WhatsSocket implements IWhatsSocket {
         if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
 
         const chatId: string = msgUpdate.key.remoteJid!;
-        const senderId_LID: string | null = msgUpdate.key.participant ?? null;
-        const senderId_PN: string | null = msgUpdate.key.participantAlt ?? null;
+        const senderId_LID: string | null = msgUpdate.key.participant ?? msgUpdate.key.participantLid ?? null;
+        const senderId_PN: string | null = msgUpdate.key.participantPn ?? null;
         const senderType: SenderType = MsgHelper_FullMsg_GetSenderType(msgUpdate);
         this.onUpdateMsg.CallAll(senderId_LID, senderId_PN, chatId, msgUpdate, MsgHelper_FullMsg_GetMsgType(msgUpdate), senderType);
       }

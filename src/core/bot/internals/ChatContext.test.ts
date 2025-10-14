@@ -46,7 +46,7 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
   const chatSession = new ChatContext(
     GroupTxtMsg.key.participant ?? null,
-    GroupTxtMsg.key.participantAlt ?? null,
+    GroupTxtMsg.key.participantPn ?? null,
     GroupTxtMsg.key.remoteJid!,
     GroupTxtMsg,
     senderDependency,
@@ -651,13 +651,13 @@ describe("ChatContext Cloning Methods", () => {
       key: {
         remoteJid: keyData.remoteJid,
         participant: keyData.participant,
-        participantAlt: keyData.participantAlt,
+        participantPn: keyData.participantAlt,
         id: "mock_id",
         fromMe: false,
       },
       message: { conversation: "mock message" },
       // ... other properties as needed
-    } as WhatsappMessage;
+    } satisfies WhatsappMessage;
   }
 
   // --- Test for the simple Clone() method ---
@@ -707,7 +707,7 @@ describe("ChatContext Cloning Methods", () => {
       expect(forkedChat.InitialMsg).toBe(mockMsg);
       // It should prioritize key.participant
       expect(forkedChat.FixedParticipantPN).toBe(mockMsg.key.participant!);
-      expect(forkedChat.FixedParticipantLID).toBe(mockMsg.key.participantAlt!);
+      expect(forkedChat.FixedParticipantLID).toBe(mockMsg.key.participantPn!);
     });
 
     it("should use a new config if provided", () => {

@@ -1,11 +1,4 @@
-import {
-  type AnyMessageContent,
-  type GroupMetadata,
-  type GroupParticipant,
-  type MiscMessageGenerationOptions,
-  type WAMessage,
-  WAMessageAddressingMode,
-} from "baileys";
+import { type AnyMessageContent, type GroupMetadata, type GroupParticipant, type MiscMessageGenerationOptions, type WAMessage } from "baileys";
 import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
 import Delegate from "../../../libs/Delegate.js";
@@ -153,7 +146,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     }
     this._groupMetadataMock = {
       id: chatIdToUse ?? "fakeIdGroup" + WhatsappGroupIdentifier,
-      addressingMode: groupData?.sendingMode === "pn" ? WAMessageAddressingMode.PN : WAMessageAddressingMode.LID,
+      addressingMode: groupData?.sendingMode === "pn" ? "pn" : "lid",
       owner: groupData?.ownerName ?? undefined,
       subject: groupData?.groupName ?? "GroupName",
       desc: groupData?.groupDescription ?? undefined,
@@ -220,7 +213,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     const info = this._extractInfoFromWhatsMsg(rawMsg, options);
     await this.onIncomingMsg.CallAllAsync(
       info.rawMsg.key.participant ?? null,
-      info.rawMsg.key.participantAlt ?? null,
+      info.rawMsg.key.participantPn ?? null,
       info.rawMsg.key.remoteJid!,
       info.rawMsg,
       options?.customMsgType ?? info.msgType,
@@ -239,7 +232,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     const info = this._extractInfoFromWhatsMsg(rawMsg, options);
     this.onIncomingMsg.CallAll(
       info.rawMsg.key.participant ?? null,
-      info.rawMsg.key.participantAlt ?? null,
+      info.rawMsg.key.participantPn ?? null,
       info.rawMsg.key.remoteJid!,
       info.rawMsg,
       options?.customMsgType ?? info.msgType,

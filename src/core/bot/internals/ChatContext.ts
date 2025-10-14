@@ -135,11 +135,11 @@ export class ChatContext implements IChatContext {
       }
     }
 
-    if (keysData.participantAlt) {
-      if (keysData.participantAlt.endsWith(WhatsappLIDIdentifier)) {
-        ID_LID = keysData.participantAlt;
-      } else if (keysData.participantAlt.endsWith(WhatsappPhoneNumberIdentifier)) {
-        ID_PN = keysData.participantAlt;
+    if (keysData.participantPn) {
+      if (keysData.participantPn.endsWith(WhatsappLIDIdentifier)) {
+        ID_LID = keysData.participantPn;
+      } else if (keysData.participantPn.endsWith(WhatsappPhoneNumberIdentifier)) {
+        ID_PN = keysData.participantPn;
       }
     }
 

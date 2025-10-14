@@ -3,7 +3,7 @@ import { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType, d
 import OfficialPlugin_OneCommandPerUserAtAtime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 
 class PingCommand implements ICommand {
-  name: string = "ping";
+  public name: string = "ping";
   async run(chat: ChatContext, _: AdditionalAPI, __: CommandArgs): Promise<void> {
     await chat.SendText("Pong");
   }
@@ -61,7 +61,7 @@ class SendPrivately implements ICommand {
     }
     await ctx.Loading();
     const txtExtracted: string = args.args.join(" ");
-    const fullWhatsId: string = args.originalRawMsg.key.participantAlt!;
+    const fullWhatsId: string = args.originalRawMsg.key.participantPn!;
     await api.InternalSocket.Send.Text(fullWhatsId, txtExtracted);
     await ctx.Ok();
   }

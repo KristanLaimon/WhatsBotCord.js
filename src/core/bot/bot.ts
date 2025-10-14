@@ -652,7 +652,7 @@ export default class Bot implements BotMinimalInfo {
         originalRawMsg: rawMsg,
         senderType: senderType,
         participantIdLID: senderId_LID,
-        participantIdPN: rawMsg.key.participantAlt ?? null,
+        participantIdPN: senderId_PN,
         quotedMsgInfo: quotedMsgAsArgument,
         botInfo: this,
       };
