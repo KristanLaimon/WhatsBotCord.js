@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.5](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.4...v0.17.5) (2025-10-14)
+
+### Bug Fixes
+
+* Fixed QR not displaying due to baileys.js outdated dependency ([7808e9d](https://github.com/KristanLaimon/WhatsBotCord.js/commit/7808e9d6889f1bcb616f39d79918adaf7b7d8282))
+
 ## [0.17.4](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.3...v0.17.4) (2025-10-14)
 
 ## [0.17.3](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.2...v0.17.3) (2025-10-11)
