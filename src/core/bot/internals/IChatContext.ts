@@ -655,7 +655,7 @@ export interface IChatContext {
    * }
    * ```
    */
-  WaitYesOrNoAnswer(localOptions?: IChatContext_WaitYesOrNoAnswer_Params): Promise<boolean | null>;
+  WaitYesOrNoAnswer(localOptions?: Partial<IChatContext_WaitYesOrNoAnswer_Params>): Promise<boolean | null>;
 
   /**
    * Waits for the next multimedia message of the specified type (e.g., image, video, audio).
@@ -865,14 +865,14 @@ export type IChatContext_WaitYesOrNoAnswerConfig = {
    * The check is always case-insensitive.
    * @default ["yes", "y", "si", "s", "ok", "vale", "dale"]
    */
-  positiveAnswerOptions: string[];
+  positiveAnswerOptions?: string[];
   /**
    * An array of strings to use as negative answers, overriding the defaults.
    * The check is case-insensitive.
    * The check is always case-insensitive.
    * @default ["no", "n"]
    */
-  negativeAnswerOptions: string[];
+  negativeAnswerOptions?: string[];
 };
 
 /**
