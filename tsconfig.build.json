@@ -5,5 +5,5 @@
     "moduleResolution": "NodeNext",
     "outDir": "build"
   },
-  "exclude": ["**/*.test.ts", "src/core/whats_socket/mocks/", "src/mocks/", "docs/examples"]
+  "exclude": ["**/*.test.ts", "src/core/whats_socket/mocks/", "src/mocks/", "docs/examples", "src/index.main.ts", "src/index.main.test.ts"]
 }
