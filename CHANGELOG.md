@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.18.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.5...v0.18.0) (2025-10-15)
+
+### Features
+
+* **chatcontext:**  WaitYesOrNoAnswer sugar method ([00faf16](https://github.com/KristanLaimon/WhatsBotCord.js/commit/00faf164ad9e64ace633b4963051a39312a22e75))
+
 ## [0.17.5](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.4...v0.17.5) (2025-10-14)
 
 ### Bug Fixes
