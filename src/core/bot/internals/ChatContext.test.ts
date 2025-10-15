@@ -829,14 +829,14 @@ describe("WaitYesOrNoAnswer", () => {
       const negativeAnswers = ["no", "n", "NO", "N"];
       for (const answer of negativeAnswers) {
         waitTextSpy.mockResolvedValueOnce(answer);
-        const result = await chat.WaitYesOrNoAnswer();
+        const result: boolean | null = await chat.WaitYesOrNoAnswer();
         expect(result).toBe(false);
       }
     });
 
     it("should return null for ambiguous answers", async () => {
       waitTextSpy.mockResolvedValueOnce("maybe");
-      const result = await chat.WaitYesOrNoAnswer();
+      const result: boolean | null = await chat.WaitYesOrNoAnswer();
       expect(result).toBeNull();
     });
 
