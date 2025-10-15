@@ -23,6 +23,7 @@ import type {
   IChatContext_CloneTargetedTo_FromIds_GROUP_Params,
   IChatContext_CloneTargetedTo_FromIds_Individual_Params,
   IChatContext_CloneTargetedTo_FromWhatsmsg_Params,
+  IChatContext_WaitYesOrNoAnswer_Params,
 } from "./IChatContext.js";
 
 export type IChatContextConfig = WhatsSocketReceiverWaitOptions & {
@@ -30,6 +31,22 @@ export type IChatContextConfig = WhatsSocketReceiverWaitOptions & {
    * Used primarly in mocking system
    */
   explicitSenderType?: SenderType;
+
+  /**
+   * Default keywords to be interpreted as an affirmative ("yes") response
+   * in `WaitYesOrNoAnswer`. Case-insensitive.
+   *
+   * @default ["yes", "y", "si", "s", "ok", "vale", "sí"]
+   */
+  positiveAnswerOptions?: string[];
+
+  /**
+   * Default keywords to be interpreted as a negative ("no") response
+   * in `WaitYesOrNoAnswer`. Case-insensitive.
+   *
+   * @default ["no", "n"]
+   */
+  negativeAnswerOptions?: string[];
 };
 
 /**
@@ -104,6 +121,8 @@ export class ChatContext implements IChatContext {
     this.FixedChatId = fixedChatId;
     this.InitialMsg = initialMsg;
     this.FixedSenderType = config.explicitSenderType ?? (this.InitialMsg !== null ? MsgHelper_FullMsg_GetSenderType(this.InitialMsg) : SenderType.Individual);
+
+    this.WaitText = this.WaitText.bind(this);
   }
 
   @autobind
@@ -427,12 +446,36 @@ export class ChatContext implements IChatContext {
     }
   }
 
-  @autobind
+  //@autbinded in constructor()
   public async WaitText(localOptions?: Partial<IChatContextConfig>): Promise<string | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(MsgType.Text, localOptions);
     if (!found) return null;
     const extractedTxtToReturn: string | null = MsgHelper_FullMsg_GetText(found);
     return extractedTxtToReturn;
+  }
+
+  @autobind
+  public async WaitYesOrNoAnswer(localOptions?: Partial<IChatContext_WaitYesOrNoAnswer_Params>): Promise<boolean | null> {
+    const text: string | null = await this.WaitText(localOptions?.normalConfig);
+    if (!text) {
+      return null;
+    }
+
+    const textLower: string = text.toLowerCase();
+    //prettier-ignore
+    const positiveAnswers: string[] = localOptions?.waitYesOrNoOptions?.positiveAnswerOptions ??  this.Config.positiveAnswerOptions ?? ["yes", "y", "si", "s", "ok", "vale", "sí"];
+    //prettier-ignore
+    const negativeAnswers: string[] = localOptions?.waitYesOrNoOptions?.negativeAnswerOptions ?? this.Config.negativeAnswerOptions ?? ["no", "n"];
+
+    if (positiveAnswers.includes(textLower)) {
+      return true;
+    }
+
+    if (negativeAnswers.includes(textLower)) {
+      return false;
+    }
+
+    return null;
   }
 
   @autobind

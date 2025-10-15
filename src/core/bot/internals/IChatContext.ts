@@ -626,6 +626,38 @@ export interface IChatContext {
   WaitText(localOptions?: Partial<IChatContextConfig>): Promise<string | null>;
 
   /**
+   * Waits for a "yes" or "no" response from the user.
+   *
+   * This is a specialized version of `WaitText` that interprets common
+   * affirmative and negative responses.
+   *
+   * - **Positive responses**: "yes", "y", "si", "s", "ok" (and more, case-insensitive).
+   * - **Negative responses**: "no", "n" (and more, case-insensitive).
+   *
+   * You can override the default keywords using the `localOptions` parameter.
+   *
+   * @param localOptions - Optional configuration to override default "yes"/"no" keywords
+   *                       and to pass standard waiting options like timeout.
+   * @returns `true` for a positive answer, `false` for a negative answer, or `null`
+   *          if the user's response is ambiguous, they cancel, or the wait times out.
+   *
+   * @example
+   * ```ts
+   * await ctx.SendText("Do you want to continue? (yes/no)");
+   * const answer = await ctx.WaitYesOrNoAnswer({ normalConfig: { timeoutSeconds: 30 } });
+   *
+   * if (answer === true) {
+   *   await ctx.SendText("Proceeding...");
+   * } else if (answer === false) {
+   *   await ctx.SendText("Operation cancelled.");
+   * } else {
+   *   await ctx.SendText("No valid response received.");
+   * }
+   * ```
+   */
+  WaitYesOrNoAnswer(localOptions?: IChatContext_WaitYesOrNoAnswer_Params): Promise<boolean | null>;
+
+  /**
    * Waits for the next multimedia message of the specified type (e.g., image, video, audio).
    *
    * @param msgTypeToWaitFor - Multimedia type to wait for.
@@ -809,3 +841,63 @@ export type IChatContext_CloneTargetedTo_FromIds_GROUP_Params = {
    */
   newConfig?: IChatContextConfig;
 };
+
+// ========================================================================================================
+/**
+ * Configuration for customizing the keywords recognized by `WaitYesOrNoAnswer`.
+ *
+ * @example
+ * ```ts
+ * const customYesNo: IChatContext_WaitYesOrNoAnswerConfig = {
+ *   overridePositiveAnswerOptions: ['accept', 'confirm'],
+ *   overrideNegativeAnswerOptions: ['reject', 'deny']
+ * };
+ *
+ * const answer = await ctx.WaitYesOrNoAnswer({
+ *   waitYesOrNoOptions: customYesNo
+ * });
+ * ```
+ */
+export type IChatContext_WaitYesOrNoAnswerConfig = {
+  /**
+   * An array of strings to use as affirmative answers, overriding the defaults.
+   * The check is case-insensitive.
+   * The check is always case-insensitive.
+   * @default ["yes", "y", "si", "s", "ok", "vale", "dale"]
+   */
+  positiveAnswerOptions: string[];
+  /**
+   * An array of strings to use as negative answers, overriding the defaults.
+   * The check is case-insensitive.
+   * The check is always case-insensitive.
+   * @default ["no", "n"]
+   */
+  negativeAnswerOptions: string[];
+};
+
+/**
+ * Parameters for configuring the `WaitYesOrNoAnswer` method.
+ *
+ *
+ * This type allows for both customizing the "yes/no" keyword detection
+ * and passing standard waiting configurations like timeouts.
+ */
+export type IChatContext_WaitYesOrNoAnswer_Params = {
+  /**
+   * Options to customize the affirmative and negative keywords.
+   * If not provided, default "yes"/"no" keywords will be used.
+   */
+  waitYesOrNoOptions: IChatContext_WaitYesOrNoAnswerConfig;
+  /**
+   * Standard waiting configuration, such as `timeoutSeconds` and `cancelKeywords`.
+   * These options are passed down to the underlying `WaitText` call.
+   *
+   * @example
+   * ```ts
+   * // Wait for 10 seconds and allow "stop" as a cancel keyword.
+   * await ctx.WaitYesOrNoAnswer({ normalConfig: { timeoutSeconds: 10, cancelKeywords: ['stop'] } });
+   * ```
+   */
+  normalConfig: Partial<IChatContextConfig>;
+};
+// ========================================================================================================
