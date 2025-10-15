@@ -18,7 +18,7 @@ import { WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import { type IChatContextConfig, ChatContext } from "./ChatContext.js";
-import type { IChatContext } from "./IChatContext.js";
+import type { IChatContext, IChatContext_WaitYesOrNoAnswer_Params } from "./IChatContext.js";
 
 /**
  * ChatSession Testing Suite
@@ -801,6 +801,129 @@ describe("ChatContext Cloning Methods", () => {
       expect(forkedChat.FixedChatId).toBe(newGroupChatId);
       expect(forkedChat.FixedParticipantLID).toBe(individualChat.FixedParticipantLID);
       expect(forkedChat.FixedParticipantPN).toBe(individualChat.FixedParticipantPN);
+    });
+  });
+});
+
+describe("WaitYesOrNoAnswer", () => {
+  let chat: IChatContext;
+  let waitTextSpy: Mock<typeof chat.WaitText>;
+
+  beforeEach(() => {
+    const toolkit = GenerateLocalToolKit_ChatSession_FromGroup();
+    chat = toolkit.chat;
+    waitTextSpy = spyOn(chat, "WaitText");
+  });
+
+  describe("with default keywords", () => {
+    it("should return true for default positive answers (case-insensitive)", async () => {
+      const positiveAnswers = ["yes", "y", "si", "s", "ok", "vale", "sí", "YEs", "OK"];
+      for (const answer of positiveAnswers) {
+        waitTextSpy.mockResolvedValueOnce(answer);
+        const result = await chat.WaitYesOrNoAnswer();
+        expect(result).toBe(true);
+      }
+    });
+
+    it("should return false for default negative answers (case-insensitive)", async () => {
+      const negativeAnswers = ["no", "n", "NO", "N"];
+      for (const answer of negativeAnswers) {
+        waitTextSpy.mockResolvedValueOnce(answer);
+        const result = await chat.WaitYesOrNoAnswer();
+        expect(result).toBe(false);
+      }
+    });
+
+    it("should return null for ambiguous answers", async () => {
+      waitTextSpy.mockResolvedValueOnce("maybe");
+      const result = await chat.WaitYesOrNoAnswer();
+      expect(result).toBeNull();
+    });
+
+    it("should return null if WaitText returns null (e.g., timeout)", async () => {
+      waitTextSpy.mockResolvedValueOnce(null);
+      const result = await chat.WaitYesOrNoAnswer();
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("with global config override", () => {
+    beforeEach(() => {
+      chat.Config.positiveAnswerOptions = ["confirm", "accept"];
+      chat.Config.negativeAnswerOptions = ["deny", "reject"];
+    });
+
+    it("should return true for globally configured positive answers", async () => {
+      waitTextSpy.mockResolvedValueOnce("confirm");
+      expect(await chat.WaitYesOrNoAnswer()).toBe(true);
+    });
+
+    it("should return false for globally configured negative answers", async () => {
+      waitTextSpy.mockResolvedValueOnce("reject");
+      expect(await chat.WaitYesOrNoAnswer()).toBe(false);
+    });
+
+    it("should return null for default keywords that are no longer valid", async () => {
+      waitTextSpy.mockResolvedValueOnce("yes");
+      expect(await chat.WaitYesOrNoAnswer()).toBeNull();
+
+      waitTextSpy.mockResolvedValueOnce("no");
+      expect(await chat.WaitYesOrNoAnswer()).toBeNull();
+    });
+  });
+
+  describe("with local options override", () => {
+    const localOptions: IChatContext_WaitYesOrNoAnswer_Params = {
+      waitYesOrNoOptions: {
+        positiveAnswerOptions: ["proceed", "go"],
+        negativeAnswerOptions: ["stop", "halt"],
+      },
+      normalConfig: { timeoutSeconds: 10 },
+    };
+
+    it("should return true for locally configured positive answers", async () => {
+      waitTextSpy.mockResolvedValueOnce("proceed");
+      const result = await chat.WaitYesOrNoAnswer(localOptions);
+      expect(result).toBe(true);
+    });
+
+    it("should return false for locally configured negative answers", async () => {
+      waitTextSpy.mockResolvedValueOnce("halt");
+      const result = await chat.WaitYesOrNoAnswer(localOptions);
+      expect(result).toBe(false);
+    });
+
+    it("should return null for default and global keywords", async () => {
+      // Override global config to ensure local takes precedence
+      chat.Config.positiveAnswerOptions = ["confirm"];
+      chat.Config.negativeAnswerOptions = ["deny"];
+
+      // Test default keyword
+      waitTextSpy.mockResolvedValueOnce("yes");
+      expect(await chat.WaitYesOrNoAnswer(localOptions)).toBeNull();
+
+      // Test global keyword
+      waitTextSpy.mockResolvedValueOnce("confirm");
+      expect(await chat.WaitYesOrNoAnswer(localOptions)).toBeNull();
+    });
+
+    it("should pass normalConfig down to WaitText", async () => {
+      waitTextSpy.mockResolvedValueOnce("go");
+      await chat.WaitYesOrNoAnswer(localOptions);
+      expect(waitTextSpy).toHaveBeenCalledWith(localOptions.normalConfig);
+    });
+
+    it("should use an empty object for normalConfig if not provided", async () => {
+      const localOptsWithoutNormalConfig: IChatContext_WaitYesOrNoAnswer_Params = {
+        waitYesOrNoOptions: {
+          positiveAnswerOptions: ["a"],
+          negativeAnswerOptions: ["b"],
+        },
+        normalConfig: {}, // Explicitly empty
+      };
+      waitTextSpy.mockResolvedValueOnce("a");
+      await chat.WaitYesOrNoAnswer(localOptsWithoutNormalConfig);
+      expect(waitTextSpy).toHaveBeenCalledWith({});
     });
   });
 });
