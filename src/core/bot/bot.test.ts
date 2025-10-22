@@ -1,5 +1,6 @@
 import { describe, expect, mock as fn, spyOn, test } from "bun:test";
-import { type WhatsappMessage, IChatContext, MsgHelpers } from "../..";
+import type { IChatContext } from "../..";
+import { type WhatsappMessage, MsgHelpers } from "../..";
 import { skipLongTests } from "../../Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
