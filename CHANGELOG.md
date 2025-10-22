@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.20.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.20.0...v0.20.1) (2025-10-22)
+
+### Bug Fixes
+
+* Fixed edge case with Middleware and CommandFoundAfter event (check details) ([2fc6ed1](https://github.com/KristanLaimon/WhatsBotCord.js/commit/2fc6ed17856d8647ee8fd698832cc7600bb95776))
+
 ## [0.20.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.17.5...v0.20.0) (2025-10-15)
 
 ### Features
