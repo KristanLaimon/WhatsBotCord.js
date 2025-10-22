@@ -222,6 +222,9 @@ export default class WhatsSocketMock implements IWhatsSocket {
   }
 
   /**
+   * @deprecated Use 'MockSendMsgAsync()' instead from this object 'WhatsSocketMock'. Its more reliable and normally
+   * all code logic related to mockSending is Promised-Based....
+   *
    * Simulates the reception of a message from whatsapp synchronously!
    * @param rawMsg The message to be sent.
    * @param options Optional options to modify the message before sending it.

@@ -1,5 +1,5 @@
-import { expect, mock as fn, spyOn, test } from "bun:test";
-import { type WhatsappMessage, MsgHelpers } from "../..";
+import { describe, expect, mock as fn, spyOn, test } from "bun:test";
+import { type WhatsappMessage, IChatContext, MsgHelpers } from "../..";
 import { skipLongTests } from "../../Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
@@ -1119,4 +1119,52 @@ test("WhenSettingDefault_Tag_WithMuchTextTogetherButSeparatedFromPrefix_ShouldUs
 
   expect(tagRunSpy).toHaveBeenCalledTimes(1);
   expect(normalCommandCalled).toBe(true);
+});
+
+describe("EDGE CASE: EVENT_onCommandFoundAfterItsExecution should be called always when finish command", () => {
+  class MyCom implements ICommand {
+    name: string = "command";
+    public async run(ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+      await ctx.Ok();
+    }
+  }
+  test("Essential: When running simple command", async () => {
+    const { bot, socket } = toolkit();
+    const subscriberOnFinishSpy = fn<(ctx: IChatContext, commandExecuted: ICommand, ranSuccessfully: boolean) => void>();
+    bot.Events.onCommandFoundAfterItsExecution.Subscribe(subscriberOnFinishSpy);
+    bot.Commands.Add(new MyCom());
+    bot.Start();
+
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!command" });
+
+    expect(subscriberOnFinishSpy).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * This was a rare edge case I discovered related to 'Bot.Events.onCommandFoundAfterItsExecution'
+   * and Middleware 'Bot.Use_OnCommandFound', when commands starts but never executes event '...afterItsExecution'
+   * due to middleware stopping it...
+   */
+  test("Edge case: When middleware Use_OnCommandFound blocks command execution", async () => {
+    const { bot, socket } = toolkit();
+
+    const subscriberOnFinishSpy = fn<(ctx: IChatContext, commandExecuted: ICommand, ranSuccessfully: boolean) => void>();
+    bot.Events.onCommandFoundAfterItsExecution.Subscribe(subscriberOnFinishSpy);
+
+    bot.Commands.Add(new MyCom());
+
+    bot.Use_OnCommandFound(async (_bot, _senderLID, _senderPN, _chatId, _rawMsg, _msgType, _senderType, _commandFound, next) => {
+      await next();
+    });
+    bot.Use_OnCommandFound(async (_bot, _senderLID, _senderPN, _chatId, _rawMsg, _msgType, _senderType, _commandFound, _next) => {
+      /** blocking the middleware */
+    });
+
+    bot.Start();
+
+    await socket.MockSendMsgAsync(GroupTxtMsg, { replaceTextWith: "!command" });
+
+    //Should be called!
+    expect(subscriberOnFinishSpy).toHaveBeenCalledTimes(1);
+  });
 });

@@ -583,6 +583,23 @@ export default class Bot implements BotMinimalInfo {
       if (!commandFound && commandTypeFound) {
         commandFound = this.Commands.GetWhateverWithAlias(commandOrAliasNameLowerCased, commandTypeFound);
       }
+
+      //=========================================================
+      let ARG1_ChatContext: IChatContext;
+      const customChatContext: IChatContext | null = this.Settings.ownChatContextCreationHook_Internal!();
+      if (customChatContext) {
+        ARG1_ChatContext = customChatContext;
+      } else {
+        ARG1_ChatContext = new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
+          cancelKeywords: this.Settings.cancelKeywords!,
+          timeoutSeconds: this.Settings.timeoutSeconds!,
+          ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+          wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+          cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+        });
+      }
+      //=========================================================
+
       // 4. Can't be found after all that? its not a valid command
       if (!commandFound) {
         await this.Events.onCommandNotFound.CallAllAsync(
@@ -615,6 +632,7 @@ export default class Bot implements BotMinimalInfo {
         const shouldContinueAgain = await middlewareOnFound.run(this, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType, commandFound);
         await this.Events.onFoundCommandMiddlewareEnd.CallAllAsync(shouldContinueAgain);
         if (!shouldContinueAgain) {
+          await this._EVENT_onAfterCommandExecution.CallAllAsync(ARG1_ChatContext, commandFound, false);
           return;
         }
       }
@@ -622,19 +640,6 @@ export default class Bot implements BotMinimalInfo {
       const quotedMsgAsArgument: FoundQuotedMsg | null = MsgHelper_ExtractQuotedMsgInfo(rawMsg);
 
       //=========================================================
-      let ARG1_ChatContext: IChatContext;
-      const customChatContext: IChatContext | null = this.Settings.ownChatContextCreationHook_Internal!();
-      if (customChatContext) {
-        ARG1_ChatContext = customChatContext;
-      } else {
-        ARG1_ChatContext = new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
-          cancelKeywords: this.Settings.cancelKeywords!,
-          timeoutSeconds: this.Settings.timeoutSeconds!,
-          ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-          wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-          cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-        });
-      }
       const ARG2_AdditionalAPI: AdditionalAPI = {
         // @deprecated ones: InternalSockets already have them inside!
         // Receive: this._socket.Receive,
@@ -665,7 +670,6 @@ export default class Bot implements BotMinimalInfo {
           /** Command basic arguments */
           ARG3_AdditionalArgs
         );
-        this._EVENT_onAfterCommandExecution.CallAll(ARG1_ChatContext, commandFound, true);
       } catch (e) {
         if (this.Settings.defaultEmojiToSendReactionOnFailureCommand) {
           await ARG1_ChatContext.SendReactEmojiToInitialMsg(this.Settings.defaultEmojiToSendReactionOnFailureCommand);
@@ -685,12 +689,11 @@ export default class Bot implements BotMinimalInfo {
             );
         }
 
-        //TODO: Test this BOT EVENTS (all this._EVENT*** props!)
-        await this._EVENT_onAfterCommandExecution.CallAllAsync(ARG1_ChatContext, commandFound, false);
         if (!this.Settings.enableCommandSafeNet) {
           throw e;
         }
       }
+      await this._EVENT_onAfterCommandExecution.CallAllAsync(ARG1_ChatContext, commandFound, false);
     }
   } //EVENT_...() Method
 }
