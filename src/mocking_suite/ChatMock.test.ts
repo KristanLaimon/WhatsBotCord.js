@@ -2982,3 +2982,55 @@ test("When trying to wait a non-queued message from mockchat", async () => {
     await chat.StartChatSimulation(); //This will work
   }).toThrowError();
 });
+
+describe("ChatSenderId's chat mock constructor params", () => {
+  test("SenderLID: When using null chatSenderId's in chatmock constructor should set as defined senders in mock environment", async () => {
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, args: CommandArgs): Promise<void> {
+        expect(args.participantIdLID).toBe(null);
+      }
+    }
+
+    const chat = new ChatMock(new MyCom(), {
+      senderType: SenderType.Group,
+      participantId_LID: null,
+    });
+
+    await chat.StartChatSimulation();
+  });
+
+  test("SenderPN: When using null chatSenderId's in chatmock constructor should set as defined senders in mock environment", async () => {
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, args: CommandArgs): Promise<void> {
+        expect(args.participantIdPN).toBe(null);
+      }
+    }
+
+    const chat = new ChatMock(new MyCom(), {
+      senderType: SenderType.Group,
+      participantId_PN: null,
+    });
+
+    await chat.StartChatSimulation();
+  });
+
+  test("Both SenderId types (LID AND PN): When using null chatSenderId's in chatmock constructor should set as defined senders in mock environment", async () => {
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, args: CommandArgs): Promise<void> {
+        expect(args.participantIdLID).toBe(null);
+        expect(args.participantIdPN).toBe(null);
+      }
+    }
+
+    const chat = new ChatMock(new MyCom(), {
+      senderType: SenderType.Group,
+      participantId_PN: null,
+      participantId_LID: null,
+    });
+
+    await chat.StartChatSimulation();
+  });
+});
