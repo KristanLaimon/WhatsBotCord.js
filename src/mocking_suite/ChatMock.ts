@@ -361,33 +361,54 @@ export default class ChatMock {
     //Need to conver
     const botCommandsSearcher = new CommandsSearcher();
     const botSettings = BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextMock.Config.cancelKeywords });
-    await this._command.run(
-      this._chatContextMock,
-      {
-        InternalSocket: this._socketMock,
-        Myself: {
-          Status: new Myself_Submodule_Status(this._socketMock),
-          Bot: {
+    try {
+      await this._command.run(
+        this._chatContextMock,
+        {
+          InternalSocket: this._socketMock,
+          Myself: {
+            Status: new Myself_Submodule_Status(this._socketMock),
+            Bot: {
+              Commands: botCommandsSearcher,
+              Settings: botSettings,
+            },
+          },
+        },
+        {
+          args: this._constructorConfig?.args ?? [],
+          botInfo: {
             Commands: botCommandsSearcher,
             Settings: botSettings,
           },
-        },
-      },
-      {
-        args: this._constructorConfig?.args ?? [],
-        botInfo: {
-          Commands: botCommandsSearcher,
-          Settings: botSettings,
-        },
-        chatId: this.ChatId,
-        participantIdPN: this.ParticipantId_PN,
-        participantIdLID: this.ParticipantId_LID,
-        msgType: this._constructorConfig?.msgType ?? MsgType.Text,
-        originalRawMsg: {} as any,
-        quotedMsgInfo: {} as any,
-        senderType: this._senderType,
+          chatId: this.ChatId,
+          participantIdPN: this.ParticipantId_PN,
+          participantIdLID: this.ParticipantId_LID,
+          msgType: this._constructorConfig?.msgType ?? MsgType.Text,
+          originalRawMsg: {} as any,
+          quotedMsgInfo: {} as any,
+          senderType: this._senderType,
+        }
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        if (
+          error.message === "ChatContext is trying to wait a msg that will never arrives!... Use MockChat.EnqueueIncoming_****() to enqueue what to return!"
+        ) {
+          if (this.SentFromCommand.Texts.length > 0) {
+            const lastMessage = this.SentFromCommand.Texts.at(-1)!.text;
+            throw new Error(
+              "\n\n\n[Whatsbotcord | MockChat Test Error: Deadlock]\n\n" +
+                "The command is waiting for a user reply, but the mock's incoming message queue is empty.\n\n" +
+                "Last Message Sent by Command:\n" +
+                `"${lastMessage}"\n\n` +
+                "How to Fix:\n" +
+                "Use MockChat.EnqueueIncoming_...() in your test setup to provide the message the command is waiting for.\n\n\n"
+            );
+          }
+        }
       }
-    );
+      throw error;
+    }
   }
 
   /**

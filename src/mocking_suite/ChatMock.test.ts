@@ -2966,3 +2966,19 @@ describe.skipIf(skipLongTests)("delayMilisecondsToReponse", () => {
     expect(receivedText!).toBe("this message is on time");
   });
 });
+
+test("When trying to wait a non-queued message from mockchat", async () => {
+  class MyCom implements ICommand {
+    name: string = "command";
+    public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+      await _ctx.SendText("Hi user!, give me your name pls"); //
+      const userName: string | null = await _ctx.WaitText({ timeoutSeconds: 3 }); // "christian"
+      if (userName) await _ctx.SendText("Hello " + userName + " good morning");
+    }
+  }
+
+  const chat = new ChatMock(new MyCom());
+  expect(async () => {
+    await chat.StartChatSimulation(); //This will work
+  }).toThrowError();
+});
