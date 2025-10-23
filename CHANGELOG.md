@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.20.1...v0.21.0) (2025-10-23)
+
+### Features
+
+* Adding better error msg feedback when waiting non-enqueued msg in mockchat environment ([5a6d3c2](https://github.com/KristanLaimon/WhatsBotCord.js/commit/5a6d3c2fe06ff11133d129ffcba1611d6e2652ce))
+
 ## [0.20.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.20.0...v0.20.1) (2025-10-22)
 
 ### Bug Fixes
