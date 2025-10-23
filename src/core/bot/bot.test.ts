@@ -28,31 +28,6 @@ import { CommandType } from "./internals/CommandsSearcher.js";
 import type { CommandArgs } from "./internals/CommandsSearcher.types.js";
 import type { AdditionalAPI, ICommand } from "./internals/ICommand.js";
 
-/** WOW = All finished!
- * Bot.ts Suite testing
- * 1. [X] Can be instantiable
- * 2. [X] Are all options setted by default (non-undefined internal options check)
- * 3. [X] Can register commands (normal and tags) without strange behavior
-      3.0.1 [X] IF TWO COMMANDS duplicate of same type, error as well
- *    3.1. [X] What happens if 2 commands have the same name? (should throw error unless, they're from different type (tag != normal))
- *    3.2. [X] What happens if 2 commands have same alias? (should throw error) (not if differnet type)
- * 
- * 6. [X] Can run commands and tags
- *      [X] Can run a normal command
- *      [X] CAn run a tag command
- *      [X] Can differentiate tags and commands (if having a tag with same name like a command)
- *      [X] Can run a command with their ALIAS ONLY
- *      [X] Commands receives correct arguments from the bot
- *          [X] For incoming quoted msg, should send argument successfully to command
- *      [X] When running only @ or ! (common prefixes) shouldn't do anything
- * 7. [X] Unexpected exception: Should not break bot and console.log error instead serialized as json text
- * 8. [X] Expected Error "Command rejection": Should not break and console log like info
- * 9. [X] Expected Error "command not rejection" (by timeout): Shouldn't console anything, and return null on waitMsg who triggered it
- * 10. [X] Middlware system add correctly new middlewares
- *        [X] If all middleware are success, should continue with internal command processing
- *        [X] If middleware chain stopped, should NOT continue with internal command processing
- *  */
-
 //============= MOCK DATA ================
 const CommandIdealName = "ideal";
 const CommandIdealAliases: string[] = ["mocky"];
