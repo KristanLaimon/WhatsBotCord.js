@@ -31,8 +31,8 @@ export type MockingChatParams = {
   chatContextConfig?: Omit<Partial<IChatContextConfig>, "cancelKeywords">;
   botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
   chatId?: string;
-  participantId_LID?: string;
-  participantId_PN?: string;
+  participantId_LID?: string | null;
+  participantId_PN?: string | null;
   args?: string[];
   msgType?: MsgType;
   senderType?: SenderType;
@@ -532,8 +532,8 @@ function Constructor_ResolveChatID(chatId?: string, senderType?: SenderType): { 
 }
 
 function Constructor_ResolveParticipantIds(
-  participantId_LID?: string,
-  participantId_PN?: string,
+  participantId_LID?: string | null,
+  participantId_PN?: string | null,
   senderType?: SenderType
 ): { LID: string | null; PN: string | null; senderTypeUpdated: SenderType | null } {
   const defaultLID: string = "fakeParticipnatID" + WhatsappLIDIdentifier;
@@ -543,25 +543,31 @@ function Constructor_ResolveParticipantIds(
     return { LID: null, PN: null, senderTypeUpdated: null };
   }
 
-  let LID_ToReturn: string;
-  if (participantId_LID) {
+  let LID_ToReturn: string | null; // participant_LID => Could be (string | undefined | null)
+  if (typeof participantId_LID === "string") {
     if (participantId_LID.endsWith(WhatsappLIDIdentifier)) {
       LID_ToReturn = participantId_LID; //Its ok, nothing to fix
     } else {
       LID_ToReturn = participantId_LID + WhatsappLIDIdentifier; //Let's fix it
     }
+  } else if (participantId_LID === null) {
+    LID_ToReturn = null;
   } else {
+    //Is undefined
     LID_ToReturn = defaultLID;
   }
 
-  let PN_ToReturn: string;
-  if (participantId_PN) {
+  let PN_ToReturn: string | null; // participant_PN => Could be (string | undefined | null)
+  if (typeof participantId_PN === "string") {
     if (participantId_PN.endsWith(WhatsappPhoneNumberIdentifier)) {
       PN_ToReturn = participantId_PN; //Its ok, nothing to fix
     } else {
       PN_ToReturn = participantId_PN + WhatsappPhoneNumberIdentifier; //Let's fix it
     }
+  } else if (participantId_PN === null) {
+    PN_ToReturn = null;
   } else {
+    //Is undefined then
     PN_ToReturn = defaultPN;
   }
 
