@@ -84,16 +84,39 @@ export default class CommandsSearcher {
   }
 
   /**
-   * Registers a new command in the searcher.
+   * Registers a new command, validating it and adding it to the appropriate
+   * namespace (`Normal` or `Tag`).
+   *
+   * The method ensures that command names are valid (non-empty, single-word),
+   * unique within their type, and that their aliases do not conflict with
+   * other commands of the same type. All names and aliases are normalized to
+   * lowercase for case-insensitive matching.
+   *
+   * @param commandToAdd The {@link ICommand} instance to register.
+   * @param addCommandAsType The type of command, either `CommandType.Normal` (default) or `CommandType.Tag`.
    *
    * @example
-   * ```ts
-   * const searcher = new CommandsSearcher();
-   * searcher.Add({ name: "ping", execute: () => "pong" });
-   * searcher.Add({ name: "mod", execute: () => "ok" }, CommandType.Tag);
-   * ```
+   * // Add a simple normal command
+   * searcher.Add({ name: 'help', run: ... });
    *
-   * @throws If the command name is invalid, already exists, or its aliases conflict.
+   * // Add a tag command with aliases
+   * searcher.Add({ name: 'admin', aliases: ['mod'], run: ... }, CommandType.Tag);
+   *
+   * @example <caption>Error Scenarios</caption>
+   * // Throws error for duplicate command name
+   * searcher.Add({ name: 'help', run: ... }); // OK
+   * searcher.Add({ name: 'help', run: ... }); // Throws Error
+   *
+   * // Throws error for alias conflict
+   * searcher.Add({ name: 'kick', aliases: ['remove'], run: ... }); // OK
+   * searcher.Add({ name: 'ban', aliases: ['remove'], run: ... }); // Throws Error
+   *
+   * // Throws error for invalid name
+   * searcher.Add({ name: 'bad name', run: ... }); // Throws Error
+   *
+   * @throws {Error} If the command name is empty or contains spaces.
+   * @throws {Error} If a command with the same name already exists for the given type.
+   * @throws {Error} If an alias conflicts with an existing command's name or aliases of the same type.
    */
   public Add(commandToAdd: ICommand, addCommandAsType: CommandType = CommandType.Normal): void {
     if (!commandToAdd.name || commandToAdd.name.trim() === "") {
@@ -126,7 +149,7 @@ export default class CommandsSearcher {
         for (const alias of commandToAdd.aliases!) {
           if (com.aliases!.includes(alias)) {
             throw new Error(
-              `Alias '${alias}' for command '${commandNameLowercase}' conflicts with existing command '${com.name}' of type "${CommandType[addCommandAsType]}".`
+              `Bad Args: CommandsSearcher => Alias '${alias}' for command '${commandNameLowercase}' conflicts with existing command '${com.name}' of type "${CommandType[addCommandAsType]}".`
             );
           }
         }

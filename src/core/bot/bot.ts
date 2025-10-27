@@ -20,8 +20,26 @@ import type { AdditionalAPI, ICommand } from "./internals/ICommand.js";
 //Little dependency to verify that "defaulEmojiToSendOnCommandFailure" is 1 emoji length!
 const emojiSplitter = new GraphemeSplitter();
 
+/**
+ * Defines the essential, public-facing components of a bot instance.
+ *
+ * This type is useful for scenarios where a full `Bot` instance is not
+ * required, but access to its core configuration and command system is needed.
+ * It serves as a minimal interface implemented by the main `Bot` class.
+ */
 export type BotMinimalInfo = {
+  /**
+   * The bot's current configuration settings.
+   *
+   * Provides access to all runtime options, such as command prefixes,
+   * timeouts, and logging modes.
+   */
   Settings: WhatsBotOptions;
+  /**
+   * The command management system for the bot.
+   *
+   * Allows for registering, searching, and managing all bot commands.
+   */
   Commands: WhatsBotCommands;
 };
 
