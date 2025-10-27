@@ -3105,7 +3105,6 @@ describe("Chatmock [Commands adding] update", () => {
     const chat = new ChatMock(new MyComWithoutExpect(), {
       /** empty */
     });
-
     await chat.StartChatSimulation();
   });
 });
