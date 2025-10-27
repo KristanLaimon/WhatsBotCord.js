@@ -3,7 +3,7 @@ import path from "node:path";
 import { type WhatsBotOptions, BotUtils_GenerateOptions } from "../core/bot/bot.js";
 import type { IChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import Myself_Submodule_Status from "../core/bot/internals/ChatContext.myself.status.js";
-import CommandsSearcher from "../core/bot/internals/CommandsSearcher.js";
+import CommandsSearcher, { CommandType } from "../core/bot/internals/CommandsSearcher.js";
 import type { ICommand } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsSocketMockMsgSent } from "../core/whats_socket/mocks/types.js";
@@ -27,15 +27,81 @@ import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockin
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 
+/**
+ * Extends {@link WhatsBotOptions} with additional settings specific to the mocking suite.
+ */
+type AdditionalWhatsBotOptions = {
+  /**
+   * An array of commands to pre-register in the bot's command handler
+   * when the mock environment is initialized. This is useful for testing
+   * commands that might depend on or interact with other commands.
+   *
+   * @example
+   * ```ts
+   * const chat = new ChatMock(myCommand, {
+   *   botSettings: {
+   *     initialCommandsToAdd: [new AnotherCommand(), new HelperCommand()]
+   *   }
+   * });
+   * ```
+   */
+  initialCommandsToAdd: Array<{ command: ICommand; commandType: CommandType }>;
+};
+
+/**
+ * Defines the configuration parameters for creating a `ChatMock` instance.
+ *
+ * This object allows for detailed customization of the simulated chat
+ * environment, including sender details, bot settings, and message context.
+ */
 export type MockingChatParams = {
+  /**
+   * Overrides for the `ChatContext` configuration, such as timeouts and
+   * feedback messages. `cancelKeywords` is handled separately.
+   */
   chatContextConfig?: Omit<Partial<IChatContextConfig>, "cancelKeywords">;
-  botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords">;
+  /**
+   * Overrides for the bot's settings (`WhatsBotOptions`), allowing customization
+   * of prefixes, logging, and other bot behaviors for the test. Also includes
+   * mock-specific options via `AdditionalWhatsBotOptions`.
+   */
+  botSettings?: Omit<Partial<WhatsBotOptions>, "cancelKeywords"> & Partial<AdditionalWhatsBotOptions>;
+  /**
+   * The simulated chat ID. If not provided, a default is generated.
+   * The suffix (`@g.us` or `@s.whatsapp.net`) is automatically handled based on `senderType`.
+   */
   chatId?: string;
+  /**
+   * The LID (Legacy ID) of the simulated message sender.
+   * If provided, the `senderType` will default to `Group`.
+   */
   participantId_LID?: string | null;
+  /**
+   * The PN (Phone Number ID) of the simulated message sender.
+   * If provided, the `senderType` will default to `Group`.
+   */
   participantId_PN?: string | null;
+  /**
+   * An array of strings representing the arguments passed to the command,
+   * as if they were typed by the user after the command name.
+   */
   args?: string[];
+  /**
+   * The type of the initial (command-triggering) message.
+   * @default MsgType.Text
+   */
   msgType?: MsgType;
+  /**
+   * The type of chat context to simulate.
+   * - `SenderType.Individual`: A private one-on-one chat.
+   * - `SenderType.Group`: A group chat.
+   * @default SenderType.Individual (unless a participantId is provided)
+   */
   senderType?: SenderType;
+  /**
+   * A list of keywords that will trigger a cancellation error when the
+   * command is waiting for a user response.
+   */
   cancelKeywords?: string[];
 };
 
@@ -360,6 +426,18 @@ export default class ChatMock {
     // const receiver: WhatsSocket_Submodule_Receiver = new WhatsSocket_Submodule_Receiver();
     //Need to conver
     const botCommandsSearcher = new CommandsSearcher();
+
+    if (this._constructorConfig?.botSettings?.initialCommandsToAdd) {
+      for (const entry of this._constructorConfig.botSettings.initialCommandsToAdd) {
+        if (entry.commandType === CommandType.Normal) {
+          botCommandsSearcher.Add(entry.command, CommandType.Normal);
+        }
+        if (entry.commandType === CommandType.Tag) {
+          botCommandsSearcher.Add(entry.command, CommandType.Tag);
+        }
+      }
+    }
+
     const botSettings = BotUtils_GenerateOptions({ ...this._constructorConfig?.botSettings, cancelKeywords: this._chatContextMock.Config.cancelKeywords });
     try {
       await this._command.run(

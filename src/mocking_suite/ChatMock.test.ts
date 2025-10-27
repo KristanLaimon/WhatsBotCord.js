@@ -1,4 +1,5 @@
 import { describe, expect, it, test } from "bun:test";
+import { CommandType } from "../core/bot/internals/CommandsSearcher.js";
 import type { CommandArgs } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { ChatContextContactRes, IChatContext } from "../core/bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "../core/bot/internals/ICommand.js";
@@ -3029,6 +3030,80 @@ describe("ChatSenderId's chat mock constructor params", () => {
       senderType: SenderType.Group,
       participantId_PN: null,
       participantId_LID: null,
+    });
+
+    await chat.StartChatSimulation();
+  });
+});
+
+describe("Chatmock [Commands adding] update", () => {
+  const BOT_COMMANDS: MockCommand[] = [
+    {
+      commandType: CommandType.Normal,
+      command: {
+        name: "test1_normal",
+        async run(): Promise<void> {},
+      },
+    },
+    {
+      commandType: CommandType.Tag,
+      command: {
+        name: "test2_tag",
+        async run(): Promise<void> {},
+      },
+    },
+    {
+      commandType: CommandType.Normal,
+      command: {
+        name: "test3_normal",
+        async run(): Promise<void> {},
+      },
+    },
+    {
+      commandType: CommandType.Tag,
+      command: {
+        name: "test4_tag",
+        async run(): Promise<void> {},
+      },
+    },
+    {
+      commandType: CommandType.Normal,
+      command: {
+        name: "test5_normal",
+        async run(): Promise<void> {},
+      },
+    },
+  ];
+
+  type MockCommand = { command: ICommand; commandType: CommandType };
+
+  test("When 'initialCommandsToAdd' prop set => Should be available from bot mocked", async () => {
+    class MyComWithExpect implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        expect(api.Myself.Bot.Commands.NormalCommands).toHaveLength(3);
+        expect(api.Myself.Bot.Commands.TagCommands).toHaveLength(2);
+      }
+    }
+
+    const chat = new ChatMock(new MyComWithExpect(), {
+      botSettings: {
+        initialCommandsToAdd: BOT_COMMANDS,
+      },
+    });
+    await chat.StartChatSimulation();
+  });
+
+  test("When 'initialCommandsToAdd' prop set => Should be empty array []", async () => {
+    class MyComWithoutExpect implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        expect(api.Myself.Bot.Commands.NormalCommands).toHaveLength(0);
+        expect(api.Myself.Bot.Commands.TagCommands).toHaveLength(0);
+      }
+    }
+    const chat = new ChatMock(new MyComWithoutExpect(), {
+      /** empty */
     });
 
     await chat.StartChatSimulation();
