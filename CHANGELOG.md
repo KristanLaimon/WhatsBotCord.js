@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.22.3](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.22.2...v0.22.3) (2025-11-11)
+
+### Bug Fixes
+
+* Fixed connection problem with baileys.js ([4af9c70](https://github.com/KristanLaimon/WhatsBotCord.js/commit/4af9c70a62ed4f38af3cad2838f18179b784735c))
+
 ## [0.22.2](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.22.1...v0.22.2) (2025-11-08)
 
 ## [0.22.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.22.0...v0.22.1) (2025-10-27)
