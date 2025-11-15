@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.23.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.22.3...v0.23.0) (2025-11-15)
+
+### Features
+
+* ChatMock.EnqueueIncoming_Img more overloads ([9f87008](https://github.com/KristanLaimon/WhatsBotCord.js/commit/9f8700893d15bc044800128188c79cbecf0a1228))
+
+### Bug Fixes
+
+* Finishing last feature update details ([a970107](https://github.com/KristanLaimon/WhatsBotCord.js/commit/a9701076573735c32ae5ddee1aaf66cf38e281bb))
+
 ## [0.22.3](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.22.2...v0.22.3) (2025-11-11)
 
 ### Bug Fixes
