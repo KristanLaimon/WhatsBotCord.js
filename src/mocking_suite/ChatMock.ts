@@ -106,7 +106,8 @@ export type MockingChatParams = {
 };
 
 export type MockEnqueueParamsMinimal = { pushName?: string; delayMilisecondsToReponse?: number };
-export type MockEnqueueParamsMultimediaMinimal = MockEnqueueParamsMinimal & { bufferToReturnOn_WaitMultimedia?: Buffer };
+
+export type MockEnqueueParamsMultimediaMinimal = MockEnqueueParamsMinimal & { imgContentBufferMock?: Buffer | Buffer<ArrayBuffer> };
 export type MockEnqueueParamsMultimedia = MockEnqueueParamsMultimediaMinimal & { caption?: string };
 export type MockEnqueueParamsDocument = MockEnqueueParamsMultimediaMinimal & { mimeType?: string };
 export type MockEnqueueParamsLocation = MockEnqueueParamsMinimal & { locationName?: string; addressDescription?: string };
@@ -303,8 +304,8 @@ export default class ChatMock {
         caption: imgUrl_or_Opts?.caption,
         pushName: imgUrl_or_Opts?.pushName,
       });
-      if (imgUrl_or_Opts?.bufferToReturnOn_WaitMultimedia) {
-        this._chatContextMock.EnqueueMediaBufferToReturn(imgUrl_or_Opts.bufferToReturnOn_WaitMultimedia);
+      if (imgUrl_or_Opts?.imgContentBufferMock) {
+        this._chatContextMock.EnqueueMediaBufferToReturn(imgUrl_or_Opts.imgContentBufferMock);
       }
       this._receiverMock.AddWaitMsg({ rawMsg: imgMsg, milisecondsDelayToRespondMock: imgUrl_or_Opts?.delayMilisecondsToReponse });
       return;
@@ -316,8 +317,8 @@ export default class ChatMock {
         caption: onlyOpts?.caption,
         pushName: onlyOpts?.pushName,
       });
-      if (onlyOpts?.bufferToReturnOn_WaitMultimedia) {
-        this._chatContextMock.EnqueueMediaBufferToReturn(onlyOpts.bufferToReturnOn_WaitMultimedia);
+      if (onlyOpts?.imgContentBufferMock) {
+        this._chatContextMock.EnqueueMediaBufferToReturn(onlyOpts.imgContentBufferMock);
       }
       this._receiverMock.AddWaitMsg({ rawMsg: imgMsg, milisecondsDelayToRespondMock: onlyOpts?.delayMilisecondsToReponse });
       return;
@@ -341,8 +342,8 @@ export default class ChatMock {
     const stickerMsg: WhatsappMessage = MsgFactory_Sticker(this.ChatId, this.ParticipantId_LID, urlSticker, {
       pushName: opts?.pushName,
     });
-    if (opts?.bufferToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
+    if (opts?.imgContentBufferMock) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.imgContentBufferMock);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: stickerMsg, milisecondsDelayToRespondMock: opts?.delayMilisecondsToReponse });
   }
@@ -362,8 +363,8 @@ export default class ChatMock {
     const audioMsg: WhatsappMessage = MsgFactory_Audio(this.ChatId, this.ParticipantId_LID, urlaudio, {
       pushName: opts?.pushName,
     });
-    if (opts?.bufferToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
+    if (opts?.imgContentBufferMock) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.imgContentBufferMock);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: audioMsg, milisecondsDelayToRespondMock: opts?.delayMilisecondsToReponse });
   }
@@ -384,8 +385,8 @@ export default class ChatMock {
       caption: opts?.caption,
       pushName: opts?.pushName,
     });
-    if (opts?.bufferToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
+    if (opts?.imgContentBufferMock) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.imgContentBufferMock);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: videoMsg, milisecondsDelayToRespondMock: opts?.delayMilisecondsToReponse });
   }
@@ -408,8 +409,8 @@ export default class ChatMock {
       mimetype: opts?.mimeType ?? mime.getType(path.extname(fileName)) ?? "application/pdf",
       pushName: opts?.pushName,
     });
-    if (opts?.bufferToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
+    if (opts?.imgContentBufferMock) {
+      this._chatContextMock.EnqueueMediaBufferToReturn(opts.imgContentBufferMock);
     }
     this._receiverMock.AddWaitMsg({ rawMsg: documentMsg, milisecondsDelayToRespondMock: opts?.delayMilisecondsToReponse });
   }

@@ -509,11 +509,11 @@ it("ShouldGetDefaultBufferWhenExpectingMsgIfnotBufferMockConfigured_ChatContext"
     }
   }
   const chat = new ChatMock(new Com());
-  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
-  chat.EnqueueIncoming_Img("./my-img-file.jpg", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
-  chat.EnqueueIncoming_Video("./my-video-file.mp4", { bufferToReturnOn_WaitMultimedia: undefined });
-  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
-  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { bufferToReturnOn_WaitMultimedia: undefined /** use default */ });
+  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { imgContentBufferMock: undefined /** use default */ });
+  chat.EnqueueIncoming_Img("./my-img-file.jpg", { imgContentBufferMock: undefined /** use default */ });
+  chat.EnqueueIncoming_Video("./my-video-file.mp4", { imgContentBufferMock: undefined });
+  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { imgContentBufferMock: undefined /** use default */ });
+  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { imgContentBufferMock: undefined /** use default */ });
   await chat.StartChatSimulation();
 });
 
@@ -547,11 +547,11 @@ it("ShouldGetDefaultBufferWhenExpectingMsgButBufferMockIsConfigured_ChatContext"
     }
   }
   const chat = new ChatMock(new Com());
-  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { bufferToReturnOn_WaitMultimedia: Buffer.from("audio") });
-  chat.EnqueueIncoming_Img("./my-img-file.jpg", { bufferToReturnOn_WaitMultimedia: Buffer.from("img") });
-  chat.EnqueueIncoming_Video("./my-video-file.mp4", { bufferToReturnOn_WaitMultimedia: Buffer.from("video") });
-  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { bufferToReturnOn_WaitMultimedia: Buffer.from("document") });
-  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { bufferToReturnOn_WaitMultimedia: Buffer.from("sticker") });
+  chat.EnqueueIncoming_Audio("./my-url-audio.mp3", { imgContentBufferMock: Buffer.from("audio") });
+  chat.EnqueueIncoming_Img("./my-img-file.jpg", { imgContentBufferMock: Buffer.from("img") });
+  chat.EnqueueIncoming_Video("./my-video-file.mp4", { imgContentBufferMock: Buffer.from("video") });
+  chat.EnqueueIncoming_Document("./my-document-file.pdf", "my-file-name.pdf", { imgContentBufferMock: Buffer.from("document") });
+  chat.EnqueueIncoming_Sticker("./my-sticker-file.webp", { imgContentBufferMock: Buffer.from("sticker") });
   await chat.StartChatSimulation();
 });
 /**
@@ -980,7 +980,7 @@ describe("Images", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncoming_Img("./img-path-name.png", { bufferToReturnOn_WaitMultimedia: Buffer.from("myimg_omg") });
+    chat.EnqueueIncoming_Img("./img-path-name.png", { imgContentBufferMock: Buffer.from("myimg_omg") });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
@@ -1224,7 +1224,7 @@ describe("Stickers", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncoming_Sticker("./sticker-path-name.webp", { bufferToReturnOn_WaitMultimedia: Buffer.from("mysticker_omg") });
+    chat.EnqueueIncoming_Sticker("./sticker-path-name.webp", { imgContentBufferMock: Buffer.from("mysticker_omg") });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
@@ -1495,7 +1495,7 @@ describe("Audio", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncoming_Audio("./audio-path-name.mp3", { bufferToReturnOn_WaitMultimedia: Buffer.from("myaudio_omg") });
+    chat.EnqueueIncoming_Audio("./audio-path-name.mp3", { imgContentBufferMock: Buffer.from("myaudio_omg") });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
@@ -1839,7 +1839,7 @@ describe("Video", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncoming_Video("./video-path-name.mp4", { bufferToReturnOn_WaitMultimedia: Buffer.from("myvideo_omg") });
+    chat.EnqueueIncoming_Video("./video-path-name.mp4", { imgContentBufferMock: Buffer.from("myvideo_omg") });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
@@ -2137,7 +2137,7 @@ describe("Document", () => {
       }
     }
     const chat = new ChatMock(new Com());
-    chat.EnqueueIncoming_Document("./document-path-name.pdf", "document.pdf", { bufferToReturnOn_WaitMultimedia: Buffer.from("mydocument_omg") });
+    chat.EnqueueIncoming_Document("./document-path-name.pdf", "document.pdf", { imgContentBufferMock: Buffer.from("mydocument_omg") });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
@@ -3198,7 +3198,7 @@ describe("ChatMock.prototype.EnqueueIncoming_Img() overload", () => {
     }
 
     const chat = new ChatMock(new MyCom());
-    chat.EnqueueIncoming_Img({ bufferToReturnOn_WaitMultimedia: customBuffer });
+    chat.EnqueueIncoming_Img({ imgContentBufferMock: customBuffer });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
@@ -3214,7 +3214,7 @@ describe("ChatMock.prototype.EnqueueIncoming_Img() overload", () => {
     }
 
     const chat = new ChatMock(new MyCom());
-    chat.EnqueueIncoming_Img("http://some.url/img.gif", { bufferToReturnOn_WaitMultimedia: customBuffer });
+    chat.EnqueueIncoming_Img("http://some.url/img.gif", { imgContentBufferMock: customBuffer });
     await chat.StartChatSimulation();
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
