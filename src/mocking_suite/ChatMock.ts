@@ -262,27 +262,66 @@ export default class ChatMock {
   }
 
   /**
-   * Simulates the sending of an image message into the mocked chat.
-   * The message is enqueued into the mocked receiver and can be consumed
-   * by the command under test.
+   * Simulates an incoming image message, enqueuing it for the command under test to consume.
    *
-   * If a `bufferToReturnOnWaitMultimedia` is provided, it will override
-   * the buffer returned by {@link ChatContext.WaitMultimedia}.
+   * ### Overloads
+   * This method provides two convenient overloads for simulating image messages:
    *
-   * @param imgUrl - URL of the image to simulate.
-   * @param opts - Optional parameters such as caption, sender pushName,
-   *   and an optional mock buffer for multimedia retrieval.
+   * 1.  **`EnqueueIncoming_Img(imgUrl: string, opts?: MockEnqueueParamsMultimedia)`**
+   *     - Simulates an image from a specific URL or file path.
+   *     - Use the `opts` parameter to add a `caption`, `pushName`, or mock the download buffer.
+   *
+   * 2.  **`EnqueueIncoming_Img(opts?: MockEnqueueParamsMultimedia)`**
+   *     - Simulates a generic, default placeholder image (`./whatsbotcord-mock-img.png`).
+   *     - This is useful when the specific image content is not important for the test.
+   *     - Can be called with no arguments.
+   *
+   * ### Multimedia Mocking
+   * The `bufferToReturnOn_WaitMultimedia` option allows you to specify a `Buffer` that `ctx.WaitMultimedia()`
+   * will resolve with. This is essential for testing multimedia handling logic without performing
+   * actual downloads.
+   *
+   * @example
+   * ```ts
+   * // Overload 1: Simulate an image from a URL with a caption.
+   * mock.EnqueueIncoming_Img("http://example.com/image.jpg", { caption: "Look at this!" });
+   *
+   * // Overload 2: Simulate a default image with a custom sender name.
+   * mock.EnqueueIncoming_Img({ pushName: "Another User" });
+   *
+   * // Or just... to simulate a generic img coming from user.
+   * mock.EnqueueIncoming_Img();
+   * ```
    */
+  public EnqueueIncoming_Img(opts?: MockEnqueueParamsMultimedia): void;
+  public EnqueueIncoming_Img(imgUrl: string, opts?: MockEnqueueParamsMultimedia): void;
   @autobind
-  public EnqueueIncoming_Img(imgUrl: string, opts?: MockEnqueueParamsMultimedia): void {
-    const imgMsg: WhatsappMessage = MsgFactory_Image(this.ChatId, this.ParticipantId_LID, imgUrl, {
-      caption: opts?.caption,
-      pushName: opts?.pushName,
-    });
-    if (opts?.bufferToReturnOn_WaitMultimedia) {
-      this._chatContextMock.EnqueueMediaBufferToReturn(opts.bufferToReturnOn_WaitMultimedia);
+  public EnqueueIncoming_Img(imgUrl_or_Opts?: MockEnqueueParamsMultimedia | string, onlyOpts?: MockEnqueueParamsMultimedia): void {
+    // 1st Overload: public EnqueueIncoming_Img(opts?:MockEnqueueParamsMultimedia): void;
+    if ((typeof imgUrl_or_Opts === "undefined" && typeof onlyOpts === "undefined") || typeof imgUrl_or_Opts === "object") {
+      const imgMsg: WhatsappMessage = MsgFactory_Image(this.ChatId, this.ParticipantId_LID, "./whatsbotcord-mock-img.png", {
+        caption: imgUrl_or_Opts?.caption,
+        pushName: imgUrl_or_Opts?.pushName,
+      });
+      if (imgUrl_or_Opts?.bufferToReturnOn_WaitMultimedia) {
+        this._chatContextMock.EnqueueMediaBufferToReturn(imgUrl_or_Opts.bufferToReturnOn_WaitMultimedia);
+      }
+      this._receiverMock.AddWaitMsg({ rawMsg: imgMsg, milisecondsDelayToRespondMock: imgUrl_or_Opts?.delayMilisecondsToReponse });
+      return;
     }
-    this._receiverMock.AddWaitMsg({ rawMsg: imgMsg, milisecondsDelayToRespondMock: opts?.delayMilisecondsToReponse });
+
+    // 2nd Overload: public EnqueueIncoming_Img(imgUrl: string, opts?: MockEnqueueParamsMultimedia): void ;
+    if (typeof imgUrl_or_Opts === "string") {
+      const imgMsg: WhatsappMessage = MsgFactory_Image(this.ChatId, this.ParticipantId_LID, imgUrl_or_Opts, {
+        caption: onlyOpts?.caption,
+        pushName: onlyOpts?.pushName,
+      });
+      if (onlyOpts?.bufferToReturnOn_WaitMultimedia) {
+        this._chatContextMock.EnqueueMediaBufferToReturn(onlyOpts.bufferToReturnOn_WaitMultimedia);
+      }
+      this._receiverMock.AddWaitMsg({ rawMsg: imgMsg, milisecondsDelayToRespondMock: onlyOpts?.delayMilisecondsToReponse });
+      return;
+    }
   }
 
   /**

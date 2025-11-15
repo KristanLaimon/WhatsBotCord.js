@@ -3108,3 +3108,114 @@ describe("Chatmock [Commands adding] update", () => {
     await chat.StartChatSimulation();
   });
 });
+
+describe("ChatMock.prototype.EnqueueIncoming_Img() overload", () => {
+  it("Overload 1: should enqueue a default image when called with no arguments", async () => {
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const img = await _ctx.WaitMsg(MsgType.Image);
+        expect(img).toBeDefined();
+        expect(img!.message?.imageMessage?.url).toBe("./whatsbotcord-mock-img.png");
+        expect(img!.pushName).not.toBe("Custom Pusher");
+      }
+    }
+
+    const chat = new ChatMock(new MyCom());
+    chat.EnqueueIncoming_Img(); // No args
+    await chat.StartChatSimulation();
+
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+    expect(chat.WaitedFromCommand[0]?.waitedMsgType).toBe(MsgType.Image);
+  });
+
+  it("Overload 1: should enqueue a default image with custom options", async () => {
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const img = await _ctx.WaitMsg(MsgType.Image);
+        expect(img).toBeDefined();
+        expect(img!.message?.imageMessage?.url).toBe("./whatsbotcord-mock-img.png");
+        expect(img!.message?.imageMessage?.caption).toBe("Test Caption");
+        expect(img!.pushName).toBe("Custom Pusher");
+      }
+    }
+
+    const chat = new ChatMock(new MyCom());
+    chat.EnqueueIncoming_Img({ caption: "Test Caption", pushName: "Custom Pusher" });
+    await chat.StartChatSimulation();
+
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+    expect(chat.WaitedFromCommand[0]?.waitedMsgType).toBe(MsgType.Image);
+  });
+
+  it("Overload 2: should enqueue an image with a specific URL", async () => {
+    const testUrl = "https://example.com/my-image.jpg";
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const img = await _ctx.WaitMsg(MsgType.Image);
+        expect(img).toBeDefined();
+        expect(img!.message?.imageMessage?.url).toBe(testUrl);
+      }
+    }
+
+    const chat = new ChatMock(new MyCom());
+    chat.EnqueueIncoming_Img(testUrl);
+    await chat.StartChatSimulation();
+
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("Overload 2: should enqueue an image with a specific URL and custom options", async () => {
+    const testUrl = "https://example.com/another-image.png";
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const img = await _ctx.WaitMsg(MsgType.Image);
+        expect(img).toBeDefined();
+        expect(img!.message?.imageMessage?.url).toBe(testUrl);
+        expect(img!.message?.imageMessage?.caption).toBe("Another Caption");
+        expect(img!.pushName).toBe("Another Pusher");
+      }
+    }
+
+    const chat = new ChatMock(new MyCom());
+    chat.EnqueueIncoming_Img(testUrl, { caption: "Another Caption", pushName: "Another Pusher" });
+    await chat.StartChatSimulation();
+
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("should use the provided buffer for WaitMultimedia (Overload 1)", async () => {
+    const customBuffer = Buffer.from("custom-image-buffer-1");
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const buffer = await _ctx.WaitMultimedia(MsgType.Image);
+        expect(buffer).toBe(customBuffer);
+      }
+    }
+
+    const chat = new ChatMock(new MyCom());
+    chat.EnqueueIncoming_Img({ bufferToReturnOn_WaitMultimedia: customBuffer });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+
+  it("should use the provided buffer for WaitMultimedia (Overload 2)", async () => {
+    const customBuffer = Buffer.from("custom-image-buffer-2");
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        const buffer = await _ctx.WaitMultimedia(MsgType.Image);
+        expect(buffer).toBe(customBuffer);
+      }
+    }
+
+    const chat = new ChatMock(new MyCom());
+    chat.EnqueueIncoming_Img("http://some.url/img.gif", { bufferToReturnOn_WaitMultimedia: customBuffer });
+    await chat.StartChatSimulation();
+    expect(chat.WaitedFromCommand).toHaveLength(1);
+  });
+});
