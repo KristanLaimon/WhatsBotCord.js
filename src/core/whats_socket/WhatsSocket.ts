@@ -5,7 +5,6 @@ import {
   type MiscMessageGenerationOptions,
   type proto,
   type WAMessageUpdate,
-  Browsers,
   DisconnectReason,
   fetchLatestBaileysVersion,
   makeWASocket,
@@ -225,7 +224,7 @@ export default class WhatsSocket implements IWhatsSocket {
         version, //2. Then added "version" prop in Socket constructor
         auth: state,
         logger: logger,
-        browser: Browsers.windows("Chrome"),
+        // browser: Browsers.windows("Chrome"),
         // syncFullHistory: true,
       });
     }
