@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.23.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.23.0...v0.23.1) (2025-11-19)
+
+### Bug Fixes
+
+* Fixed strange bug ([a28619f](https://github.com/KristanLaimon/WhatsBotCord.js/commit/a28619f90500bde0941c89623741d7004a6f7c74))
+
 ## [0.23.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.22.3...v0.23.0) (2025-11-15)
 
 ### Features
