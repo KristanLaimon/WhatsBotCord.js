@@ -3,7 +3,6 @@ import {
   type AnyMessageContent,
   type GroupMetadata,
   type MiscMessageGenerationOptions,
-  type proto,
   type WAMessageUpdate,
   DisconnectReason,
   fetchLatestBaileysVersion,
@@ -220,7 +219,7 @@ export default class WhatsSocket implements IWhatsSocket {
       this.Socket = this._customSocketImplementation;
     } else {
       const logger = pino({ level: this._loggerMode === "recommended" ? "silent" : this._loggerMode });
-      this.Socket = makeWASocket({
+      this.Socket = await makeWASocket({
         version, //2. Then added "version" prop in Socket constructor
         auth: state,
         logger: logger,
@@ -332,8 +331,8 @@ export default class WhatsSocket implements IWhatsSocket {
         const msg = msgAny as WhatsappMessage;
         if (this._ignoreSelfMessages) if (!msg.message || msg.key.fromMe) continue;
         const chatId = msg.key.remoteJid!;
-        const senderId_LID: string | null = msg.key.participant ?? null;
-        const senderId_PN: string | null = msg.key.participantPn ?? null;
+        const senderId_LID: string | null = msg.key.participant ? (msg.key.participant.trim() !== "" ? msg.key.participant : null) : null;
+        const senderId_PN: string | null = msg.key.participantAlt ? (msg.key.participantAlt.trim() !== "" ? msg.key.participantAlt : null) : null;
         let senderType: SenderType = SenderType.Unknown;
         if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
         if (chatId && chatId.endsWith(WhatsappPhoneNumberIdentifier)) senderType = SenderType.Individual;
@@ -349,10 +348,10 @@ export default class WhatsSocket implements IWhatsSocket {
         const msgUpdate = msgUpdateRaw as WhatsappMessage;
         if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
 
-        const chatId: string = msgUpdate.key.remoteJid!;
-        const senderId_LID: string | null = msgUpdate.key.participant ?? msgUpdate.key.participantLid ?? null;
-        const senderId_PN: string | null = msgUpdate.key.participantPn ?? null;
         const senderType: SenderType = MsgHelper_FullMsg_GetSenderType(msgUpdate);
+        const chatId: string = msgUpdate.key.remoteJid!;
+        const senderId_LID: string | null = msgUpdate.key.participant ? (msgUpdate.key.participant.trim() !== "" ? msgUpdate.key.participant : null) : null;
+        const senderId_PN: string | null = msgUpdate.key.participantAlt ? (msgUpdate.key.participantAlt !== "" ? msgUpdate.key.participantAlt : null) : null;
         this.onUpdateMsg.CallAll(senderId_LID, senderId_PN, chatId, msgUpdate, MsgHelper_FullMsg_GetMsgType(msgUpdate), senderType);
       }
     });
@@ -403,7 +402,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
-    const toReturn: proto.IWebMessageInfo | null = (await this.Socket.sendMessage(chatId_JID, content, options)) ?? null;
+    const toReturn = (await this.Socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;
   }
 }

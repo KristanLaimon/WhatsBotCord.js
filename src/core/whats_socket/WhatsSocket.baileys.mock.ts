@@ -1,4 +1,4 @@
-import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage, proto } from "baileys";
+import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage } from "baileys";
 import { mock as fn, type Mock } from "bun:test";
 
 /**
@@ -26,7 +26,7 @@ export interface IWhatsSocketServiceAdapter {
    * @returns A promise resolving to the full WAMessage object representing
    *          the sent message.
    */
-  sendMessage(jid: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<proto.IWebMessageInfo | undefined>;
+  sendMessage(jid: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | undefined>;
 
   /**
    * Retrieves metadata for a given group chat.
@@ -73,9 +73,10 @@ export interface IWhatsSocketServiceAdapter {
     /**
      * Closes the underlying WebSocket connection.
      *
-     * @returns A promise that resolves once the socket is closed.
+     * @returns A promise that resolves once the socket is closed, or void for implementations
+     * that close synchronously (e.g., the real Baileys socket).
      */
-    close(): Promise<void>;
+    close(): Promise<void> | void;
   };
 }
 

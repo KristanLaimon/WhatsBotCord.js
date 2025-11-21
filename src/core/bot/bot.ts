@@ -671,6 +671,7 @@ export default class Bot implements BotMinimalInfo {
       const ARG3_AdditionalArgs: CommandArgs = {
         args: commandArgs,
         chatId: chatId,
+        chatId_LID: rawMsg.key.remoteJidAlt,
         msgType: msgType,
         originalRawMsg: rawMsg,
         senderType: senderType,

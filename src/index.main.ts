@@ -61,7 +61,7 @@ class SendPrivately implements ICommand {
     }
     await ctx.Loading();
     const txtExtracted: string = args.args.join(" ");
-    const fullWhatsId: string = args.originalRawMsg.key.participantPn!;
+    const fullWhatsId: string = args.originalRawMsg.key.participantAlt!;
     await api.InternalSocket.Send.Text(fullWhatsId, txtExtracted);
     await ctx.Ok();
   }

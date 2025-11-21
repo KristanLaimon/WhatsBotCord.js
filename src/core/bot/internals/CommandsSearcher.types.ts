@@ -37,6 +37,17 @@ export type CommandArgs = {
   chatId: string;
 
   /**
+   * LID-normalized chat identifier where the command was triggered.
+   * - For private chats, `chatId` remains the PN-format ID while `chatId_LID`
+   *   provides the equivalent LID version if it was resolved.
+   * - For group chats, this will be `undefined` (js type) and
+   *   may be undefined as well for older groups that only expose PN IDs.
+   *
+   * @version Added in `v0.24.0`
+   */
+  chatId_LID?: string;
+
+  /**
    * Type of sender (e.g. private user, group participant, system).
    * Derived from the incoming message context.
    */
