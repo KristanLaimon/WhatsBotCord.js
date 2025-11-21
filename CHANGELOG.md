@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.24.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.23.1...v0.24.0) (2025-11-21)
+
+### Features
+
+* Baileys and dual chat identifiers update 🎉 ([52ae9fd](https://github.com/KristanLaimon/WhatsBotCord.js/commit/52ae9fd4bf52174c0b0911a22e7af0070993da65))
+
 ## [0.23.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.23.0...v0.23.1) (2025-11-19)
 
 ### Bug Fixes
