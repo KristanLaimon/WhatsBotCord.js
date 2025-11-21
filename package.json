@@ -54,7 +54,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "baileys": "6.7.21",
+    "baileys": "7.0.0-rc.9",
     "dotenv": "17.2.1",
     "emoji-regex": "10.4.0",
     "grapheme-splitter": "1.0.4",
