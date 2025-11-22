@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.24.0...v0.24.1) (2025-11-22)
+
+### Bug Fixes
+
+* Fixed bad tests with ChatContext.Image*() sending ([3f25196](https://github.com/KristanLaimon/WhatsBotCord.js/commit/3f2519617a57f03ee49425f72e4c60659aa6a714))
+* Now sends giffs ([61b0e86](https://github.com/KristanLaimon/WhatsBotCord.js/commit/61b0e86cb8151fb3afc84258617f38e77c013396))
+
 ## [0.24.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.23.1...v0.24.0) (2025-11-21)
 
 ### Features
