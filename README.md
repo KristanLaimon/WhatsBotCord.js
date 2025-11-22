@@ -26,10 +26,15 @@
   - [Canceling long commands](#cancelling-long-commands)
   - [Events](#events)
   - [Middleware](#middleware)
-  - [Plugins](#plugins)
+- [Plugins](#plugins)
     - [OneUserPerCommand](#one-user-per-command---plugin-official)
   - [Tags With @](#usage-with-group-data-and-tags)
   - [Manipulating the Chat Context](#manipulating-the-chat-context)
+- [Using AdditionalAPI & Internal Socket](#using-additionalapi--internal-socket)
+  - [When to use it](#when-to-use-it)
+  - [Send to arbitrary chats](#send-to-arbitrary-chats)
+  - [Listen to raw events](#listen-to-raw-events)
+  - [Safety tips](#safety-tips-for-internalsocket)
 - [Testing/Mocking your commands](#whatsbotcordjs-mocking--testing)
   - [Basic](#simplest-usage)
   - [Advanced](#advanced-example)
@@ -114,7 +119,7 @@ bot.Start();
 ## More advanced usage
 
 The last example is the easiest way to start, but commonly you will be using
-the following worflow when working with them. It shows a little more advance usage and
+the following workflow when working with them. It shows a little more advance usage and
 a basic showcase what this library has to offer.
 
 Here it's creating a simple command that accepts an img, validates its sent from the user, and send it back if
@@ -246,7 +251,7 @@ bot.Start();
 
 # Cancelling long commands
 
-If you have long worflows commands, user can cancel them using specific
+If you have long-running command workflows, users can cancel them using specific
 **cancel words**, by default are "cancel" (english) and "cancelar" (spanish).
 
 Let's say you are using the last example !forwardmsg. Bot is expecting from you to send him a
@@ -286,7 +291,7 @@ this case will be: ["my", "cancel", "words"]
 
 ## Plugins
 
-Of course, you can use plugins to improve dinamically your bot,
+Of course, you can use plugins to improve dynamically your bot,
 either imported from other libraries or official ones.
 
 ### One user per command - Plugin \[Official]
@@ -657,6 +662,77 @@ class ParallelTaskCommand implements ICommand {
   }
 }
 ```
+
+# Using AdditionalAPI & Internal Socket
+
+Each command receives `api: AdditionalAPI` alongside `ctx`. `ctx` is the high-level, per-chat helper you will use 95% of the time. `api.InternalSocket` is the raw WhatsApp socket exposed for advanced scenarios where you need to go beyond the current chat or wire custom instrumentation.
+
+## When to use it
+
+- Send messages to other chats without cloning the current context (broadcasts, cross-chat replies).
+- Subscribe to raw socket events for analytics/telemetry.
+- Publish stories/statuses with `api.Myself.Status.UploadText(...)`.
+- Use socket features not surfaced by `ChatContext` while keeping full control over parameters.
+
+## Send to arbitrary chats
+
+`InternalSocket.Send.*` exposes the same sugar methods as `ChatContext.Send*`, but you must pass a full WhatsApp JID:
+
+- Private chats → `123456789@whatsapp.es` (PN).
+- Groups → `123456789@g.us`.
+
+Messages are queued safely by default; set `sendRawWithoutEnqueue: true` only when you deliberately want to bypass the safety queue.
+
+```ts
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "whatsbotcord";
+
+class Broadcast implements ICommand {
+  name = "broadcast";
+
+  async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+    const groups = ["123456789@g.us", "987654321@g.us"];
+    const text = args.args.join(" ") || "Hello group!";
+
+    for (const chatId of groups) {
+      await api.InternalSocket.Send.Text(chatId, `📢 ${text}`);
+    }
+
+    await ctx.SendText("Sent your message to all configured groups.");
+  }
+}
+```
+
+## Listen to raw events
+
+You can subscribe to socket-level events directly from the command context. Remember to unsubscribe to avoid duplicate listeners when commands run multiple times.
+
+```ts
+import type { AdditionalAPI, CommandArgs, IChatContext, ICommand } from "whatsbotcord";
+import { MsgType } from "whatsbotcord";
+
+class TapRawStream implements ICommand {
+  name = "tapprobe";
+
+  async run(ctx: IChatContext, api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+    const handler = (senderLID, chatId, _rawMsg, msgType) => {
+      console.log(`[raw] ${chatId} from ${senderLID ?? "unknown"}:`, MsgType[msgType]);
+    };
+
+    api.InternalSocket.onIncomingMsg.Subscribe(handler);
+    await ctx.SendText("Subscribed to raw incoming messages for logging.");
+
+    // Later, if you want to stop listening:
+    // api.InternalSocket.onIncomingMsg.Unsubscribe(handler);
+  }
+}
+```
+
+## Safety tips for InternalSocket
+
+- Prefer `ChatContext` for single-chat flows; reach for `InternalSocket` only when you need cross-chat or low-level control.
+- Always pass the correct JID suffix (`@whatsapp.es` for individuals, `@g.us` for groups) when using `Send.*`.
+- Keep listeners paired with `Unsubscribe` when attaching them inside commands, especially in dev hot-reload setups.
+- Use the default queued sends (no `sendRawWithoutEnqueue`) to avoid hitting WhatsApp throttling.
 
 # WhatsBotCord.js Mocking & Testing
 
