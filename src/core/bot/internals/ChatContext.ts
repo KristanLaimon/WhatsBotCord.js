@@ -236,7 +236,11 @@ export class ChatContext implements IChatContext {
   }
 
   @autobind
-  public SendImgFromBuffer(imagePath: Buffer<ArrayBuffer>, extensionType: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+  public SendImgFromBuffer(
+    imagePath: Buffer | Buffer<ArrayBuffer>,
+    extensionType: string,
+    options?: WhatsMsgSenderSendingOptions
+  ): Promise<WhatsappMessage | null> {
     return this.HandlePrimaryMsg(
       this._internalSend.Image(this.FixedChatId, { source: imagePath, formatExtension: extensionType, caption: undefined }, options)
     );
