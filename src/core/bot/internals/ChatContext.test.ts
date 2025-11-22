@@ -1,4 +1,5 @@
 import { type Mock, beforeEach, describe, expect, it, spyOn, test } from "bun:test";
+import fs from "node:fs";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID_LID,
@@ -39,6 +40,11 @@ const WHATSMSGOPTIONSPARAM: WhatsMsgSenderSendingOptions = {
   sendRawWithoutEnqueue: false,
   mentionsIds: ["testID" + WhatsappPhoneNumberIdentifier, "testID2" + WhatsappPhoneNumberIdentifier],
 };
+const MINIMAL_GIF_BUFFER: Buffer = Buffer.from([
+  0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x21, 0xf9, 0x04, 0x01, 0x00, 0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02,
+  0x02, 0x44, 0x01, 0x00, 0x3b,
+]);
 
 function GenerateLocalToolKit_ChatSession_FromGroup() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
@@ -117,6 +123,51 @@ it("Image_WhenUsingSendImgWithCaption_ShouldUseCorrectlySugarSender", async (): 
 
   expect(senderImgSpy).toHaveBeenCalledTimes(1);
   expect(senderImgSpy).toBeCalledWith(CHATID, { source: "./test_img", caption: "img caption" }, WHATSMSGOPTIONSPARAM);
+});
+
+it("Image_WhenSendingGif_ShouldSendAsVideoWithGifPlayback", async (): Promise<void> => {
+  const { chat, mockSocket } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const gifPath = "./test/tmp-sendimg-gif.gif";
+  fs.writeFileSync(gifPath, MINIMAL_GIF_BUFFER);
+  try {
+    await chat.SendImg(gifPath, WHATSMSGOPTIONSPARAM);
+  } finally {
+    if (fs.existsSync(gifPath)) {
+      fs.rmSync(gifPath);
+    }
+  }
+
+  const lastSent = mockSocket.SentMessagesThroughQueue.at(-1);
+  expect(lastSent?.content).toBeDefined();
+  expect(lastSent?.content).not.toHaveProperty("image");
+  expect(lastSent?.content).toHaveProperty("video");
+  expect((lastSent?.content as any).gifPlayback).toBe(true);
+  expect((lastSent?.content as any).mimetype).toBe("image/gif");
+  expect((lastSent?.content as any).mentions).toEqual(WHATSMSGOPTIONSPARAM.mentionsIds);
+});
+
+it("Image_WhenSendingGifBuffer_ShouldSendAsVideoWithGifPlayback", async (): Promise<void> => {
+  const { chat, mockSocket } = GenerateLocalToolKit_ChatSession_FromGroup();
+
+  await chat.SendImgFromBuffer(MINIMAL_GIF_BUFFER, ".gif", WHATSMSGOPTIONSPARAM);
+
+  const lastSent = mockSocket.SentMessagesThroughQueue.at(-1);
+  expect(lastSent?.content).toHaveProperty("video");
+  expect(lastSent?.content).not.toHaveProperty("image");
+  expect((lastSent?.content as any).gifPlayback).toBe(true);
+  expect((lastSent?.content as any).mimetype).toBe("image/gif");
+});
+
+it("Image_WhenUsingGifBufferWithCaption_ShouldSendAsVideoWithGifPlayback", async (): Promise<void> => {
+  const { chat, mockSocket } = GenerateLocalToolKit_ChatSession_FromGroup();
+
+  await chat.SendImgFromBufferWithCaption(MINIMAL_GIF_BUFFER, "gif", "funny gif", WHATSMSGOPTIONSPARAM);
+
+  const lastSent = mockSocket.SentMessagesThroughQueue.at(-1);
+  expect(lastSent?.content).toHaveProperty("video");
+  expect((lastSent?.content as any).gifPlayback).toBe(true);
+  expect((lastSent?.content as any).caption).toBe("funny gif");
+  expect((lastSent?.content as any).mimetype).toBe("image/gif");
 });
 
 it("ReactionEmoji_WhenUsingSendReactEmojiTo_ShouldUseCorrectlySugarSender", async (): Promise<void> => {

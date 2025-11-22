@@ -61,6 +61,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
   public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
     let imgBuffer: Buffer;
     let mimeType: string;
+    let isGif: boolean = false;
     //1. First overload: {sourcePath: string, caption?:string}
     if (typeof imageOptions.source === "string") {
       //1.1 Check if its a valid img type at least
@@ -92,11 +93,13 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         ? //@ts-expect-error Can be usable with formatExtension as well
           MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.formatExtension })
         : MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source });
+      isGif = mimeType === "image/gif";
     }
     //2. Second overload: {sourcePath: Buffer, caption?:string, formatExtension: string}
     else if ("formatExtension" in imageOptions) {
       imgBuffer = imageOptions.source;
       mimeType = MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source, extensionType: imageOptions.formatExtension });
+      isGif = mimeType === "image/gif";
     } else {
       throw new Error(
         "SugarSender.Img() bad args!, expected source in buffer or string with formatExtension prop if buffer... got instead: " +
@@ -110,6 +113,21 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         captionToSend = Str_NormalizeLiteralString(captionToSend);
       }
     }
+    // WhatsApp requires GIFs to be sent as videos with gifPlayback enabled
+    if (isGif) {
+      return await this._getSendingMethod(options)(
+        chatId,
+        {
+          image: imgBuffer,
+          caption: captionToSend,
+          gifPlayback: true,
+          mentions: options?.mentionsIds,
+          // mimetype: mimeType | For some reason it breaks if it includes a mimeType along with it (why? 🤓?)
+        },
+        options as MiscMessageGenerationOptions
+      );
+    }
+
     //Ends
     return await this._getSendingMethod(options)(
       chatId,

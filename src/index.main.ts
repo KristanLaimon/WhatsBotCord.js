@@ -1,11 +1,15 @@
+import fs from "fs";
 import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
 import { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType, default as WhatsbotCord } from "src/index.js";
 import OfficialPlugin_OneCommandPerUserAtAtime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
+import { isDev } from "./Envs.js";
 
 class PingCommand implements ICommand {
   public name: string = "ping";
   async run(chat: ChatContext, _: AdditionalAPI, __: CommandArgs): Promise<void> {
     await chat.SendText("Pong");
+    const buf = fs.readFileSync("./frieren.gif");
+    await chat.SendImgFromBuffer(buf, ".gif");
   }
 }
 
@@ -88,7 +92,7 @@ class WaitForMsgAndSendItBack implements ICommand {
 const bot = new WhatsbotCord({
   commandPrefix: ["$", "!", "/", "."],
   tagPrefix: ["@"],
-  credentialsFolder: "./auth",
+  credentialsFolder: isDev ? "auth_canary" : "./auth",
   loggerMode: "recommended",
   delayMilisecondsBetweenMsgs: 1,
   cancelKeywords: ["cancelcustom"],
