@@ -8,6 +8,10 @@
 ![NPM Last Update](https://img.shields.io/npm/last-update/whatsbotcord)
 ![NPM License](https://img.shields.io/npm/l/whatsbotcord)
 
+> Safety notice:
+> A recent NPM worm (`Shai-Hulud`) attempts to exfiltrate env secrets and run arbitrary code.
+> This library is `UNNAFECTED`. Dependencies are locked to older, pre-incident versions and will stay pinned until the NPM situation stabilizes; this also means major updates are paused to avoid pulling newer, potentially risky packages.
+
 **_WhatsBotCord_** is a lightweight, TypeScript-based library for building WhatsApp bots with a Discord-inspired command system (e.g., **!yourcommand**, **@everyone**, and _more_). Built as a wrapper around Baileys.js, it abstracts complex Baileys.js internals, providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Designed from developers to developers to create custom bots with ease.
 
 > Note: WhatsBotCord its stable but still on beta, current api could change but not drastically. Soon there will be a 1.0.0 release and a proper documentation website.
@@ -27,7 +31,7 @@
   - [Events](#events)
   - [Middleware](#middleware)
 - [Plugins](#plugins)
-    - [OneUserPerCommand](#one-user-per-command---plugin-official)
+  - [OneUserPerCommand](#one-user-per-command---plugin-official)
   - [Tags With @](#usage-with-group-data-and-tags)
   - [Manipulating the Chat Context](#manipulating-the-chat-context)
 - [Using AdditionalAPI & Internal Socket](#using-additionalapi--internal-socket)
