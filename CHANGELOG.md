@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.24.1...v0.25.0) (2025-12-05)
+
+### Features
+
+* Added disclaimer about current npm threat ([6fb00d6](https://github.com/KristanLaimon/WhatsBotCord.js/commit/6fb00d612716ed47645dfc0a2f2f7613d123ef74))
+* fixing dependencies ([cdbea25](https://github.com/KristanLaimon/WhatsBotCord.js/commit/cdbea2586b2d1cf5f2c2f7d8ee91c4c14cd15d1d))
+
 ## [0.24.1](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.24.0...v0.24.1) (2025-11-22)
 
 ### Bug Fixes
