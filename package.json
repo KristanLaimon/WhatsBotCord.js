@@ -29,7 +29,7 @@
     "@eslint/json": "0.13.2",
     "@eslint/markdown": "7.2.0",
     "@release-it/conventional-changelog": "10.0.1",
-    "@types/bun": "latest",
+    "@types/bun": "1.2.20",
     "@types/mime-types": "3.0.1",
     "cross-env": "10.0.0",
     "eslint": "9.34.0",
