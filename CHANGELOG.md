@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.26.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.25.0...v0.26.0) (2025-12-07)
+
+### Features
+
+* Removing innecesary warning ([53f949f](https://github.com/KristanLaimon/WhatsBotCord.js/commit/53f949ffc79a766b8ae51e57ca62fedeaf8b27fe))
+
 ## [0.25.0](https://github.com/KristanLaimon/WhatsBotCord.js/compare/v0.24.1...v0.25.0) (2025-12-05)
 
 ### Features
