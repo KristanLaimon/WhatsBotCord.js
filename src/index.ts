@@ -91,71 +91,71 @@ export {
 };
 
 // === Helpers ===
-/**
- * Collection of helper functions for working with WhatsApp messages.
- *
- * Provides convenience methods to extract text or determine message types
- * from raw WhatsappMessages
- */
-export const MsgHelpers = {
-  FullMsg_GetQuotedMsgText: MsgHelper_FullMsg_GetQuotedMsgText,
-  FullMsg_GetMsgType: MsgHelper_FullMsg_GetMsgType,
-  FullMsg_GetText: MsgHelper_FullMsg_GetText,
-  FullMsg_GetQuotedMsgObj: MsgHelper_FullMsg_GetQuotedMsg,
-  FullMsg_GetSenderType: MsgHelper_FullMsg_GetSenderType,
-  QuotedMsg_GetText: MsgHelper_QuotedMsg_GetText,
-  AnyMsg_GetMsgType: MsgHelper_ProtoMsg_GetMsgType,
-};
-
-/**
- * Collection of helper functions for working with WhatsApp IDs and mentions.
- *
- * Provides utilities to extract sender information, identify mentions,
- * and verify WhatsApp ID formats.
- */
-export const WhatsappHelpers = {
-  GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg,
-  GetWhatsInfoFromWhatsappID: WhatsappHelper_ExtractFromWhatsappID,
-  GetWhatsInfoFromMentionStr: WhatsappHelper_ExtractWhatsappInfoFromMention,
-  IsLIDId: WhatsappHelper_isLIDIdentifier,
-  IsMentionString: WhatsappHelper_isMentionId,
-  IsPNId: WhatsappHelper_isFullWhatsappIdUser,
-};
-
-/**
- * Useful collection of functions for debugging whatsapp related stuff. (Optional use)
- */
-export const DebuggingHelpers = {
-  StoreMsgInHistoryJson: Debug_StoreWhatsMsgHistoryInJson,
-};
-
-/**
- * Object containing all common patterns identifers from whatsapp API and
- * Whatsapp messages.
- * For example: "@s.whatsapp.net"
- */
-export const WhatsappIdentifiers = {
+export const Helpers = {
   /**
-   * Identifier for group chats. Example: "@g.us"
+   * Collection of helper functions for working with WhatsApp messages.
    *
-   * @note Just for reference
+   * Provides convenience methods to extract text or determine message types
+   * from raw WhatsappMessages
    */
-  Group_Suffix_ID: WhatsappGroupIdentifier,
+  Msg: {
+    FullMsg_GetQuotedMsgText: MsgHelper_FullMsg_GetQuotedMsgText,
+    FullMsg_GetMsgType: MsgHelper_FullMsg_GetMsgType,
+    FullMsg_GetText: MsgHelper_FullMsg_GetText,
+    FullMsg_GetQuotedMsgObj: MsgHelper_FullMsg_GetQuotedMsg,
+    FullMsg_GetSenderType: MsgHelper_FullMsg_GetSenderType,
+    QuotedMsg_GetText: MsgHelper_QuotedMsg_GetText,
+    AnyMsg_GetMsgType: MsgHelper_ProtoMsg_GetMsgType,
+  },
+
   /**
-   * Identifer for local IDs. Example: "@lid"
+   * Collection of helper functions for working with WhatsApp IDs and mentions.
    *
-   * @note Just for reference
+   * Provides utilities to extract sender information, identify mentions,
+   * and verify WhatsApp ID formats.
    */
-  LID_Suffix_ID: WhatsappLIDIdentifier,
+  Whatsapp: {
+    GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg,
+    GetWhatsInfoFromWhatsappID: WhatsappHelper_ExtractFromWhatsappID,
+    GetWhatsInfoFromMentionStr: WhatsappHelper_ExtractWhatsappInfoFromMention,
+    IsLIDId: WhatsappHelper_isLIDIdentifier,
+    IsMentionString: WhatsappHelper_isMentionId,
+    IsPNId: WhatsappHelper_isFullWhatsappIdUser,
+
+    /**
+     * Object containing all common patterns identifers from whatsapp API and
+     * Whatsapp messages.
+     * For example: "@s.whatsapp.net"
+     */
+    IdentifiersPostfixes: {
+      /**
+       * Identifier for group chats. Example: "@g.us"
+       *
+       * @note Just for reference
+       */
+      Group_Suffix_ID: WhatsappGroupIdentifier,
+      /**
+       * Identifer for local IDs. Example: "@lid"
+       *
+       * @note Just for reference
+       */
+      LID_Suffix_ID: WhatsappLIDIdentifier,
+      /**
+       * Identifier for individual user chats. Example: "@s.whatsapp.net"
+       *
+       * @note Just for reference
+       */
+      PhoneNumber_Suffix_ID: WhatsappPhoneNumberIdentifier,
+    },
+  },
+
   /**
-   * Identifier for individual user chats. Example: "@s.whatsapp.net"
-   *
-   * @note Just for reference
+   * Useful collection of functions for debugging whatsapp related stuff. (Optional use)
    */
-  PhoneNumber_Suffix_ID: WhatsappPhoneNumberIdentifier,
+  Debugging: {
+    StoreMsgInHistoryJson: Debug_StoreWhatsMsgHistoryInJson,
+  },
 };
 
 // === Main Default Export ===
 export default Whatsbotcord;
-
-//TODO: Add tests for ChatContexts.CloneForksWithoutInitialMsg to update its initialmsg when sending any main principal msg
