@@ -21,11 +21,18 @@ import type { AdditionalAPI, ICommand } from "./internals/ICommand.js";
 const emojiSplitter = new GraphemeSplitter();
 
 /**
+ * # Minimal Bot Information
+ *
  * Defines the essential, public-facing components of a bot instance.
  *
  * This type is useful for scenarios where a full `Bot` instance is not
  * required, but access to its core configuration and command system is needed.
  * It serves as a minimal interface implemented by the main `Bot` class.
+ *
+ * @example
+ * ```typescript
+ * const minBot: BotMinimalInfo = { Settings, Commands };
+ * ```
  */
 export type BotMinimalInfo = {
   /**
@@ -70,22 +77,35 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
     commandPrefix?: string | string[];
 
     /**
+     * # Custom Socket Implementation
+     *
      * For advanced users and maintainers: replace the internal WhatsApp socket implementation.
      *
      * If provided, the bot will use this custom implementation instead of the
      * built-in `WhatsSocket`. Useful for testing, extending, or mocking.
      *
-     * ⚠️ Use at your own risk — incorrect implementations can break bot behavior.
+     * Warning: Use at your own risk. Incorrect implementations can break bot behavior.
+     *
+     * @example
+     * ```typescript
+     * const opts: WhatsBotOptions = { ownWhatsSocketImplementation_Internal: myMock };
+     * ```
      */
     ownWhatsSocketImplementation_Internal?: IWhatsSocket;
 
     /**
+     * # Custom Chat Context Hook
+     *
      * For advanced users and maintainers: replaces the ChatContext that will be sent to all commands.
      *
-     * Used primarly for testing
+     * Used primarily for testing.
      *
-     * ⚠️ Use at your own risk — incorrect implementations can break bot behavior.
-     * @returns
+     * Warning: Use at your own risk. Incorrect implementations can break bot behavior.
+     *
+     * @example
+     * ```typescript
+     * const opts: WhatsBotOptions = { ownChatContextCreationHook_Internal: () => myCtx };
+     * ```
      */
     ownChatContextCreationHook_Internal?: () => IChatContext | null;
 
@@ -123,11 +143,18 @@ export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketA
   };
 
 /**
+ * # WhatsApp Bot Events
+ *
  * Defines all events emitted by the Bot instance.
  *
  * This type aggregates events from the underlying WhatsApp socket
  * (`IWhatsSocket_EventsOnly_Module`) and adds bot-specific events
  * related to command processing and middleware execution.
+ *
+ * @example
+ * ```typescript
+ * bot.Events.onIncomingMsg.Subscribe((msg) => console.log(msg));
+ * ```
  */
 export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
   /**
@@ -219,6 +246,8 @@ export type WhatsbotcordPlugin = {
 };
 
 /**
+ * # WhatsApp Bot
+ *
  * Represents the main WhatsApp Bot instance.
  *
  * The `Bot` class orchestrates the WhatsApp socket connection and provides a
@@ -227,8 +256,8 @@ export type WhatsbotcordPlugin = {
  * Typical usage involves registering and handling commands via the internal
  * `Command` prop.
  *
- * Example:
- * ```ts
+ * @example
+ * ```typescript
  * const bot = new Bot();
  * await bot.Start();
  *

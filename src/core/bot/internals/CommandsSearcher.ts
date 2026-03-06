@@ -1,8 +1,15 @@
 import type { ICommand } from "./ICommand.js";
 /**
+ * # Command Type
+ *
  * Different categories of commands supported by the searcher.
  * - `Normal`: explicit commands that match directly.
  * - `Tag`: commands triggered by a tag (metadata, alias, or secondary marker).
+ *
+ * @example
+ * ```typescript
+ * const type = CommandType.Normal;
+ * ```
  */
 export enum CommandType {
   Normal = "Normal",
@@ -10,7 +17,9 @@ export enum CommandType {
 }
 
 /**
- * Central registry and search helper for commands.
+ * # Command Entry
+ *
+ * Central registry and search helper type for commands.
  *
  * Commands are separated into two namespaces:
  * - **Normal commands**: Standard commands invoked by name.
@@ -18,12 +27,29 @@ export enum CommandType {
  *
  * A default command or tag may be defined. These act as a global fallback
  * when no specific match is found.
+ *
+ * @example
+ * ```typescript
+ * const entry: CommandEntry = { commandName: "ping", commandObj: pingCommand };
+ * ```
  */
 export type CommandEntry = {
   commandName: string;
   commandObj: ICommand;
 };
 
+/**
+ * # Commands Searcher System
+ *
+ * Central registry and search mechanism for commands.
+ * Resolves commands by name or alias and manages fallback commands.
+ *
+ * @example
+ * ```typescript
+ * const searcher = new CommandsSearcher();
+ * searcher.Add(myCmd);
+ * ```
+ */
 export default class CommandsSearcher {
   private _normalCommands: Map<string, ICommand> = new Map();
   private _tagCommands: Map<string, ICommand> = new Map();

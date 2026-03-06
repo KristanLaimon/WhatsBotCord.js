@@ -6,12 +6,35 @@
  */
 
 /**
+ * # Delegate Consumer
+ *
  * Represents a delegate consumer type that exposes all Delegate functionality
  * except the `CallAll` method. Useful for restricting access to certain operations.
  *
  * @template fnType - The function signature that the delegate consumes.
+ *
+ * @example
+ * ```typescript
+ * const myEvent: DelegateConsumer<() => void> = new Delegate();
+ * ```
  */
 export type DelegateConsumer<fnType extends (...args: any[]) => any> = Omit<Delegate<fnType>, "CallAll">;
+
+/**
+ * # Delegate
+ *
+ * A simple delegate implementation inspired by C# delegates.
+ * Useful for the Observer pattern and event-driven programming.
+ *
+ * @template functType - The function signature that the delegate can hold.
+ *
+ * @example
+ * ```typescript
+ * const onChange = new Delegate<(id: string) => void>();
+ * onChange.Subscribe((id) => console.log(id));
+ * onChange.CallAll("123");
+ * ```
+ */
 
 export default class Delegate<functType extends (...args: any[]) => any> {
   /** Internal storage for all subscribed functions. */

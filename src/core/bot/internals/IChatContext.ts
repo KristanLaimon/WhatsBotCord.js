@@ -10,7 +10,14 @@ import type { WhatsappMessage } from "../../whats_socket/types.js";
 import type { IChatContextConfig } from "./ChatContext.js";
 
 /**
+ * # Chat Context Ubication
+ *
  * Represents a location shared in a chat.
+ *
+ * @example
+ * ```typescript
+ * const location: ChatContextUbication = { degreesLatitude: 40.7128, degreesLongitude: -74.0060, thumbnailJpegBuffer: null, isLive: false };
+ * ```
  */
 export type ChatContextUbication = {
   /** Latitude in decimal degrees */
@@ -27,7 +34,14 @@ export type ChatContextUbication = {
 };
 
 /**
+ * # Chat Context Contact Result
+ *
  * Represents a contact shared in a chat.
+ *
+ * @example
+ * ```typescript
+ * const contact: ChatContextContactRes = { name: "John Doe", number: "123456789", whatsappId_PN: "123456789@s.whatsapp.net" };
+ * ```
  */
 export type ChatContextContactRes = {
   /** Display name of the contact */
@@ -41,10 +55,19 @@ export type ChatContextContactRes = {
 };
 
 /**
+ * # Chat Context Interface
+ *
  * Interface for the ChatContext sugar-layer abstraction.
  *
  * Simplifies sending/receiving messages bound to a fixed chat.
  * Encapsulates all common bot patterns and helpers.
+ *
+ * @example
+ * ```typescript
+ * async function run(ctx: IChatContext) {
+ *   await ctx.SendText("Hello");
+ * }
+ * ```
  */
 export interface IChatContext {
   /**
@@ -779,10 +802,18 @@ export interface IChatContext {
 }
 
 /**
+ * # Context Clone Parameters via Message
+ *
  * Parameters for creating a new, retargeted `IChatContext` from an existing message.
  *
  * This method is ideal for forking a context because the `initialMsg` object
  * provides a reliable "anchor" with all the necessary metadata to establish the new chat.
+ *
+ * @example
+ * ```typescript
+ * const params: IChatContext_CloneTargetedTo_FromWhatsmsg_Params = { initialMsg: msg };
+ * const newCtx = ctx.CloneButTargetedToWithInitialMsg(params);
+ * ```
  */
 export type IChatContext_CloneTargetedTo_FromWhatsmsg_Params = {
   /**

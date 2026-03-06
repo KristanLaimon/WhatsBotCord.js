@@ -4,6 +4,16 @@ import { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType, d
 import OfficialPlugin_OneCommandPerUserAtAtime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 import { isDev } from "./Envs.js";
 
+/**
+ * # Main Playground Entry
+ *
+ * Entry point for development and manual testing of the library capabilities.
+ *
+ * @example
+ * ```bash
+ * bun run src/index.main.ts
+ * ```
+ */
 class PingCommand implements ICommand {
   public name: string = "ping";
   async run(chat: ChatContext, _: AdditionalAPI, __: CommandArgs): Promise<void> {

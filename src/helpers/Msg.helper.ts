@@ -5,32 +5,24 @@ import type { FoundQuotedMsg } from "../core/bot/internals/CommandsSearcher.type
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 
 /**
+ * # Extract Full Message Text
+ *
  * Extracts the textual content from a raw WhatsApp message.
  *
  * This function inspects a `WAMessage` object and returns the main text associated with it.
- * It supports multiple message types, including:
- * - Simple text messages (`conversation`)
- * - Extended text messages (`extendedTextMessage.text`)
- * - Image messages with captions (`imageMessage.caption`)
- * - Video messages with captions (`videoMessage.caption`)
- *
+ * It supports multiple message types, including simple text, extended text, and media captions.
  * If the message has no text content, it returns `null`.
  *
  * @param rawMsg - The raw message object received from Baileys.
  * @returns The text content of the message, or `null` if none is found.
  *
  * @example
- * const text = MsgHelper_GetTextFrom(rawMsg);
+ * ```typescript
+ * const text = MsgHelper_FullMsg_GetText(rawMsg);
  * if (text) {
  *   console.log("Message text:", text);
  * }
- *
- * @example
- * // Handling cases where no text exists
- * const text = MsgHelper_GetTextFrom(imageOnlyMsg);
- * if (!text) {
- *   console.log("This message has no text content.");
- * }
+ * ```
  */
 export function MsgHelper_FullMsg_GetText(rawMsg: WAMessage): string | null {
   if (!rawMsg.message) return null;
@@ -44,9 +36,18 @@ export function MsgHelper_FullMsg_GetText(rawMsg: WAMessage): string | null {
 }
 
 /**
- * Extracts the text from a quoted message if includes one inside a WAMesage
- * @param rawMsg
- * @returns
+ * # Extract Quoted Message Text
+ *
+ * Extracts the text from a quoted message if it includes one inside a WAMessage.
+ *
+ * @param rawMsg - The raw message containing the quote.
+ * @returns The extracted quoted text or `null` if it doesn't exist.
+ *
+ * @example
+ * ```typescript
+ * const quotedText = MsgHelper_FullMsg_GetQuotedMsgText(rawMsg);
+ * console.log(quotedText);
+ * ```
  */
 export function MsgHelper_FullMsg_GetQuotedMsgText(rawMsg: WhatsappMessage): string | null {
   if (
@@ -61,6 +62,22 @@ export function MsgHelper_FullMsg_GetQuotedMsgText(rawMsg: WhatsappMessage): str
   return text;
 }
 
+/**
+ * # Extract Text From Quoted Message Object
+ *
+ * Extracts text content directly from a quoted message prototype object.
+ *
+ * @param quotedMsgOnly - The proto message object representing the quote.
+ * @returns The text representation of the quoted message.
+ *
+ * @example
+ * ```typescript
+ * const quotedProto = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
+ * if (quotedProto) {
+ *   const text = MsgHelper_QuotedMsg_GetText(quotedProto);
+ * }
+ * ```
+ */
 export function MsgHelper_QuotedMsg_GetText(quotedMsgOnly: proto.IMessage): string | null {
   return quotedMsgOnly.extendedTextMessage?.text ?? null;
 }
@@ -69,10 +86,39 @@ export function MsgHelper_QuotedMsg_GetText(quotedMsgOnly: proto.IMessage): stri
 //   return !!rawMsg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 // }
 
+/**
+ * # Get Quoted Message Object
+ *
+ * Safely extracts the quoted message prototype object from a full WhatsApp message.
+ *
+ * @param rawMsg - The raw WhatsApp message that might contain a quote.
+ * @returns The quoted message protocol object or `null` if not found.
+ *
+ * @example
+ * ```typescript
+ * const quotedProto = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
+ * ```
+ */
 export function MsgHelper_FullMsg_GetQuotedMsg(rawMsg: WAMessage): proto.IMessage | null {
   return rawMsg.message?.extendedTextMessage?.contextInfo?.quotedMessage ?? null;
 }
 
+/**
+ * # Extract Quoted Message Information
+ *
+ * Returns both the quoted message object itself and its determined message type.
+ *
+ * @param rawMsg - The full WhatsApp message object.
+ * @returns An object containing the quoted message and its type, or `null`.
+ *
+ * @example
+ * ```typescript
+ * const info = MsgHelper_ExtractQuotedMsgInfo(rawMsg);
+ * if (info) {
+ *   console.log("Quoted message type:", info.type);
+ * }
+ * ```
+ */
 export function MsgHelper_ExtractQuotedMsgInfo(rawMsg: WAMessage): FoundQuotedMsg | null {
   const existsQuotedMsg: proto.IMessage | null = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
   let quotedMsgAsArgument: FoundQuotedMsg | null = null;
@@ -87,20 +133,23 @@ export function MsgHelper_ExtractQuotedMsgInfo(rawMsg: WAMessage): FoundQuotedMs
 }
 
 /**
+ * # Get Message Type
+ *
  * Determines the type of a WhatsApp message from a raw Baileys `WAMessage` object.
  *
  * This function inspects the `message` field of the raw message and returns
- * a `MsgType` representing its type, such as `"text"`, `"image"`, `"audio"`, etc.
- * If the message object is empty or unrecognized, it returns `MsgType.Unknown`.
+ * a `MsgType` representing its type. If empty or unrecognized, returns `MsgType.Unknown`.
  *
  * @param rawMsg - The raw message object received from Baileys.
  * @returns The detected message type (`MsgType` enum).
  *
  * @example
- * const msgType = MsgHelper_GetMsgTypeFromRawMsg(rawMsg);
+ * ```typescript
+ * const msgType = MsgHelper_FullMsg_GetMsgType(rawMsg);
  * if (msgType === MsgType.Text) {
- *   console.log("Received a text message!");
+ *   console.log("Received a text message.");
  * }
+ * ```
  */
 export function MsgHelper_FullMsg_GetMsgType(rawMsg: WhatsappMessage): MsgType {
   if (!rawMsg.message) return MsgType.Unknown;
@@ -108,6 +157,22 @@ export function MsgHelper_FullMsg_GetMsgType(rawMsg: WhatsappMessage): MsgType {
   return MsgHelper_ProtoMsg_GetMsgType(objMsg);
 }
 
+/**
+ * # Get Sender Type
+ *
+ * Detects whether the sender chat of the message is a group or an individual.
+ *
+ * @param rawMsg - The received WhatsApp message object.
+ * @returns A `SenderType` indicating if it comes from a Group or Individual.
+ *
+ * @example
+ * ```typescript
+ * const senderType = MsgHelper_FullMsg_GetSenderType(rawMsg);
+ * if (senderType === SenderType.Group) {
+ *   console.log("Message is from a group chat.");
+ * }
+ * ```
+ */
 export function MsgHelper_FullMsg_GetSenderType(rawMsg: WhatsappMessage): SenderType {
   const chatId: string = rawMsg.key.remoteJid || rawMsg.key.remoteJidAlt!;
   let senderType: SenderType = SenderType.Unknown;
@@ -118,10 +183,17 @@ export function MsgHelper_FullMsg_GetSenderType(rawMsg: WhatsappMessage): Sender
 }
 
 /**
- * Gets the type of the message from the raw message object. (Private function inside this file)
- * @param generic It's a IMessage type object but can't be imported from baileys library for some reason...
- * @returns The type of the message as MsgType enum
- * @private
+ * # Parse Prototype Message Type
+ *
+ * Gets the type of the message from the pure protocol message object.
+ *
+ * @param generic - The `IMessage` object from Baileys representing message content.
+ * @returns The determined type of the message as a `MsgType` enum.
+ *
+ * @example
+ * ```typescript
+ * const msgType = MsgHelper_ProtoMsg_GetMsgType(rawMsg.message);
+ * ```
  */
 export function MsgHelper_ProtoMsg_GetMsgType(generic: proto.IMessage): MsgType {
   if (generic.imageMessage) return MsgType.Image;

@@ -1,6 +1,6 @@
 import { describe, expect, mock as fn, spyOn, test } from "bun:test";
 import type { IChatContext } from "../..";
-import { type WhatsappMessage, MsgHelpers } from "../..";
+import { type WhatsappMessage, Helpers } from "../..";
 import { skipLongTests } from "../../Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
@@ -313,7 +313,7 @@ test("Running_WhenReceivingCommandFromQuotedMsg_FROMGROUP_ShouldRecognizeQuotedM
 
       expect(args.quotedMsgInfo?.type).toBe(MsgType.Text);
       // expect(args.quotedMsgInfo?.userIdItComesFrom).toBe("111222333444555@lid");
-      const txt = MsgHelpers.QuotedMsg_GetText(args.quotedMsgInfo!.msg);
+      const txt = Helpers.Msg.QuotedMsg_GetText(args.quotedMsgInfo!.msg);
       expect(txt).toBe("!ping");
       console.log(args.quotedMsgInfo?.msg.extendedTextMessage?.text ?? "___");
     },
@@ -333,7 +333,7 @@ test("Running_WhenReceivingCommandFromQuotedMsg_FROMINDIVIDUAL_ShouldRecognizeQu
 
       expect(args.quotedMsgInfo?.type).toBe(MsgType.Text);
       // expect(args.quotedMsgInfo?.userIdItComesFrom).toBe(MockQuotedMsg_Individual_CHATID);
-      const txt = MsgHelpers.QuotedMsg_GetText(args.quotedMsgInfo!.msg);
+      const txt = Helpers.Msg.QuotedMsg_GetText(args.quotedMsgInfo!.msg);
       expect(txt).toBe("!ping");
       console.log(args.quotedMsgInfo?.msg.extendedTextMessage?.text ?? "___");
     },

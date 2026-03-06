@@ -3,10 +3,27 @@ import type { MsgType, SenderType } from "../../../Msg.types.js";
 import type { BotMinimalInfo } from "../bot.js";
 
 /**
+ * # Command Arguments
+ *
  * Arguments provided to a bot command when it is executed.
  *
  * Contains both metadata about the incoming message and
  * pre-parsed arguments extracted from the message text.
+ *
+ * @example
+ * ```typescript
+ * const args: CommandArgs = {
+ *   originalRawMsg: msg,
+ *   chatId: "123",
+ *   senderType: SenderType.Individual,
+ *   msgType: MsgType.Text,
+ *   args: ["help"],
+ *   quotedMsgInfo: null,
+ *   botInfo: {},
+ *   participantIdLID: null,
+ *   participantIdPN: "123"
+ * };
+ * ```
  */
 export type CommandArgs = {
   /**
@@ -75,7 +92,14 @@ export type CommandArgs = {
 };
 
 /**
+ * # Found Quoted Message
+ *
  * Represents a quoted (replied-to) message.
+ *
+ * @example
+ * ```typescript
+ * const quoted: FoundQuotedMsg = { msg: quotedRawMsg, type: MsgType.Text };
+ * ```
  */
 export type FoundQuotedMsg = {
   /**

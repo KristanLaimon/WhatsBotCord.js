@@ -22,6 +22,8 @@ const emojiRegex = emojiRegexFabric();
 const emojiSplitter = new GraphemeSplitter();
 
 /**
+ * # Sugar Sender Submodule
+ *
  * A utility class for sending various types of WhatsApp messages with simplified APIs.
  * This class acts as a wrapper around the core WhatsApp socket functionality,
  * providing methods to send text, images, videos, audio, stickers, documents,
@@ -33,6 +35,12 @@ const emojiSplitter = new GraphemeSplitter();
  * - Media-related methods validate file existence and MIME types before sending.
  * - The class leverages Baileys' `MiscMessageGenerationOptions` for additional
  *   message customization.
+ *
+ * @example
+ * ```typescript
+ * const sender = new WhatsSocket_Submodule_SugarSender(socket);
+ * await sender.Text("123@s.whatsapp.net", "Hello World!");
+ * ```
  */
 export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule_SugarSender {
   /** Strong dependency, needs to be inejcted from constructor */
@@ -53,7 +61,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         "SugarSender.Text() received a non string text or an empty string to send, check that. Received instead: " + JSON.stringify(text, null, 2)
       );
     }
-    text = options?.normalizeMessageText ?? true ? Str_NormalizeLiteralString(text) : text;
+    text = (options?.normalizeMessageText ?? true) ? Str_NormalizeLiteralString(text) : text;
     //_getSendingMethod() returns a functions, it seems cursed I know, get used to it
     return await this._getSendingMethod(options)(chatId, { text, mentions: options?.mentionsIds }, options as MiscMessageGenerationOptions);
   }

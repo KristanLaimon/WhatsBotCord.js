@@ -26,6 +26,16 @@ import type { IWhatsSocket } from "./IWhatsSocket.js";
 import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types.js";
 import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock.js";
 
+/**
+ * # WhatsApp Socket Options
+ *
+ * Configuration options for the WhatsApp Socket behavior.
+ *
+ * @example
+ * ```typescript
+ * const options: WhatsSocketOptions = { loggerMode: "silent", maxReconnectionRetries: 3 };
+ * ```
+ */
 export type WhatsSocketOptions = {
   /**
    * Determines the logging level of the WhatsSocket instance.
@@ -86,11 +96,14 @@ export type WhatsSocketOptions = {
 };
 
 /**
+ * # WhatsApp Socket Core
+ *
  * Class used to interact with the WhatsApp Web socket client (baileys).
  * Will start the socket and keep it connected until you call the Shutdown method.
  * Provides some events you can subscribe to, to get notified when different things happen.
  *
  * @example
+ * ```typescript
  * const socket = new WhatsSocket({
  *    credentialsFolder: "./auth",
  *    loggerMode: "silent",
@@ -98,15 +111,16 @@ export type WhatsSocketOptions = {
  *    ignoreSelfMessage: true
  * });
  *
- * socket.onIncomingMessage.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
- *    console.log(`Msg: ${msgType} | SenderId: ${senderId} | ChatId: ${chatId} | Type: ${msgType} | SenderType: ${senderType}`);
+ * socket.onIncomingMsg.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
+ *    console.log(`Msg: ${msgType} | SenderId: ${senderId}`);
  * });
  *
  * socket.Start().then(() => {
  *    console.log("WhatsSocket initialized successfully!");
  * }).catch((error) => {
  *    console.error("Error initializing WhatsSocket:", error);
- * })
+ * });
+ * ```
  */
 export default class WhatsSocket implements IWhatsSocket {
   //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events

@@ -4,6 +4,16 @@ import type { MsgType, SenderType } from "../../Msg.types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./internals/IWhatsSocket.sugarsender.js";
 
+/**
+ * # WhatsApp Socket Sending Module
+ *
+ * Internal interface defining the core sending capabilities.
+ *
+ * @example
+ * ```typescript
+ * const sender: IWhatsSocket_SendingMsgsOnly_Module = socket;
+ * ```
+ */
 interface IWhatsSocket_SendingMsgsOnly_Module {
   /**
    * Send a message to a specific chat ID with content and optionally with other options.
@@ -41,11 +51,21 @@ interface IWhatsSocket_SendingMsgsOnly_Module {
   _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
 }
 
+/**
+ * # Minimum Socket Service
+ *
+ * @example
+ * ```typescript
+ * const minSender: IMsgServiceSocketMinimum = socket;
+ * ```
+ */
 export interface IMsgServiceSocketMinimum extends IWhatsSocket_SendingMsgsOnly_Module {
   //Only Send*() related functions
 }
 
 /**
+ * # WhatsApp Socket Events Module
+ *
  * Event-only module of the WhatsSocket.
  *
  * Provides delegates (C#-like event emitters) for subscribing to lifecycle,
@@ -65,6 +85,11 @@ export interface IMsgServiceSocketMinimum extends IWhatsSocket_SendingMsgsOnly_M
  *
  * // Later...
  * socket.onGroupEnter.Unsubscribe(handler);
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const events: IWhatsSocket_EventsOnly_Module = socket;
  * ```
  */
 export interface IWhatsSocket_EventsOnly_Module {
@@ -168,6 +193,8 @@ export interface IWhatsSocket_EventsOnly_Module {
 }
 
 /**
+ * # WhatsApp Socket Main Interface
+ *
  * Public interface for the WhatsSocket class.
  *
  * Defines the contract for interacting with the WhatsApp socket client.
@@ -176,6 +203,12 @@ export interface IWhatsSocket_EventsOnly_Module {
  * - Provides modules for sending messages and receiving events.
  * - Manages connection lifecycle (start, shutdown).
  * - Exposes utility methods for chat and group operations.
+ *
+ * @example
+ * ```typescript
+ * const socket: IWhatsSocket = new WhatsSocket(options);
+ * await socket.Start();
+ * ```
  */
 export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhatsSocket_EventsOnly_Module {
   /**

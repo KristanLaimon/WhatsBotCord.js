@@ -1,8 +1,18 @@
 /**
+ * # Autobind Decorator
+ *
  * Method decorator that ensures the decorated function is always invoked
  * with its original class instance as `this`.
  *
  * Throws an error if applied to anything other than an instance method.
+ *
+ * @example
+ * ```typescript
+ * class MyClass {
+ *   @autobind
+ *   myMethod() { console.log(this); }
+ * }
+ * ```
  */
 export function autobind(target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   const originalMethod = descriptor.value;

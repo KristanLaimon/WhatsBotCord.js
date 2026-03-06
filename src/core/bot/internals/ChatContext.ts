@@ -26,6 +26,16 @@ import type {
   IChatContext_WaitYesOrNoAnswer_Params,
 } from "./IChatContext.js";
 
+/**
+ * # Chat Context Configuration
+ *
+ * Extra configuration properties for the Chat Context initializing.
+ *
+ * @example
+ * ```typescript
+ * const config: IChatContextConfig = { timeoutSeconds: 30 };
+ * ```
+ */
 export type IChatContextConfig = WhatsSocketReceiverWaitOptions & {
   /**
    * Used primarly in mocking system
@@ -50,12 +60,19 @@ export type IChatContextConfig = WhatsSocketReceiverWaitOptions & {
 };
 
 /**
+ * # Chat Context
+ *
  * A sugar-layer abstraction for sending/receiving msgs bound to the actual chat.
  *
  * This class simplifies sending messages and reactions to a fixed chat
  * without needing to repeatedly provide the chat ID. It also provides
- * helpers for common bot patterns like reacting with ✅ or ❌ to the
+ * helpers for common bot patterns like reacting with checkmarks or crosses to the
  * initial message and other common high-level utilities.
+ *
+ * @example
+ * ```typescript
+ * await ctx.SendText("Hello");
+ * ```
  */
 export class ChatContext implements IChatContext {
   /**

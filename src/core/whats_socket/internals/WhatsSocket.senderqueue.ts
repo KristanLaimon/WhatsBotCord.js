@@ -3,6 +3,21 @@ import Delegate from "../../../libs/Delegate.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
 
+/**
+ * # Socket Message Queue Item
+ *
+ * Represents an item in the sending queue.
+ *
+ * @example
+ * ```typescript
+ * const item: SocketMsgQueueItem = {
+ *   chatId: "123",
+ *   content: { text: "hello" },
+ *   resolve: () => {},
+ *   reject: () => {}
+ * };
+ * ```
+ */
 type SocketMsgQueueItem = {
   chatId: string;
   content: AnyMessageContent;
@@ -23,9 +38,16 @@ function Clone_MsgQueueItem(msgItem: SocketMsgQueueItem) {
 }
 
 /**
+ * # Sender Queue Submodule
+ *
  * A subclass code of 'WhatsSocket' class that manages a queue of messages to be sent.
  * Helps to prevent overwhelming the WhatsApp socket with too many messages at once incoming from
  * multiple users or a funny user trying to spam the bot.
+ *
+ * @example
+ * ```typescript
+ * const queue = new WhatsSocketSenderQueue_SubModule(socket, 10, 500);
+ * ```
  */
 export default class WhatsSocketSenderQueue_SubModule {
   public onSentMessageInsideQueue: Delegate<(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions) => void> = new Delegate();

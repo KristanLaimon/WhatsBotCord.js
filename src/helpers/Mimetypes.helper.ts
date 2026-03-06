@@ -25,6 +25,16 @@ import path from "node:path";
  */
 const isPath_regex = /^(?:(?:\/|[a-zA-Z]:\\|\\)(?:[\w-]+[\\/])*[\w-]+(?:\.[\w]+)?|(?:\.\/|\.\.\/)(?:[\w-]+[\\/])*[\w-]+(?:\.[\w]+)?)$/;
 
+/**
+ * # Default Mimetype
+ *
+ * The default mimetype used when no match is found.
+ *
+ * @example
+ * ```typescript
+ * const type = DEFAULT_MIMETYPE; // "application/octet-stream"
+ * ```
+ */
 export const DEFAULT_MIMETYPE = "application/octet-stream";
 
 /**
@@ -49,6 +59,8 @@ function _extractExtensionFrom_Path_Or_FileExtension(filePathOrExtensionOnly: st
 }
 
 /**
+ * # Is Image
+ *
  * Determines whether the given file path or extension refers to an **image**.
  *
  * @param filePathOrExtension - A string with either:
@@ -56,6 +68,11 @@ function _extractExtensionFrom_Path_Or_FileExtension(filePathOrExtensionOnly: st
  *  - A path (relative or absolute, e.g. `./pic.png`)
  *
  * @returns `true` if the file is an image type (`image/*`), otherwise `false`.
+ *
+ * @example
+ * ```typescript
+ * const isImage = MimeTypeHelper_IsImage("file.png"); // true
+ * ```
  */
 export function MimeTypeHelper_IsImage(filePathOrExtension: string): boolean {
   if (!filePathOrExtension || filePathOrExtension.trim() === "") return false;
@@ -64,6 +81,8 @@ export function MimeTypeHelper_IsImage(filePathOrExtension: string): boolean {
 }
 
 /**
+ * # Is Video
+ *
  * Determines whether the given file path or extension refers to a **video**.
  *
  * @param filePathOrExtension - A string with either:
@@ -71,6 +90,11 @@ export function MimeTypeHelper_IsImage(filePathOrExtension: string): boolean {
  *  - A path (relative or absolute, e.g. `/movies/video.avi`)
  *
  * @returns `true` if the file is a video type (`video/*`), otherwise `false`.
+ *
+ * @example
+ * ```typescript
+ * const isVideo = MimeTypeHelper_IsVideo("file.mp4"); // true
+ * ```
  */
 export function MimeTypeHelper_IsVideo(filePathOrExtension: string): boolean {
   if (!filePathOrExtension || filePathOrExtension.trim() === "") return false;
@@ -79,6 +103,8 @@ export function MimeTypeHelper_IsVideo(filePathOrExtension: string): boolean {
 }
 
 /**
+ * # Is Audio
+ *
  * Determines whether the given file path or extension refers to an **audio**.
  *
  * @param filePathOrExtension - A string with either:
@@ -86,6 +112,11 @@ export function MimeTypeHelper_IsVideo(filePathOrExtension: string): boolean {
  *  - A path (relative or absolute, e.g. `./audio/song.mp3`)
  *
  * @returns `true` if the file is an audio type (`audio/*`), otherwise `false`.
+ *
+ * @example
+ * ```typescript
+ * const isAudio = MimeTypeHelper_IsAudio("file.mp3"); // true
+ * ```
  */
 export function MimeTypeHelper_IsAudio(filePathOrExtension: string): boolean {
   if (!filePathOrExtension || filePathOrExtension.trim() === "") return false;
@@ -94,6 +125,8 @@ export function MimeTypeHelper_IsAudio(filePathOrExtension: string): boolean {
 }
 
 /**
+ * # Get Mimetype Of
+ *
  * Retrieves the MIME type of a file or buffer with a given extension.
  *
  * Supports two overloads:
@@ -105,10 +138,16 @@ export function MimeTypeHelper_IsAudio(filePathOrExtension: string): boolean {
  *
  * Returns the determined MIME type as a string. If the MIME type cannot be
  * determined, it returns `"application/octet-stream"`.
- * @param params
+ *
+ * @param params Object containing either string source, or source Buffer + extension type string.
  * @returns The complete mimetype if found, otherwise, fallbacks to default "application/octet-stream"
  *
  * @note This is already being tested on WhatsSocket.sugarsenders.test.ts!, doesn't need a standaole suite test
+ *
+ * @example
+ * ```typescript
+ * const type = MimeTypeHelper_GetMimeTypeOf({ source: "file.png" }); // "image/png"
+ * ```
  */
 export function MimeTypeHelper_GetMimeTypeOf(params: { source: string } | { source: Buffer; extensionType: string }): string {
   //1. First overload

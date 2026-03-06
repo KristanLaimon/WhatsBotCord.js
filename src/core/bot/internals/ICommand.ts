@@ -5,11 +5,22 @@ import type { CommandArgs } from "./CommandsSearcher.types.js";
 import type { IChatContext } from "./IChatContext.js";
 
 /**
+ * # Command Interface
+ *
  * Represents a bot command.
  *
  * Each command has a unique `name`, optional aliases, a description,
  * and a `run` method which contains the logic to execute when the command
  * is invoked.
+ *
+ * @example
+ * ```typescript
+ * const ping: ICommand = {
+ *   name: "ping",
+ *   aliases: ["p"],
+ *   run: async (ctx, api, args) => { await ctx.SendText("Pong!"); }
+ * };
+ * ```
  */
 export interface ICommand {
   /** Unique name of the command (used to trigger it) */
@@ -37,6 +48,8 @@ export interface ICommand {
 }
 
 /**
+ * # Additional API
+ *
  * Low-level utilities and direct socket access.
  *
  * Exposes internal submodules and helpers that extend beyond what
@@ -51,6 +64,13 @@ export interface ICommand {
  * 🚫 For most command implementations, prefer using `ChatContext`
  * (the higher-level abstraction). Only fall back to `AdditionalAPI`
  * when you need cross-chat operations, raw access, or bot-wide state control.
+ *
+ * @example
+ * ```typescript
+ * async function run(ctx: IChatContext, api: AdditionalAPI) {
+ *    const metadata = await api.InternalSocket.GetRawGroupMetadata("123@g.us");
+ * }
+ * ```
  */
 export type AdditionalAPI = {
   /**

@@ -67,7 +67,7 @@ export type {
 import { ChatContext } from "./core/bot/internals/ChatContext.js";
 import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
 import OfficialPlugin_OneCommandPerUserAtATime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
-import { WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
+import { WhatsSocketReceiverHelper_isReceiverError, WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
 import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
 import CreateCommand from "./helpers/CommandForJs.helper.js";
@@ -93,10 +93,16 @@ export {
 // === Helpers ===
 export const Helpers = {
   /**
-   * Collection of helper functions for working with WhatsApp messages.
+   * # External Message Helpers
    *
+   * Collection of helper functions for working with WhatsApp messages.
    * Provides convenience methods to extract text or determine message types
-   * from raw WhatsappMessages
+   * from raw WhatsappMessages.
+   *
+   * @example
+   * ```typescript
+   * const text = Helpers.Msg.FullMsg_GetText(rawMsg);
+   * ```
    */
   Msg: {
     FullMsg_GetQuotedMsgText: MsgHelper_FullMsg_GetQuotedMsgText,
@@ -109,10 +115,16 @@ export const Helpers = {
   },
 
   /**
-   * Collection of helper functions for working with WhatsApp IDs and mentions.
+   * # External WhatsApp Identifiers Helpers
    *
+   * Collection of helper functions for working with WhatsApp IDs and mentions.
    * Provides utilities to extract sender information, identify mentions,
    * and verify WhatsApp ID formats.
+   *
+   * @example
+   * ```typescript
+   * const isPN = Helpers.Whatsapp.IsPNId("123@s.whatsapp.net");
+   * ```
    */
   Whatsapp: {
     GetWhatsInfoFromSenderMsg: WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg,
@@ -123,9 +135,15 @@ export const Helpers = {
     IsPNId: WhatsappHelper_isFullWhatsappIdUser,
 
     /**
-     * Object containing all common patterns identifers from whatsapp API and
-     * Whatsapp messages.
-     * For example: "@s.whatsapp.net"
+     * # Identifiers Postfixes
+     *
+     * Object containing all common patterns identifiers from WhatsApp API and
+     * WhatsApp messages. Keep this for reference in your logic.
+     *
+     * @example
+     * ```typescript
+     * const isGroup = id.endsWith(Helpers.Whatsapp.IdentifiersPostfixes.Group_Suffix_ID);
+     * ```
      */
     IdentifiersPostfixes: {
       /**
@@ -150,11 +168,20 @@ export const Helpers = {
   },
 
   /**
-   * Useful collection of functions for debugging whatsapp related stuff. (Optional use)
+   * # Debugging Utilities
+   *
+   * Useful collection of functions for debugging WhatsApp behavior locally.
+   *
+   * @example
+   * ```typescript
+   * Helpers.Debugging.StoreMsgInHistoryJson(rawMsg);
+   * ```
    */
   Debugging: {
     StoreMsgInHistoryJson: Debug_StoreWhatsMsgHistoryInJson,
   },
+
+  ChatContext_IsWaitError: WhatsSocketReceiverHelper_isReceiverError,
 };
 
 // === Main Default Export ===

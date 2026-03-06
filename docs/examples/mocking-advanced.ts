@@ -1,6 +1,6 @@
 import { describe, it } from "bun:test";
 import type { AdditionalAPI, CommandArgs, IChatContext, ICommand, WhatsappMessage } from "../../src/index.js";
-import { ChatMock, MsgHelpers, MsgType, SenderType } from "../../src/index.js";
+import { ChatMock, Helpers, MsgType, SenderType } from "../../src/index.js";
 
 // Example command implementation
 class MyCommand implements ICommand {
@@ -23,7 +23,7 @@ class MyCommand implements ICommand {
     const response: WhatsappMessage | null = await ctx.WaitMsg(MsgType.Text);
 
     if (response) {
-      const language = MsgHelpers.FullMsg_GetText(response);
+      const language = Helpers.Msg.FullMsg_GetText(response);
       if (language) await ctx.SendText(`Oh, your favorite language is: ${language}`);
     } else {
       await ctx.SendText("You didn't respond in 3 seconds.");

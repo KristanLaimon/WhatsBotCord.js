@@ -1,5 +1,13 @@
 import type { MiscMessageGenerationOptions, WAMessage } from "baileys";
 
+/**
+ * # Minimum Sending Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgSenderSendingOptionsMINIMUM = { sendRawWithoutEnqueue: false };
+ * ```
+ */
 export type WhatsMsgSenderSendingOptionsMINIMUM = {
   /**
    * If true, bypasses the safe anti-spam queue system and sends the message
@@ -32,6 +40,14 @@ export type WhatsMsgSenderSendingOptionsMINIMUM = {
   mentionsIds?: string[];
 } & MiscMessageGenerationOptions;
 
+/**
+ * # Complete Sending Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgSenderSendingOptions = { normalizeMessageText: true };
+ * ```
+ */
 export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM & {
   /**
    * If true, applies text normalization before sending the message.
@@ -48,6 +64,14 @@ export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM &
   normalizeMessageText?: boolean;
 } & MiscMessageGenerationOptions;
 
+/**
+ * # Media With Caption Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgMediaWithCaption = { caption: "Look at this!" };
+ * ```
+ */
 export type WhatsMsgMediaWithCaption = {
   /**
    * Optional text to include along with the image.
@@ -58,6 +82,14 @@ export type WhatsMsgMediaWithCaption = {
   caption?: string;
 };
 
+/**
+ * # Media String Source
+ *
+ * @example
+ * ```typescript
+ * const source: WhatsMsgMediaStringSource = { source: "./image.png" };
+ * ```
+ */
 export type WhatsMsgMediaStringSource = {
   /**
    * Path to the source file to send.
@@ -70,6 +102,14 @@ export type WhatsMsgMediaStringSource = {
   source: string;
 };
 
+/**
+ * # Media Buffer Source
+ *
+ * @example
+ * ```typescript
+ * const source: WhatsMsgMediaBufferSource = { source: Buffer.from([]), formatExtension: "png" };
+ * ```
+ */
 export type WhatsMsgMediaBufferSource = {
   /**
    * Path to the source file to send.
@@ -92,20 +132,60 @@ export type WhatsMsgMediaBufferSource = {
   formatExtension: string;
 };
 
+/**
+ * # Media Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgMediaOptions = { source: "./video.mp4" };
+ * ```
+ */
 export type WhatsMsgMediaOptions = WhatsMsgMediaWithCaption & (WhatsMsgMediaStringSource | WhatsMsgMediaBufferSource);
 
+/**
+ * # Audio Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgAudioOptions = { source: "./audio.mp3" };
+ * ```
+ */
 export type WhatsMsgAudioOptions = WhatsMsgMediaStringSource | WhatsMsgMediaBufferSource;
 
+/**
+ * # Document Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgDocumentOptions = { source: "./doc.pdf", fileNameToDisplay: "report.pdf" };
+ * ```
+ */
 export type WhatsMsgDocumentOptions =
   | (WhatsMsgMediaStringSource & { fileNameToDisplay?: string })
   | (WhatsMsgMediaBufferSource & { fileNameWithoutExtension: string });
 
+/**
+ * # Poll Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgPollOptions = { withMultiSelect: false };
+ * ```
+ */
 export type WhatsMsgPollOptions = {
   withMultiSelect: boolean;
   normalizeTitleText?: boolean;
   normalizeOptionsText?: boolean;
 };
 
+/**
+ * # Ubication Options
+ *
+ * @example
+ * ```typescript
+ * const opts: WhatsMsgUbicationOptions = { degreesLatitude: 40.71, degreesLongitude: -74.00 };
+ * ```
+ */
 export type WhatsMsgUbicationOptions = {
   degreesLatitude: number;
   degreesLongitude: number;
@@ -113,6 +193,14 @@ export type WhatsMsgUbicationOptions = {
   addressText?: string;
 };
 
+/**
+ * # Sugar Sender Submodule Interface
+ *
+ * @example
+ * ```typescript
+ * const sender: IWhatsSocket_Submodule_SugarSender = socket.Send;
+ * ```
+ */
 export interface IWhatsSocket_Submodule_SugarSender {
   /**
    * Sends a text message to the specified chat.

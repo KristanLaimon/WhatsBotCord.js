@@ -2,6 +2,16 @@ import type { MsgType } from "../../../Msg.types.js";
 import type { WhatsappMessage } from "../types.js";
 import type { GroupMetadataInfo, WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver.js";
 
+/**
+ * # Receiver Submodule Interface
+ *
+ * Defines the contract for the receiver submodule.
+ *
+ * @example
+ * ```typescript
+ * const receiver: IWhatsSocket_Submodule_Receiver = socket.Receive;
+ * ```
+ */
 export interface IWhatsSocket_Submodule_Receiver {
   /**
    * Waits for the next message from a specific user in a group chat.

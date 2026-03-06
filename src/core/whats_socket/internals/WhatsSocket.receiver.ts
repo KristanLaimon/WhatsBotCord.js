@@ -26,7 +26,14 @@ type SuccessConditionCallback = (
 ) => boolean;
 
 /**
- * Options used to configure the WaitNextMsg behavior.
+ * # Wait Options
+ *
+ * Options used to configure the wait message behavior in Receiver module.
+ *
+ * @example
+ * ```typescript
+ * const waitOpts: WhatsSocketReceiverWaitOptions = { timeoutSeconds: 10, cancelKeywords: ["stop"], ignoreSelfMessages: true };
+ * ```
  */
 export type WhatsSocketReceiverWaitOptions = {
   /** Maximum time (in seconds) to wait for a valid message before rejecting. */
@@ -45,7 +52,20 @@ export type WhatsSocketReceiverWaitOptions = {
 };
 
 /**
- * Represents an error that occurs during message reception.
+ * # Receiver Error
+ *
+ * Represents an error that occurs during message reception waiting.
+ *
+ * @example
+ * ```typescript
+ * const err: WhatsSocketReceiverError = {
+ *   errorMessage: WhatsSocketReceiverMsgError.Timeout,
+ *   wasAbortedByUser: false,
+ *   chatId: "123",
+ *   participantId_LID: null,
+ *   participantId_PN: null
+ * };
+ * ```
  */
 export type WhatsSocketReceiverError = {
   /** Human-readable error message. */
@@ -69,18 +89,37 @@ export type WhatsSocketReceiverError = {
   chatId: string;
 };
 
+/**
+ * # Receiver Error Reason
+ *
+ * Enumeration mapping the reason for the receiver failure.
+ *
+ * @example
+ * ```typescript
+ * const reason = WhatsSocketReceiverMsgError.Timeout;
+ * ```
+ */
 export enum WhatsSocketReceiverMsgError {
   Timeout = "User didn't responded in time",
   UserCanceledWaiting = "User has canceled the dialog",
 }
 
 /**
- * Checks if an object is a `WhatsMsgReceiverError`, this error comes from ChatContext if using "Wait" methods,
+ * # Is Receiver Error
+ *
+ * Checks if an object is a `WhatsSocketReceiverError`. This error comes from ChatContext if using "Wait" methods,
  * or directly from WhatsMsgReceiver Submodule.
  *
  * @param anything The thing to check.
- * @returns Whether `anything` is a `WhatsMsgReceiverError`.
+ * @returns Whether `anything` is a `WhatsSocketReceiverError`.
  * @category Internal
+ *
+ * @example
+ * ```typescript
+ * if(WhatsSocketReceiverHelper_isReceiverError(error)) {
+ *   console.log(error.errorMessage);
+ * }
+ * ```
  */
 export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): anything is WhatsSocketReceiverError {
   return (
@@ -95,7 +134,14 @@ export function WhatsSocketReceiverHelper_isReceiverError(anything: unknown): an
 }
 
 /**
+ * # Receiver Submodule
+ *
  * Submodule responsible for listening and waiting for messages through a WhatsSocket instance.
+ *
+ * @example
+ * ```typescript
+ * const receiver = new WhatsSocket_Submodule_Receiver(socket);
+ * ```
  */
 export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Receiver {
   private _whatsSocket: IWhatsSocket;
@@ -307,7 +353,14 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
 }
 
 /**
+ * # Participant Information
+ *
  * Represents a participant in a WhatsApp group.
+ *
+ * @example
+ * ```typescript
+ * const pInfo: ParticipantInfo = { isAdmin: true, rawId: "123" };
+ * ```
  */
 export type ParticipantInfo = {
   /** Whether this participant is an admin */
@@ -315,7 +368,14 @@ export type ParticipantInfo = {
 } & WhatsappIDInfo;
 
 /**
+ * # Group Metadata
+ *
  * Represents all relevant metadata for a WhatsApp group chat.
+ *
+ * @example
+ * ```typescript
+ * // const metadata: GroupMetadataInfo = await receiver.FetchGroupData("123@g.us");
+ * ```
  */
 export type GroupMetadataInfo = {
   /** Group ID */
