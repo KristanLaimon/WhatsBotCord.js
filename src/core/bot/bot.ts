@@ -327,6 +327,38 @@ export default class Bot implements BotMinimalInfo {
   public Settings: WhatsBotOptions;
 
   /**
+   * Gets the primary command prefix configured for the bot.
+   *
+   * If multiple prefixes are configured (e.g., `["!", "/"]`), this method
+   * returns the first one in the array. If no prefix is explicitly configured,
+   * it returns the default `"!"`.
+   *
+   * This is an utility Get Function to avoid unnecesary logic in your code
+   * due to the nature of `this.Settings.commandPrefix` type  "string | string[] | undefined"
+   * (Triple validation? ugh, use this method instead!)
+   *
+   * @returns {string} The primary command prefix.
+   */
+  public get Settings_GetCommandPrefix(): string {
+    const defaultPrefix: string = "!";
+
+    if (typeof this.Settings.commandPrefix === "undefined") {
+      return defaultPrefix;
+    }
+
+    if (typeof this.Settings.commandPrefix === "string") {
+      return this.Settings.commandPrefix;
+    }
+
+    //Is "array" then...
+    if (this.Settings.commandPrefix.length > 0) {
+      return this.Settings.commandPrefix.at(0)!;
+    } else {
+      return defaultPrefix;
+    }
+  }
+
+  /**
    * Direct access to the underlying send messaging module.
    *
    * ⚠️ Normally you should not use this directly.
@@ -517,20 +549,33 @@ export default class Bot implements BotMinimalInfo {
    * @param usePluginOrMiddleware - The middleware function or plugin object to register.
    *
    * @example
+   * // ----- Using `WhatsbotcordMiddlewareFunct` param -----
+   *
    * // Middleware for logging all incoming messages
-   * bot.Use(async (bot, senderId, chatId, rawMsg, msgType, senderType, next) => {
-   * console.log(`New message in chat ${chatId}`);
-   * await next(); // Continue to the next middleware
+   * bot.Use(async (bot, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType, next) => {
+   *     console.log(`New message in chat ${chatId}`);
+   *     await next(); // Continue to the next middleware
    * });
    *
    * @example
    * // Middleware to block a specific user
-   * bot.Use((bot, senderId, chatId, rawMsg, msgType, senderType, next) => {
-   * if (senderId === "user-to-block@s.whatsapp.net") {
-   * return; // Stop the chain by not calling next()
+   * bot.Use((bot, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType, next) => {
+   *     if (senderId_PN === "user-to-block@s.whatsapp.net") {
+   *     return; // Stop the chain by not calling next()
    * }
    * next();
    * });
+   *
+   * // ---- Using `WhatsbotcordPlugin` param -----
+   * @example
+   * // Plugin that registers multiple commands
+   * const myPlugin: WhatsbotcordPlugin = {
+   *   plugin: (bot) => {
+   *     bot.Commands.Register("ping", async (ctx) => ctx.Reply("pong"));
+   *     bot.Commands.Register("help", async (ctx) => ctx.Reply("Here is some help!"));
+   *   }
+   * };
+   * bot.Use(myPlugin);
    */
   @autobind
   public Use(usePluginOrMiddleware: WhatsbotcordMiddlewareFunct | WhatsbotcordPlugin): void {
@@ -558,9 +603,9 @@ export default class Bot implements BotMinimalInfo {
    *
    * @example
    * // Middleware to allow a command only for admins
-   * bot.Use_OnCommandFound(async (bot, senderId, chatId, rawMsg, msgType, senderType, commandFound, next) => {
+   * bot.Use_OnCommandFound(async (bot, senderId_LID, senderId_PN, chatId, rawMsg, msgType, senderType, commandFound, next) => {
    * const admins = ["admin1@s.whatsapp.net", "admin2@s.whatsapp.net"];
-   * if (commandFound.name === "ban" && !admins.includes(senderId)) {
+   * if (commandFound.name === "ban" && (!senderId_PN || !admins.includes(senderId_PN))) {
    * // User is not an admin, block the command
    * await bot.SendMsg.Text(chatId, "You don't have permission to use that command.");
    * return;
