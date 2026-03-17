@@ -64,6 +64,7 @@ export type {
 };
 
 // == Runtime deps exporting ==
+import Bot from "./core/bot/bot.js";
 import { ChatContext } from "./core/bot/internals/ChatContext.js";
 import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
 import OfficialPlugin_OneCommandPerUserAtATime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
@@ -86,6 +87,7 @@ export {
   OfficialPlugin_OneCommandPerUserAtATime,
   SenderType,
   WhatsappIdType,
+  Bot as Whatsbotcord,
   WhatsSocket,
   WhatsSocketReceiverMsgError,
 };

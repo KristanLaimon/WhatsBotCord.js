@@ -24,7 +24,7 @@ import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueu
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "./IWhatsSocket.js";
 import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types.js";
-import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.baileys.mock.js";
+import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.types.js";
 
 /**
  * # WhatsApp Socket Options

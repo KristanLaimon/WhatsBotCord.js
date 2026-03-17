@@ -2,17 +2,28 @@
   "name": "whatsbotcord",
   "version": "0.26.0",
   "author": "KristanLaimon",
-  "main": "build/index.js",
   "type": "module",
-  "types": "build/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "license": "MIT",
   "files": [
-    "build",
+    "dist",
     "README.md",
     "LICENSE"
   ],
   "exports": {
-    ".": {}
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "repository": {
     "type": "git",
@@ -27,36 +38,18 @@
     "commands",
     "command"
   ],
-  "devDependencies": {
-    "@eslint/js": "9.34.0",
-    "@eslint/json": "0.13.2",
-    "@eslint/markdown": "7.2.0",
-    "@release-it/conventional-changelog": "10.0.1",
-    "@socketsecurity/bun-security-scanner": "1.1.2",
-    "@types/bun": "1.2.20",
-    "@types/mime-types": "3.0.1",
-    "cross-env": "10.0.0",
-    "eslint": "9.34.0",
-    "globals": "16.3.0",
-    "jiti": "2.5.1",
-    "release-it": "19.0.5",
-    "tsdown": "0.20.3",
-    "typescript-eslint": "8.42.0"
-  },
   "scripts": {
-    "check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint",
-    "fullcheck": "bun check && bun lint",
+    "fullcheck": "bun typecheck && bun lint",
     "fastest": "cross-env whatsbotcord_SKIP_LONG_TESTS=true bun test",
     "fulltest": "cross-env whatsbotcord_SKIP_LONG_TESTS=false bun test",
-    "buildonly": "bun ./scripts/clean_build.js && tsc --project tsconfig.build.json",
+    "buildonly": "tsdown",
+    "build_watch": "tsdown --watch",
     "build": "bun fullcheck && bun fulltest && bun run buildonly",
-    "release": "release-it",
+    "release": "bumpp",
     "prerelease_upgrade": "npm version prerelease --preid=beta",
     "try": "bun ./src/index.main.ts"
-  },
-  "peerDependencies": {
-    "typescript": "5.9.2"
   },
   "dependencies": {
     "baileys": "7.0.0-rc.9",
@@ -70,6 +63,25 @@
     "pino": "9.9.0",
     "qr": "0.5.0",
     "sharp": "0.34.3"
+  },
+  "peerDependencies": {
+    "typescript": "5.9.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.34.0",
+    "@eslint/json": "0.13.2",
+    "@eslint/markdown": "7.2.0",
+    "@release-it/conventional-changelog": "10.0.1",
+    "@socketsecurity/bun-security-scanner": "1.1.2",
+    "@types/bun": "1.2.20",
+    "@types/mime-types": "3.0.1",
+    "bumpp": "^11.0.1",
+    "cross-env": "10.0.0",
+    "eslint": "9.34.0",
+    "globals": "16.3.0",
+    "jiti": "2.5.1",
+    "tsdown": "^0.21.4",
+    "typescript-eslint": "8.42.0"
   },
   "trustedDependencies": [
     "baileys",
