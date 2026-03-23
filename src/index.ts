@@ -18,7 +18,7 @@ import {
 } from "./helpers/Whatsapp.helper.js";
 
 // === Types deps exporting ===
-import type { WhatsbotcordMiddlewareFunct, WhatsbotcordMiddlewareFunct_OnFoundCommand } from "./core/bot/bot.js";
+import type { WhatsbotcordMiddlewareFunct, WhatsbotcordMiddlewareFunct_OnFoundCommand, WhatsbotcordPlugin } from "./core/bot/bot.js";
 import type { IChatContextConfig } from "./core/bot/internals/ChatContext.js";
 import type { CommandEntry } from "./core/bot/internals/CommandsSearcher.js";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
@@ -67,6 +67,7 @@ export type {
   WhatsappIDInfo,
   WhatsappMessage,
   WhatsbotcordMiddlewareFunct,
+  WhatsbotcordPlugin,
   WhatsSocketReceiverError,
 };
 
