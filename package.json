@@ -1,6 +1,6 @@
 {
   "name": "whatsbotcord",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "KristanLaimon",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -41,7 +41,7 @@
     "buildonly": "tsdown",
     "build_watch": "tsdown --watch",
     "build": "bun fullcheck && bun fulltest && bun run buildonly",
-    "release": "bun run build && bumpp && npm publish --tag=beta",
+    "release": "bun run build && bumpp && npm publish",
     "try": "bun ./src/index.main.ts"
   },
   "dependencies": {
