@@ -24,8 +24,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
+    "types": ["bun"],
     "ignoreDeprecations": "6.0"
   }
 }
