@@ -15,7 +15,6 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": false,
-    "moduleResolution": "node",
     "esModuleInterop": true,
     "experimentalDecorators": true,
     //== Opinionated Options ==
@@ -25,8 +24,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
-    "ignoreDeprecations": "6.0",
-    "baseUrl": "."
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
   }
 }
 // Bundler mode
