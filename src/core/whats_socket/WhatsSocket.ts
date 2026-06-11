@@ -21,7 +21,6 @@ import type {
   WhatsappPollVote,
   WhatsSocketLoggerMode,
 } from "./types.js";
-import { WhatsSocketVendorFactory_CreateDefault } from "./vendors/DefaultWhatsSocketVendor.js";
 
 /**
  * # WhatsApp Socket Options
@@ -30,7 +29,7 @@ import { WhatsSocketVendorFactory_CreateDefault } from "./vendors/DefaultWhatsSo
  *
  * @example
  * ```typescript
- * const options: WhatsSocketOptions = { loggerMode: "silent", maxReconnectionRetries: 3 };
+ * const options: WhatsSocketOptions = { loggerMode: "silent", maxReconnectionRetries: 3, ownWhatsSocketVendorFactory_Internal: vendorFactory };
  * ```
  */
 export type WhatsSocketOptions = {
@@ -84,11 +83,10 @@ export type WhatsSocketOptions = {
   delayMilisecondsBetweenMsgs?: number;
 
   /**
-   * Optionally provide a custom vendor factory.
-   * By default, the built-in Baileys implementation is used.
+   * Vendor factory used to create the internal WhatsApp socket client.
+   * `WhatsSocket` does not create a default vendor by itself; callers must provide one.
    */
-  ownWhatsSocketVendorFactory_Internal?: IWhatsSocketVendorFactory;
-
+  ownWhatsSocketVendorFactory_Internal: IWhatsSocketVendorFactory;
 };
 
 /**
@@ -104,7 +102,8 @@ export type WhatsSocketOptions = {
  *    credentialsFolder: "./auth",
  *    loggerMode: "silent",
  *    maxReconnectionRetries: 5,
- *    ignoreSelfMessage: true
+ *    ignoreSelfMessage: true,
+ *    ownWhatsSocketVendorFactory_Internal: vendorFactory
  * });
  *
  * socket.onIncomingMsg.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
@@ -158,21 +157,19 @@ export default class WhatsSocket implements IWhatsSocket {
 
   // === Configuration Properties ===
   private _loggerMode: WhatsSocketLoggerMode;
-  private _credentialsFolder: string;
   private _ignoreSelfMessages: boolean;
   private _maxReconnectionRetries: number;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
-  private _customSocketVendorFactory?: IWhatsSocketVendorFactory;
+  private _socketVendorFactory: IWhatsSocketVendorFactory;
 
-  constructor(options?: WhatsSocketOptions) {
-    this._loggerMode = options?.loggerMode ?? "silent";
-    this._credentialsFolder = options?.credentialsFolder ?? "./auth";
-    this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
-    this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
-    this._milisecondsDelayBetweenSentMsgs = options?.delayMilisecondsBetweenMsgs ?? 100;
-    this._customSocketVendorFactory = options?.ownWhatsSocketVendorFactory_Internal;
-    this._maxReconnectionRetries = options?.maxReconnectionRetries ?? 5;
+  constructor(options: WhatsSocketOptions) {
+    this._loggerMode = options.loggerMode ?? "silent";
+    this._ignoreSelfMessages = options.ignoreSelfMessage ?? true;
+    this._senderQueueMaxLimit = options.senderQueueMaxLimit ?? 20;
+    this._milisecondsDelayBetweenSentMsgs = options.delayMilisecondsBetweenMsgs ?? 100;
+    this._socketVendorFactory = options.ownWhatsSocketVendorFactory_Internal;
+    this._maxReconnectionRetries = options.maxReconnectionRetries ?? 5;
   }
   private _isRestarting: boolean = false;
 
@@ -221,13 +218,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private async InitializeInternalSocket() {
-    const vendorFactory =
-      this._customSocketVendorFactory ??
-      WhatsSocketVendorFactory_CreateDefault({
-        credentialsFolder: this._credentialsFolder,
-        loggerMode: this._loggerMode,
-      });
-    this.Socket = await vendorFactory.Create();
+    this.Socket = await this._socketVendorFactory.Create();
 
     //== Initializing internal sub-modules ==
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);

@@ -8,6 +8,7 @@ import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
+import { BaileysWhatsSocketVendorFactory } from "../whats_socket/vendors/baileys/BaileysWhatsSocketVendor.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import type { IWhatsSocketVendorFactory, WhatsappMessage } from "../whats_socket/types.js";
 import { type IChatContextConfig, ChatContext } from "./internals/ChatContext.js";
@@ -514,11 +515,17 @@ export default class Bot implements BotMinimalInfo {
     }
 
     this._commandSearcher = new CommandsSearcher();
+    const socketVendorFactory =
+      vendorFactory ??
+      new BaileysWhatsSocketVendorFactory({
+        credentialsFolder: this.Settings.credentialsFolder ?? "./auth",
+        loggerMode: this.Settings.loggerMode ?? "recommended",
+      });
     this.InternalSocket =
       this.Settings.ownWhatsSocketImplementation_Internal ??
       new WhatsSocket({
         ...this.Settings,
-        ownWhatsSocketVendorFactory_Internal: vendorFactory,
+        ownWhatsSocketVendorFactory_Internal: socketVendorFactory,
       });
     this.InternalSocket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
   }
