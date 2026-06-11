@@ -21,6 +21,8 @@ import {
   WhatsSocketReceiverMsgError,
 } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocketVendorFactory } from "../whats_socket/types.js";
+import { BaileysSocketServiceAdapter_Mock } from "../whats_socket/WhatsSocket.baileys.mock.js";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock.js";
 import Bot, { type WhatsbotcordMiddlewareFunct } from "./bot.js";
 import type { ChatContext } from "./internals/ChatContext.js";
@@ -90,6 +92,18 @@ test("Creation_WhenInstatiatingWithoutBotParams_ShouldSetAllConfig_NotUndefinedC
   for (const prop of Object.values(bot.Settings)) {
     expect(prop).toBeDefined();
   }
+});
+
+test("Creation_WhenProvidingVendorFactoryAsSecondParam_ShouldUseFactoryClient", async () => {
+  const vendorClient = new BaileysSocketServiceAdapter_Mock();
+  const vendorFactory: IWhatsSocketVendorFactory = {
+    Create: async () => vendorClient,
+  };
+
+  const bot = new Bot({ delayMilisecondsBetweenMsgs: 1 }, vendorFactory);
+  await bot.Start();
+
+  expect((bot.InternalSocket as any).Socket).toMatchObject(vendorClient);
 });
 
 // ========================== COMMANDS ============================

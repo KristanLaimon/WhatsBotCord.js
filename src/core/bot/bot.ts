@@ -9,7 +9,7 @@ import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/interna
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
-import type { WhatsappMessage } from "../whats_socket/types.js";
+import type { IWhatsSocketVendorFactory, WhatsappMessage } from "../whats_socket/types.js";
 import { type IChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import Myself_Submodule_Status from "./internals/ChatContext.myself.status.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
@@ -50,7 +50,7 @@ export type BotMinimalInfo = {
   Commands: WhatsBotCommands;
 };
 
-export type WhatsBotOptions = WhatsSocketOptions &
+export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownWhatsSocketVendorFactory_Internal"> &
   Omit<Partial<IChatContextConfig>, "ignoreSelfMessages"> & {
     /**
      * Character(s) used to tag the bot in messages.
@@ -430,10 +430,10 @@ export default class Bot implements BotMinimalInfo {
    * Creates a new `Bot` instance with customizable behavior.
    *
    * The constructor accepts a `WhatsBotOptions` object that allows overriding
-   * runtime settings such as logging, message delays, command handling, and
-   * socket implementation.
+   * runtime settings such as logging, message delays, and command handling.
    *
    * @param options - Optional configuration for customizing bot behavior.
+   * @param vendorFactory - Optional WhatsApp socket vendor factory. Defaults to the built-in Baileys vendor.
    *
    * Default values:
    * - `credentialsFolder`: `"./auth"`
@@ -487,6 +487,10 @@ export default class Bot implements BotMinimalInfo {
    *   Enables a safeguard layer around command execution, preventing
    *   crashes or unintended side effects from propagating.
    *
+   * - `vendorFactory`: `undefined`
+   *   Optional second constructor parameter for replacing the WhatsApp socket
+   *   vendor. If omitted, the built-in Baileys vendor is used.
+   *
    * @remarks
    * - All defaults are applied when their corresponding `options` field
    *   is `undefined` or invalid.
@@ -494,7 +498,7 @@ export default class Bot implements BotMinimalInfo {
    * - For production bots, consider raising `delayMilisecondsBetweenMsgs`
    *   slightly to avoid WhatsApp anti-spam systems.
    */
-  constructor(options?: WhatsBotOptions /** HERE The Vendor (Optional, by default, Baileys.js) */) {
+  constructor(options?: WhatsBotOptions, vendorFactory?: IWhatsSocketVendorFactory) {
     this.Settings = BotUtils_GenerateOptions(options);
 
     //# Validations:
@@ -510,7 +514,12 @@ export default class Bot implements BotMinimalInfo {
     }
 
     this._commandSearcher = new CommandsSearcher();
-    this.InternalSocket = this.Settings.ownWhatsSocketImplementation_Internal ?? new WhatsSocket(this.Settings);
+    this.InternalSocket =
+      this.Settings.ownWhatsSocketImplementation_Internal ??
+      new WhatsSocket({
+        ...this.Settings,
+        ownWhatsSocketVendorFactory_Internal: vendorFactory,
+      });
     this.InternalSocket.onIncomingMsg.Subscribe(this.EVENT_OnMessageIncoming);
   }
 
@@ -806,7 +815,6 @@ export function BotUtils_GenerateOptions(options?: Partial<WhatsBotOptions>): Wh
     timeoutSeconds: options?.timeoutSeconds ?? 30,
     wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
     ownWhatsSocketImplementation_Internal: options?.ownWhatsSocketImplementation_Internal,
-    ownWhatsSocketVendorFactory_Internal: options?.ownWhatsSocketVendorFactory_Internal,
     enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
     defaultEmojiToSendReactionOnFailureCommand: options?.defaultEmojiToSendReactionOnFailureCommand ?? null,
     sendErrorToChatOnFailureCommand_debug: options?.sendErrorToChatOnFailureCommand_debug ?? false,
