@@ -8,9 +8,9 @@ import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
-import { BaileysWhatsSocketVendorFactory } from "../whats_socket/vendors/baileys/BaileysWhatsSocketVendor.js";
-import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import type { IWhatsSocketVendorFactory, WhatsappMessage } from "../whats_socket/types.js";
+import { BaileysAdapter } from "../whats_socket/vendors/baileys/BaileysWhatsSocketVendor.js";
+import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import { type IChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import Myself_Submodule_Status from "./internals/ChatContext.myself.status.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
@@ -517,7 +517,7 @@ export default class Bot implements BotMinimalInfo {
     this._commandSearcher = new CommandsSearcher();
     const socketVendorFactory =
       vendorFactory ??
-      new BaileysWhatsSocketVendorFactory({
+      new BaileysAdapter({
         credentialsFolder: this.Settings.credentialsFolder ?? "./auth",
         loggerMode: this.Settings.loggerMode ?? "recommended",
       });

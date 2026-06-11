@@ -36,7 +36,7 @@ export type BaileysWhatsSocketVendorOptions = {
   ownRawBaileysSocket?: BaileysWASocket;
 };
 
-export class BaileysWhatsSocketVendorFactory implements IWhatsSocketVendorFactory {
+export class BaileysAdapter implements IWhatsSocketVendorFactory {
   private readonly _options: BaileysWhatsSocketVendorOptions;
 
   constructor(options: BaileysWhatsSocketVendorOptions) {
