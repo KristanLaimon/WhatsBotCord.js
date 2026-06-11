@@ -1,5 +1,5 @@
-import { type WAMessage, type proto } from "baileys";
 import type { MsgType, SenderType } from "../../../Msg.types.js";
+import type { WhatsappMessage, WhatsappProtocolMessage } from "../../whats_socket/types.js";
 import type { BotMinimalInfo } from "../bot.js";
 
 /**
@@ -27,10 +27,10 @@ import type { BotMinimalInfo } from "../bot.js";
  */
 export type CommandArgs = {
   /**
-   * The raw WhatsApp message object from Baileys.
+   * The raw WhatsApp message object from the configured vendor.
    * Gives full access to low-level details of the incoming message.
    */
-  originalRawMsg: WAMessage;
+  originalRawMsg: WhatsappMessage;
 
   /**
    * Partipant ID new @LID whatsapp version. (Modern, used on newer groups)
@@ -103,9 +103,9 @@ export type CommandArgs = {
  */
 export type FoundQuotedMsg = {
   /**
-   * The raw quoted WhatsApp message object from Baileys.
+   * The raw quoted WhatsApp message object from the configured vendor.
    */
-  msg: proto.IMessage;
+  msg: WhatsappProtocolMessage;
 
   /**
    * The type of the quoted message (text, image, audio, etc.).

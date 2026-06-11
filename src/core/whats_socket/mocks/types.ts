@@ -1,7 +1,7 @@
-import type { AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
+import type { WhatsappMessageContent, WhatsappMessageOptions } from "../types.js";
 
 export type WhatsSocketMockMsgSent = {
   chatId: string;
-  content: AnyMessageContent;
-  miscOptions?: MiscMessageGenerationOptions;
+  content: WhatsappMessageContent;
+  miscOptions?: WhatsappMessageOptions;
 };

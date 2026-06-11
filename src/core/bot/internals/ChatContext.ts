@@ -1,4 +1,3 @@
-import { downloadMediaMessage } from "baileys";
 import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../../../Msg.types.js";
@@ -506,7 +505,7 @@ export class ChatContext implements IChatContext {
   ): Promise<Buffer | null> {
     const found: WhatsappMessage | null = await this.WaitMsg(msgTypeToWaitFor, localOptions);
     if (!found) return null;
-    const buffer = await downloadMediaMessage(found, "buffer", {});
+    const buffer = await this._internalReceive.DownloadMediaMessage(found);
     return buffer;
   }
 

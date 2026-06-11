@@ -39,7 +39,6 @@ function _createBaseMsg(chatId: string, participantId: string | null | undefined
       recipientTimestamp: "1155394318",
     },
     deviceListMetadataVersion: 2,
-    //@ts-expect-error This is string, but ts thinks is other type for some reason
     messageSecret: "j+pPQKnytgjeJuMsvrly26TrQQjTFgDauhu2Gy9XsUM=",
   };
 }

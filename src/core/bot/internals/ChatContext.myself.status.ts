@@ -1,8 +1,7 @@
-import type { MiscMessageGenerationOptions } from "baileys";
 import type { IWhatsSocket } from "../../whats_socket/IWhatsSocket.js";
-import type { WhatsappMessage } from "../../whats_socket/types.js";
+import type { WhatsappMessage, WhatsappMessageOptions } from "../../whats_socket/types.js";
 
-type MyselfStatusTextParams = Omit<Omit<MiscMessageGenerationOptions, "statusJidList">, "broadcast">;
+type MyselfStatusTextParams = Omit<Omit<WhatsappMessageOptions, "statusJidList">, "broadcast">;
 
 /**
  * Submodule responsible for sending status updates ("stories")
@@ -62,7 +61,7 @@ export default class Myself_Submodule_Status {
    * ```
    */
   public async UploadText(txtToSendToStatus: string, whatsappIdsToShowStatus: string[], options?: MyselfStatusTextParams): Promise<WhatsappMessage | null> {
-    let optionsTosend: MiscMessageGenerationOptions;
+    let optionsTosend: WhatsappMessageOptions;
     if (options) {
       optionsTosend = { ...options, statusJidList: whatsappIdsToShowStatus, broadcast: true };
     } else {

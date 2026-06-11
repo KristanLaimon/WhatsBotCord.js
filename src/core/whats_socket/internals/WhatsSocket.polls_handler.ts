@@ -1,9 +1,7 @@
-import type { proto } from "baileys";
-import { getAggregateVotesInPollMessage } from "baileys";
 import Delegate from "../../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
-import type { WhatsappMessage } from "../types.js";
+import type { WhatsappMessage, WhatsappPollUpdateMessage, WhatsappProtocolMessage } from "../types.js";
 
 type WhatsPollResult = {
   Option: string;
@@ -29,7 +27,7 @@ export default class WhatsPoll implements IWhatsPoll {
   public isListeningForUpdates: boolean = true;
   private _borrowedSocket: IWhatsSocket;
   private _pollInfo: WhatsPollParamsInfo;
-  private _pollUpdates: proto.Message.IPollUpdateMessage[] = [];
+  private _pollUpdates: WhatsappPollUpdateMessage[] = [];
 
   constructor(borrowedSocket: IWhatsSocket, pollInfo: WhatsPollParamsInfo) {
     this._borrowedSocket = borrowedSocket;
@@ -55,14 +53,7 @@ export default class WhatsPoll implements IWhatsPoll {
         return [];
       }
 
-      const pollVotes = await getAggregateVotesInPollMessage(
-        {
-          message: this._pollInfo.pollRawMsg.message,
-          //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
-          pollUpdates: this._pollUpdates,
-        },
-        this._borrowedSocket.ownJID
-      );
+      const pollVotes = await this._borrowedSocket.GetPollVotes(this._pollInfo.pollRawMsg, this._pollUpdates);
 
       return pollVotes.map((vote) => ({
         Option: vote.name,
@@ -112,26 +103,12 @@ export default class WhatsPoll implements IWhatsPoll {
 
   private async _thisPollUpdate(pollMsg: WhatsappMessage): Promise<void> {
     try {
-      const pollVotes = await getAggregateVotesInPollMessage(
-        {
-          message: this._pollInfo.pollRawMsg.message,
-          //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
-          pollUpdates: this._pollUpdates,
-        },
-        this._borrowedSocket.ownJID
-      );
+      const pollVotes = await this._borrowedSocket.GetPollVotes(this._pollInfo.pollRawMsg, this._pollUpdates);
 
       // Find the new updates
       const previousVotes =
         this._pollUpdates.length > 1
-          ? await getAggregateVotesInPollMessage(
-              {
-                message: this._pollInfo.pollRawMsg.message,
-                //@ts-expect-error It's neccesary, due to bugg "baileys library" type system with this. Its not documented anyway, so, I do what I can
-                pollUpdates: this._pollUpdates.slice(0, -1),
-              },
-              this._borrowedSocket.ownJID
-            )
+          ? await this._borrowedSocket.GetPollVotes(this._pollInfo.pollRawMsg, this._pollUpdates.slice(0, -1))
           : [];
 
       for (const vote of pollVotes) {
@@ -153,7 +130,7 @@ export default class WhatsPoll implements IWhatsPoll {
   }
 
   // New private method to handle different poll message formats
-  private _normalizePollMessage(msg: proto.IMessage | undefined | null): proto.IMessage | undefined | null {
+  private _normalizePollMessage(msg: WhatsappProtocolMessage | undefined | null): WhatsappProtocolMessage | undefined | null {
     if (!msg) return msg;
 
     if (msg.pollCreationMessageV3) {
@@ -167,7 +144,7 @@ export default class WhatsPoll implements IWhatsPoll {
           })),
         },
         pollCreationMessageV3: undefined, // Clear the V3 field to avoid conflicts
-      } as proto.IMessage;
+      } as WhatsappProtocolMessage;
     }
 
     return msg;

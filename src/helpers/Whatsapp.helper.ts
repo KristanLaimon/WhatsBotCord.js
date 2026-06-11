@@ -1,5 +1,5 @@
-import type { WAMessage } from "baileys";
 import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
+import type { WhatsappMessage } from "../core/whats_socket/types.js";
 
 /**
  * # WhatsApp ID Type
@@ -75,11 +75,11 @@ export type WhatsappIDInfo = {
  * console.log("Sender Mention string:", phoneInfo.asMentionFormatted);
  * ```
  */
-export function WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(rawMsg: WAMessage): WhatsappIDInfo {
+export function WhatsappHelper_ExtractWhatsappInfoInfoFromSenderRawMsg(rawMsg: WhatsappMessage): WhatsappIDInfo {
   //Let's check if comes from private msg or group
   const id: string | null = rawMsg.key.participant || rawMsg.key.remoteJid || null;
   if (!id) {
-    throw Error("This shouldn't happen, baileys library never gives both participant and remoteJid as undefined, only one of them");
+    throw Error("This shouldn't happen, WhatsApp vendors should never provide both participant and remoteJid as undefined");
   }
   return WhatsappHelper_ExtractFromWhatsappID(id);
 }

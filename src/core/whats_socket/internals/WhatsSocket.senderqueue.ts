@@ -1,7 +1,6 @@
-import type { AnyMessageContent, MiscMessageGenerationOptions } from "baileys";
 import Delegate from "../../../libs/Delegate.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
-import type { WhatsappMessage } from "../types.js";
+import type { WhatsappMessage, WhatsappMessageContent, WhatsappMessageOptions } from "../types.js";
 
 /**
  * # Socket Message Queue Item
@@ -20,8 +19,8 @@ import type { WhatsappMessage } from "../types.js";
  */
 type SocketMsgQueueItem = {
   chatId: string;
-  content: AnyMessageContent;
-  misc?: MiscMessageGenerationOptions;
+  content: WhatsappMessageContent;
+  misc?: WhatsappMessageOptions;
   resolve: (result: any) => void;
   reject: (reason: any) => void;
 };
@@ -50,7 +49,7 @@ function Clone_MsgQueueItem(msgItem: SocketMsgQueueItem) {
  * ```
  */
 export default class WhatsSocketSenderQueue_SubModule {
-  public onSentMessageInsideQueue: Delegate<(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions) => void> = new Delegate();
+  public onSentMessageInsideQueue: Delegate<(chatId: string, content: WhatsappMessageContent, misc?: WhatsappMessageOptions) => void> = new Delegate();
   /**
    * A getter that returns a deep copy of all elements currently in the queue as an array.
    * This is useful for debugging and logging purposes.
@@ -83,7 +82,7 @@ export default class WhatsSocketSenderQueue_SubModule {
    * @param content The content of the message.
    * @param misc Miscellaneous options.
    */
-  public Enqueue(chatId: string, content: AnyMessageContent, misc?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
+  public Enqueue(chatId: string, content: WhatsappMessageContent, misc?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
     return new Promise((resolve, reject) => {
       if (this.queue.length >= this.maxQueueLimit) {
         console.log(`WhatsSocketSenderQueue: Queue limit of ${this.maxQueueLimit} reached. Ignoring extra img...`);

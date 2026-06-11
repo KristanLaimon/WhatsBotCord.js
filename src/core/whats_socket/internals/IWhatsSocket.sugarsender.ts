@@ -1,4 +1,4 @@
-import type { MiscMessageGenerationOptions, WAMessage } from "baileys";
+import type { WhatsappMessage, WhatsappMessageOptions } from "../types.js";
 
 /**
  * # Minimum Sending Options
@@ -38,7 +38,7 @@ export type WhatsMsgSenderSendingOptionsMINIMUM = {
    * Default: undefined (no users mentioned)
    */
   mentionsIds?: string[];
-} & MiscMessageGenerationOptions;
+} & WhatsappMessageOptions;
 
 /**
  * # Complete Sending Options
@@ -62,7 +62,7 @@ export type WhatsMsgSenderSendingOptions = WhatsMsgSenderSendingOptionsMINIMUM &
    * Default: true (message text is normalized by default)
    */
   normalizeMessageText?: boolean;
-} & MiscMessageGenerationOptions;
+} & WhatsappMessageOptions;
 
 /**
  * # Media With Caption Options
@@ -212,7 +212,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    * @param mentionsIds - Array of IDs of users to mention in the message. The 'text' must contain '@' characters in the same order as this array.
    * @returns The msg sent, null if it couldn't be send.
    */
-  Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null>;
+  Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null>;
 
   /**
    * Sends an image message to a specific chat.
@@ -225,7 +225,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   - `mentionsIds`: List of WhatsApp IDs to tag (`@user`) in the caption.
    *   - `sendRawWithoutEnqueue`: If true, bypasses the safe queue system
    *      and sends immediately.
-   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *   - Any other Baileys `Record<string, any>`.
    *
    * Behavior:
    * - Reads the image file from `imagePath` into memory and attaches it.
@@ -244,7 +244,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    * });
    * ```
    */
-  Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null>;
+  Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a reaction emoji to a specific message in a chat.
@@ -254,13 +254,13 @@ export interface IWhatsSocket_Submodule_SugarSender {
    * @param options - Additional sending options:
    *   - `normalizeMessageText`: If true, normalizes the emoji reaction
    *      (trims spaces, cleans up multi-line text).
-   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *   - Any other Baileys `Record<string, any>`.
    *
    * Behavior:
    * - If the emoji string is not a single emoji character, throws an error.
    * - If the emoji reaction is valid, sends it to the target chat.
    */
-  ReactEmojiToMsg(chatId: string, rawMsgToReactTo: WAMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null>;
+  ReactEmojiToMsg(chatId: string, rawMsgToReactTo: WhatsappMessage, emojiStr: string, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a sticker message to a specific chat.
@@ -278,7 +278,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   - `string`: A public URL pointing to the sticker file. Note: WhatsApp encrypted `.enc` URLs **will not work** unless downloaded and decrypted first.
    * @param options - Optional sending options:
    *   - `sendRawWithoutEnqueue`: If true, bypasses the safe queue system and sends immediately.
-   *   - Any other Baileys `MiscMessageGenerationOptions` like `quoted`, `contextInfo`, etc.
+   *   - Any other Baileys `Record<string, any>` like `quoted`, `contextInfo`, etc.
    *
    * @example
    * // Send a local WebP sticker
@@ -288,7 +288,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    * // Send a public URL sticker (must be directly accessible)
    * await bot.Sticker(chatId, 'https://example.com/sticker.webp');
    */
-  Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null>;
+  Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null>;
 
   /**
    * Sends an **audio message** to the specified chat.
@@ -308,7 +308,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    * @param options - Additional sending options:
    *   - `sendRawWithoutEnqueue?` → If true, bypasses the safe queue system and sends immediately.
    *   - `mentionsIds?` → JIDs of users to mention in the message.
-   *   - Any other Baileys `MiscMessageGenerationOptions` like `quoted`, `contextInfo`, etc.
+   *   - Any other Baileys `Record<string, any>` like `quoted`, `contextInfo`, etc.
    *
    * @throws
    * - If a string path is provided but the file does not exist.
@@ -326,7 +326,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    * const buffer = fs.readFileSync("./downloads/sample.ogg");
    * await bot.Audio(chatId, { source: buffer, formatExtension: "ogg" });
    */
-  Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null>;
+  Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a video message to a specific chat.
@@ -352,7 +352,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   - `normalizeMessageText`: Normalize caption text (default: true).
    *   - `mentionsIds`: Users to mention in the caption.
    *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
-   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *   - Any other Baileys `Record<string, any>`.
    *
    * @example
    * // Send a local MP4 with caption
@@ -362,7 +362,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    * // Send a raw Buffer without queuing
    * await bot.Video(chatId, { sourcePath: fs.readFileSync("./clip.mov") }, { sendRawWithoutEnqueue: true });
    */
-  Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null>;
+  Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a document (any file type) to the specified WhatsApp chat.
@@ -385,7 +385,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   - `displayNameFile`: The name shown in WhatsApp for the document.
    *   - `fileExtension`: File extension (e.g. `"pdf"`, `"zip"`) to assist MIME detection.
    * @param options - Additional message-sending options (e.g. sender overrides).
-   * @returns A `WAMessage` if successfully sent, otherwise `null`.
+   * @returns A `WhatsappMessage` if successfully sent, otherwise `null`.
    *
    * @throws If the file path does not exist, or if `source` is neither a string nor a Buffer.
    *
@@ -406,7 +406,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   fileExtension: "zip"
    * });
    */
-  Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null>;
+  Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a poll message to a specific chat.
@@ -431,7 +431,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   - `normalizeOptionsText`: Normalize each option string.
    * @param moreOptions - Additional sending options:
    *   - `sendRawWithoutEnqueue`: Send immediately, bypass queue.
-   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *   - Any other Baileys `Record<string, any>`.
    * @returns Poll autoself-updating obj with the poll actualvotes, in case the poll couldn't be send, will return null instead.
    *
    * @example
@@ -453,7 +453,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
     selections: string[],
     pollParams: WhatsMsgPollOptions,
     moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
-  ): Promise<WAMessage | null>;
+  ): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a location (geographic coordinates) message to a specific chat.
@@ -473,9 +473,9 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   - `addressText` (optional): Human-readable address string.
    * @param options - Additional sending options:
    *   - `sendRawWithoutEnqueue`: Send immediately, bypassing the queue.
-   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *   - Any other Baileys `Record<string, any>`.
    *
-   * @returns A `WAMessage` object representing the sent location,
+   * @returns A `WhatsappMessage` object representing the sent location,
    *          or `null` if the message could not be sent.
    *
    * @example
@@ -494,7 +494,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   addressText: "NY, USA"
    * }, { sendRawWithoutEnqueue: true });
    */
-  Location(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null>;
+  Location(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a contact card (vCard) to a specific chat.
@@ -518,7 +518,7 @@ export interface IWhatsSocket_Submodule_SugarSender {
    *   - `phone`: Phone number in international format (no `+` required).
    * @param options - Additional sending options:
    *   - `sendRawWithoutEnqueue`: Send immediately, bypass queue.
-   *   - Any other Baileys `MiscMessageGenerationOptions`.
+   *   - Any other Baileys `Record<string, any>`.
    *
    * @example
    * // Send one contact
@@ -538,5 +538,5 @@ export interface IWhatsSocket_Submodule_SugarSender {
     chatId: string,
     contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
-  ): Promise<WAMessage | null>;
+  ): Promise<WhatsappMessage | null>;
 }

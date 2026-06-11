@@ -179,6 +179,10 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
       return this._groupMetadataToSendMock;
     }
   }
+
+  public async DownloadMediaMessage(_rawMsg: WhatsappMessage): Promise<Buffer> {
+    return Buffer.from([]);
+  }
 }
 
 /**

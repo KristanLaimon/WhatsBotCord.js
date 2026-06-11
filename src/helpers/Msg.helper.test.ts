@@ -1,6 +1,6 @@
-import { type WAMessage } from "baileys";
 import { describe, expect, it, test } from "bun:test";
 import fs from "fs";
+import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { GetPath } from "../libs/BunPath.js";
 import {
   audioMsg,
@@ -21,7 +21,7 @@ import { MsgType } from "../Msg.types.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetQuotedMsgText, MsgHelper_FullMsg_GetText } from "./Msg.helper.js";
 
 test("Mockdata from .json can be imported", () => {
-  const mockMsgs: WAMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "mocks", "./Msg.helper.mocks.json"), "utf-8"));
+  const mockMsgs: WhatsappMessage[] = JSON.parse(fs.readFileSync(GetPath("src", "mocks", "./Msg.helper.mocks.json"), "utf-8"));
   expect(mockMsgs).toBeDefined();
   expect(mockMsgs.length).toBeGreaterThan(0);
   expect(Array.isArray(mockMsgs)).toBe(true);

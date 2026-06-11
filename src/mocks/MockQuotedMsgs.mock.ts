@@ -37,13 +37,9 @@ export const MockQuotedMsg_Individual: WhatsappMessage = {
     },
     messageContextInfo: {
       deviceListMetadata: {
-        //@ts-expect-error should be numbers but string
         senderKeyHash: "fakeSenderHash==",
-        //@ts-expect-error should be numbers but string
         senderTimestamp: "1756692691",
-        //@ts-expect-error should be numbers but string
         recipientKeyHash: "fakeRecipientHash==",
-        //@ts-expect-error should be numbers but string
         recipientTimestamp: "1755726002",
       },
       deviceListMetadataVersion: 2,

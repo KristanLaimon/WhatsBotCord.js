@@ -1,11 +1,3 @@
-import {
-  type AnyMessageContent,
-  type GroupMetadata,
-  type GroupParticipant,
-  type MiscMessageGenerationOptions,
-  type WAMessage,
-  WAMessageAddressingMode,
-} from "baileys";
 import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
 import Delegate from "../../../libs/Delegate.js";
@@ -17,7 +9,15 @@ import type { GroupMetadataInfo, ParticipantInfo } from "../internals/WhatsSocke
 import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
-import type { WhatsappMessage } from "../types.js";
+import type {
+  WhatsappGroupMetadata,
+  WhatsappGroupParticipant,
+  WhatsappMessage,
+  WhatsappMessageContent,
+  WhatsappMessageOptions,
+  WhatsappPollUpdateMessage,
+  WhatsappPollVote,
+} from "../types.js";
 import type { WhatsSocketMockMsgSent } from "./types.js";
 
 export type WhatsSocketMockOptions = {
@@ -38,23 +38,23 @@ export type WhatsSocketMockSendingMsgOptions = {
 export default class WhatsSocketMock implements IWhatsSocket {
   // ==== Interface dependencies ====
   onRestart: Delegate<() => Promise<void>> = new Delegate();
-  onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
+  onSentMessage: Delegate<(chatId: string, rawContentMsg: WhatsappMessageContent, optionalMisc?: WhatsappMessageOptions) => void> = new Delegate();
   onIncomingMsg: Delegate<
-    (participantId_LID: string | null, participantId_PN: string | null, chatId: string, rawMsg: WAMessage, type: MsgType, senderType: SenderType) => void
+    (participantId_LID: string | null, participantId_PN: string | null, chatId: string, rawMsg: WhatsappMessage, type: MsgType, senderType: SenderType) => void
   > = new Delegate();
   onUpdateMsg: Delegate<
     (
       participantId_LID: string | null,
       participantId_PN: string | null,
       chatId: string,
-      rawMsgUpdate: WAMessage,
+      rawMsgUpdate: WhatsappMessage,
       msgType: MsgType,
       senderType: SenderType
     ) => void
   > = new Delegate();
-  onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
-  onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
-  onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
+  onGroupEnter: Delegate<(groupInfo: WhatsappGroupMetadata) => void> = new Delegate();
+  onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void> = new Delegate();
+  onStartupAllGroupsIn: Delegate<(allGroupsIn: WhatsappGroupMetadata[]) => void> = new Delegate();
   ownJID: string = "ownIDMock" + WhatsappPhoneNumberIdentifier;
 
   Send: IWhatsSocket_Submodule_SugarSender;
@@ -90,7 +90,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   public async Shutdown(): Promise<void> {
     this.IsOn = false;
   }
-  public async _SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async _SendSafe(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
     let chatIdToUse: string;
     if (!chatId_JID.endsWith(WhatsappGroupIdentifier)) {
       chatIdToUse = chatId_JID + WhatsappGroupIdentifier;
@@ -115,7 +115,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     };
   }
 
-  public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null> {
+  public async _SendRaw(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
     let chatIdToUse: string;
     if (!chatId_JID.endsWith(WhatsappGroupIdentifier)) {
       chatIdToUse = chatId_JID + WhatsappGroupIdentifier;
@@ -139,7 +139,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     };
   }
 
-  private _groupMetadataMock?: GroupMetadata;
+  private _groupMetadataMock?: WhatsappGroupMetadata;
 
   @autobind
   public SetGroupMetadataMock(groupData: Partial<GroupMetadataInfo>) {
@@ -153,7 +153,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     }
     this._groupMetadataMock = {
       id: chatIdToUse ?? "fakeIdGroup" + WhatsappGroupIdentifier,
-      addressingMode: groupData?.sendingMode === "pn" ? WAMessageAddressingMode.PN : WAMessageAddressingMode.LID,
+      addressingMode: groupData?.sendingMode === "pn" ? "pn" : "lid",
       owner: groupData?.ownerName ?? undefined,
       subject: groupData?.groupName ?? "GroupName",
       desc: groupData?.groupDescription ?? undefined,
@@ -180,7 +180,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
    * @returns A promise that resolves to the group metadata.
    */
   @autobind
-  public async GetRawGroupMetadata(chatId: string): Promise<GroupMetadata> {
+  public async GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
     this.GroupsIDTriedToFetch.push(chatId);
     if (this._groupMetadataMock) {
       return this._groupMetadataMock;
@@ -190,7 +190,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
         subject: "Mock Group",
         creation: Date.now(),
         creator: "Some User",
-      } as any;
+        participants: [],
+      };
     }
   }
 
@@ -207,6 +208,14 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.onUpdateMsg.Clear();
     this.SentMessagesThroughRaw = [];
     this.SentMessagesThroughQueue = [];
+  }
+
+  public async DownloadMediaMessage(_rawMsg: WhatsappMessage): Promise<Buffer> {
+    return Buffer.from([]);
+  }
+
+  public async GetPollVotes(_pollRawMsg: WhatsappMessage, _pollUpdates: WhatsappPollUpdateMessage[]): Promise<WhatsappPollVote[]> {
+    return [];
   }
 
   /**
@@ -280,7 +289,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   }
 }
 
-function mapParticipant(p: ParticipantInfo): GroupParticipant {
+function mapParticipant(p: ParticipantInfo): WhatsappGroupParticipant {
   return {
     id: p.rawId ?? "defaultId" + WhatsappLIDIdentifier, // from WhatsappIDInfo
     name: undefined,

@@ -1,4 +1,11 @@
-import type { AnyMessageContent, GroupMetadata, MiscMessageGenerationOptions, WAMessage, WAMessageUpdate } from "baileys";
+import type {
+  WhatsappGroupMetadata,
+  WhatsappMessage,
+  WhatsappMessageContent,
+  WhatsappMessageOptions,
+  WhatsappPollUpdateMessage,
+  WhatsappPollVote,
+} from "./types.js";
 import type Delegate from "../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../Msg.types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
@@ -29,9 +36,9 @@ interface IWhatsSocket_SendingMsgsOnly_Module {
    * interaction with the socket.
    * @param chatId_JID Whatsapp chat id of the user you want to send the message to (e.g: "1234567890@c.us")
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
-   * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
+   * @param options A collection of options that can be used to customize the message. Check the type definition of any for more information.
    */
-  _SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
+  _SendSafe(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null>;
 
   /**
    * Sends a message to a specific chat ID with content and optionally with other options.
@@ -46,9 +53,9 @@ interface IWhatsSocket_SendingMsgsOnly_Module {
    *
    * @param chatId_JID Whatsapp chat id of the user you want to send the message to (e.g: "1234567890@c.us")
    * @param content The content of the message. It can be a string, a buffer, an object, or a function that returns a string or buffer.
-   * @param options A collection of options that can be used to customize the message. Check the type definition of MiscMessageGenerationOptions for more information.
+   * @param options A collection of options that can be used to customize the message. Check the type definition of any for more information.
    */
-  _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage | null>;
+  _SendRaw(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null>;
 }
 
 /**
@@ -120,7 +127,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void>;
+  onSentMessage: Delegate<(chatId: string, rawContentMsg: WhatsappMessageContent, optionalMisc?: WhatsappMessageOptions) => void>;
 
   /**
    * Triggered when a new raw message arrives.
@@ -133,7 +140,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * ```
    */
   onIncomingMsg: Delegate<
-    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsg: WAMessage, msgType: MsgType, senderType: SenderType) => void
+    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void
   >;
 
   /**
@@ -148,7 +155,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * ```
    */
   onUpdateMsg: Delegate<
-    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsgUpdate: WAMessageUpdate, msgType: MsgType, senderType: SenderType) => void
+    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void
   >;
 
   // ================= Group Events =================
@@ -163,7 +170,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void>;
+  onGroupEnter: Delegate<(groupInfo: WhatsappGroupMetadata) => void>;
 
   /**
    * Triggered when a group’s metadata changes
@@ -176,7 +183,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void>;
+  onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void>;
 
   /**
    * Triggered once on startup with metadata for all groups
@@ -189,7 +196,7 @@ export interface IWhatsSocket_EventsOnly_Module {
    * });
    * ```
    */
-  onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void>;
+  onStartupAllGroupsIn: Delegate<(allGroupsIn: WhatsappGroupMetadata[]) => void>;
 }
 
 /**
@@ -260,5 +267,22 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * - Admin information
    * - Group settings
    */
-  GetRawGroupMetadata(chatId: string): Promise<GroupMetadata>;
+  GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata>;
+
+  /**
+   * Downloads the media payload attached to a raw message.
+   *
+   * @param rawMsg - Message containing downloadable media.
+   * @returns A buffer with the downloaded media.
+   */
+  DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer>;
+
+  /**
+   * Calculates current votes for a poll message.
+   *
+   * @param pollRawMsg - Original poll creation message.
+   * @param pollUpdates - Poll update messages received after creation.
+   * @returns The current aggregated poll votes.
+   */
+  GetPollVotes(pollRawMsg: WhatsappMessage, pollUpdates: WhatsappPollUpdateMessage[]): Promise<WhatsappPollVote[]>;
 }

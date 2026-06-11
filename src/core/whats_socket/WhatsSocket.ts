@@ -1,20 +1,6 @@
-import type { Boom } from "@hapi/boom";
-import {
-  type AnyMessageContent,
-  type GroupMetadata,
-  type MiscMessageGenerationOptions,
-  type WAMessageUpdate,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  makeWASocket,
-  useMultiFileAuthState,
-} from "baileys";
-
 import moment from "moment";
-import pino from "pino";
 import encodeQr from "qr";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../helpers/Msg.helper.js";
-import { GetPath } from "../../libs/BunPath.js";
 import Delegate from "../../libs/Delegate.js";
 import type { MsgType } from "../../Msg.types.js";
 import { SenderType } from "../../Msg.types.js";
@@ -23,8 +9,19 @@ import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "./IWhatsSocket.js";
-import type { WhatsappMessage, WhatsSocketLoggerMode } from "./types.js";
-import type { IWhatsSocketServiceAdapter } from "./WhatsSocket.types.js";
+import type {
+  IWhatsSocketVendorFactory,
+  IWhatsSocketVendorClient,
+  WhatsappGroupMetadata,
+  WhatsappMessage,
+  WhatsappMessageContent,
+  WhatsappMessageOptions,
+  WhatsappMessageUpdate,
+  WhatsappPollUpdateMessage,
+  WhatsappPollVote,
+  WhatsSocketLoggerMode,
+} from "./types.js";
+import { WhatsSocketVendorFactory_CreateDefault } from "./vendors/DefaultWhatsSocketVendor.js";
 
 /**
  * # WhatsApp Socket Options
@@ -87,18 +84,17 @@ export type WhatsSocketOptions = {
   delayMilisecondsBetweenMsgs?: number;
 
   /**
-   * Optionally provide a custom implementation of the WhatsApp socket API.
-   * By default, Baileys is used.
-   *
-   * @note Primarily intended for testing. Use at your own risk if you override.
+   * Optionally provide a custom vendor factory.
+   * By default, the built-in Baileys implementation is used.
    */
-  ownImplementationSocketAPIWhatsapp?: IWhatsSocketServiceAdapter;
+  ownWhatsSocketVendorFactory_Internal?: IWhatsSocketVendorFactory;
+
 };
 
 /**
  * # WhatsApp Socket Core
  *
- * Class used to interact with the WhatsApp Web socket client (baileys).
+ * Class used to interact with the configured WhatsApp vendor client.
  * Will start the socket and keep it connected until you call the Shutdown method.
  * Provides some events you can subscribe to, to get notified when different things happen.
  *
@@ -132,19 +128,19 @@ export default class WhatsSocket implements IWhatsSocket {
     (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void
   > = new Delegate();
 
-  public onSentMessage: Delegate<(chatId: string, rawContentMsg: AnyMessageContent, optionalMisc?: MiscMessageGenerationOptions) => void> = new Delegate();
+  public onSentMessage: Delegate<(chatId: string, rawContentMsg: WhatsappMessageContent, optionalMisc?: WhatsappMessageOptions) => void> = new Delegate();
   public onRestart: Delegate<() => Promise<void>> = new Delegate();
-  public onGroupEnter: Delegate<(groupInfo: GroupMetadata) => void> = new Delegate();
-  public onGroupUpdate: Delegate<(groupInfo: Partial<GroupMetadata>) => void> = new Delegate();
-  public onStartupAllGroupsIn: Delegate<(allGroupsIn: GroupMetadata[]) => void> = new Delegate();
+  public onGroupEnter: Delegate<(groupInfo: WhatsappGroupMetadata) => void> = new Delegate();
+  public onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void> = new Delegate();
+  public onStartupAllGroupsIn: Delegate<(allGroupsIn: WhatsappGroupMetadata[]) => void> = new Delegate();
 
   public get ownJID(): string {
-    return this.Socket.user!.id;
+    return this.Socket.ownJID;
   }
 
   //=== Subcomponents ===
   //They're initialized/instantiated in "Start()"
-  public Socket!: IWhatsSocketServiceAdapter;
+  public Socket!: IWhatsSocketVendorClient;
   private _senderQueue!: WhatsSocketSenderQueue_SubModule;
   /**
    * Sender module and sugar layer for sending all kinds of msgs.
@@ -167,7 +163,7 @@ export default class WhatsSocket implements IWhatsSocket {
   private _maxReconnectionRetries: number;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
-  private _customSocketImplementation?: IWhatsSocketServiceAdapter;
+  private _customSocketVendorFactory?: IWhatsSocketVendorFactory;
 
   constructor(options?: WhatsSocketOptions) {
     this._loggerMode = options?.loggerMode ?? "silent";
@@ -175,7 +171,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this._ignoreSelfMessages = options?.ignoreSelfMessage ?? true;
     this._senderQueueMaxLimit = options?.senderQueueMaxLimit ?? 20;
     this._milisecondsDelayBetweenSentMsgs = options?.delayMilisecondsBetweenMsgs ?? 100;
-    this._customSocketImplementation = options?.ownImplementationSocketAPIWhatsapp;
+    this._customSocketVendorFactory = options?.ownWhatsSocketVendorFactory_Internal;
     this._maxReconnectionRetries = options?.maxReconnectionRetries ?? 5;
   }
   private _isRestarting: boolean = false;
@@ -225,23 +221,13 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private async InitializeInternalSocket() {
-    const authInfoPath: string = GetPath(this._credentialsFolder);
-    const { state, saveCreds } = await useMultiFileAuthState(authInfoPath);
-
-    const { version } = await fetchLatestBaileysVersion(); //1. I've added this line
-    if (this._customSocketImplementation) {
-      this.Socket = this._customSocketImplementation;
-    } else {
-      const logger = pino({ level: this._loggerMode === "recommended" ? "silent" : this._loggerMode });
-      this.Socket = await makeWASocket({
-        version, //2. Then added "version" prop in Socket constructor
-        auth: state,
-        logger: logger,
-        // browser: Browsers.windows("Chrome"),
-        // syncFullHistory: true,
+    const vendorFactory =
+      this._customSocketVendorFactory ??
+      WhatsSocketVendorFactory_CreateDefault({
+        credentialsFolder: this._credentialsFolder,
+        loggerMode: this._loggerMode,
       });
-    }
-    this.Socket.ev.on("creds.update", saveCreds);
+    this.Socket = await vendorFactory.Create();
 
     //== Initializing internal sub-modules ==
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
@@ -250,11 +236,11 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   public async Shutdown() {
-    await this.Socket.ws.close();
+    await this.Socket.shutdown();
   }
 
   private ConfigureReconnection(): void {
-    this.Socket.ev.on("connection.update", async (update) => {
+    this.Socket.on("ConnectionStateChanged", async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       // Show QR code if needed
@@ -270,7 +256,7 @@ export default class WhatsSocket implements IWhatsSocket {
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: ✅ Connected to whatsapp servers");
           }
-          const groups = Object.values(await this.Socket.groupFetchAllParticipating());
+          const groups = await this.Socket.fetchAllGroups();
           this.onStartupAllGroupsIn.CallAll(groups);
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: 💬 All groups metadata fetched successfully");
@@ -284,11 +270,10 @@ export default class WhatsSocket implements IWhatsSocket {
 
       // Connection closed
       if (connection === "close") {
-        const error = lastDisconnect?.error as Boom | undefined;
-        const statusCode = error?.output?.statusCode;
+        const statusCode = lastDisconnect?.statusCode;
 
         // Only attempt to reconnect if not logged out
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        const shouldReconnect = lastDisconnect?.isLoggedOut !== true;
         if (this._loggerMode !== "silent") {
           console.warn("[Whatsbotcord]: ❌ Socket closed", statusCode ? `(code: ${statusCode})` : "");
         }
@@ -339,7 +324,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureMessageIncoming(): void {
-    this.Socket.ev.on("messages.upsert", async (messageUpdate) => {
+    this.Socket.on("IncomingMessagesReceived", async (messageUpdate) => {
       if (!messageUpdate.messages) return;
       for (const msgAny of messageUpdate.messages) {
         const msg = msgAny as WhatsappMessage;
@@ -356,7 +341,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureMessagesUpdates(): void {
-    this.Socket.ev.on("messages.update", (msgsUpdates: WAMessageUpdate[]) => {
+    this.Socket.on("MessagesUpdated", (msgsUpdates: WhatsappMessageUpdate[]) => {
       if (!msgsUpdates || msgsUpdates.length === 0) return;
       for (const msgUpdateRaw of msgsUpdates) {
         const msgUpdate = msgUpdateRaw as WhatsappMessage;
@@ -377,14 +362,14 @@ export default class WhatsSocket implements IWhatsSocket {
    * @throws Will throw an error if the provided chatId is not a group chat ID
    * @returns A promise that resolves to the group metadata.
    */
-  public async GetRawGroupMetadata(chatId: string): Promise<GroupMetadata> {
+  public async GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
     if (!chatId.endsWith(WhatsappGroupIdentifier))
       throw new Error("Bad args => WhatsSocket.GetGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
-    return await this.Socket.groupMetadata(chatId);
+    return await this.Socket.fetchGroupMetadata(chatId);
   }
 
   private ConfigureGroupsEnter(): void {
-    this.Socket.ev.on("groups.upsert", async (groupsUpserted: GroupMetadata[]) => {
+    this.Socket.on("GroupsJoined", async (groupsUpserted: WhatsappGroupMetadata[]) => {
       for (const group of groupsUpserted) {
         this.onGroupEnter.CallAll(group);
         if (this._loggerMode !== "silent") {
@@ -395,7 +380,7 @@ export default class WhatsSocket implements IWhatsSocket {
   }
 
   private ConfigureGroupsUpdates(): void {
-    this.Socket.ev.on("groups.update", (args) => {
+    this.Socket.on("GroupsUpdated", (args) => {
       if (args.length === 0) {
         if (this._loggerMode !== "silent") {
           console.log("INFO: No group updates received.");
@@ -403,7 +388,7 @@ export default class WhatsSocket implements IWhatsSocket {
         return;
       }
       for (let i = 0; i < args.length; i++) {
-        const groupMetadata: Partial<GroupMetadata> | undefined = args[i];
+        const groupMetadata: Partial<WhatsappGroupMetadata> | undefined = args[i];
         if (groupMetadata) {
           this.onGroupUpdate.CallAll(groupMetadata);
         }
@@ -411,12 +396,20 @@ export default class WhatsSocket implements IWhatsSocket {
     });
   }
 
-  public async _SendSafe(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
+  public async _SendSafe(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
     return this._senderQueue.Enqueue(chatId_JID, content, options);
   }
 
-  public async _SendRaw(chatId_JID: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WhatsappMessage | null> {
+  public async _SendRaw(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
     const toReturn = (await this.Socket.sendMessage(chatId_JID, content, options)) ?? null;
     return toReturn;
+  }
+
+  public async DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer> {
+    return await this.Socket.downloadMediaMessage(rawMsg);
+  }
+
+  public async GetPollVotes(pollRawMsg: WhatsappMessage, pollUpdates: WhatsappPollUpdateMessage[]): Promise<WhatsappPollVote[]> {
+    return await this.Socket.getPollVotes(pollRawMsg, pollUpdates);
   }
 }

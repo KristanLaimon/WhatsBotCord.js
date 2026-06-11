@@ -131,4 +131,12 @@ export interface IWhatsSocket_Submodule_Receiver {
    * ```
    */
   FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null>;
+
+  /**
+   * Downloads media content from a raw WhatsApp message.
+   *
+   * @param rawMsg - Message containing media.
+   * @returns A buffer with the media bytes.
+   */
+  DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer>;
 }

@@ -1,8 +1,7 @@
-import { type WAMessage, type proto } from "baileys";
 import { MsgType, SenderType } from "../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import type { FoundQuotedMsg } from "../core/bot/internals/CommandsSearcher.types.js";
-import type { WhatsappMessage } from "../core/whats_socket/types.js";
+import type { WhatsappMessage, WhatsappProtocolMessage } from "../core/whats_socket/types.js";
 
 /**
  * # Extract Full Message Text
@@ -24,7 +23,7 @@ import type { WhatsappMessage } from "../core/whats_socket/types.js";
  * }
  * ```
  */
-export function MsgHelper_FullMsg_GetText(rawMsg: WAMessage): string | null {
+export function MsgHelper_FullMsg_GetText(rawMsg: WhatsappMessage): string | null {
   if (!rawMsg.message) return null;
   return (
     rawMsg.message.conversation ??
@@ -78,11 +77,11 @@ export function MsgHelper_FullMsg_GetQuotedMsgText(rawMsg: WhatsappMessage): str
  * }
  * ```
  */
-export function MsgHelper_QuotedMsg_GetText(quotedMsgOnly: proto.IMessage): string | null {
+export function MsgHelper_QuotedMsg_GetText(quotedMsgOnly: WhatsappProtocolMessage): string | null {
   return quotedMsgOnly.extendedTextMessage?.text ?? null;
 }
 
-// export function MsgHelper_HasQuotedMsg(rawMsg: WAMessage): boolean {
+// export function MsgHelper_HasQuotedMsg(rawMsg: WhatsappMessage): boolean {
 //   return !!rawMsg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 // }
 
@@ -99,7 +98,7 @@ export function MsgHelper_QuotedMsg_GetText(quotedMsgOnly: proto.IMessage): stri
  * const quotedProto = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
  * ```
  */
-export function MsgHelper_FullMsg_GetQuotedMsg(rawMsg: WAMessage): proto.IMessage | null {
+export function MsgHelper_FullMsg_GetQuotedMsg(rawMsg: WhatsappMessage): WhatsappProtocolMessage | null {
   return rawMsg.message?.extendedTextMessage?.contextInfo?.quotedMessage ?? null;
 }
 
@@ -119,8 +118,8 @@ export function MsgHelper_FullMsg_GetQuotedMsg(rawMsg: WAMessage): proto.IMessag
  * }
  * ```
  */
-export function MsgHelper_ExtractQuotedMsgInfo(rawMsg: WAMessage): FoundQuotedMsg | null {
-  const existsQuotedMsg: proto.IMessage | null = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
+export function MsgHelper_ExtractQuotedMsgInfo(rawMsg: WhatsappMessage): FoundQuotedMsg | null {
+  const existsQuotedMsg: WhatsappProtocolMessage | null = MsgHelper_FullMsg_GetQuotedMsg(rawMsg);
   let quotedMsgAsArgument: FoundQuotedMsg | null = null;
   if (existsQuotedMsg) {
     const quotedMsgType: MsgType = MsgHelper_ProtoMsg_GetMsgType(existsQuotedMsg);
@@ -195,7 +194,7 @@ export function MsgHelper_FullMsg_GetSenderType(rawMsg: WhatsappMessage): Sender
  * const msgType = MsgHelper_ProtoMsg_GetMsgType(rawMsg.message);
  * ```
  */
-export function MsgHelper_ProtoMsg_GetMsgType(generic: proto.IMessage): MsgType {
+export function MsgHelper_ProtoMsg_GetMsgType(generic: WhatsappProtocolMessage): MsgType {
   if (generic.imageMessage) return MsgType.Image;
   if (generic.videoMessage) return MsgType.Video;
   if (generic.audioMessage) return MsgType.Audio;

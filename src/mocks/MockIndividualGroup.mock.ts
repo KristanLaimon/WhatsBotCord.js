@@ -15,23 +15,17 @@ export const MockIndividualTxtMsg: WhatsappMessage = {
       text: "This comes from private/individual message",
       contextInfo: {
         expiration: 0,
-        //@ts-expect-error Typescript can't recognize from string. But its ok
         ephemeralSettingTimestamp: "0",
         disappearingMode: {
-          //@ts-expect-error Typescript can't recognize from string. But its ok
           initiator: "CHANGED_IN_CHAT",
         },
       },
     },
     messageContextInfo: {
       deviceListMetadata: {
-        //@ts-expect-error Typescript can't recognize from string. But its ok
         senderKeyHash: "SENDER_HASH_FAKE",
-        //@ts-expect-error Typescript can't recognize from string. But its ok
         senderTimestamp: "1755000000",
-        //@ts-expect-error Typescript can't recognize from string. But its ok
         recipientKeyHash: "RECIPIENT_HASH_FAKE",
-        //@ts-expect-error Typescript can't recognize from string. But its ok
         recipientTimestamp: "1755000100",
       },
       deviceListMetadataVersion: 2,

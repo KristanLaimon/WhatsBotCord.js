@@ -1,4 +1,3 @@
-import { type MiscMessageGenerationOptions, type WAMessage } from "baileys";
 import emojiRegexFabric from "emoji-regex";
 import GraphemeSplitter from "grapheme-splitter";
 import fs from "node:fs";
@@ -7,6 +6,7 @@ import { MimeTypeHelper_GetMimeTypeOf, MimeTypeHelper_IsAudio, MimeTypeHelper_Is
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper.js";
 import { GetPath } from "../../../libs/BunPath.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
+import type { WhatsappMessage, WhatsappMessageOptions } from "../types.js";
 import type {
   IWhatsSocket_Submodule_SugarSender,
   WhatsMsgAudioOptions,
@@ -33,7 +33,7 @@ const emojiSplitter = new GraphemeSplitter();
  * - All methods support optional sending configurations, such as bypassing the
  *   safe queue system or mentioning users.
  * - Media-related methods validate file existence and MIME types before sending.
- * - The class leverages Baileys' `MiscMessageGenerationOptions` for additional
+ * - The class accepts vendor-neutral message options for additional
  *   message customization.
  *
  * @example
@@ -63,10 +63,10 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
     }
     text = (options?.normalizeMessageText ?? true) ? Str_NormalizeLiteralString(text) : text;
     //_getSendingMethod() returns a functions, it seems cursed I know, get used to it
-    return await this._getSendingMethod(options)(chatId, { text, mentions: options?.mentionsIds }, options as MiscMessageGenerationOptions);
+    return await this._getSendingMethod(options)(chatId, { text, mentions: options?.mentionsIds }, options as WhatsappMessageOptions);
   }
 
-  public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+  public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     let imgBuffer: Buffer;
     let mimeType: string;
     let isGif: boolean = false;
@@ -132,7 +132,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
           mentions: options?.mentionsIds,
           // mimetype: mimeType | For some reason it breaks if it includes a mimeType along with it (why? 🤓?)
         },
-        options as MiscMessageGenerationOptions
+        options as WhatsappMessageOptions
       );
     }
 
@@ -145,16 +145,16 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         mentions: options?.mentionsIds,
         mimetype: mimeType,
       },
-      options as MiscMessageGenerationOptions
+      options as WhatsappMessageOptions
     );
   }
 
   public async ReactEmojiToMsg(
     chatId: string,
-    rawMsgToReactTo: WAMessage,
+    rawMsgToReactTo: WhatsappMessage,
     emojiStr: string,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
-  ): Promise<WAMessage | null> {
+  ): Promise<WhatsappMessage | null> {
     if (typeof emojiStr !== "string") {
       throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received an non string emoji");
     }
@@ -179,11 +179,11 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         },
         mentions: options?.mentionsIds,
       },
-      options as MiscMessageGenerationOptions
+      options as WhatsappMessageOptions
     );
   }
 
-  public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Sticker(chatId: string, stickerUrlSource: string | Buffer, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     if (typeof stickerUrlSource === "string") {
       if (!stickerUrlSource.endsWith(".webp")) {
         throw new Error("WhatsSocketSugarSender.Sticker() received a non .webp sticker to send. Must be in .webp format first!");
@@ -203,11 +203,11 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
             },
         mentions: options?.mentionsIds,
       },
-      options as MiscMessageGenerationOptions
+      options as WhatsappMessageOptions
     );
   }
 
-  public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     let buffer: Buffer;
     let mimeType: string;
     //1. First overload: {source: string, caption?:string}
@@ -258,11 +258,11 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         mimetype: mimeType,
         mentions: options?.mentionsIds,
       },
-      options as MiscMessageGenerationOptions
+      options as WhatsappMessageOptions
     );
   }
 
-  public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WAMessage | null> {
+  public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
     let buffer: Buffer;
     let mimeType: string;
 
@@ -324,7 +324,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
     );
   }
 
-  public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
     let buffer: Buffer;
     let mimeType: string;
     let fileNameToDisplay: string;
@@ -372,7 +372,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
     selections: string[],
     pollParams: WhatsMsgPollOptions,
     moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
-  ): Promise<WAMessage | null> {
+  ): Promise<WhatsappMessage | null> {
     let title: string = pollTitle;
     let selects: string[] = selections;
 
@@ -409,7 +409,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         },
         mentions: moreOptions?.mentionsIds,
       },
-      moreOptions as MiscMessageGenerationOptions
+      moreOptions as WhatsappMessageOptions
     );
 
     //INFO: Uncomment this section until discover a way to fetch votes data from polls, only sending porpuses so far.
@@ -429,7 +429,11 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
     // }
   }
 
-  public async Location(chatId: string, ubicationParams: WhatsMsgUbicationOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WAMessage | null> {
+  public async Location(
+    chatId: string,
+    ubicationParams: WhatsMsgUbicationOptions,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
     if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
       throw new Error(
         `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
@@ -446,7 +450,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
         },
         mentions: options?.mentionsIds,
       },
-      options as MiscMessageGenerationOptions
+      options as WhatsappMessageOptions
     );
   }
 
@@ -454,7 +458,7 @@ export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule
     chatId: string,
     contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
     options?: WhatsMsgSenderSendingOptionsMINIMUM
-  ): Promise<WAMessage | null> {
+  ): Promise<WhatsappMessage | null> {
     const arr = Array.isArray(contacts) ? contacts : [contacts];
 
     const vCards = arr.map((c) => {
@@ -477,7 +481,7 @@ END:VCARD`;
         },
         mentions: options?.mentionsIds,
       },
-      options as MiscMessageGenerationOptions
+      options as WhatsappMessageOptions
     );
   }
 

@@ -1,4 +1,3 @@
-import type { WAMessage } from "baileys";
 import GraphemeSplitter from "grapheme-splitter";
 import { autobind } from "../../helpers/Decorators.helper.js";
 import { MsgHelper_ExtractQuotedMsgInfo, MsgHelper_FullMsg_GetText } from "../../helpers/Msg.helper.js";
@@ -10,6 +9,7 @@ import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/interna
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
+import type { WhatsappMessage } from "../whats_socket/types.js";
 import { type IChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import Myself_Submodule_Status from "./internals/ChatContext.myself.status.js";
 import CommandsSearcher, { CommandType } from "./internals/CommandsSearcher.js";
@@ -50,7 +50,7 @@ export type BotMinimalInfo = {
   Commands: WhatsBotCommands;
 };
 
-export type WhatsBotOptions = Omit<WhatsSocketOptions, "ownImplementationSocketAPIWhatsapp"> &
+export type WhatsBotOptions = WhatsSocketOptions &
   Omit<Partial<IChatContextConfig>, "ignoreSelfMessages"> & {
     /**
      * Character(s) used to tag the bot in messages.
@@ -223,7 +223,7 @@ export type WhatsbotcordMiddlewareFunct = (
   senderId_LID: string | null,
   senderId_PN: string | null,
   chatId: string,
-  rawMsg: WAMessage,
+  rawMsg: WhatsappMessage,
   msgType: MsgType,
   senderType: SenderType,
   next: () => Promise<void>
@@ -234,7 +234,7 @@ export type WhatsbotcordMiddlewareFunct_OnFoundCommand = (
   senderId_LID: string | null,
   senderId_PN: string | null,
   chatId: string,
-  rawMsg: WAMessage,
+  rawMsg: WhatsappMessage,
   msgType: MsgType,
   senderType: SenderType,
   commandFound: ICommand,
@@ -494,7 +494,7 @@ export default class Bot implements BotMinimalInfo {
    * - For production bots, consider raising `delayMilisecondsBetweenMsgs`
    *   slightly to avoid WhatsApp anti-spam systems.
    */
-  constructor(options?: WhatsBotOptions) {
+  constructor(options?: WhatsBotOptions /** HERE The Vendor (Optional, by default, Baileys.js) */) {
     this.Settings = BotUtils_GenerateOptions(options);
 
     //# Validations:
@@ -624,7 +624,7 @@ export default class Bot implements BotMinimalInfo {
     senderId_LID: string | null,
     senderId_PN: string | null,
     chatId: string,
-    rawMsg: WAMessage,
+    rawMsg: WhatsappMessage,
     msgType: MsgType,
     senderType: SenderType
   ): Promise<void> {
@@ -745,7 +745,7 @@ export default class Bot implements BotMinimalInfo {
       const ARG3_AdditionalArgs: CommandArgs = {
         args: commandArgs,
         chatId: chatId,
-        chatId_LID: rawMsg.key.remoteJidAlt,
+        chatId_LID: rawMsg.key.remoteJidAlt ?? undefined,
         msgType: msgType,
         originalRawMsg: rawMsg,
         senderType: senderType,
@@ -806,6 +806,7 @@ export function BotUtils_GenerateOptions(options?: Partial<WhatsBotOptions>): Wh
     timeoutSeconds: options?.timeoutSeconds ?? 30,
     wrongTypeFeedbackMsg: options?.wrongTypeFeedbackMsg ?? "wrong expected msg type ❌ (Default Message: Change me using Bot constructor params options)",
     ownWhatsSocketImplementation_Internal: options?.ownWhatsSocketImplementation_Internal,
+    ownWhatsSocketVendorFactory_Internal: options?.ownWhatsSocketVendorFactory_Internal,
     enableCommandSafeNet: options?.enableCommandSafeNet ?? true,
     defaultEmojiToSendReactionOnFailureCommand: options?.defaultEmojiToSendReactionOnFailureCommand ?? null,
     sendErrorToChatOnFailureCommand_debug: options?.sendErrorToChatOnFailureCommand_debug ?? false,

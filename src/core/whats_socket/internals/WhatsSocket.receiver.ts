@@ -1,9 +1,8 @@
-import type { GroupMetadata } from "baileys";
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
 import { type WhatsappIDInfo, WhatsappHelper_ExtractFromWhatsappID, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
 import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
-import type { WhatsappMessage } from "../types.js";
+import type { WhatsappGroupMetadata, WhatsappMessage } from "../types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./IWhatsSocket.receiver.js";
 
 /**
@@ -309,7 +308,7 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
   }
 
   public async FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null> {
-    let res: GroupMetadata;
+    let res: WhatsappGroupMetadata;
     try {
       //In case its a bad chatId and comes from individual msg
       res = await this._whatsSocket.GetRawGroupMetadata(chatId);
@@ -349,6 +348,10 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
       creationDate: res.creation || null,
       members: participants,
     };
+  }
+
+  public async DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer> {
+    return await this._whatsSocket.DownloadMediaMessage(rawMsg);
   }
 }
 

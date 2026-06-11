@@ -32,7 +32,8 @@ import type { IWhatsSocket_Submodule_Receiver } from "./core/whats_socket/intern
 import type { IWhatsSocket_Submodule_SugarSender } from "./core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { GroupMetadataInfo, WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { IMsgServiceSocketMinimum, IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "./core/whats_socket/IWhatsSocket.js";
-import type { WhatsappMessage } from "./core/whats_socket/types.js";
+import type { IWhatsSocketVendorClient, IWhatsSocketVendorFactory, WhatsappMessage, WhatsSocketLoggerMode } from "./core/whats_socket/types.js";
+import type { WhatsSocketOptions } from "./core/whats_socket/WhatsSocket.js";
 import type { WhatsappIDInfo } from "./helpers/Whatsapp.helper.js";
 import type {
   MockEnqueueParamsDocument,
@@ -55,6 +56,8 @@ export type {
   IWhatsSocket_EventsOnly_Module,
   IWhatsSocket_Submodule_Receiver,
   IWhatsSocket_Submodule_SugarSender,
+  IWhatsSocketVendorClient,
+  IWhatsSocketVendorFactory,
   WhatsbotcordMiddlewareFunct_OnFoundCommand as MiddlewareFunct_OnFoundCommand,
   MockEnqueueParamsDocument,
   MockEnqueueParamsLocation,
@@ -66,6 +69,8 @@ export type {
   OfficialPlugin_OneCommandPerUserAtATime_ContextInfo,
   WhatsappIDInfo,
   WhatsappMessage,
+  WhatsSocketLoggerMode,
+  WhatsSocketOptions,
   WhatsbotcordMiddlewareFunct,
   WhatsbotcordPlugin,
   WhatsSocketReceiverError,
