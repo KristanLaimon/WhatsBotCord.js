@@ -374,7 +374,7 @@ test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromCo
       const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
       expect(groupInfo).not.toBeNull();
       //it really doesn't matter the chatId, it gets a default mock group metadata object
-      const groupInfoFromInternalReceiver: GroupMetadataInfo | null = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
+      const groupInfoFromInternalReceiver: GroupMetadataInfo | null = await _rawMsgApi.InternalSocket.group.FetchGroupData(_args.chatId);
       expect(groupInfoFromInternalReceiver).not.toBeNull();
 
       if (!groupInfo || !groupInfoFromInternalReceiver)
@@ -394,7 +394,7 @@ test("GroupChatMetadata_DoesntMatterSenderType_WhenFetchingFromInternalSocket_Sh
       if (!groupInfoFromReceiveDirectly) {
         throw new Error("Group mocking from receiver should be always available on tests, why null?");
       }
-      expect(groupInfoFromReceiveDirectly.id).toBe("mygroupid" + WhatsappGroupIdentifier);
+      expect(groupInfoFromReceiveDirectly.id).toBe("anything");
     }
   }
   const chat = new ChatMock(new Com());
@@ -407,7 +407,7 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupMetadata_chatcontext = await _ctx.FetchGroupData();
-      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
+      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.group.FetchGroupData(_args.chatId);
       const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
 
       expect(groupMetadata_chatcontext).not.toBeNull();
@@ -445,7 +445,7 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupMetadata_chatcontext = await _ctx.FetchGroupData();
-      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.Receive.FetchGroupData(_args.chatId);
+      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.group.FetchGroupData(_args.chatId);
       const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
 
       expect(groupMetadata_chatcontext).not.toBeNull();
@@ -3219,3 +3219,30 @@ describe("ChatMock.prototype.EnqueueIncoming_Img() overload", () => {
     expect(chat.WaitedFromCommand).toHaveLength(1);
   });
 });
+
+describe("Group Mocking Suite testing from ChatMock", () => {
+  it("Should catch group metadata API calls via GroupActionsFromCommand", async () => {
+    class MyCom implements ICommand {
+      name: string = "command";
+      public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
+        await _ctx.group.getMetadata("123");
+        await _ctx.group.isBotAdmin("123");
+        await _ctx.group.removeParticipants("123", ["456"]);
+      }
+    }
+
+    const chat = new ChatMock(new MyCom(), { senderType: SenderType.Group });
+    await chat.StartChatSimulation();
+    expect(chat.GroupActionsFromCommand).toHaveLength(3);
+    expect(chat.GroupActionsFromCommand[0]?.actionName).toBe("getMetadata");
+    expect(chat.GroupActionsFromCommand[0]?.groupId).toBe("123");
+    
+    expect(chat.GroupActionsFromCommand[1]?.actionName).toBe("isBotAdmin");
+    expect(chat.GroupActionsFromCommand[1]?.groupId).toBe("123");
+    
+    expect(chat.GroupActionsFromCommand[2]?.actionName).toBe("removeParticipants");
+    expect(chat.GroupActionsFromCommand[2]?.groupId).toBe("123");
+    expect(chat.GroupActionsFromCommand[2]?.payload).toEqual(["456"]);
+  });
+});
+

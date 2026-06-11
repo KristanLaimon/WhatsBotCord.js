@@ -275,6 +275,18 @@ export type WhatsappGroupMetadata = {
   [key: string]: any;
 };
 
+/**
+ * # WhatsApp Group Participant Action
+ *
+ * Vendor-neutral participant update action supported by WhatsApp groups.
+ *
+ * @example
+ * ```typescript
+ * const action: WhatsappGroupParticipantAction = "promote";
+ * ```
+ */
+export type WhatsappGroupParticipantAction = "add" | "remove" | "promote" | "demote";
+
 export type WhatsappMessageUpdate = WhatsappMessage;
 
 export type WhatsappPollUpdateMessage = {
@@ -328,11 +340,21 @@ export interface IWhatsappSocketAdapterClient {
 
   on<EventName extends keyof WhatsSocketVendorEventMap>(eventName: EventName, callback: WhatsSocketVendorEventMap[EventName]): void;
 
+  normalizeJid(jid: string): string;
+
+  getBotJid(): string;
+
   sendMessage(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null>;
 
   fetchGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata>;
 
   fetchAllGroups(): Promise<WhatsappGroupMetadata[]>;
+
+  updateGroupParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<unknown[]>;
+
+  leaveGroup(groupId: string): Promise<void>;
+
+  deleteChatLocally(chatId: string): Promise<void>;
 
   downloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer>;
 

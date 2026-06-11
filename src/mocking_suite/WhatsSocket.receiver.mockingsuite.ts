@@ -6,11 +6,10 @@ import {
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverMsgError,
 } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
+import { WhatsappIdType } from "../helpers/Whatsapp.helper.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
-import { WhatsappIdType } from "../helpers/Whatsapp.helper.js";
 import { MsgType } from "../Msg.types.js";
-import { WhatsappGroupIdentifier } from "../Whatsapp.types.js";
 
 export type WhatsSocketReceiverWaitObject = {
   rawMsg: WhatsappMessage;
@@ -31,14 +30,6 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
    */
   private _queueWait: WhatsSocketReceiverWaitObject[] = [];
 
-  /**
-   * Config: Actual metadata to mock when executing command (Environment mock)
-   */
-  private _groupMetadataToSendMock: GroupMetadataInfo;
-  public get GroupMetadataToSendMock(): GroupMetadataInfo | undefined {
-    return this._groupMetadataToSendMock;
-  }
-
   //=================================================== Spy External Methods ==================================================
   /**
    * All waited msgs from command after its execution
@@ -46,16 +37,7 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
   public Waited: WhatsSocketReceiverMsgWaited[] = [];
   //===========================================================================================================================
 
-  public constructor() {
-    this._groupMetadataToSendMock = GenerateDefaultGroupMetadata();
-  }
-
-  public SetGroupMetadataMock(mock: Partial<GroupMetadataInfo>) {
-    this._groupMetadataToSendMock = GenerateDefaultGroupMetadata(mock);
-  }
-  public ResetGroupMetadata() {
-    this._groupMetadataToSendMock = GenerateDefaultGroupMetadata();
-  }
+  public constructor() {}
 
   public AddWaitMsg(toAdd: WhatsSocketReceiverWaitObject) {
     this._queueWait.push(toAdd);
@@ -64,7 +46,6 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
   public ClearMocks() {
     this._queueWait = [];
     this.Waited = [];
-    this._groupMetadataToSendMock = GenerateDefaultGroupMetadata();
   }
 
   //_local Options is not used, just used in real commands, here is not necessary;
@@ -167,77 +148,42 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
     return this.WaitMsg(null, null, userIdToWait, expectedMsgType, options);
   }
 
-  /**
-   * Important note: chatId param Is ignored, if you want to set a custom mock group metadata, use SetGroupMetadataMock() of this class
-   * @param _chatId Is ignored, if you want to set a custom mock group metadata, use SetGroupMetadataMock() of this class
-   * @returns The mocked group metadata establish in this mock receiver
-   */
   public async FetchGroupData(_chatId: string): Promise<GroupMetadataInfo | null> {
-    if (_chatId) {
-      return { ...this._groupMetadataToSendMock, id: _chatId };
-    } else {
-      return this._groupMetadataToSendMock;
-    }
+    console.warn(
+      "FetchGroupData is deprecated in WhatsSocket_Submodule_Receiver_MockingSuite and has been moved to WhatsSocket_Submodule_Group_MockingSuite. Please use the group mock instead."
+    );
+    return {
+      id: _chatId,
+      sendingMode: WhatsappIdType.Modern,
+      ownerName: "Mock Owner",
+      groupName: "Mock Group",
+      groupDescription: "This is a mock group for deprecated FetchGroupData",
+      communityIdWhereItBelongs: null,
+      onlyAdminsCanChangeGroupSettings: false,
+      onlyAdminsCanSendMsgs: false,
+      membersCanAddOtherMembers: true,
+      needsRequestApprovalToJoinIn: false,
+      isCommunityAnnounceChannel: false,
+      membersCount: 3,
+      ephemeralDuration: null,
+      inviteCode: "mock-invite-code",
+      lastNameChangeDateTime: null,
+      author: "Mock Author",
+      creationDate: 1600000000,
+      members: [
+        {
+          rawId: "1234567890@s.whatsapp.net",
+          isAdmin: true,
+        },
+        {
+          rawId: "0987654321@s.whatsapp.net",
+          isAdmin: false,
+        },
+      ],
+    };
   }
 
   public async DownloadMediaMessage(_rawMsg: WhatsappMessage): Promise<Buffer> {
     return Buffer.from([]);
   }
-}
-
-/**
- * Generates a default group metadata object for mocking purposes.
- *
- * - Provides sensible defaults for all {@link GroupMetadataInfo} fields.
- * - Allows overriding any field by passing a partial object.
- *
- * @param chatContextData - Partial group data to override defaults.
- * @returns A fully populated {@link GroupMetadataInfo}.
- */
-export function GenerateDefaultGroupMetadata(chatContextData: Partial<GroupMetadataInfo> = {}): GroupMetadataInfo {
-  const defaults: GroupMetadataInfo = {
-    id: "fakeChatId" + WhatsappGroupIdentifier,
-    sendingMode: WhatsappIdType.Modern,
-    ownerName: "John Doe",
-    groupName: "DEFAULT_groupname",
-    groupDescription: "A group for awesome team collaboration!",
-    communityIdWhereItBelongs: null,
-    onlyAdminsCanChangeGroupSettings: true,
-    onlyAdminsCanSendMsgs: false,
-    membersCanAddOtherMembers: true,
-    needsRequestApprovalToJoinIn: false,
-    isCommunityAnnounceChannel: false,
-    membersCount: 25,
-    ephemeralDuration: 86400, // 24 hours in seconds
-    inviteCode: "abc123xyz",
-    lastNameChangeDateTime: 1694726400000, // Example timestamp (2023-09-15)
-    author: "mock_author",
-    creationDate: 1694640000000, // Example timestamp (2023-09-14)
-    members: [
-      {
-        asMentionFormatted: "@12345678901",
-        rawId: "12345678901@s.whatsapp.net",
-        isAdmin: true,
-        WhatsappIdType: WhatsappIdType.Modern,
-      },
-      {
-        asMentionFormatted: "@12345678902",
-        rawId: "12345678902@s.whatsapp.net",
-        isAdmin: false,
-        WhatsappIdType: WhatsappIdType.Modern,
-      },
-      {
-        asMentionFormatted: "@12345678903",
-        rawId: "12345678903@s.whatsapp.net",
-        isAdmin: false,
-        WhatsappIdType: WhatsappIdType.Modern,
-      },
-    ],
-  };
-
-  return {
-    ...defaults,
-    ...chatContextData,
-    members: chatContextData.members ?? defaults.members,
-  };
 }

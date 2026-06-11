@@ -4,12 +4,13 @@ import { MsgHelper_ExtractQuotedMsgInfo, MsgHelper_FullMsg_GetText } from "../..
 import Delegate from "../../libs/Delegate.js";
 import { MiddlewareChain } from "../../libs/MiddlewareChain.js";
 import { type SenderType, MsgType } from "../../Msg.types.js";
+import type { IWhatsSocket_Submodule_Group } from "../whats_socket/internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
 import type { IWhatsappAdapter, WhatsappMessage } from "../whats_socket/types.js";
-import { BaileysAdapter } from "../whats_socket/vendors/baileys/BaileysWhatsSocketVendor.js";
+import { BaileysAdapter } from "../whats_socket/vendors/baileys/BaileysAdapter.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import { type IChatContextConfig, ChatContext } from "./internals/ChatContext.js";
 import Myself_Submodule_Status from "./internals/ChatContext.myself.status.js";
@@ -217,6 +218,7 @@ export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
 
 export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
 export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
+export type WhatsBotGroup = IWhatsSocket_Submodule_Group;
 export type WhatsBotCommands = CommandsSearcher;
 
 export type WhatsbotcordMiddlewareFunct = (
@@ -384,6 +386,19 @@ export default class Bot implements BotMinimalInfo {
    */
   public get ReceiveMsg(): WhatsBotReceiver {
     return this.InternalSocket.Receive;
+  }
+
+  /**
+   * Grouped API for WhatsApp group utilities.
+   *
+   * @example
+   * ```typescript
+   * const groups = await bot.group.getAll();
+   * await bot.group.cleanup("123@g.us");
+   * ```
+   */
+  public get group(): WhatsBotGroup {
+    return this.InternalSocket.group;
   }
 
   /** Exposes all bot-related events that consumers can subscribe to.
@@ -696,39 +711,66 @@ export default class Bot implements BotMinimalInfo {
       if (customChatContext) {
         ARG1_ChatContext = customChatContext;
       } else {
-        ARG1_ChatContext = new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
-          cancelKeywords: this.Settings.cancelKeywords!,
-          timeoutSeconds: this.Settings.timeoutSeconds!,
-          ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-          wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-          cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-        });
+        ARG1_ChatContext = new ChatContext(
+          senderId_LID,
+          senderId_PN,
+          chatId,
+          rawMsg,
+          this.InternalSocket.Send,
+          this.InternalSocket.Receive,
+          this.InternalSocket.group,
+          {
+            cancelKeywords: this.Settings.cancelKeywords!,
+            timeoutSeconds: this.Settings.timeoutSeconds!,
+            ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+            wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+            cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+          }
+        );
       }
       //=========================================================
 
       // 4. Can't be found after all that? its not a valid command
       if (!commandFound) {
         await this.Events.onCommandNotFound.CallAllAsync(
-          new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
-            cancelKeywords: this.Settings.cancelKeywords!,
-            timeoutSeconds: this.Settings.timeoutSeconds!,
-            ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-            wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-            cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-          }),
+          new ChatContext(
+            senderId_LID,
+            senderId_PN,
+            chatId,
+            rawMsg,
+            this.InternalSocket.Send,
+            this.InternalSocket.Receive,
+            this.InternalSocket.group,
+            {
+              cancelKeywords: this.Settings.cancelKeywords!,
+              timeoutSeconds: this.Settings.timeoutSeconds!,
+              ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+              wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+              cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+            }
+          ),
           txtFromMsg
         );
         return;
       } else {
         if (this.Events.onCommandFound.Length > 0) {
           await this.Events.onCommandFound.CallAllAsync(
-            new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, {
-              cancelKeywords: this.Settings.cancelKeywords!,
-              timeoutSeconds: this.Settings.timeoutSeconds!,
-              ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-              wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-              cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-            }),
+            new ChatContext(
+              senderId_LID,
+              senderId_PN,
+              chatId,
+              rawMsg,
+              this.InternalSocket.Send,
+              this.InternalSocket.Receive,
+              this.InternalSocket.group,
+              {
+                cancelKeywords: this.Settings.cancelKeywords!,
+                timeoutSeconds: this.Settings.timeoutSeconds!,
+                ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+                wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+                cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+              }
+            ),
             commandFound
           );
         }

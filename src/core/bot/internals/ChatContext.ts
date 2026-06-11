@@ -2,6 +2,7 @@ import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
+import type { IWhatsSocket_Submodule_Group as IChatGroupAPI, IWhatsSocket_Submodule_Group } from "../../whats_socket/internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
 import type {
   IWhatsSocket_Submodule_SugarSender,
@@ -92,6 +93,8 @@ export class ChatContext implements IChatContext {
    */
   private _internalReceive: IWhatsSocket_Submodule_Receiver;
 
+  private _internalGroup: IWhatsSocket_Submodule_Group | null;
+
   public readonly FixedParticipantPN: string | null;
 
   public readonly FixedParticipantLID: string | null;
@@ -104,6 +107,13 @@ export class ChatContext implements IChatContext {
 
   public Config: IChatContextConfig;
 
+  public get group(): IChatGroupAPI {
+    if (this.FixedSenderType !== SenderType.Group) {
+      throw new Error("ChatContext.group can only be used from a group chat context");
+    }
+    return this._GetGroupDependency();
+  }
+
   /**
    * Creates a new chat session bound to a specific chat and initial message.
    *
@@ -113,6 +123,7 @@ export class ChatContext implements IChatContext {
    * @param initialMsg - The original message object that caused this context to spawn.
    * @param senderDependency - Internal sender utility for dispatching messages.
    * @param receiverDependency - Internal receiver utility for subscribing to events.
+   * @param groupDependency - Internal group utility for scoped group operations.
    * @param config - Context configuration controlling runtime behavior.
    *
    * @remarks
@@ -127,6 +138,7 @@ export class ChatContext implements IChatContext {
     initialMsg: WhatsappMessage | null,
     senderDependency: IWhatsSocket_Submodule_SugarSender,
     receiverDependency: IWhatsSocket_Submodule_Receiver,
+    groupDependency: IWhatsSocket_Submodule_Group | null,
     config: IChatContextConfig
   ) {
     this.Config = config;
@@ -134,6 +146,7 @@ export class ChatContext implements IChatContext {
     this.FixedParticipantPN = participantID_PN;
     this._internalSend = senderDependency;
     this._internalReceive = receiverDependency;
+    this._internalGroup = groupDependency;
     this.FixedChatId = fixedChatId;
     this.InitialMsg = initialMsg;
     this.FixedSenderType = config.explicitSenderType ?? (this.InitialMsg !== null ? MsgHelper_FullMsg_GetSenderType(this.InitialMsg) : SenderType.Individual);
@@ -150,6 +163,7 @@ export class ChatContext implements IChatContext {
       this.InitialMsg,
       this._internalSend,
       this._internalReceive,
+      this._internalGroup,
       this.Config
     );
   }
@@ -186,6 +200,7 @@ export class ChatContext implements IChatContext {
         params.initialMsg,
         this._internalSend,
         this._internalReceive,
+        this._internalGroup,
         params?.newConfig ?? this.Config
       );
   }
@@ -205,6 +220,7 @@ export class ChatContext implements IChatContext {
           this.InitialMsg,
           this._internalSend,
           this._internalReceive,
+          this._internalGroup,
           {...configCopy, ...params.newConfig}
         );
   }
@@ -223,8 +239,17 @@ export class ChatContext implements IChatContext {
           this.InitialMsg,
           this._internalSend,
           this._internalReceive,
+          this._internalGroup,
           {...configCopy, ...params.newConfig}
         );
+  }
+
+  private _GetGroupDependency(): IWhatsSocket_Submodule_Group {
+    if (!this._internalGroup) {
+      throw new Error("ChatContext.group is not configured. Create this ChatContext from a Bot or pass a group dependency.");
+    }
+
+    return this._internalGroup;
   }
 
   private async HandlePrimaryMsg(mainMsgPromise: Promise<WhatsappMessage | null>): Promise<WhatsappMessage | null> {
@@ -560,9 +585,10 @@ export class ChatContext implements IChatContext {
     if (this.FixedSenderType === SenderType.Individual) {
       return null;
     }
-    return await this._internalReceive.FetchGroupData(this.FixedChatId);
+    return await this._GetGroupDependency().FetchGroupData(this.FixedChatId);
   }
 }
+
 
 function ThrowBadFirstMsgError(): Error {
   throw new Error(

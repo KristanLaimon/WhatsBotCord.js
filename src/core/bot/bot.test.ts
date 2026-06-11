@@ -106,6 +106,12 @@ test("Creation_WhenProvidingVendorFactoryAsSecondParam_ShouldUseFactoryClient", 
   expect((bot.InternalSocket as any).Socket).toMatchObject(vendorClient);
 });
 
+test("Creation_WhenInstantiatingWithSocket_ShouldExposeGroupedGroupApi", () => {
+  const { bot, socket } = toolkit();
+
+  expect(bot.group).toBe(socket.group);
+});
+
 // ========================== COMMANDS ============================
 
 //All command testing related can be found in CommandSearcher.test.ts

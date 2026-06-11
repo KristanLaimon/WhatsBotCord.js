@@ -9,6 +9,7 @@ import {
   downloadMediaMessage,
   fetchLatestBaileysVersion,
   getAggregateVotesInPollMessage,
+  jidNormalizedUser,
   makeWASocket,
   useMultiFileAuthState,
 } from "baileys";
@@ -21,6 +22,7 @@ import type {
   WhatsappMessage,
   WhatsappMessageContent,
   WhatsappMessageOptions,
+  WhatsappGroupParticipantAction,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
   WhatsSocketConnectionUpdate,
@@ -75,6 +77,18 @@ export class BaileysWhatsSocketVendorClient implements IWhatsappSocketAdapterCli
     return this._socket.user!.id;
   }
 
+  public normalizeJid(jid: string): string {
+    return jidNormalizedUser(jid);
+  }
+
+  public getBotJid(): string {
+    if (!this._socket.user?.id) {
+      throw new Error("Socket user is not ready");
+    }
+
+    return this.normalizeJid(this._socket.user.id);
+  }
+
   public on<EventName extends keyof WhatsSocketVendorEventMap>(eventName: EventName, callback: WhatsSocketVendorEventMap[EventName]): void {
     if (eventName === "ConnectionStateChanged") {
       this._socket.ev.on("connection.update", (update) => {
@@ -122,6 +136,24 @@ export class BaileysWhatsSocketVendorClient implements IWhatsappSocketAdapterCli
 
   public async fetchAllGroups(): Promise<WhatsappGroupMetadata[]> {
     return Object.values(await this._socket.groupFetchAllParticipating()) as unknown as WhatsappGroupMetadata[];
+  }
+
+  public async updateGroupParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<unknown[]> {
+    return (await this._socket.groupParticipantsUpdate(groupId, participants, action)) as unknown[];
+  }
+
+  public async leaveGroup(groupId: string): Promise<void> {
+    await this._socket.groupLeave(groupId);
+  }
+
+  public async deleteChatLocally(chatId: string): Promise<void> {
+    await this._socket.chatModify(
+      {
+        delete: true,
+        lastMessages: [],
+      },
+      chatId
+    );
   }
 
   public async downloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer> {

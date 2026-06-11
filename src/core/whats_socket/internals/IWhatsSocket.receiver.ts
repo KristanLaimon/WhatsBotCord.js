@@ -108,35 +108,31 @@ export interface IWhatsSocket_Submodule_Receiver {
   ): Promise<WhatsappMessage>;
 
   /**
-   * Retrieves metadata about a WhatsApp group chat.
-   *
-   * This method fetches all relevant information from the WhatsApp group,
-   * including the list of participants, group owner, description, invite code, and
-   * group settings like whether only admins can send messages or change group settings.
-   *
-   * @param chatId - The WhatsApp ID of the group to fetch metadata for.
-   * @returns A promise resolving to `ChatContextGroupData` containing the group metadata,
-   *          or `null` if the metadata could not be retrieved.
-   * @example
-   * ```ts
-   * const receiver: IWhatsSocket_Submodule_Receiver; // Assume initialized
-   * const groupId = "123456789-987654321@g.us";
-   * const groupData = await receiver.GetGroupMetadata(groupId);
-   * if (groupData) {
-   *   console.log("Group Name:", groupData.groupName);
-   *   console.log("Participants:", groupData.members.map(m => m.rawId));
-   * } else {
-   *   console.error("Failed to fetch group metadata.");
-   * }
-   * ```
-   */
-  FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null>;
-
-  /**
    * Downloads media content from a raw WhatsApp message.
    *
    * @param rawMsg - Message containing media.
    * @returns A buffer with the media bytes.
    */
   DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer>;
+
+  /**
+   * @deprecated ⚠️ **DEPRECATED**: This method has been moved to the `group` submodule for better architectural consistency.
+   *
+   * Please use the new `FetchGroupData` method from the `group` submodule instead.
+   * 
+   * @example
+   * **Old Way (Deprecated):**
+   * ```ts
+   * const groupData = await socket.Receive.FetchGroupData("123@g.us");
+   * ```
+   *
+   * **New Way:**
+   * ```ts
+   * const groupData = await socket.group.FetchGroupData("123@g.us");
+   * ```
+   *
+   * @param chatId - The WhatsApp ID of the group.
+   * @returns A promise resolving to `GroupMetadataInfo` or `null`.
+   */
+  FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null>;
 }

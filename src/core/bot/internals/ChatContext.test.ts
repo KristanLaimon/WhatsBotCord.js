@@ -15,6 +15,7 @@ import {
   WhatsSocket_Submodule_Receiver,
   WhatsSocketReceiverMsgError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
+import { WhatsSocket_Submodule_Group } from "../../whats_socket/internals/WhatsSocket.groups.js";
 import { WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
@@ -49,6 +50,7 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
+  const groupDependency = new WhatsSocket_Submodule_Group(mockSocket); // Así es como debe de instanciarse
   const chatSession = new ChatContext(
     GroupTxtMsg.key.participant ?? null,
     GroupTxtMsg.key.participantAlt ?? null,
@@ -56,18 +58,20 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
     GroupTxtMsg,
     senderDependency,
     receiverDependency,
+    groupDependency,
     {
       cancelKeywords: ["cancel", "cancelar"],
       ignoreSelfMessages: true,
       timeoutSeconds: 5,
       wrongTypeFeedbackMsg: "❌",
-    }
+    },
   );
   return {
     mockSocket: mockSocket,
     sender: senderDependency,
     chat: chatSession,
     receiver: receiverDependency,
+    group: groupDependency,
   };
 }
 
@@ -75,17 +79,19 @@ function GenerateLocalToolKit_ChatSession_FromIndividual() {
   const mockSocket = new WhatsSocketMock({ minimumMilisecondsDelayBetweenMsgs: 0 });
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
-  const chatSession = new ChatContext(null, null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, {
+  const groupDependency = new WhatsSocket_Submodule_Group(mockSocket);
+  const chatSession = new ChatContext(null, null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, groupDependency, {
     cancelKeywords: ["cancel", "cancelar"],
     ignoreSelfMessages: true,
     timeoutSeconds: 5,
-    wrongTypeFeedbackMsg: "❌",
+    wrongTypeFeedbackMsg: "error",
   });
   return {
     mockSocket: mockSocket,
     sender: senderDependency,
     chat: chatSession,
     receiver: receiverDependency,
+    group: groupDependency,
   };
 }
 
@@ -93,6 +99,27 @@ test("WhenInstatiating_ShouldNotThrowAnyError", () => {
   expect(() => {
     GenerateLocalToolKit_ChatSession_FromGroup();
   }).not.toThrow();
+});
+
+it("Group_WhenUsingGroupContext_ShouldDelegateToScopedGroupApi", async (): Promise<void> => {
+  const { chat, group } = GenerateLocalToolKit_ChatSession_FromGroup();
+  const addParticipantsSpy: Mock<typeof group.addParticipants> = spyOn(group, "addParticipants");
+
+  await chat.group.addParticipants(chat.FixedChatId, ["123" + WhatsappPhoneNumberIdentifier]);
+
+  expect(addParticipantsSpy).toHaveBeenCalledTimes(1);
+  expect(addParticipantsSpy).toHaveBeenCalledWith(CHATID, ["123" + WhatsappPhoneNumberIdentifier]);
+});
+
+it("Group_WhenUsingIndividualContext_ShouldThrowGroupOnlyError", async (): Promise<void> => {
+  const { chat } = GenerateLocalToolKit_ChatSession_FromIndividual();
+
+  // Because group now exposes the raw IWhatsSocket_Submodule_Group which expects a groupId,
+  // we actually need to test if `group` itself is accessible or if we throw.
+  // Wait, if we use chat.group.getMetadata, we must pass the group id. But actually, if senderType is individual,
+  // `chat.group` getter might throw "ChatContext.group can only be used from a group chat context"?
+  // Let's check how the getter is implemented.
+  expect(() => chat.group).toThrow("ChatContext.group can only be used from a group chat context");
 });
 
 it("Text_WhenUsingSendText_ShouldUseCorrectlySugarSender", async () => {

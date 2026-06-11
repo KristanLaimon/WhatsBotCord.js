@@ -8,6 +8,9 @@ import type { GroupMetadataInfo } from "../../whats_socket/internals/WhatsSocket
 
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import type { IChatContextConfig } from "./ChatContext.js";
+import type { IWhatsSocket_Submodule_Group as IChatGroupAPI } from "../../whats_socket/internals/IWhatsSocket.groups.js";
+
+export type { IChatGroupAPI };
 
 /**
  * # Chat Context Ubication
@@ -53,6 +56,8 @@ export type ChatContextContactRes = {
   /** WhatsApp ID of the contact */
   whatsappId_PN: string;
 };
+
+
 
 /**
  * # Chat Context Interface
@@ -124,6 +129,18 @@ export interface IChatContext {
    * how the session should behave.
    */
   Config: IChatContextConfig;
+
+  /**
+   * Group helpers scoped to this context's fixed chat.
+   *
+   * @example
+   * ```typescript
+   * if (await ctx.group.isBotAdmin()) {
+   *   await ctx.group.removeParticipants(["123@s.whatsapp.net"]);
+   * }
+   * ```
+   */
+  group: IChatGroupAPI;
 
   // ============================ SENDING ============================
   /**

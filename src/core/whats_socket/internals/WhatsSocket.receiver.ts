@@ -1,8 +1,8 @@
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
-import { type WhatsappIDInfo, WhatsappHelper_ExtractFromWhatsappID, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
+import { type WhatsappIDInfo, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
 import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
-import type { WhatsappGroupMetadata, WhatsappMessage } from "../types.js";
+import type { WhatsappMessage } from "../types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./IWhatsSocket.receiver.js";
 
 /**
@@ -151,10 +151,33 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
   constructor(socket: IWhatsSocket) {
     this._whatsSocket = socket;
     //DO NOT use decorator @autobind for this class, tests start to fail due to that, here has to be done manually
-    this.FetchGroupData = this.FetchGroupData.bind(this);
     this.WaitUntilNextRawMsgFromUserIDInGroup = this.WaitUntilNextRawMsgFromUserIDInGroup.bind(this);
     this.WaitUntilNextRawMsgFromUserIdInPrivateConversation = this.WaitUntilNextRawMsgFromUserIdInPrivateConversation.bind(this);
     this._waitNextMsg = this._waitNextMsg.bind(this);
+    this.FetchGroupData = this.FetchGroupData.bind(this);
+  }
+
+  /**
+   * @deprecated ⚠️ **DEPRECATED**: This method has been moved to the `group` submodule for better architectural consistency.
+   *
+   * Please use the new `FetchGroupData` method from the `group` submodule instead.
+   * 
+   * @example
+   * **Old Way (Deprecated):**
+   * ```ts
+   * const groupData = await socket.Receive.FetchGroupData("123@g.us");
+   * ```
+   *
+   * **New Way:**
+   * ```ts
+   * const groupData = await socket.group.FetchGroupData("123@g.us");
+   * ```
+   *
+   * @param chatId - The WhatsApp ID of the group.
+   * @returns A promise resolving to `GroupMetadataInfo` or `null`.
+   */
+  public async FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null> {
+    return await this._whatsSocket.group.FetchGroupData(chatId);
   }
 
   /**
@@ -307,48 +330,7 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
     return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
 
-  public async FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null> {
-    let res: WhatsappGroupMetadata;
-    try {
-      //In case its a bad chatId and comes from individual msg
-      res = await this._whatsSocket.GetRawGroupMetadata(chatId);
-    } catch {
-      return null;
-    }
-    const participants: ParticipantInfo[] = res.participants.map((info): ParticipantInfo => {
-      const foundId = info.id || info.lid;
-      let foundWhatsInfo: WhatsappIDInfo | null = null;
-      if (foundId) {
-        foundWhatsInfo = WhatsappHelper_ExtractFromWhatsappID(foundId);
-      }
-      return {
-        isAdmin: info.admin === "superadmin",
-        asMentionFormatted: foundWhatsInfo?.asMentionFormatted,
-        rawId: foundWhatsInfo?.rawId,
-        WhatsappIdType: foundWhatsInfo?.WhatsappIdType,
-      };
-    });
-    return {
-      id: res.id,
-      sendingMode: res.addressingMode === "pn" ? WhatsappIdType.Legacy : WhatsappIdType.Modern,
-      ownerName: res.subjectOwner || res.owner || null,
-      groupName: res.subject,
-      groupDescription: res.desc || null,
-      inviteCode: res.inviteCode || null,
-      communityIdWhereItBelongs: res.isCommunity ? res.id : null,
-      onlyAdminsCanChangeGroupSettings: res.restrict || null,
-      onlyAdminsCanSendMsgs: res.announce || null,
-      membersCanAddOtherMembers: res.memberAddMode || null,
-      needsRequestApprovalToJoinIn: res.joinApprovalMode ?? null,
-      isCommunityAnnounceChannel: res.isCommunityAnnounce || null,
-      membersCount: res.participants.length || null,
-      ephemeralDuration: res.ephemeralDuration || null,
-      author: null,
-      lastNameChangeDateTime: res.subjectTime || null,
-      creationDate: res.creation || null,
-      members: participants,
-    };
-  }
+
 
   public async DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer> {
     return await this._whatsSocket.DownloadMediaMessage(rawMsg);

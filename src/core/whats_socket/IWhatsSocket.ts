@@ -5,9 +5,11 @@ import type {
   WhatsappMessageOptions,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
+  IWhatsappSocketAdapterClient,
 } from "./types.js";
 import type Delegate from "../../libs/Delegate.js";
 import type { MsgType, SenderType } from "../../Msg.types.js";
+import type { IWhatsSocket_Submodule_Group } from "./internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./internals/IWhatsSocket.sugarsender.js";
 
@@ -242,6 +244,19 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    */
   Receive: IWhatsSocket_Submodule_Receiver;
 
+  Socket: IWhatsappSocketAdapterClient;
+
+  /**
+   * Grouped API for WhatsApp group utilities.
+   *
+   * @example
+   * ```typescript
+   * const groups = await socket.group.getAll();
+   * await socket.group.addParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * ```
+   */
+  group: IWhatsSocket_Submodule_Group;
+
   /**
    * Establishes the socket connection and starts the client.
    * Must be called before using `Send` or `Receive`.
@@ -266,6 +281,8 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * - Participant list
    * - Admin information
    * - Group settings
+   *
+   * @deprecated Use `socket.group.getMetadata(chatId)` instead.
    */
   GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata>;
 

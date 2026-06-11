@@ -16,12 +16,7 @@ test("ShouldNotThrowErrorWhenInstatiating", () => {
 test("ShouldClearMocksCorrectly", async (): Promise<void> => {
   const suite = new WhatsSocket_Submodule_Receiver_MockingSuite();
 
-  // Configuring MockChat.SetGroupMetadata (is just a wrapper around suite.SetGroupMetadataMock())
-  suite.SetGroupMetadataMock({
-    groupName: "Overridden Group",
-  });
-
-  // Arrange: put some mocks
+  // Test other mock states... some mocks
   // 1. Adding msg to wait
   suite.AddWaitMsg({ rawMsg: MockGroupTxtMsg });
 
@@ -36,7 +31,6 @@ test("ShouldClearMocksCorrectly", async (): Promise<void> => {
   // 3. Sanity check before clearing
   expect(suite["_queueWait"]?.length ?? 0).toBeGreaterThan(0);
   expect(suite.Waited.length).toBeGreaterThan(0);
-  expect(suite.GroupMetadataToSendMock?.groupName).toBe("Overridden Group");
 
   // Act
   suite.ClearMocks();
@@ -44,6 +38,4 @@ test("ShouldClearMocksCorrectly", async (): Promise<void> => {
   // Assert
   expect(suite["_queueWait"]?.length ?? 0).toBe(0); //There are no pending waited msg to send to "command"
   expect(suite.Waited.length).toBe(0); //No msgs waited successfully after command execution
-  expect(suite.GroupMetadataToSendMock?.groupName).toBe("DEFAULT_groupname"); // should be with default name
-  expect(suite.GroupMetadataToSendMock?.id.endsWith(WhatsappGroupIdentifier)).toBe(true); //should have a default chatId with correct suffix
 });

@@ -22,17 +22,24 @@ import type { WhatsbotcordMiddlewareFunct, WhatsbotcordMiddlewareFunct_OnFoundCo
 import type { IChatContextConfig } from "./core/bot/internals/ChatContext.js";
 import type { CommandEntry } from "./core/bot/internals/CommandsSearcher.js";
 import type { CommandArgs } from "./core/bot/internals/CommandsSearcher.types.js";
-import type { IChatContext } from "./core/bot/internals/IChatContext.js";
+import type { IChatContext, IChatGroupAPI } from "./core/bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "./core/bot/internals/ICommand.js";
 import type {
   OfficialPlugin_OneCommandPerUserAtATime_Config,
   OfficialPlugin_OneCommandPerUserAtATime_ContextInfo,
 } from "./core/official_plugins/OneCommandPerUser_Plugin.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./core/whats_socket/internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_Group } from "./core/whats_socket/internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { GroupMetadataInfo, WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { IMsgServiceSocketMinimum, IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "./core/whats_socket/IWhatsSocket.js";
-import type { IWhatsappAdapter, IWhatsappSocketAdapterClient, WhatsappMessage, WhatsSocketLoggerMode } from "./core/whats_socket/types.js";
+import type {
+  IWhatsappAdapter,
+  IWhatsappSocketAdapterClient,
+  WhatsappGroupMetadata,
+  WhatsappMessage,
+  WhatsSocketLoggerMode,
+} from "./core/whats_socket/types.js";
 import type { WhatsSocketOptions } from "./core/whats_socket/WhatsSocket.js";
 import type { WhatsappIDInfo } from "./helpers/Whatsapp.helper.js";
 import type {
@@ -50,10 +57,12 @@ export type {
   CommandEntry,
   GroupMetadataInfo,
   IChatContext,
+  IChatGroupAPI,
   ICommand,
   IMsgServiceSocketMinimum,
   IWhatsSocket,
   IWhatsSocket_EventsOnly_Module,
+  IWhatsSocket_Submodule_Group,
   IWhatsSocket_Submodule_Receiver,
   IWhatsSocket_Submodule_SugarSender,
   IWhatsappSocketAdapterClient as IWhatsSocketVendorClient,
@@ -67,6 +76,7 @@ export type {
   MockingChatParams,
   OfficialPlugin_OneCommandPerUserAtATime_Config,
   OfficialPlugin_OneCommandPerUserAtATime_ContextInfo,
+  WhatsappGroupMetadata,
   WhatsappIDInfo,
   WhatsappMessage,
   WhatsbotcordMiddlewareFunct,
@@ -77,20 +87,20 @@ export type {
 };
 
 // == Runtime deps exporting ==
-import Bot from "./core/bot/bot.js";
-import { ChatContext } from "./core/bot/internals/ChatContext.js";
-import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
-import OfficialPlugin_OneCommandPerUserAtATime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
-import { WhatsSocketReceiverHelper_isReceiverError, WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
-import { BaileysAdapter } from "./core/whats_socket/vendors/baileys/BaileysWhatsSocketVendor.js";
-import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
-import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
-import CreateCommand from "./helpers/CommandForJs.helper.js";
-import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
-import Delegate from "./libs/Delegate.js";
-import ChatMock from "./mocking_suite/ChatMock.js";
-import { MsgType, SenderType } from "./Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./Whatsapp.types.js";
+  import Bot from "./core/bot/bot.js";
+  import { ChatContext } from "./core/bot/internals/ChatContext.js";
+  import { CommandType } from "./core/bot/internals/CommandsSearcher.js";
+  import OfficialPlugin_OneCommandPerUserAtATime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
+  import { WhatsSocketReceiverHelper_isReceiverError, WhatsSocketReceiverMsgError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
+  import { BaileysAdapter } from "./core/whats_socket/vendors/baileys/BaileysAdapter.js";
+  import WhatsSocket from "./core/whats_socket/WhatsSocket.js";
+  import { Debug_StoreWhatsMsgHistoryInJson } from "./Debugging.helper.js";
+  import CreateCommand from "./helpers/CommandForJs.helper.js";
+  import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
+  import Delegate from "./libs/Delegate.js";
+  import ChatMock from "./mocking_suite/ChatMock.js";
+  import { MsgType, SenderType } from "./Msg.types.js";
+  import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./Whatsapp.types.js";
 export {
   BaileysAdapter,
   ChatContext,

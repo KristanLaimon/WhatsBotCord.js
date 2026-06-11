@@ -6,6 +6,7 @@ import type {
   WhatsappMessage,
   WhatsappMessageContent,
   WhatsappMessageOptions,
+  WhatsappGroupParticipantAction,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
   WhatsSocketVendorEventMap,
@@ -50,6 +51,24 @@ export class GenericSocketVendorClient_Mock implements IWhatsappSocketAdapterCli
   public groupFetchAllParticipating: Mock<() => Promise<Record<string, WhatsappGroupMetadata>>> = fn(async () => {
     const groups = await this.fetchAllGroups();
     return Object.fromEntries(groups.map((group) => [group.id, group]));
+  });
+
+  public normalizeJid: Mock<(jid: string) => string> = fn((jid: string) => jid);
+  public getBotJid: Mock<() => string> = fn(() => this.normalizeJid(this.ownJID));
+  public updateGroupParticipants: Mock<(groupId: string, participants: string[], action: WhatsappGroupParticipantAction) => Promise<unknown[]>> = fn(
+    async (_groupId: string, participants: string[], action: WhatsappGroupParticipantAction) =>
+      participants.map((participant) => ({
+        jid: participant,
+        status: "200",
+        action,
+      }))
+  );
+  public groupParticipantsUpdate = this.updateGroupParticipants;
+  public leaveGroup: Mock<(groupId: string) => Promise<void>> = fn(async (_groupId: string) => Promise.resolve());
+  public groupLeave = this.leaveGroup;
+  public deleteChatLocally: Mock<(chatId: string) => Promise<void>> = fn(async (_chatId: string) => Promise.resolve());
+  public chatModify: Mock<(_mutation: unknown, chatId: string) => Promise<void>> = fn(async (_mutation: unknown, chatId: string) => {
+    await this.deleteChatLocally(chatId);
   });
 
   public downloadMediaMessage: Mock<(rawMsg: WhatsappMessage) => Promise<Buffer>> = fn(async (_rawMsg: WhatsappMessage) => Buffer.from([]));

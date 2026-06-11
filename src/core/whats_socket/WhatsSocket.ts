@@ -5,6 +5,7 @@ import Delegate from "../../libs/Delegate.js";
 import type { MsgType } from "../../Msg.types.js";
 import { SenderType } from "../../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../Whatsapp.types.js";
+import { WhatsSocket_Submodule_Group } from "./internals/WhatsSocket.groups.js";
 import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
@@ -152,6 +153,11 @@ export default class WhatsSocket implements IWhatsSocket {
    */
   public Receive!: WhatsSocket_Submodule_Receiver;
 
+  /**
+   * Group utility module for metadata, participant updates, and cleanup actions.
+   */
+  public group!: WhatsSocket_Submodule_Group;
+
   // === Normal Public Properties ===
   public ActualReconnectionRetries: number = 0;
 
@@ -224,6 +230,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
     this.Send = new WhatsSocket_Submodule_SugarSender(this);
     this.Receive = new WhatsSocket_Submodule_Receiver(this);
+    this.group = new WhatsSocket_Submodule_Group(this);
   }
 
   public async Shutdown() {
@@ -247,7 +254,7 @@ export default class WhatsSocket implements IWhatsSocket {
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: ✅ Connected to whatsapp servers");
           }
-          const groups = await this.Socket.fetchAllGroups();
+          const groups = await this.group.getAll();
           this.onStartupAllGroupsIn.CallAll(groups);
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: 💬 All groups metadata fetched successfully");
@@ -355,9 +362,13 @@ export default class WhatsSocket implements IWhatsSocket {
    */
   public async GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
     if (!chatId.endsWith(WhatsappGroupIdentifier))
-      throw new Error("Bad args => WhatsSocket.GetGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
+      throw new Error("Bad args => WhatsSocket.GetRawGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
     return await this.Socket.fetchGroupMetadata(chatId);
   }
+
+  // Internal group methods removed
+
+  // Those group methods were removed here and are implemented in WhatsSocket_Submodule_Group now.
 
   private ConfigureGroupsEnter(): void {
     this.Socket.on("GroupsJoined", async (groupsUpserted: WhatsappGroupMetadata[]) => {

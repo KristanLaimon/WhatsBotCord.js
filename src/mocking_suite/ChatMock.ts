@@ -26,6 +26,7 @@ import {
 import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
+import WhatsSocket_Submodule_Groups_MockingSuite from "./WhatsSocket.groups.mockingsuite.js";
 
 /**
  * Extends {@link WhatsBotOptions} with additional settings specific to the mocking suite.
@@ -140,6 +141,7 @@ export default class ChatMock {
   private _command: ICommand;
   private _receiverMock: WhatsSocket_Submodule_Receiver_MockingSuite;
   private _sugarSenderMock: WhatsSocket_Submodule_SugarSender_MockingSuite;
+  private _groupMock: WhatsSocket_Submodule_Groups_MockingSuite;
   private _socketMock: WhatsSocketMock;
 
   /**
@@ -168,6 +170,13 @@ export default class ChatMock {
       Locations: this._sugarSenderMock.SentMessages_Locations,
       Contacts: this._sugarSenderMock.SentMessages_Contacts,
     };
+  }
+
+  /**
+   * All actions executed through the group API.
+   */
+  public get GroupActionsFromCommand() {
+    return this._groupMock.Actions;
   }
 
   /**
@@ -233,7 +242,8 @@ export default class ChatMock {
     };
     this._receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
-    this._socketMock = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock });
+    this._groupMock = new WhatsSocket_Submodule_Groups_MockingSuite();
+    this._socketMock = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock, customGroup: this._groupMock });
     const chatContext = new ChatContext_MockingSuite(
       this.ParticipantId_LID,
       this.ParticipantId_PN,
@@ -241,6 +251,7 @@ export default class ChatMock {
       MsgFactory_Text(this.ChatId, this.ParticipantId_LID, `!${this._command.name}`, { pushName: "ChatMock User" }),
       this._sugarSenderMock,
       this._receiverMock,
+      this._groupMock,
       chatContextConfig
     );
     this._chatContextMock = chatContext;
@@ -566,9 +577,7 @@ export default class ChatMock {
     }
     //@ts-expect-error just a little fix... jejeje
     this._chatContextMock["FixedChatId"] = this.ChatId;
-    this._receiverMock.SetGroupMetadataMock({ ...metadata, id: this.ChatId });
-    //With mocksocket, do not modify it, its always group
-    this._socketMock.SetGroupMetadataMock(metadata);
+    this._groupMock.SetGroupMetadataMock({ ...metadata, id: this.ChatId });
   }
 
   /**
@@ -585,6 +594,7 @@ export default class ChatMock {
   public ClearMocks(): void {
     this._receiverMock.ClearMocks();
     this._sugarSenderMock.ClearMocks();
+    this._groupMock.ClearMocks();
     this._socketMock.ClearMock();
     this._chatContextMock.ClearMocks();
   }

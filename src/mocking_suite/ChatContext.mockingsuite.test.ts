@@ -4,14 +4,17 @@ import ChatContext_MockingSuite from "./ChatContext.mockingsuite.js";
 import { MsgFactory_Audio, MsgFactory_Document, MsgFactory_Image, MsgFactory_Sticker, MsgFactory_Text, MsgFactory_Video } from "./MsgsMockFactory.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
+import WhatsSocket_Submodule_Groups_MockingSuite from "./WhatsSocket.groups.mockingsuite.js";
 
 let chatCtx: ChatContext_MockingSuite;
 let receiverMock: WhatsSocket_Submodule_Receiver_MockingSuite;
 let senderMock: WhatsSocket_Submodule_SugarSender_MockingSuite;
+let groupMock: WhatsSocket_Submodule_Groups_MockingSuite;
 
 beforeEach(() => {
   receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
   senderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
+  groupMock = new WhatsSocket_Submodule_Groups_MockingSuite();
 
   chatCtx = new ChatContext_MockingSuite(
     "123456789@lid",
@@ -20,6 +23,7 @@ beforeEach(() => {
     MsgFactory_Image("1234567890@s.whatsapp.net", null, "./img.png"),
     senderMock,
     receiverMock,
+    groupMock,
     {
       cancelKeywords: ["cancel"],
       ignoreSelfMessages: true,
