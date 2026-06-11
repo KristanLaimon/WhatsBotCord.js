@@ -14,7 +14,7 @@ import type {
  * A mock implementation of the internal vendor client.
  * The name is kept for compatibility with existing tests.
  */
-export class BaileysSocketServiceAdapter_Mock implements IWhatsSocketVendorClient {
+export class GenericSocketVendorClient_Mock implements IWhatsSocketVendorClient {
   public readonly ownJID = "mock-jid";
   public user = { id: this.ownJID };
 
