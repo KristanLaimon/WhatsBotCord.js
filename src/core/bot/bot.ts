@@ -8,7 +8,7 @@ import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import type { IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "../whats_socket/IWhatsSocket.js";
-import type { IWhatsSocketVendorFactory, WhatsappMessage } from "../whats_socket/types.js";
+import type { IWhatsappAdapter, WhatsappMessage } from "../whats_socket/types.js";
 import { BaileysAdapter } from "../whats_socket/vendors/baileys/BaileysWhatsSocketVendor.js";
 import WhatsSocket, { type WhatsSocketOptions } from "../whats_socket/WhatsSocket.js";
 import { type IChatContextConfig, ChatContext } from "./internals/ChatContext.js";
@@ -434,7 +434,7 @@ export default class Bot implements BotMinimalInfo {
    * runtime settings such as logging, message delays, and command handling.
    *
    * @param options - Optional configuration for customizing bot behavior.
-   * @param vendorFactory - Optional WhatsApp socket vendor factory. Defaults to the built-in Baileys vendor.
+   * @param whatsappAdapter -  You can provide your own WhatsApp adapter. Defaults to the built-in `Baileys.js` adapter.
    *
    * Default values:
    * - `credentialsFolder`: `"./auth"`
@@ -499,7 +499,7 @@ export default class Bot implements BotMinimalInfo {
    * - For production bots, consider raising `delayMilisecondsBetweenMsgs`
    *   slightly to avoid WhatsApp anti-spam systems.
    */
-  constructor(options?: WhatsBotOptions, vendorFactory?: IWhatsSocketVendorFactory) {
+  constructor(options?: WhatsBotOptions, whatsappAdapter?: IWhatsappAdapter) {
     this.Settings = BotUtils_GenerateOptions(options);
 
     //# Validations:
@@ -516,7 +516,7 @@ export default class Bot implements BotMinimalInfo {
 
     this._commandSearcher = new CommandsSearcher();
     const socketVendorFactory =
-      vendorFactory ??
+      whatsappAdapter ??
       new BaileysAdapter({
         credentialsFolder: this.Settings.credentialsFolder ?? "./auth",
         loggerMode: this.Settings.loggerMode ?? "recommended",

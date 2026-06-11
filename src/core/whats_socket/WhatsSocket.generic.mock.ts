@@ -1,7 +1,7 @@
 import { type Mock, mock as fn } from "bun:test";
 import type {
-  IWhatsSocketVendorClient,
-  IWhatsSocketVendorFactory,
+  IWhatsappAdapter,
+  IWhatsappSocketAdapterClient,
   WhatsappGroupMetadata,
   WhatsappMessage,
   WhatsappMessageContent,
@@ -11,7 +11,7 @@ import type {
   WhatsSocketVendorEventMap,
 } from "./types.js";
 
-export function CreateWhatsSocketVendorFactoryMock(mockSocket: GenericSocketVendorClient_Mock): IWhatsSocketVendorFactory {
+export function CreateWhatsSocketVendorFactoryMock(mockSocket: GenericSocketVendorClient_Mock): IWhatsappAdapter {
   return {
     Create: async () => mockSocket,
   };
@@ -21,7 +21,7 @@ export function CreateWhatsSocketVendorFactoryMock(mockSocket: GenericSocketVend
  * A mock implementation of the internal vendor client.
  * The name is kept for compatibility with existing tests.
  */
-export class GenericSocketVendorClient_Mock implements IWhatsSocketVendorClient {
+export class GenericSocketVendorClient_Mock implements IWhatsappSocketAdapterClient {
   public readonly ownJID = "mock-jid";
   public user = { id: this.ownJID };
 

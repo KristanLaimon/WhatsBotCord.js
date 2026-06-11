@@ -22,7 +22,7 @@ import {
 } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock.js";
-import type { IWhatsSocketVendorFactory } from "../whats_socket/types.js";
+import type { IWhatsappAdapter } from "../whats_socket/types.js";
 import { GenericSocketVendorClient_Mock } from "../whats_socket/WhatsSocket.generic.mock.js";
 import Bot, { type WhatsbotcordMiddlewareFunct } from "./bot.js";
 import type { ChatContext } from "./internals/ChatContext.js";
@@ -96,7 +96,7 @@ test("Creation_WhenInstatiatingWithoutBotParams_ShouldSetAllConfig_NotUndefinedC
 
 test("Creation_WhenProvidingVendorFactoryAsSecondParam_ShouldUseFactoryClient", async () => {
   const vendorClient = new GenericSocketVendorClient_Mock();
-  const vendorFactory: IWhatsSocketVendorFactory = {
+  const vendorFactory: IWhatsappAdapter = {
     Create: async () => vendorClient,
   };
 

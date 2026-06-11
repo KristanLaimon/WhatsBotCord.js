@@ -1,7 +1,14 @@
 import fs from "fs";
 import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
-import { type ChatContext, type CommandArgs, CommandType, MsgType, SenderType, default as WhatsbotCord } from "src/index.js";
-import OfficialPlugin_OneCommandPerUserAtAtime from "./core/official_plugins/OneCommandPerUser_Plugin.js";
+import {
+  type ChatContext,
+  type CommandArgs,
+  CommandType,
+  MsgType,
+  SenderType,
+  default as WhatsbotCord,
+  OfficialPlugin_OneCommandPerUserAtATime,
+} from "src/index.js";
 import { isDev } from "./Envs.js";
 
 /**
@@ -114,7 +121,7 @@ bot.Commands.Add(new SendToStateCommand());
 bot.Commands.Add(new SendPrivately());
 bot.Commands.Add(new WaitForMsgAndSendItBack());
 bot.Use(
-  OfficialPlugin_OneCommandPerUserAtAtime({
+  OfficialPlugin_OneCommandPerUserAtATime({
     msgToSend: (info, lastCommand, actualCommand) => {
       return `
       You ${info.pushName} have already started command !${lastCommand.name},

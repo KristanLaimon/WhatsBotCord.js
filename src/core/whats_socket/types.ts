@@ -323,7 +323,7 @@ export type WhatsSocketVendorEventMap = {
  * client.on("IncomingMessagesReceived", update => console.log(update.messages));
  * ```
  */
-export interface IWhatsSocketVendorClient {
+export interface IWhatsappSocketAdapterClient {
   readonly ownJID: string;
 
   on<EventName extends keyof WhatsSocketVendorEventMap>(eventName: EventName, callback: WhatsSocketVendorEventMap[EventName]): void;
@@ -341,6 +341,6 @@ export interface IWhatsSocketVendorClient {
   shutdown(): Promise<void>;
 }
 
-export interface IWhatsSocketVendorFactory {
-  Create(): Promise<IWhatsSocketVendorClient>;
+export interface IWhatsappAdapter {
+  Create(): Promise<IWhatsappSocketAdapterClient>;
 }

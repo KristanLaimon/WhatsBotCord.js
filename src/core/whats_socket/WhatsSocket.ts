@@ -10,8 +10,8 @@ import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueu
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "./IWhatsSocket.js";
 import type {
-  IWhatsSocketVendorFactory,
-  IWhatsSocketVendorClient,
+  IWhatsappAdapter,
+  IWhatsappSocketAdapterClient,
   WhatsappGroupMetadata,
   WhatsappMessage,
   WhatsappMessageContent,
@@ -86,7 +86,7 @@ export type WhatsSocketOptions = {
    * Vendor factory used to create the internal WhatsApp socket client.
    * `WhatsSocket` does not create a default vendor by itself; callers must provide one.
    */
-  ownWhatsSocketVendorFactory_Internal: IWhatsSocketVendorFactory;
+  ownWhatsSocketVendorFactory_Internal: IWhatsappAdapter;
 };
 
 /**
@@ -139,7 +139,7 @@ export default class WhatsSocket implements IWhatsSocket {
 
   //=== Subcomponents ===
   //They're initialized/instantiated in "Start()"
-  public Socket!: IWhatsSocketVendorClient;
+  public Socket!: IWhatsappSocketAdapterClient;
   private _senderQueue!: WhatsSocketSenderQueue_SubModule;
   /**
    * Sender module and sugar layer for sending all kinds of msgs.
@@ -161,7 +161,7 @@ export default class WhatsSocket implements IWhatsSocket {
   private _maxReconnectionRetries: number;
   private _senderQueueMaxLimit: number;
   private _milisecondsDelayBetweenSentMsgs: number;
-  private _socketVendorFactory: IWhatsSocketVendorFactory;
+  private _socketVendorFactory: IWhatsappAdapter;
 
   constructor(options: WhatsSocketOptions) {
     this._loggerMode = options.loggerMode ?? "silent";

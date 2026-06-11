@@ -15,8 +15,8 @@ import {
 import pino from "pino";
 import { GetPath } from "../../../../libs/BunPath.js";
 import type {
-  IWhatsSocketVendorClient,
-  IWhatsSocketVendorFactory,
+  IWhatsappAdapter,
+  IWhatsappSocketAdapterClient,
   WhatsappGroupMetadata,
   WhatsappMessage,
   WhatsappMessageContent,
@@ -36,14 +36,14 @@ export type BaileysWhatsSocketVendorOptions = {
   ownRawBaileysSocket?: BaileysWASocket;
 };
 
-export class BaileysAdapter implements IWhatsSocketVendorFactory {
+export class BaileysAdapter implements IWhatsappAdapter {
   private readonly _options: BaileysWhatsSocketVendorOptions;
 
   constructor(options: BaileysWhatsSocketVendorOptions) {
     this._options = options;
   }
 
-  public async Create(): Promise<IWhatsSocketVendorClient> {
+  public async Create(): Promise<IWhatsappSocketAdapterClient> {
     if (this._options.ownRawBaileysSocket) {
       return new BaileysWhatsSocketVendorClient(this._options.ownRawBaileysSocket);
     }
@@ -64,7 +64,7 @@ export class BaileysAdapter implements IWhatsSocketVendorFactory {
   }
 }
 
-export class BaileysWhatsSocketVendorClient implements IWhatsSocketVendorClient {
+export class BaileysWhatsSocketVendorClient implements IWhatsappSocketAdapterClient {
   private readonly _socket: BaileysWASocket;
 
   constructor(socket: BaileysWASocket) {
@@ -92,14 +92,14 @@ export class BaileysWhatsSocketVendorClient implements IWhatsSocketVendorClient 
 
     if (eventName === "MessagesUpdated") {
       this._socket.ev.on("messages.update", (messagesUpdates: WAMessageUpdate[]) => {
-        callback((messagesUpdates as unknown as WhatsappMessage[]) as never);
+        callback(messagesUpdates as unknown as WhatsappMessage[] as never);
       });
       return;
     }
 
     if (eventName === "GroupsJoined") {
       this._socket.ev.on("groups.upsert", (groups: GroupMetadata[]) => {
-        callback((groups as unknown as WhatsappGroupMetadata[]) as never);
+        callback(groups as unknown as WhatsappGroupMetadata[] as never);
       });
       return;
     }
@@ -112,11 +112,8 @@ export class BaileysWhatsSocketVendorClient implements IWhatsSocketVendorClient 
   }
 
   public async sendMessage(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
-    return ((await this._socket.sendMessage(
-      chatId_JID,
-      content as AnyMessageContent,
-      options as MiscMessageGenerationOptions | undefined
-    )) ?? null) as WhatsappMessage | null;
+    return ((await this._socket.sendMessage(chatId_JID, content as AnyMessageContent, options as MiscMessageGenerationOptions | undefined)) ??
+      null) as WhatsappMessage | null;
   }
 
   public async fetchGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
