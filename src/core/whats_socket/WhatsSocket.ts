@@ -254,7 +254,7 @@ export default class WhatsSocket implements IWhatsSocket {
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: ✅ Connected to whatsapp servers");
           }
-          const groups = await this.group.getAll();
+          const groups = await this.group.GetAll();
           this.onStartupAllGroupsIn.CallAll(groups);
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: 💬 All groups metadata fetched successfully");

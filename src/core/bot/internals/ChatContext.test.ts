@@ -103,9 +103,9 @@ test("WhenInstatiating_ShouldNotThrowAnyError", () => {
 
 it("Group_WhenUsingGroupContext_ShouldDelegateToScopedGroupApi", async (): Promise<void> => {
   const { chat, group } = GenerateLocalToolKit_ChatSession_FromGroup();
-  const addParticipantsSpy: Mock<typeof group.addParticipants> = spyOn(group, "addParticipants");
+  const addParticipantsSpy: Mock<typeof group.AddParticipants> = spyOn(group, "AddParticipants");
 
-  await chat.Group.addParticipants(chat.FixedChatId, ["123" + WhatsappPhoneNumberIdentifier]);
+  await chat.Group.AddParticipants(chat.FixedChatId, ["123" + WhatsappPhoneNumberIdentifier]);
 
   expect(addParticipantsSpy).toHaveBeenCalledTimes(1);
   expect(addParticipantsSpy).toHaveBeenCalledWith(CHATID, ["123" + WhatsappPhoneNumberIdentifier]);

@@ -28,34 +28,34 @@ export class WhatsSocket_Submodule_Group implements IWhatsSocket_Submodule_Group
     this.socket = socket;
   }
 
-  public normalizeJid(jid: string): string {
+  public NormalizeJid(jid: string): string {
     this._assertNotEmpty(jid, "jid");
     return this.socket.Socket.normalizeJid(jid);
   }
 
-  public getBotJid(): string {
+  public GetBotJid(): string {
     return this.socket.Socket.getBotJid();
   }
 
-  public async getMetadata(groupId: string): Promise<WhatsappGroupMetadata> {
+  public async GetMetadata(groupId: string): Promise<WhatsappGroupMetadata> {
     this._assertGroupId(groupId);
     return await this.socket.GetRawGroupMetadata(groupId);
   }
 
-  public async getAll(): Promise<WhatsappGroupMetadata[]> {
+  public async GetAll(): Promise<WhatsappGroupMetadata[]> {
     return await this.socket.Socket.fetchAllGroups();
   }
 
-  public async findByName(name: string): Promise<WhatsappGroupMetadata | null> {
+  public async FindByName(name: string): Promise<WhatsappGroupMetadata | null> {
     this._assertNotEmpty(name, "name");
 
-    const groups = await this.getAll();
+    const groups = await this.GetAll();
     return groups.find((group) => group.subject === name) ?? null;
   }
 
-  public async isBotAdmin(groupId: string): Promise<boolean> {
-    const metadata = await this.getMetadata(groupId);
-    const botJid = this.getBotJid();
+  public async IsBotAdmin(groupId: string): Promise<boolean> {
+    const metadata = await this.GetMetadata(groupId);
+    const botJid = this.GetBotJid();
 
     const botParticipant = metadata.participants.find((participant) => {
       const participantJid = participant.id ?? participant.lid;
@@ -63,73 +63,77 @@ export class WhatsSocket_Submodule_Group implements IWhatsSocket_Submodule_Group
         return false;
       }
 
-      return this.normalizeJid(participantJid) === botJid;
+      return this.NormalizeJid(participantJid) === botJid;
     });
 
     return botParticipant?.admin === "admin" || botParticipant?.admin === "superadmin";
   }
 
-  public async updateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<unknown[]> {
+  public async UpdateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
     this._assertGroupId(groupId);
     this._assertValidAction(action);
-
     if (participants.length === 0) {
-      return [];
+      return false;
     }
-
-    const normalizedParticipants = participants.map((participant) => this.normalizeJid(participant));
-    return await this.socket.Socket.updateGroupParticipants(groupId, normalizedParticipants, action);
+    const normalizedParticipants = participants.map((participant) => this.NormalizeJid(participant));
+    try {
+      const result = await this.socket.Socket.updateGroupParticipants(groupId, normalizedParticipants, action);
+      return !!result;
+    } catch (e) {
+      console.warn(`Failed to update participants (${action}) in group ${groupId}:`, e);
+      return false;
+    }
   }
 
-  public async addParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "add");
+  public async AddParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "add");
   }
 
-  public async removeParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "remove");
+  public async RemoveParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "remove");
   }
 
-  public async promoteParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "promote");
+  public async PromoteParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "promote");
   }
 
-  public async demoteParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "demote");
+  public async DemoteParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "demote");
   }
 
-  public async removeAllParticipants(groupId: string): Promise<void> {
-    const metadata = await this.getMetadata(groupId);
-    const botJid = this.getBotJid();
+  public async RemoveAllParticipants(groupId: string): Promise<void> {
+    const metadata = await this.GetMetadata(groupId);
+    const botJid = this.GetBotJid();
 
     const participants = metadata.participants
       .map((participant) => participant.id ?? participant.lid ?? null)
       .filter((participantJid): participantJid is string => participantJid !== null)
-      .map((participantJid) => this.normalizeJid(participantJid))
+      .map((participantJid) => this.NormalizeJid(participantJid))
       .filter((participantJid) => participantJid !== botJid);
 
     if (participants.length === 0) {
       return;
     }
 
-    await this.removeParticipants(groupId, participants);
+    await this.RemoveParticipants(groupId, participants);
   }
 
-  public async leave(groupId: string): Promise<void> {
+  public async Leave(groupId: string): Promise<void> {
     this._assertGroupId(groupId);
     await this.socket.Socket.leaveGroup(groupId);
   }
 
-  public async deleteChat(groupId: string): Promise<void> {
+  public async DeleteChat(groupId: string): Promise<void> {
     this._assertGroupId(groupId);
     await this.socket.Socket.deleteChatLocally(groupId);
   }
 
-  public async cleanup(groupId: string): Promise<void> {
-    await this.removeAllParticipants(groupId);
-    await this.leave(groupId);
+  public async Cleanup(groupId: string): Promise<void> {
+    await this.RemoveAllParticipants(groupId);
+    await this.Leave(groupId);
 
     try {
-      await this.deleteChat(groupId);
+      await this.DeleteChat(groupId);
     } catch (error) {
       console.warn("Could not delete chat locally:", error);
     }

@@ -24,7 +24,7 @@ export interface IWhatsSocket_Submodule_Group {
    * const jid = socket.group.normalizeJid("123@s.whatsapp.net");
    * ```
    */
-  normalizeJid(jid: string): string;
+  NormalizeJid(jid: string): string;
 
   /**
    * Gets the connected bot account JID.
@@ -36,7 +36,7 @@ export interface IWhatsSocket_Submodule_Group {
    * const botJid = socket.group.getBotJid();
    * ```
    */
-  getBotJid(): string;
+  GetBotJid(): string;
 
   /**
    * Fetches raw metadata for one group.
@@ -49,7 +49,7 @@ export interface IWhatsSocket_Submodule_Group {
    * const metadata = await socket.group.getMetadata("123@g.us");
    * ```
    */
-  getMetadata(groupId: string): Promise<WhatsappGroupMetadata>;
+  GetMetadata(groupId: string): Promise<WhatsappGroupMetadata>;
 
   /**
    * Fetches every group the bot is participating in.
@@ -61,7 +61,7 @@ export interface IWhatsSocket_Submodule_Group {
    * const groups = await socket.group.getAll();
    * ```
    */
-  getAll(): Promise<WhatsappGroupMetadata[]>;
+  GetAll(): Promise<WhatsappGroupMetadata[]>;
 
   /**
    * Finds a participating group by its exact subject.
@@ -74,7 +74,7 @@ export interface IWhatsSocket_Submodule_Group {
    * const group = await socket.group.findByName("Team");
    * ```
    */
-  findByName(name: string): Promise<WhatsappGroupMetadata | null>;
+  FindByName(name: string): Promise<WhatsappGroupMetadata | null>;
 
   /**
    * Checks whether the bot is an admin in a group.
@@ -89,27 +89,154 @@ export interface IWhatsSocket_Submodule_Group {
    * }
    * ```
    */
-  isBotAdmin(groupId: string): Promise<boolean>;
-
-  updateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<unknown[]>;
-
-  addParticipants(groupId: string, participants: string[]): Promise<unknown[]>;
-
-  removeParticipants(groupId: string, participants: string[]): Promise<unknown[]>;
-
-  promoteParticipants(groupId: string, participants: string[]): Promise<unknown[]>;
-
-  demoteParticipants(groupId: string, participants: string[]): Promise<unknown[]>;
-
-  removeAllParticipants(groupId: string): Promise<void>;
-
-  leave(groupId: string): Promise<void>;
-
-  deleteChat(groupId: string): Promise<void>;
-
-  cleanup(groupId: string): Promise<void>;
+  IsBotAdmin(groupId: string): Promise<boolean>;
 
   /**
+   * # Update Group Participants
+   *
+   * Executes a participant action (add, remove, promote, demote) on a group.
+   * Internal method typically wrapped by specific action methods.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @param participants - Array of participant JIDs.
+   * @param action - Action to perform (`WhatsappGroupParticipantAction`).
+   * @returns A boolean indicating if the action was executed successfully.
+   *
+   * @example
+   * ```typescript
+   * const success = await socket.group.updateParticipants("123@g.us", ["456@s.whatsapp.net"], "add");
+   * ```
+   */
+  UpdateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean>;
+
+  /**
+   * # Add Participants
+   *
+   * Adds new participants to the group. The bot must be an admin.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @param participants - Array of participant JIDs to add.
+   * @returns A boolean indicating if the additions were executed successfully.
+   *
+   * @example
+   * ```typescript
+   * const success = await socket.group.addParticipants("123@g.us", ["456@s.whatsapp.net", "789@s.whatsapp.net"]);
+   * ```
+   */
+  AddParticipants(groupId: string, participants: string[]): Promise<boolean>;
+
+  /**
+   * # Remove Participants
+   *
+   * Removes existing participants from the group. The bot must be an admin.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @param participants - Array of participant JIDs to remove.
+   * @returns A boolean indicating if the removals were executed successfully.
+   *
+   * @example
+   * ```typescript
+   * const success = await socket.group.removeParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * ```
+   */
+  RemoveParticipants(groupId: string, participants: string[]): Promise<boolean>;
+
+  /**
+   * # Promote Participants
+   *
+   * Promotes regular participants to admins. The bot must be an admin.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @param participants - Array of participant JIDs to promote.
+   * @returns A boolean indicating if the promotions were executed successfully.
+   *
+   * @example
+   * ```typescript
+   * const success = await socket.group.promoteParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * ```
+   */
+  PromoteParticipants(groupId: string, participants: string[]): Promise<boolean>;
+
+  /**
+   * # Demote Participants
+   *
+   * Demotes admins to regular participants. The bot must be an admin.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @param participants - Array of participant JIDs to demote.
+   * @returns A boolean indicating if the demotions were executed successfully.
+   *
+   * @example
+   * ```typescript
+   * const success = await socket.group.demoteParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * ```
+   */
+  DemoteParticipants(groupId: string, participants: string[]): Promise<boolean>;
+
+  /**
+   * # Remove All Participants
+   *
+   * Removes every non-admin participant from the group. The bot must be an admin.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @returns Resolves when the operation is complete.
+   *
+   * @example
+   * ```typescript
+   * await socket.group.removeAllParticipants("123@g.us");
+   * ```
+   */
+  RemoveAllParticipants(groupId: string): Promise<void>;
+
+  /**
+   * # Leave Group
+   *
+   * Instructs the bot to leave the specified group.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @returns Resolves when the bot successfully leaves.
+   *
+   * @example
+   * ```typescript
+   * await socket.group.leave("123@g.us");
+   * ```
+   */
+  Leave(groupId: string): Promise<void>;
+
+  /**
+   * # Delete Chat
+   *
+   * Deletes the specified chat from the bot's local chat history.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @returns Resolves when the chat is deleted locally.
+   *
+   * @example
+   * ```typescript
+   * await socket.group.deleteChat("123@g.us");
+   * ```
+   */
+  DeleteChat(groupId: string): Promise<void>;
+
+  /**
+   * # Cleanup Group
+   *
+   * Removes all participants and then leaves and deletes the group.
+   * Equivalent to a full group wipe out.
+   *
+   * @param groupId - WhatsApp group JID.
+   * @returns Resolves when cleanup is entirely complete.
+   *
+   * @example
+   * ```typescript
+   * await socket.group.cleanup("123@g.us");
+   * ```
+   */
+  Cleanup(groupId: string): Promise<void>;
+
+  /**
+   * # Fetch Group Data
+   *
    * Retrieves metadata about a WhatsApp group chat.
    *
    * This method fetches all relevant information from the WhatsApp group,
@@ -119,11 +246,12 @@ export interface IWhatsSocket_Submodule_Group {
    * @param chatId - The WhatsApp ID of the group to fetch metadata for.
    * @returns A promise resolving to `GroupMetadataInfo` containing the group metadata,
    *          or `null` if the metadata could not be retrieved.
+   *
    * @example
-   * ```ts
-   * const receiver: IWhatsSocket_Submodule_Receiver; // Assume initialized
+   * ```typescript
    * const groupId = "123456789-987654321@g.us";
-   * const groupData = await receiver.GetGroupMetadata(groupId);
+   * const groupData = await socket.group.FetchGroupData(groupId);
+   * 
    * if (groupData) {
    *   console.log("Group Name:", groupData.groupName);
    *   console.log("Participants:", groupData.members.map(m => m.rawId));

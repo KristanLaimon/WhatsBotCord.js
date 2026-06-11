@@ -165,7 +165,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   @autobind
   public async GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
     this.GroupsIDTriedToFetch.push(chatId);
-    return await this.group.getMetadata(chatId);
+    return await this.group.GetMetadata(chatId);
   }
 
   public _NormalizeJid(jid: string): string {
@@ -180,23 +180,23 @@ export default class WhatsSocketMock implements IWhatsSocket {
     return [await this.GetRawGroupMetadata("mock-group" + WhatsappGroupIdentifier)];
   }
 
-  public async _UpdateGroupParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<unknown[]> {
+  public async _UpdateGroupParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
     if (this.group instanceof WhatsSocketMock_Group) {
-      return await this.group.updateParticipants(groupId, participants, action);
+      this.group.UpdatedParticipants.push({ groupId, participants: participants.map(p => this._NormalizeJid(p)), action });
     }
 
-    return participants.map((participant) => ({ jid: participant, status: "200", action }));
+    return true;
   }
 
   public async _LeaveGroup(groupId: string): Promise<void> {
     if (this.group instanceof WhatsSocketMock_Group) {
-      await this.group.leave(groupId);
+      await this.group.Leave(groupId);
     }
   }
 
   public async _DeleteChatLocally(chatId: string): Promise<void> {
     if (this.group instanceof WhatsSocketMock_Group) {
-      await this.group.deleteChat(chatId);
+      await this.group.DeleteChat(chatId);
     }
   }
 
@@ -309,7 +309,7 @@ export class WhatsSocketMock_Group implements IWhatsSocket_Submodule_Group {
   }
 
   public async FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null> {
-    const rawMeta = await this.getMetadata(chatId);
+    const rawMeta = await this.GetMetadata(chatId);
     return {
       id: rawMeta.id,
       groupName: rawMeta.subject,
@@ -340,88 +340,88 @@ export class WhatsSocketMock_Group implements IWhatsSocket_Submodule_Group {
     };
   }
 
-  public normalizeJid(jid: string): string {
+  public NormalizeJid(jid: string): string {
     return jid.trim();
   }
 
-  public getBotJid(): string {
-    return this.normalizeJid(this._socket.ownJID);
+  public GetBotJid(): string {
+    return this.NormalizeJid(this._socket.ownJID);
   }
 
-  public async getMetadata(groupId: string): Promise<WhatsappGroupMetadata> {
+  public async GetMetadata(groupId: string): Promise<WhatsappGroupMetadata> {
     return await this._socket.GetRawGroupMetadata(groupId);
   }
 
-  public async getAll(): Promise<WhatsappGroupMetadata[]> {
-    return [await this.getMetadata("mock-group" + WhatsappGroupIdentifier)];
+  public async GetAll(): Promise<WhatsappGroupMetadata[]> {
+    return [await this.GetMetadata("mock-group" + WhatsappGroupIdentifier)];
   }
 
-  public async findByName(name: string): Promise<WhatsappGroupMetadata | null> {
-    const groups = await this.getAll();
+  public async FindByName(name: string): Promise<WhatsappGroupMetadata | null> {
+    const groups = await this.GetAll();
     return groups.find((group) => group.subject === name) ?? null;
   }
 
-  public async isBotAdmin(groupId: string): Promise<boolean> {
-    const metadata = await this.getMetadata(groupId);
-    const botJid = this.getBotJid();
+  public async IsBotAdmin(groupId: string): Promise<boolean> {
+    const metadata = await this.GetMetadata(groupId);
+    const botJid = this.GetBotJid();
     const botParticipant = metadata.participants.find((participant) => {
       const participantJid = participant.id ?? participant.lid;
-      return participantJid ? this.normalizeJid(participantJid) === botJid : false;
+      return participantJid ? this.NormalizeJid(participantJid) === botJid : false;
     });
 
     return botParticipant?.admin === "admin" || botParticipant?.admin === "superadmin";
   }
 
-  public async updateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<unknown[]> {
+  public async UpdateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
     if (participants.length === 0) {
-      return [];
+      return false;
     }
 
-    const normalizedParticipants = participants.map((participant) => this.normalizeJid(participant));
+    const normalizedParticipants = participants.map((participant) => this.NormalizeJid(participant));
     this.UpdatedParticipants.push({ groupId, participants: normalizedParticipants, action });
-    return normalizedParticipants.map((participant) => ({ jid: participant, status: "200", action }));
+    return true;
   }
 
-  public async addParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "add");
+  public async AddParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "add");
   }
 
-  public async removeParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "remove");
+  public async RemoveParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "remove");
   }
 
-  public async promoteParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "promote");
+  public async PromoteParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "promote");
   }
 
-  public async demoteParticipants(groupId: string, participants: string[]): Promise<unknown[]> {
-    return await this.updateParticipants(groupId, participants, "demote");
+  public async DemoteParticipants(groupId: string, participants: string[]): Promise<boolean> {
+    return await this.UpdateParticipants(groupId, participants, "demote");
   }
 
-  public async removeAllParticipants(groupId: string): Promise<void> {
-    const metadata = await this.getMetadata(groupId);
-    const botJid = this.getBotJid();
+  public async RemoveAllParticipants(groupId: string): Promise<void> {
+    const metadata = await this.GetMetadata(groupId);
+    const botJid = this.GetBotJid();
     const participants = metadata.participants
       .map((participant) => participant.id ?? participant.lid ?? null)
       .filter((participant): participant is string => participant !== null)
-      .map((participant) => this.normalizeJid(participant))
+      .map((participant) => this.NormalizeJid(participant))
       .filter((participant) => participant !== botJid);
 
-    await this.removeParticipants(groupId, participants);
+    await this.RemoveParticipants(groupId, participants);
   }
 
-  public async leave(groupId: string): Promise<void> {
+  public async Leave(groupId: string): Promise<void> {
     this.LeftGroups.push(groupId);
   }
 
-  public async deleteChat(groupId: string): Promise<void> {
+  public async DeleteChat(groupId: string): Promise<void> {
     this.DeletedChats.push(groupId);
   }
 
-  public async cleanup(groupId: string): Promise<void> {
-    await this.removeAllParticipants(groupId);
-    await this.leave(groupId);
-    await this.deleteChat(groupId);
+  public async Cleanup(groupId: string): Promise<void> {
+    await this.RemoveAllParticipants(groupId);
+    await this.Leave(groupId);
+    await this.DeleteChat(groupId);
   }
 
 

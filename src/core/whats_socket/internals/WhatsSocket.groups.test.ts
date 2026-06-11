@@ -26,7 +26,7 @@ describe("WhatsSocket Group Submodule", () => {
     ];
     adapter.fetchAllGroups.mockResolvedValueOnce(expectedGroups);
 
-    const groups = await groupApi.getAll();
+    const groups = await groupApi.GetAll();
 
     expect(groups).toEqual(expectedGroups);
     expect(adapter.fetchAllGroups).toHaveBeenCalledTimes(1);
@@ -49,7 +49,7 @@ describe("WhatsSocket Group Submodule", () => {
       expectedGroup,
     ]);
 
-    const group = await groupApi.findByName("Target");
+    const group = await groupApi.FindByName("Target");
 
     expect(group).toEqual(expectedGroup);
     await socket.Shutdown();
@@ -64,7 +64,7 @@ describe("WhatsSocket Group Submodule", () => {
       participants: [{ id: "123" + WhatsappPhoneNumberIdentifier, admin: "admin" }],
     });
 
-    const isAdmin = await groupApi.isBotAdmin("group" + WhatsappGroupIdentifier);
+    const isAdmin = await groupApi.IsBotAdmin("group" + WhatsappGroupIdentifier);
 
     expect(isAdmin).toBe(true);
     await socket.Shutdown();
@@ -74,7 +74,7 @@ describe("WhatsSocket Group Submodule", () => {
     const { adapter, groupApi, socket } = await toolkit();
     adapter.normalizeJid = fn((jid: string) => "normalized:" + jid);
 
-    await groupApi.addParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
+    await groupApi.AddParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
 
     expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
       "group" + WhatsappGroupIdentifier,
@@ -84,12 +84,12 @@ describe("WhatsSocket Group Submodule", () => {
     await socket.Shutdown();
   });
 
-  test("Groups_WhenUpdatingNoParticipants_ShouldReturnEmptyArrayWithoutAdapterCall", async () => {
+  test("Groups_WhenUpdatingNoParticipants_ShouldReturnFalseWithoutAdapterCall", async () => {
     const { adapter, groupApi, socket } = await toolkit();
 
-    const result = await groupApi.removeParticipants("group" + WhatsappGroupIdentifier, []);
+    const result = await groupApi.RemoveParticipants("group" + WhatsappGroupIdentifier, []);
 
-    expect(result).toEqual([]);
+    expect(result).toEqual(false);
     expect(adapter.updateGroupParticipants).toHaveBeenCalledTimes(0);
     await socket.Shutdown();
   });
@@ -98,7 +98,7 @@ describe("WhatsSocket Group Submodule", () => {
     const { adapter, groupApi, socket } = await toolkit();
     adapter.normalizeJid = fn((jid: string) => jid);
 
-    await groupApi.promoteParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
+    await groupApi.PromoteParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
 
     expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
       "group" + WhatsappGroupIdentifier,
@@ -112,7 +112,7 @@ describe("WhatsSocket Group Submodule", () => {
     const { adapter, groupApi, socket } = await toolkit();
     adapter.normalizeJid = fn((jid: string) => jid);
 
-    await groupApi.demoteParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
+    await groupApi.DemoteParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
 
     expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
       "group" + WhatsappGroupIdentifier,
@@ -136,7 +136,7 @@ describe("WhatsSocket Group Submodule", () => {
       ],
     });
 
-    await groupApi.removeAllParticipants("group" + WhatsappGroupIdentifier);
+    await groupApi.RemoveAllParticipants("group" + WhatsappGroupIdentifier);
 
     expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
       "group" + WhatsappGroupIdentifier,
@@ -149,7 +149,7 @@ describe("WhatsSocket Group Submodule", () => {
   test("Groups_WhenLeavingGroup_ShouldCallLeaveGroup", async () => {
     const { adapter, groupApi, socket } = await toolkit();
 
-    await groupApi.leave("group" + WhatsappGroupIdentifier);
+    await groupApi.Leave("group" + WhatsappGroupIdentifier);
 
     expect(adapter.leaveGroup).toHaveBeenCalledWith("group" + WhatsappGroupIdentifier);
     await socket.Shutdown();
@@ -158,7 +158,7 @@ describe("WhatsSocket Group Submodule", () => {
   test("Groups_WhenDeletingChat_ShouldCallDeleteChatLocally", async () => {
     const { adapter, groupApi, socket } = await toolkit();
 
-    await groupApi.deleteChat("group" + WhatsappGroupIdentifier);
+    await groupApi.DeleteChat("group" + WhatsappGroupIdentifier);
 
     expect(adapter.deleteChatLocally).toHaveBeenCalledWith("group" + WhatsappGroupIdentifier);
     await socket.Shutdown();
@@ -174,7 +174,7 @@ describe("WhatsSocket Group Submodule", () => {
       participants: [{ id: "user" + WhatsappPhoneNumberIdentifier }],
     });
 
-    await groupApi.cleanup("group" + WhatsappGroupIdentifier);
+    await groupApi.Cleanup("group" + WhatsappGroupIdentifier);
 
     expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
       "group" + WhatsappGroupIdentifier,

@@ -55,13 +55,8 @@ export class GenericSocketVendorClient_Mock implements IWhatsappSocketAdapterCli
 
   public normalizeJid: Mock<(jid: string) => string> = fn((jid: string) => jid);
   public getBotJid: Mock<() => string> = fn(() => this.normalizeJid(this.ownJID));
-  public updateGroupParticipants: Mock<(groupId: string, participants: string[], action: WhatsappGroupParticipantAction) => Promise<unknown[]>> = fn(
-    async (_groupId: string, participants: string[], action: WhatsappGroupParticipantAction) =>
-      participants.map((participant) => ({
-        jid: participant,
-        status: "200",
-        action,
-      }))
+  public updateGroupParticipants: Mock<(groupId: string, participants: string[], action: WhatsappGroupParticipantAction) => Promise<boolean>> = fn(
+    async (_groupId: string, _participants: string[], _action: WhatsappGroupParticipantAction) => true
   );
   public groupParticipantsUpdate = this.updateGroupParticipants;
   public leaveGroup: Mock<(groupId: string) => Promise<void>> = fn(async (_groupId: string) => Promise.resolve());
