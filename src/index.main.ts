@@ -27,6 +27,9 @@ class PingCommand implements ICommand {
     await chat.SendText("Pong");
     const buf = fs.readFileSync("./frieren.gif");
     await chat.SendImgFromBuffer(buf, ".gif");
+
+
+    chat.Group.isBotAdmin;
   }
 }
 

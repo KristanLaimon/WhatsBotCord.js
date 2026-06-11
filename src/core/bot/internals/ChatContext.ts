@@ -107,7 +107,7 @@ export class ChatContext implements IChatContext {
 
   public Config: IChatContextConfig;
 
-  public get group(): IChatGroupAPI {
+  public get Group(): IChatGroupAPI {
     if (this.FixedSenderType !== SenderType.Group) {
       throw new Error("ChatContext.group can only be used from a group chat context");
     }

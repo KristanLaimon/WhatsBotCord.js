@@ -397,7 +397,7 @@ export default class Bot implements BotMinimalInfo {
    * await bot.group.cleanup("123@g.us");
    * ```
    */
-  public get group(): WhatsBotGroup {
+  public get Groups(): WhatsBotGroup {
     return this.InternalSocket.group;
   }
 
@@ -733,44 +733,26 @@ export default class Bot implements BotMinimalInfo {
       // 4. Can't be found after all that? its not a valid command
       if (!commandFound) {
         await this.Events.onCommandNotFound.CallAllAsync(
-          new ChatContext(
-            senderId_LID,
-            senderId_PN,
-            chatId,
-            rawMsg,
-            this.InternalSocket.Send,
-            this.InternalSocket.Receive,
-            this.InternalSocket.group,
-            {
-              cancelKeywords: this.Settings.cancelKeywords!,
-              timeoutSeconds: this.Settings.timeoutSeconds!,
-              ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-              wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-              cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-            }
-          ),
+          new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, this.InternalSocket.group, {
+            cancelKeywords: this.Settings.cancelKeywords!,
+            timeoutSeconds: this.Settings.timeoutSeconds!,
+            ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+            wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+            cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+          }),
           txtFromMsg
         );
         return;
       } else {
         if (this.Events.onCommandFound.Length > 0) {
           await this.Events.onCommandFound.CallAllAsync(
-            new ChatContext(
-              senderId_LID,
-              senderId_PN,
-              chatId,
-              rawMsg,
-              this.InternalSocket.Send,
-              this.InternalSocket.Receive,
-              this.InternalSocket.group,
-              {
-                cancelKeywords: this.Settings.cancelKeywords!,
-                timeoutSeconds: this.Settings.timeoutSeconds!,
-                ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
-                wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
-                cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
-              }
-            ),
+            new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, this.InternalSocket.group, {
+              cancelKeywords: this.Settings.cancelKeywords!,
+              timeoutSeconds: this.Settings.timeoutSeconds!,
+              ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
+              wrongTypeFeedbackMsg: this.Settings.wrongTypeFeedbackMsg,
+              cancelFeedbackMsg: this.Settings.cancelFeedbackMsg,
+            }),
             commandFound
           );
         }

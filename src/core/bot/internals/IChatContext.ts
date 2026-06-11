@@ -6,9 +6,9 @@ import type {
 } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { GroupMetadataInfo } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 
+import type { IWhatsSocket_Submodule_Group as IChatGroupAPI } from "../../whats_socket/internals/IWhatsSocket.groups.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import type { IChatContextConfig } from "./ChatContext.js";
-import type { IWhatsSocket_Submodule_Group as IChatGroupAPI } from "../../whats_socket/internals/IWhatsSocket.groups.js";
 
 export type { IChatGroupAPI };
 
@@ -140,7 +140,7 @@ export interface IChatContext {
    * }
    * ```
    */
-  group: IChatGroupAPI;
+  Group: IChatGroupAPI;
 
   // ============================ SENDING ============================
   /**

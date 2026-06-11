@@ -1,5 +1,5 @@
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
-import { type WhatsappIDInfo, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
+import { type WhatsappIDInfo, type WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
 import { type SenderType, MsgType } from "../../../Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
@@ -161,7 +161,7 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
    * @deprecated ⚠️ **DEPRECATED**: This method has been moved to the `group` submodule for better architectural consistency.
    *
    * Please use the new `FetchGroupData` method from the `group` submodule instead.
-   * 
+   *
    * @example
    * **Old Way (Deprecated):**
    * ```ts
@@ -329,8 +329,6 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
     };
     return await this._waitNextMsg(conditionCallback, expectedMsgType, options);
   }
-
-
 
   public async DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer> {
     return await this._whatsSocket.DownloadMediaMessage(rawMsg);

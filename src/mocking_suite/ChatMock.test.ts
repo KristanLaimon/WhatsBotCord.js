@@ -3225,9 +3225,9 @@ describe("Group Mocking Suite testing from ChatMock", () => {
     class MyCom implements ICommand {
       name: string = "command";
       public async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs): Promise<void> {
-        await _ctx.group.getMetadata("123");
-        await _ctx.group.isBotAdmin("123");
-        await _ctx.group.removeParticipants("123", ["456"]);
+        await _ctx.Group.getMetadata("123");
+        await _ctx.Group.isBotAdmin("123");
+        await _ctx.Group.removeParticipants("123", ["456"]);
       }
     }
 
@@ -3236,10 +3236,10 @@ describe("Group Mocking Suite testing from ChatMock", () => {
     expect(chat.GroupActionsFromCommand).toHaveLength(3);
     expect(chat.GroupActionsFromCommand[0]?.actionName).toBe("getMetadata");
     expect(chat.GroupActionsFromCommand[0]?.groupId).toBe("123");
-    
+
     expect(chat.GroupActionsFromCommand[1]?.actionName).toBe("isBotAdmin");
     expect(chat.GroupActionsFromCommand[1]?.groupId).toBe("123");
-    
+
     expect(chat.GroupActionsFromCommand[2]?.actionName).toBe("removeParticipants");
     expect(chat.GroupActionsFromCommand[2]?.groupId).toBe("123");
     expect(chat.GroupActionsFromCommand[2]?.payload).toEqual(["456"]);

@@ -10,12 +10,12 @@ import {
 import { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
 import type { WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
+import { WhatsSocket_Submodule_Group } from "../../whats_socket/internals/WhatsSocket.groups.js";
 import {
   type WhatsSocketReceiverError,
   WhatsSocket_Submodule_Receiver,
   WhatsSocketReceiverMsgError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
-import { WhatsSocket_Submodule_Group } from "../../whats_socket/internals/WhatsSocket.groups.js";
 import { WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
@@ -105,7 +105,7 @@ it("Group_WhenUsingGroupContext_ShouldDelegateToScopedGroupApi", async (): Promi
   const { chat, group } = GenerateLocalToolKit_ChatSession_FromGroup();
   const addParticipantsSpy: Mock<typeof group.addParticipants> = spyOn(group, "addParticipants");
 
-  await chat.group.addParticipants(chat.FixedChatId, ["123" + WhatsappPhoneNumberIdentifier]);
+  await chat.Group.addParticipants(chat.FixedChatId, ["123" + WhatsappPhoneNumberIdentifier]);
 
   expect(addParticipantsSpy).toHaveBeenCalledTimes(1);
   expect(addParticipantsSpy).toHaveBeenCalledWith(CHATID, ["123" + WhatsappPhoneNumberIdentifier]);
@@ -119,7 +119,7 @@ it("Group_WhenUsingIndividualContext_ShouldThrowGroupOnlyError", async (): Promi
   // Wait, if we use chat.group.getMetadata, we must pass the group id. But actually, if senderType is individual,
   // `chat.group` getter might throw "ChatContext.group can only be used from a group chat context"?
   // Let's check how the getter is implemented.
-  expect(() => chat.group).toThrow("ChatContext.group can only be used from a group chat context");
+  expect(() => chat.Group).toThrow("ChatContext.group can only be used from a group chat context");
 });
 
 it("Text_WhenUsingSendText_ShouldUseCorrectlySugarSender", async () => {

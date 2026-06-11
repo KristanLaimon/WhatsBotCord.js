@@ -109,7 +109,7 @@ test("Creation_WhenProvidingVendorFactoryAsSecondParam_ShouldUseFactoryClient", 
 test("Creation_WhenInstantiatingWithSocket_ShouldExposeGroupedGroupApi", () => {
   const { bot, socket } = toolkit();
 
-  expect(bot.group).toBe(socket.group);
+  expect(bot.Groups).toBe(socket.group);
 });
 
 // ========================== COMMANDS ============================
