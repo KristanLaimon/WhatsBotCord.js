@@ -5,9 +5,9 @@ import {
   type CommandArgs,
   CommandType,
   MsgType,
+  OfficialPlugin_OneCommandPerUserAtATime,
   SenderType,
   default as WhatsbotCord,
-  OfficialPlugin_OneCommandPerUserAtATime,
 } from "src/index.js";
 import { isDev } from "./Envs.js";
 

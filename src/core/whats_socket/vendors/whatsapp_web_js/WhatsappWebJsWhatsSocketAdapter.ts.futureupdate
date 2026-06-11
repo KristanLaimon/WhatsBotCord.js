@@ -1,0 +1,414 @@
+/**
+ * Pending Adapter to add
+ *
+ */
+import WAWebJS from "whatsapp-web.js";
+import type { Client, ClientOptions, GroupChat, GroupNotification, Message, MessageContent, MessageMedia, MessageSendOptions, PollVote } from "whatsapp-web.js";
+import { GetPath } from "../../../../libs/BunPath.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../../Whatsapp.types.js";
+import type {
+  IWhatsappAdapter,
+  IWhatsappSocketAdapterClient,
+  WhatsappGroupMetadata,
+  WhatsappGroupParticipant,
+  WhatsappMessage,
+  WhatsappMessageContent,
+  WhatsappMessageOptions,
+  WhatsappPollUpdateMessage,
+  WhatsappPollVote,
+  WhatsSocketConnectionUpdate,
+  WhatsSocketLoggerMode,
+  WhatsSocketVendorEventMap,
+} from "../../types.js";
+
+export type WhatsappWebJsWhatsSocketAdapterOptions = {
+  loggerMode?: WhatsSocketLoggerMode;
+  credentialsFolder?: string;
+  clientId?: string;
+  clientOptions?: ClientOptions;
+  ownRawClient?: Client;
+  initializeOnCreate?: boolean;
+};
+
+export class WhatsappWebJsAdapter implements IWhatsappAdapter {
+  private readonly _options: WhatsappWebJsWhatsSocketAdapterOptions;
+
+  constructor(options: WhatsappWebJsWhatsSocketAdapterOptions = {}) {
+    this._options = options;
+  }
+
+  public async Create(): Promise<IWhatsappSocketAdapterClient> {
+    if (this._options.ownRawClient) {
+      return new WhatsappWebJsWhatsSocketAdapterClient(this._options.ownRawClient);
+    }
+
+    const credentialsFolder = this._options.credentialsFolder ?? "./auth";
+    const authStrategy =
+      this._options.clientOptions?.authStrategy ?? new WAWebJS.LocalAuth({ clientId: this._options.clientId, dataPath: GetPath(credentialsFolder) });
+    const client = new WAWebJS.Client({
+      ...this._options.clientOptions,
+      authStrategy,
+    });
+
+    if (this._options.initializeOnCreate !== false) {
+      await client.initialize();
+    }
+
+    return new WhatsappWebJsWhatsSocketAdapterClient(client);
+  }
+}
+
+export class WhatsappWebJsWhatsSocketAdapterClient implements IWhatsappSocketAdapterClient {
+  private readonly _client: Client;
+
+  constructor(client: Client) {
+    this._client = client;
+  }
+
+  public get ownJID(): string {
+    return WhatsappWebJsHelpers_NormalizeJid(this._client.info.wid._serialized);
+  }
+
+  public on<EventName extends keyof WhatsSocketVendorEventMap>(eventName: EventName, callback: WhatsSocketVendorEventMap[EventName]): void {
+    if (eventName === "ConnectionStateChanged") {
+      this._client.on("qr", (qr) => {
+        callback({ qr } as never);
+      });
+      this._client.on("ready", () => {
+        callback({ connection: "open" } as never);
+      });
+      this._client.on("change_state", (state) => {
+        if (state === WAWebJS.WAState.CONNECTED) {
+          callback({ connection: "open" } as never);
+        }
+      });
+      this._client.on("disconnected", (reason) => {
+        callback(this._mapConnectionClose(reason) as never);
+      });
+      this._client.on("auth_failure", (message) => {
+        callback({ connection: "close", lastDisconnect: { error: new Error(message), isLoggedOut: true } } as never);
+      });
+      return;
+    }
+
+    if (eventName === "IncomingMessagesReceived") {
+      this._client.on("message", (message) => {
+        callback({ messages: [this._mapMessage(message)] } as never);
+      });
+      return;
+    }
+
+    if (eventName === "MessagesUpdated") {
+      this._client.on("message_ack", (message) => {
+        callback([this._mapMessage(message)] as never);
+      });
+      this._client.on("message_edit", (message) => {
+        callback([this._mapMessage(message)] as never);
+      });
+      this._client.on("message_revoke_everyone", (message) => {
+        callback([this._mapMessage(message)] as never);
+      });
+      return;
+    }
+
+    if (eventName === "GroupsJoined") {
+      this._client.on("group_join", async (notification) => {
+        if (!this._groupNotificationAffectsOwnUser(notification)) return;
+        callback([await this._mapGroupNotificationToMetadata(notification)] as never);
+      });
+      return;
+    }
+
+    if (eventName === "GroupsUpdated") {
+      this._client.on("group_update", async (notification) => {
+        callback([await this._mapGroupNotificationToMetadata(notification)] as never);
+      });
+    }
+  }
+
+  public async sendMessage(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
+    if (content.react) {
+      await this._client.sendReaction(this._mapMessageKeyToWhatsappWebJsMessageId(content.react.key), content.react.text);
+      return null;
+    }
+
+    const sendOptions = await this._mapMessageOptions(content, options);
+    const messageContent = await this._mapMessageContent(content);
+    const message = await this._client.sendMessage(WhatsappWebJsHelpers_ToWhatsappWebJsJid(chatId_JID), messageContent, sendOptions);
+    return this._mapMessage(message);
+  }
+
+  public async fetchGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
+    const chat = await this._client.getChatById(WhatsappWebJsHelpers_ToWhatsappWebJsJid(chatId));
+    if (!chat.isGroup) {
+      throw new Error("Bad args => WhatsappWebJsAdapter.fetchGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
+    }
+
+    return this._mapGroupChat(chat as GroupChat);
+  }
+
+  public async fetchAllGroups(): Promise<WhatsappGroupMetadata[]> {
+    const chats = await this._client.getChats();
+    const groups = chats.filter((chat) => chat.isGroup) as GroupChat[];
+    return groups.map((group) => this._mapGroupChat(group));
+  }
+
+  public async downloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer> {
+    const rawWhatsappWebJsMessage = rawMsg["whatsappWebJsMessage"] as Message | undefined;
+    if (!rawWhatsappWebJsMessage) {
+      throw new Error("WhatsappWebJsAdapter.downloadMediaMessage() requires a message received through the WhatsappWebJsAdapter.");
+    }
+
+    const media = await rawWhatsappWebJsMessage.downloadMedia();
+    return Buffer.from(media.data, "base64");
+  }
+
+  public async getPollVotes(pollRawMsg: WhatsappMessage, _pollUpdates: WhatsappPollUpdateMessage[]): Promise<WhatsappPollVote[]> {
+    const rawWhatsappWebJsMessage = pollRawMsg["whatsappWebJsMessage"] as Message | undefined;
+    if (!rawWhatsappWebJsMessage) {
+      throw new Error("WhatsappWebJsAdapter.getPollVotes() requires a poll message received through the WhatsappWebJsAdapter.");
+    }
+
+    const votes = await rawWhatsappWebJsMessage.getPollVotes();
+    return WhatsappWebJsHelpers_MapPollVotes(votes);
+  }
+
+  public async shutdown(): Promise<void> {
+    await this._client.destroy();
+  }
+
+  private _mapConnectionClose(reason: string): WhatsSocketConnectionUpdate {
+    return {
+      connection: "close",
+      lastDisconnect: {
+        error: new Error(reason),
+        isLoggedOut: reason === "LOGOUT",
+      },
+    };
+  }
+
+  private _mapMessage(message: Message): WhatsappMessage {
+    const chatId = WhatsappWebJsHelpers_NormalizeJid(message.fromMe ? message.to : message.from);
+    const participant = message.author ? WhatsappWebJsHelpers_NormalizeJid(message.author) : null;
+
+    return {
+      key: {
+        remoteJid: chatId,
+        participant,
+        fromMe: message.fromMe,
+        id: message.id.id,
+      },
+      message: WhatsappWebJsHelpers_MapProtocolMessage(message),
+      pushName: undefined,
+      messageTimestamp: message.timestamp,
+      status: message.ack,
+      whatsappWebJsMessage: message,
+      rawData: message.rawData,
+    };
+  }
+
+  private async _mapMessageOptions(content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<MessageSendOptions> {
+    const sendOptions: MessageSendOptions = {
+      mentions: content.mentions?.map((mention) => WhatsappWebJsHelpers_ToWhatsappWebJsJid(mention)),
+      caption: content.caption,
+      quotedMessageId: options?.quoted ? this._mapMessageKeyToWhatsappWebJsMessageId(options.quoted.key) : undefined,
+      extra: options,
+    };
+
+    if (content.image || content.video || content.audio || content.sticker || content.document) {
+      sendOptions.media = (await this._mapMediaContent(content)) as MessageMedia;
+      sendOptions.sendMediaAsSticker = Boolean(content.sticker);
+      sendOptions.sendMediaAsDocument = Boolean(content.document);
+    }
+
+    return sendOptions;
+  }
+
+  private async _mapMessageContent(content: WhatsappMessageContent): Promise<MessageContent> {
+    if (content.poll) {
+      return new WAWebJS.Poll(content.poll.name, content.poll.values, { allowMultipleAnswers: content.poll.selectableCount !== 1, messageSecret: undefined });
+    }
+
+    if (content.location) {
+      return new WAWebJS.Location(content.location.degreesLatitude, content.location.degreesLongitude, {
+        name: content.location.name,
+        address: content.location.address,
+      });
+    }
+
+    if (content.contacts?.contacts.length) {
+      return content.contacts.contacts.map((contact) => contact.vcard).join("\n");
+    }
+
+    if (content.image || content.video || content.audio || content.sticker || content.document) {
+      return (await this._mapMediaContent(content)) as MessageMedia;
+    }
+
+    return content.text ?? "";
+  }
+
+  private async _mapMediaContent(content: WhatsappMessageContent): Promise<MessageMedia> {
+    const media = content.image ?? content.video ?? content.audio ?? content.sticker ?? content.document;
+    const mimetype = content.mimetype ?? "application/octet-stream";
+
+    if (Buffer.isBuffer(media)) {
+      return new WAWebJS.MessageMedia(mimetype, media.toString("base64"), content.fileName);
+    }
+
+    if (typeof media === "object" && "url" in media) {
+      return WAWebJS.MessageMedia.fromUrl(media.url, { filename: content.fileName });
+    }
+
+    throw new Error("WhatsappWebJsAdapter.sendMessage() received an unsupported media payload.");
+  }
+
+  private _mapMessageKeyToWhatsappWebJsMessageId(key: WhatsappMessage["key"]): string {
+    if (!key.id) {
+      throw new Error("WhatsappWebJsAdapter needs a message key id to reference an existing message.");
+    }
+
+    if (key["whatsappWebJsSerializedId"]) {
+      return key["whatsappWebJsSerializedId"] as string;
+    }
+
+    const remoteJid = WhatsappWebJsHelpers_ToWhatsappWebJsJid(key.remoteJid ?? "");
+    return `${Boolean(key.fromMe)}_${remoteJid}_${key.id}`;
+  }
+
+  private _mapGroupChat(group: GroupChat): WhatsappGroupMetadata {
+    return {
+      id: WhatsappWebJsHelpers_NormalizeJid(group.id._serialized),
+      subject: group.name,
+      owner: WhatsappWebJsHelpers_NormalizeJid(group.owner._serialized),
+      desc: group.description,
+      creation: Math.floor(group.createdAt.getTime() / 1000),
+      participants: group.participants.map((participant): WhatsappGroupParticipant => {
+        return {
+          id: WhatsappWebJsHelpers_NormalizeJid(participant.id._serialized),
+          admin: participant.isSuperAdmin ? "superadmin" : participant.isAdmin ? "admin" : null,
+        };
+      }),
+      whatsappWebJsGroupChat: group,
+    };
+  }
+
+  private async _mapGroupNotificationToMetadata(notification: GroupNotification): Promise<WhatsappGroupMetadata> {
+    const chat = await notification.getChat();
+    return this._mapGroupChat(chat as GroupChat);
+  }
+
+  private _groupNotificationAffectsOwnUser(notification: GroupNotification): boolean {
+    const ownJid = this.ownJID;
+    return notification.recipientIds.map((recipientId) => WhatsappWebJsHelpers_NormalizeJid(recipientId)).includes(ownJid);
+  }
+}
+
+function WhatsappWebJsHelpers_NormalizeJid(jid: string): string {
+  if (jid.endsWith("@c.us")) {
+    return jid.replace("@c.us", WhatsappPhoneNumberIdentifier);
+  }
+
+  return jid;
+}
+
+function WhatsappWebJsHelpers_ToWhatsappWebJsJid(jid: string): string {
+  if (jid.endsWith(WhatsappPhoneNumberIdentifier)) {
+    return jid.replace(WhatsappPhoneNumberIdentifier, "@c.us");
+  }
+
+  if (jid.endsWith(WhatsappGroupIdentifier) || jid.endsWith(WhatsappLIDIdentifier)) {
+    return jid;
+  }
+
+  return jid;
+}
+
+function WhatsappWebJsHelpers_MapProtocolMessage(message: Message): WhatsappMessage["message"] {
+  const contextInfo = {
+    mentionedJid: message.mentionedIds.map((mentionId) => WhatsappWebJsHelpers_NormalizeJid(mentionId)),
+    forwardingScore: message.forwardingScore,
+    isForwarded: message.isForwarded,
+  };
+
+  if (message.type === WAWebJS.MessageTypes.IMAGE) {
+    return { imageMessage: { caption: message.body, mimetype: undefined, contextInfo } };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.VIDEO) {
+    return { videoMessage: { caption: message.body, mimetype: undefined, contextInfo } };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.AUDIO || message.type === WAWebJS.MessageTypes.VOICE) {
+    return { audioMessage: { mimetype: undefined, contextInfo } };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.STICKER) {
+    return { stickerMessage: { mimetype: undefined, contextInfo } };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.DOCUMENT) {
+    return { documentMessage: { fileName: message.title, mimetype: undefined, contextInfo } };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.LOCATION) {
+    return {
+      locationMessage: {
+        degreesLatitude: Number(message.location.latitude),
+        degreesLongitude: Number(message.location.longitude),
+        name: message.location.name,
+        address: message.location.address,
+      },
+    };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.CONTACT_CARD) {
+    return { contactMessage: { displayName: message.body, vcard: message.vCards.at(0) } };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.CONTACT_CARD_MULTI) {
+    return {
+      contactsArrayMessage: {
+        contacts: message.vCards.map((vcard) => {
+          return { displayName: "", vcard };
+        }),
+      },
+    };
+  }
+
+  if (message.type === WAWebJS.MessageTypes.POLL_CREATION) {
+    return {
+      pollCreationMessageV3: {
+        name: message.pollName,
+        selectableOptionsCount: message.allowMultipleAnswers ? 0 : 1,
+        options: message.pollOptions.map((optionName) => {
+          return { optionName };
+        }),
+      },
+    };
+  }
+
+  return {
+    conversation: message.body,
+    extendedTextMessage: {
+      text: message.body,
+      contextInfo,
+    },
+  };
+}
+
+function WhatsappWebJsHelpers_MapPollVotes(votes: PollVote[]): WhatsappPollVote[] {
+  const groupedVotes = new Map<string, string[]>();
+
+  for (const vote of votes) {
+    const voter = WhatsappWebJsHelpers_NormalizeJid(vote.voter);
+    for (const option of vote.selectedOptions) {
+      const voters = groupedVotes.get(option.name) ?? [];
+      voters.push(voter);
+      groupedVotes.set(option.name, voters);
+    }
+  }
+
+  return Array.from(groupedVotes.entries()).map(([name, voters]) => {
+    return { name, voters };
+  });
+}
