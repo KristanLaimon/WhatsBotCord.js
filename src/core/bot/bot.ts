@@ -434,7 +434,7 @@ export default class Bot implements BotMinimalInfo {
    * runtime settings such as logging, message delays, and command handling.
    *
    * @param options - Optional configuration for customizing bot behavior.
-   * @param whatsappAdapter -  You can provide your own WhatsApp adapter. Defaults to the built-in `Baileys.js` adapter.
+   * @param optionalAdapter -  You can provide your own WhatsApp adapter. Defaults to the built-in `Baileys.js` adapter.
    *
    * Default values:
    * - `credentialsFolder`: `"./auth"`
@@ -488,18 +488,16 @@ export default class Bot implements BotMinimalInfo {
    *   Enables a safeguard layer around command execution, preventing
    *   crashes or unintended side effects from propagating.
    *
-   * - `vendorFactory`: `undefined`
-   *   Optional second constructor parameter for replacing the WhatsApp socket
-   *   vendor. If omitted, the built-in Baileys vendor is used.
+   * - `optionalAdapter`: `undefined`
+   *   Optional second constructor parameter to use an alternative whatsbotcord WhatsApp-adapter
+   *   If omitted, the built-in Baileys.js adapter will be used.
    *
    * @remarks
-   * - All defaults are applied when their corresponding `options` field
-   *   is `undefined` or invalid.
-   * - `commandPrefix` and `tagCharPrefix` always normalize to arrays.
+   * - So far, this library only has 1 official adapters built-in (Baileys.js). In the future there will be more.
    * - For production bots, consider raising `delayMilisecondsBetweenMsgs`
    *   slightly to avoid WhatsApp anti-spam systems.
    */
-  constructor(options?: WhatsBotOptions, whatsappAdapter?: IWhatsappAdapter) {
+  constructor(options?: WhatsBotOptions, optionalAdapter?: IWhatsappAdapter) {
     this.Settings = BotUtils_GenerateOptions(options);
 
     //# Validations:
@@ -516,7 +514,7 @@ export default class Bot implements BotMinimalInfo {
 
     this._commandSearcher = new CommandsSearcher();
     const socketVendorFactory =
-      whatsappAdapter ??
+      optionalAdapter ??
       new BaileysAdapter({
         credentialsFolder: this.Settings.credentialsFolder ?? "./auth",
         loggerMode: this.Settings.loggerMode ?? "recommended",
