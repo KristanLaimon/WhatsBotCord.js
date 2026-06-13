@@ -1,4 +1,4 @@
-import type { MsgType, SenderType } from "../../../Msg.types.js";
+import type { MsgType, SenderType } from "../../../types/Msg.types.js";
 import type { WhatsappMessage, WhatsappProtocolMessage } from "../../whats_socket/types.js";
 import type { BotMinimalInfo } from "../bot.js";
 

@@ -1,8 +1,8 @@
 import { Boom } from "@hapi/boom";
 
 import { type Mock, describe, expect, mock as fn, it, spyOn } from "bun:test";
-import { MsgType, SenderType } from "../../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../Whatsapp.types.js";
+import { MsgType, SenderType } from "../../types/Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../types/Whatsapp.types.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
 import type { WhatsappGroupMetadata, WhatsappMessage, WhatsappMessageUpdate } from "./types.js";

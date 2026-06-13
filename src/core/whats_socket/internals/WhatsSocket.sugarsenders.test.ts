@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterEach } from "node:test";
 import { allMockMsgs } from "src/mocks/MockManyTypesMsgs.mock";
 import { Str_NormalizeLiteralString } from "../../../helpers/Strings.helper.js";
-import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
 import type {
   WhatsMsgPollOptions,

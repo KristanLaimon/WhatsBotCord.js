@@ -1,5 +1,5 @@
-import { WhatsappGroupIdentifier } from "../../../Whatsapp.types.js";
 import { type WhatsappIDInfo, WhatsappHelper_ExtractFromWhatsappID, WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
+import { WhatsappGroupIdentifier } from "../../../types/Whatsapp.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappGroupMetadata, WhatsappGroupParticipantAction } from "../types.js";
 import type { IWhatsSocket_Submodule_Group } from "./IWhatsSocket.groups.js";

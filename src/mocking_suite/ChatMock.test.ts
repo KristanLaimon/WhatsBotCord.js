@@ -5,10 +5,10 @@ import type { ChatContextContactRes, IChatContext } from "../core/bot/internals/
 import type { AdditionalAPI, ICommand } from "../core/bot/internals/ICommand.js";
 import type { GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
-import { skipLongTests } from "../Envs.js";
 import { MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
-import { MsgType, SenderType } from "../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
+import { skipLongTests } from "../libs/Envs.js";
+import { MsgType, SenderType } from "../types/Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
 import ChatMock from "./ChatMock.js";
 
 //                    ------------------- ======== GENERAL Tests ========= -----------------------------

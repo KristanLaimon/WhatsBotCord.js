@@ -1,4 +1,4 @@
-import type { MsgType } from "../../../Msg.types.js";
+import type { MsgType } from "../../../types/Msg.types.js";
 import type { WhatsappMessage } from "../types.js";
 import type { GroupMetadataInfo, WhatsSocketReceiverWaitOptions } from "./WhatsSocket.receiver.js";
 
@@ -119,7 +119,7 @@ export interface IWhatsSocket_Submodule_Receiver {
    * @deprecated ⚠️ **DEPRECATED**: This method has been moved to the `group` submodule for better architectural consistency.
    *
    * Please use the new `FetchGroupData` method from the `group` submodule instead.
-   * 
+   *
    * @example
    * **Old Way (Deprecated):**
    * ```ts

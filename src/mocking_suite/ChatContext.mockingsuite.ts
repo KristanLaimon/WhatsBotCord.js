@@ -1,7 +1,7 @@
 import type { IChatContextConfig } from "../core/bot/internals/ChatContext.js";
 import { ChatContext } from "../core/bot/internals/ChatContext.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
-import type { MsgType } from "../Msg.types.js";
+import type { MsgType } from "../types/Msg.types.js";
 
 /**
  * Mocking suite for {@link ChatContext}.

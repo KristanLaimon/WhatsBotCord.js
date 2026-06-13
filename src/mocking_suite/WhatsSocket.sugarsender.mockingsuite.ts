@@ -12,7 +12,7 @@ import type {
 } from "../core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
-import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
 import {
   MsgFactory_Audio,
   MsgFactory_Contact,

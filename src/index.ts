@@ -28,8 +28,8 @@ import type {
   OfficialPlugin_OneCommandPerUserAtATime_Config,
   OfficialPlugin_OneCommandPerUserAtATime_ContextInfo,
 } from "./core/official_plugins/OneCommandPerUser_Plugin.js";
-import type { IWhatsSocket_Submodule_Receiver } from "./core/whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_Group } from "./core/whats_socket/internals/IWhatsSocket.groups.js";
+import type { IWhatsSocket_Submodule_Receiver } from "./core/whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { GroupMetadataInfo, WhatsSocketReceiverError } from "./core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { IMsgServiceSocketMinimum, IWhatsSocket, IWhatsSocket_EventsOnly_Module } from "./core/whats_socket/IWhatsSocket.js";
@@ -99,8 +99,8 @@ export type {
   import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
   import Delegate from "./libs/Delegate.js";
   import ChatMock from "./mocking_suite/ChatMock.js";
-  import { MsgType, SenderType } from "./Msg.types.js";
-  import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./Whatsapp.types.js";
+  import { MsgType, SenderType } from "./types/Msg.types.js";
+  import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./types/Whatsapp.types.js";
 export {
   BaileysAdapter,
   ChatContext,

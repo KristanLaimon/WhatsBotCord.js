@@ -1,7 +1,7 @@
-import { MsgType, SenderType } from "../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import type { FoundQuotedMsg } from "../core/bot/internals/CommandsSearcher.types.js";
 import type { WhatsappMessage, WhatsappProtocolMessage } from "../core/whats_socket/types.js";
+import { MsgType, SenderType } from "../types/Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
 
 /**
  * # Extract Full Message Text

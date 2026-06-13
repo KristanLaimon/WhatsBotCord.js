@@ -1,5 +1,5 @@
-import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
+import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
 
 /**
  * # WhatsApp ID Type

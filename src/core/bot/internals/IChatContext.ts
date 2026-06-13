@@ -1,4 +1,4 @@
-import type { MsgType, SenderType } from "../../../Msg.types.js";
+import type { MsgType, SenderType } from "../../../types/Msg.types.js";
 import type {
   WhatsMsgPollOptions,
   WhatsMsgSenderSendingOptions,
@@ -7,9 +7,8 @@ import type {
 import type { GroupMetadataInfo } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 
 import type { IWhatsSocket_Submodule_Group as IChatGroupAPI } from "../../whats_socket/internals/IWhatsSocket.groups.js";
-import type { WhatsappMessage } from "../../whats_socket/types.js";
+import type { WhatsappMessage, WhatsappPresenceState } from "../../whats_socket/types.js";
 import type { IChatContextConfig } from "./ChatContext.js";
-import type { WhatsappPresenceState } from "../../whats_socket/types.js";
 
 export type { IChatGroupAPI };
 
@@ -67,8 +66,6 @@ export type ChatContextContactRes = {
   /** WhatsApp ID of the contact */
   whatsappId_PN: string;
 };
-
-
 
 /**
  * # Chat Context Interface

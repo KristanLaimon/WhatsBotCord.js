@@ -1,6 +1,6 @@
 import { expect, it } from "bun:test";
 import { performance } from "node:perf_hooks";
-import { skipLongTests } from "../../../Envs.js";
+import { skipLongTests } from "../../../libs/Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
@@ -10,7 +10,7 @@ import {
   MockGroupTxtMsg_SENDERID,
 } from "../../../mocks/MockIndividualGroup.mock.js";
 import { imageWithCaptionMsg } from "../../../mocks/MockManyTypesMsgs.mock.js";
-import { MsgType, SenderType } from "../../../Msg.types.js";
+import { MsgType, SenderType } from "../../../types/Msg.types.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../types.js";
 import { type WhatsSocketReceiverError, type WhatsSocketReceiverWaitOptions, WhatsSocket_Submodule_Receiver } from "./WhatsSocket.receiver.js";

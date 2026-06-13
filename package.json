@@ -17,6 +17,22 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./debugging": {
+      "import": "./dist/debugging.mjs",
+      "require": "./dist/debugging.cjs"
+    },
+    "./helpers": {
+      "import": "./dist/helpers.mjs",
+      "require": "./dist/helpers.cjs"
+    },
+    "./testing": {
+      "import": "./dist/testing.mjs",
+      "require": "./dist/testing.cjs"
+    },
+    "./types": {
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.cjs"
+    },
     "./package.json": "./package.json"
   },
   "repository": {

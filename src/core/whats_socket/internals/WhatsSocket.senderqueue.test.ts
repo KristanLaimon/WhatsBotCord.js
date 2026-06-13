@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { performance } from "node:perf_hooks";
-import { skipLongTests } from "../../../Envs.js";
-import { WhatsappGroupIdentifier } from "../../../Whatsapp.types.js";
+import { skipLongTests } from "../../../libs/Envs.js";
+import { WhatsappGroupIdentifier } from "../../../types/Whatsapp.types.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
 import WhatsSocketSenderQueue from "./WhatsSocket.senderqueue.js";
 

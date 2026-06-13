@@ -7,17 +7,17 @@ import {
   MockIndividualTxtMsg_CHATID as IndividualMsg_CHATID,
   MockIndividualTxtMsg as IndividualTxtMsg,
 } from "../../../mocks/MockIndividualGroup.mock.js";
-import { MsgType, SenderType } from "../../../Msg.types.js";
-import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
+import { MsgType, SenderType } from "../../../types/Msg.types.js";
+import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
 import type { WhatsMsgSenderSendingOptions } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocket_Submodule_Group } from "../../whats_socket/internals/WhatsSocket.groups.js";
+import { WhatsSocket_Submodule_Presence } from "../../whats_socket/internals/WhatsSocket.presence.js";
 import {
   type WhatsSocketReceiverError,
   WhatsSocket_Submodule_Receiver,
   WhatsSocketReceiverMsgError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
-import { WhatsSocket_Submodule_Presence } from "../../whats_socket/internals/WhatsSocket.presence.js";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import { type IChatContextConfig, ChatContext } from "./ChatContext.js";

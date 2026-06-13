@@ -17,7 +17,7 @@ import {
   videoNoCaptionMsg,
   videoWithCaptionMsg,
 } from "../mocks/MockManyTypesMsgs.mock.js";
-import { MsgType } from "../Msg.types.js";
+import { MsgType } from "../types/Msg.types.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetQuotedMsgText, MsgHelper_FullMsg_GetText } from "./Msg.helper.js";
 
 test("Mockdata from .json can be imported", () => {

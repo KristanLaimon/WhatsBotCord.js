@@ -6,10 +6,10 @@ import {
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverMsgError,
 } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
-import { WhatsappIdType } from "../helpers/Whatsapp.helper.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetText } from "../helpers/Msg.helper.js";
-import { MsgType } from "../Msg.types.js";
+import { WhatsappIdType } from "../helpers/Whatsapp.helper.js";
+import { MsgType } from "../types/Msg.types.js";
 
 export type WhatsSocketReceiverWaitObject = {
   rawMsg: WhatsappMessage;

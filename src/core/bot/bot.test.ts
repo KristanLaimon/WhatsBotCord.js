@@ -1,7 +1,7 @@
 import { describe, expect, mock as fn, spyOn, test } from "bun:test";
 import type { IChatContext } from "../..";
 import { type WhatsappMessage, Helpers } from "../..";
-import { skipLongTests } from "../../Envs.js";
+import { skipLongTests } from "../../libs/Envs.js";
 import {
   MockGroupTxtMsg_CHATID as GroupMsg_CHATID,
   MockGroupTxtMsg_SENDERID as GroupMsg_SENDERID,
@@ -13,7 +13,7 @@ import {
   MockGroupTxtMsg_SENDERID,
 } from "../../mocks/MockIndividualGroup.mock.js";
 import { MockQuotedMsg_Group, MockQuotedMsg_Individual } from "../../mocks/MockQuotedMsgs.mock.js";
-import { MsgType, SenderType } from "../../Msg.types.js";
+import { MsgType, SenderType } from "../../types/Msg.types.js";
 import {
   type WhatsSocketReceiverError,
   WhatsSocket_Submodule_Receiver,

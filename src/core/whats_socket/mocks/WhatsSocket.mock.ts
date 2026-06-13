@@ -2,19 +2,19 @@ import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
 import { WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
 import Delegate from "../../../libs/Delegate.js";
-import type { MsgType, SenderType } from "../../../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
+import type { MsgType, SenderType } from "../../../types/Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Group } from "../internals/IWhatsSocket.groups.js";
-import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_Presence } from "../internals/IWhatsSocket.presence.js";
-import type { GroupMetadataInfo } from "../internals/WhatsSocket.receiver.js";
-import { WhatsSocket_Submodule_Presence } from "../internals/WhatsSocket.presence.js";
-import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
-import { GenericSocketVendorClient_Mock } from "../WhatsSocket.generic.mock.js";
-import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../internals/IWhatsSocket.sugarsender.js";
+import { WhatsSocket_Submodule_Presence } from "../internals/WhatsSocket.presence.js";
+import type { GroupMetadataInfo } from "../internals/WhatsSocket.receiver.js";
+import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
+import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type {
+  IWhatsappSocketAdapterClient,
   WhatsappGroupMetadata,
   WhatsappGroupParticipantAction,
   WhatsappMessage,
@@ -22,8 +22,8 @@ import type {
   WhatsappMessageOptions,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
-  IWhatsappSocketAdapterClient,
 } from "../types.js";
+import { GenericSocketVendorClient_Mock } from "../WhatsSocket.generic.mock.js";
 import type { WhatsSocketMockMsgSent } from "./types.js";
 
 export type WhatsSocketMockOptions = {

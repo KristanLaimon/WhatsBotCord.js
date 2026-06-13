@@ -3,7 +3,7 @@ import { autobind } from "../../helpers/Decorators.helper.js";
 import { MsgHelper_ExtractQuotedMsgInfo, MsgHelper_FullMsg_GetText } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
 import { MiddlewareChain } from "../../libs/MiddlewareChain.js";
-import { type SenderType, MsgType } from "../../Msg.types.js";
+import { type SenderType, MsgType } from "../../types/Msg.types.js";
 import type { IWhatsSocket_Submodule_Group } from "../whats_socket/internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";

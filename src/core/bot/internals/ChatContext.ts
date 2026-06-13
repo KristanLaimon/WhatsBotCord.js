@@ -1,11 +1,10 @@
 import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
-import { MsgType, SenderType } from "../../../Msg.types.js";
-import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
+import { MsgType, SenderType } from "../../../types/Msg.types.js";
+import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Group as IChatGroupAPI, IWhatsSocket_Submodule_Group } from "../../whats_socket/internals/IWhatsSocket.groups.js";
-import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_Presence } from "../../whats_socket/internals/IWhatsSocket.presence.js";
-import type { WhatsappPresenceState } from "../../whats_socket/types.js";
+import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
 import type {
   IWhatsSocket_Submodule_SugarSender,
   WhatsMsgPollOptions,
@@ -17,15 +16,15 @@ import {
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverHelper_isReceiverError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
-import type { WhatsappMessage } from "../../whats_socket/types.js";
+import type { WhatsappMessage, WhatsappPresenceState } from "../../whats_socket/types.js";
 import type {
   ChatContextContactRes,
   ChatContextUbication,
   IChatContext,
-  IChatContext_PresenceAPI,
   IChatContext_CloneTargetedTo_FromIds_GROUP_Params,
   IChatContext_CloneTargetedTo_FromIds_Individual_Params,
   IChatContext_CloneTargetedTo_FromWhatsmsg_Params,
+  IChatContext_PresenceAPI,
   IChatContext_WaitYesOrNoAnswer_Params,
 } from "./IChatContext.js";
 

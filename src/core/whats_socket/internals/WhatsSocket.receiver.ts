@@ -1,6 +1,6 @@
 import { MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
 import { type WhatsappIDInfo, type WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
-import { type SenderType, MsgType } from "../../../Msg.types.js";
+import { type SenderType, MsgType } from "../../../types/Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage } from "../types.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./IWhatsSocket.receiver.js";

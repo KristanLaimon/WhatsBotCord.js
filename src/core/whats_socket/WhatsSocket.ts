@@ -2,14 +2,14 @@ import moment from "moment";
 import encodeQr from "qr";
 import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../helpers/Msg.helper.js";
 import Delegate from "../../libs/Delegate.js";
-import type { MsgType } from "../../Msg.types.js";
-import { SenderType } from "../../Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../Whatsapp.types.js";
+import type { MsgType } from "../../types/Msg.types.js";
+import { SenderType } from "../../types/Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../types/Whatsapp.types.js";
 import { WhatsSocket_Submodule_Group } from "./internals/WhatsSocket.groups.js";
+import { WhatsSocket_Submodule_Presence } from "./internals/WhatsSocket.presence.js";
 import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
-import { WhatsSocket_Submodule_Presence } from "./internals/WhatsSocket.presence.js";
 import type { IWhatsSocket } from "./IWhatsSocket.js";
 import type {
   IWhatsappAdapter,

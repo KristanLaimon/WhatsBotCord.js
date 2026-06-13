@@ -3,6 +3,10 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   entry: [
     "src/index.ts",
+    "src/testing.ts",
+    "src/helpers.ts",
+    "src/types.ts",
+    "src/debugging.ts",
     "!src/**/*.test.ts",
     "!src/**/*.mock.ts",
     "!src/core/whats_socket/mocks/*/**",
@@ -19,6 +23,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   platform: "node",
+  splitting: false,
   name: "Whatsbotcord",
   format: {
     esm: {

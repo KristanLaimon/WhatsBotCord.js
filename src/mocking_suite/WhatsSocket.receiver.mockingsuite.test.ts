@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { MockGroupTxtMsg } from "../mocks/MockIndividualGroup.mock.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 
 const LID_fake = "myParticipantIdLid" + WhatsappLIDIdentifier;

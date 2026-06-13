@@ -1,8 +1,8 @@
 import { describe, expect, mock as fn, test } from "bun:test";
-import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
 import type { WhatsappGroupMetadata } from "../types.js";
-import WhatsSocket from "../WhatsSocket.js";
 import { CreateWhatsSocketVendorFactoryMock, GenericSocketVendorClient_Mock } from "../WhatsSocket.generic.mock.js";
+import WhatsSocket from "../WhatsSocket.js";
 
 async function toolkit() {
   const adapter = new GenericSocketVendorClient_Mock();

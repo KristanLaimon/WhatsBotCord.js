@@ -11,7 +11,7 @@ import WhatsSocketMock from "../core/whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
 import { autobind } from "../helpers/Decorators.helper.js";
 import { ChatContext, MsgType, SenderType } from "../index.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
 import ChatContext_MockingSuite from "./ChatContext.mockingsuite.js";
 import {
   MsgFactory_Audio,

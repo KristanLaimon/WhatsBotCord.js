@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { MsgType } from "../Msg.types.js";
+import { MsgType } from "../types/Msg.types.js";
 import ChatContext_MockingSuite from "./ChatContext.mockingsuite.js";
 import { MsgFactory_Audio, MsgFactory_Document, MsgFactory_Image, MsgFactory_Sticker, MsgFactory_Text, MsgFactory_Video } from "./MsgsMockFactory.js";
-import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
-import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 import WhatsSocket_Submodule_Groups_MockingSuite from "./WhatsSocket.groups.mockingsuite.js";
 import WhatsSocket_Submodule_Presence_MockingSuite from "./WhatsSocket.presence.mockingsuite.js";
+import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
+import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 
 let chatCtx: ChatContext_MockingSuite;
 let receiverMock: WhatsSocket_Submodule_Receiver_MockingSuite;

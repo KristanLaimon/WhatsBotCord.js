@@ -1,18 +1,18 @@
+import type Delegate from "../../libs/Delegate.js";
+import type { MsgType, SenderType } from "../../types/Msg.types.js";
+import type { IWhatsSocket_Submodule_Group } from "./internals/IWhatsSocket.groups.js";
+import type { IWhatsSocket_Submodule_Presence } from "./internals/IWhatsSocket.presence.js";
+import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_SugarSender } from "./internals/IWhatsSocket.sugarsender.js";
 import type {
+  IWhatsappSocketAdapterClient,
   WhatsappGroupMetadata,
   WhatsappMessage,
   WhatsappMessageContent,
   WhatsappMessageOptions,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
-  IWhatsappSocketAdapterClient,
 } from "./types.js";
-import type Delegate from "../../libs/Delegate.js";
-import type { MsgType, SenderType } from "../../Msg.types.js";
-import type { IWhatsSocket_Submodule_Group } from "./internals/IWhatsSocket.groups.js";
-import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
-import type { IWhatsSocket_Submodule_SugarSender } from "./internals/IWhatsSocket.sugarsender.js";
-import type { IWhatsSocket_Submodule_Presence } from "./internals/IWhatsSocket.presence.js";
 
 /**
  * # WhatsApp Socket Sending Module

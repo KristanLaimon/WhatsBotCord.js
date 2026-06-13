@@ -7,7 +7,7 @@ import type {
   WhatsMsgUbicationOptions,
 } from "../core/whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { WhatsappMessage } from "../core/whats_socket/types.js";
-import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
 const RAW_CHAT = "fakeChat";
 const CHATID_GROUP: string = RAW_CHAT + WhatsappGroupIdentifier;

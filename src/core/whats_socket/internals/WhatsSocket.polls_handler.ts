@@ -1,5 +1,5 @@
 import Delegate from "../../../libs/Delegate.js";
-import type { MsgType, SenderType } from "../../../Msg.types.js";
+import type { MsgType, SenderType } from "../../../types/Msg.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type { WhatsappMessage, WhatsappPollUpdateMessage, WhatsappProtocolMessage } from "../types.js";
 

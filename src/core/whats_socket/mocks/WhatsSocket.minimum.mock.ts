@@ -1,4 +1,4 @@
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier } from "../../../types/Whatsapp.types.js";
 import type { IMsgServiceSocketMinimum } from "../IWhatsSocket.js";
 import type { WhatsappMessage, WhatsappMessageContent, WhatsappMessageOptions } from "../types.js";
 import type { WhatsSocketMockMsgSent } from "./types.js";

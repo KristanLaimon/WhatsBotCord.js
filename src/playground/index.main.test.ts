@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
-import type { AdditionalAPI, CommandArgs, IChatContext } from "./index.js";
-import { type ICommand, ChatMock, CommandType } from "./index.js";
+import type { AdditionalAPI, CommandArgs, IChatContext } from "../index.js";
+import Whatsbotcord, { type ICommand, ChatMock, CommandType } from "../index.js";
+import { MockAdapter } from "../testing.js";
+
+test("Another test", async () => {
+  const mockAdapter = new MockAdapter();
+  const bot = new Whatsbotcord({}, mockAdapter);
+  expect(bot).toBeDefined();
+});
 
 test("Before update...", async () => {
   class MyComWithoutExpect implements ICommand {
@@ -21,14 +28,14 @@ test("Before update...", async () => {
           commandType: CommandType.Normal,
           command: {
             name: "Command1_Normal",
-            async run(_ctx, _api, _args) {},
+            async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs) {},
           },
         },
         {
           commandType: CommandType.Tag,
           command: {
             name: "Command2_Tag",
-            async run(_ctx, _api, _args) {},
+            async run(_ctx: IChatContext, _api: AdditionalAPI, _args: CommandArgs) {},
           },
         },
       ],

@@ -9,7 +9,7 @@ import {
   SenderType,
   default as WhatsbotCord,
 } from "src/index.js";
-import { isDev } from "./Envs.js";
+import { isDev } from "../libs/Envs.js";
 
 /**
  * # Main Playground Entry
@@ -27,7 +27,6 @@ class PingCommand implements ICommand {
     await chat.SendText("Pong");
     const buf = fs.readFileSync("./frieren.gif");
     await chat.SendImgFromBuffer(buf, ".gif");
-
   }
 }
 

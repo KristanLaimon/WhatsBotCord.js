@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { WhatsappGroupIdentifier } from "../../../Whatsapp.types.js";
+import { WhatsappGroupIdentifier } from "../../../types/Whatsapp.types.js";
 import WhatsSocketMock from "./WhatsSocket.mock.js";
 
 describe("WhatsSocketMock Generally", () => {

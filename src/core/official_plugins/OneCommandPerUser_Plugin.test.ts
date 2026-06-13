@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock as fn, it } from "bun:test";
-import { skipLongTests } from "../../Envs.js";
 import type { IChatContext, ICommand } from "../../index.js";
+import { skipLongTests } from "../../libs/Envs.js";
 import Bot from "../bot/bot.js";
 import { CommandType } from "../bot/internals/CommandsSearcher.js";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock.js";

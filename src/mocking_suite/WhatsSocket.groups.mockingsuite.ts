@@ -2,7 +2,7 @@ import type { IWhatsSocket_Submodule_Group } from "../core/whats_socket/internal
 import { type GroupMetadataInfo } from "../core/whats_socket/internals/WhatsSocket.receiver.js";
 import type { WhatsappGroupMetadata, WhatsappGroupParticipantAction } from "../core/whats_socket/types.js";
 import { WhatsappIdType } from "../helpers/Whatsapp.helper.js";
-import { WhatsappGroupIdentifier } from "../Whatsapp.types.js";
+import { WhatsappGroupIdentifier } from "../types/Whatsapp.types.js";
 
 /**
  * A mocking implementation of `IWhatsSocket_Submodule_Group` designed for unit testing.
