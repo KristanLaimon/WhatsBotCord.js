@@ -9,8 +9,19 @@ import type { GroupMetadataInfo } from "../../whats_socket/internals/WhatsSocket
 import type { IWhatsSocket_Submodule_Group as IChatGroupAPI } from "../../whats_socket/internals/IWhatsSocket.groups.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import type { IChatContextConfig } from "./ChatContext.js";
+import type { WhatsappPresenceState } from "../../whats_socket/types.js";
 
 export type { IChatGroupAPI };
+
+export interface IChatContext_PresenceAPI {
+  SetGlobalPresenceState(state: WhatsappPresenceState): Promise<boolean>;
+  StartTyping(): Promise<boolean>;
+  StopTyping(): Promise<boolean>;
+  StartRecording(): Promise<boolean>;
+  StopRecording(): Promise<boolean>;
+  WithTyping<T>(action: () => Promise<T>): Promise<T>;
+  WithRecording<T>(action: () => Promise<T>): Promise<T>;
+}
 
 /**
  * # Chat Context Ubication
@@ -141,6 +152,16 @@ export interface IChatContext {
    * ```
    */
   Group: IChatGroupAPI;
+
+  /**
+   * Presence helpers scoped to this context's fixed chat.
+   *
+   * @example
+   * ```typescript
+   * await ctx.Presence.StartTyping();
+   * ```
+   */
+  Presence: IChatContext_PresenceAPI;
 
   // ============================ SENDING ============================
   /**

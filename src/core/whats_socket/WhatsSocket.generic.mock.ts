@@ -10,6 +10,8 @@ import type {
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
   WhatsSocketVendorEventMap,
+  WhatsappPresenceState,
+  WhatsappChatActivity,
 } from "./types.js";
 
 export function CreateWhatsSocketVendorFactoryMock(mockSocket: GenericSocketVendorClient_Mock): IWhatsappAdapter {
@@ -70,6 +72,12 @@ export class GenericSocketVendorClient_Mock implements IWhatsappSocketAdapterCli
 
   public getPollVotes: Mock<(pollRawMsg: WhatsappMessage, pollUpdates: WhatsappPollUpdateMessage[]) => Promise<WhatsappPollVote[]>> = fn(
     async (_pollRawMsg: WhatsappMessage, _pollUpdates: WhatsappPollUpdateMessage[]) => []
+  );
+
+  public setPresenceState: Mock<(state: WhatsappPresenceState) => Promise<boolean>> = fn(async (_state: WhatsappPresenceState) => true);
+
+  public setChatActivity: Mock<(chatId_JID: string, activity: WhatsappChatActivity) => Promise<boolean>> = fn(
+    async (_chatId_JID: string, _activity: WhatsappChatActivity) => true
   );
 
   public shutdown: Mock<() => Promise<void>> = fn(async () => Promise.resolve());

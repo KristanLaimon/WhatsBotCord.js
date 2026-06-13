@@ -26,6 +26,7 @@ import {
 import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
+import WhatsSocket_Submodule_Presence_MockingSuite from "./WhatsSocket.presence.mockingsuite.js";
 import WhatsSocket_Submodule_Groups_MockingSuite from "./WhatsSocket.groups.mockingsuite.js";
 
 /**
@@ -142,6 +143,7 @@ export default class ChatMock {
   private _receiverMock: WhatsSocket_Submodule_Receiver_MockingSuite;
   private _sugarSenderMock: WhatsSocket_Submodule_SugarSender_MockingSuite;
   private _groupMock: WhatsSocket_Submodule_Groups_MockingSuite;
+  private _presenceMock: WhatsSocket_Submodule_Presence_MockingSuite;
   private _socketMock: WhatsSocketMock;
 
   /**
@@ -177,6 +179,10 @@ export default class ChatMock {
    */
   public get GroupActionsFromCommand() {
     return this._groupMock.Actions;
+  }
+
+  public get PresenceActionsFromCommand() {
+    return this._presenceMock.Actions;
   }
 
   /**
@@ -243,7 +249,8 @@ export default class ChatMock {
     this._receiverMock = new WhatsSocket_Submodule_Receiver_MockingSuite();
     this._sugarSenderMock = new WhatsSocket_Submodule_SugarSender_MockingSuite();
     this._groupMock = new WhatsSocket_Submodule_Groups_MockingSuite();
-    this._socketMock = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock, customGroup: this._groupMock });
+    this._presenceMock = new WhatsSocket_Submodule_Presence_MockingSuite();
+    this._socketMock = new WhatsSocketMock({ customReceiver: this._receiverMock, customSugarSender: this._sugarSenderMock, customGroup: this._groupMock, customPresence: this._presenceMock });
     const chatContext = new ChatContext_MockingSuite(
       this.ParticipantId_LID,
       this.ParticipantId_PN,
@@ -252,6 +259,7 @@ export default class ChatMock {
       this._sugarSenderMock,
       this._receiverMock,
       this._groupMock,
+      this._presenceMock,
       chatContextConfig
     );
     this._chatContextMock = chatContext;

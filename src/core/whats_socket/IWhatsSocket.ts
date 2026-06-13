@@ -12,6 +12,7 @@ import type { MsgType, SenderType } from "../../Msg.types.js";
 import type { IWhatsSocket_Submodule_Group } from "./internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./internals/IWhatsSocket.sugarsender.js";
+import type { IWhatsSocket_Submodule_Presence } from "./internals/IWhatsSocket.presence.js";
 
 /**
  * # WhatsApp Socket Sending Module
@@ -256,6 +257,11 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * ```
    */
   group: IWhatsSocket_Submodule_Group;
+
+  /**
+   * Submodule for managing WhatsApp presence states and chat activity.
+   */
+  Presence: IWhatsSocket_Submodule_Presence;
 
   /**
    * Establishes the socket connection and starts the client.

@@ -4,6 +4,8 @@ import { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Group as IChatGroupAPI, IWhatsSocket_Submodule_Group } from "../../whats_socket/internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_Presence } from "../../whats_socket/internals/IWhatsSocket.presence.js";
+import type { WhatsappPresenceState } from "../../whats_socket/types.js";
 import type {
   IWhatsSocket_Submodule_SugarSender,
   WhatsMsgPollOptions,
@@ -20,6 +22,7 @@ import type {
   ChatContextContactRes,
   ChatContextUbication,
   IChatContext,
+  IChatContext_PresenceAPI,
   IChatContext_CloneTargetedTo_FromIds_GROUP_Params,
   IChatContext_CloneTargetedTo_FromIds_Individual_Params,
   IChatContext_CloneTargetedTo_FromWhatsmsg_Params,
@@ -94,6 +97,7 @@ export class ChatContext implements IChatContext {
   private _internalReceive: IWhatsSocket_Submodule_Receiver;
 
   private _internalGroup: IWhatsSocket_Submodule_Group | null;
+  private _internalPresence: IWhatsSocket_Submodule_Presence;
 
   public readonly FixedParticipantPN: string | null;
 
@@ -114,6 +118,18 @@ export class ChatContext implements IChatContext {
     return this._GetGroupDependency();
   }
 
+  public get Presence(): IChatContext_PresenceAPI {
+    return {
+      SetGlobalPresenceState: (state: WhatsappPresenceState) => this._internalPresence.SetGlobalPresenceState(state),
+      StartTyping: () => this._internalPresence.StartTyping(this.FixedChatId),
+      StopTyping: () => this._internalPresence.StopTyping(this.FixedChatId),
+      StartRecording: () => this._internalPresence.StartRecording(this.FixedChatId),
+      StopRecording: () => this._internalPresence.StopRecording(this.FixedChatId),
+      WithTyping: <T>(action: () => Promise<T>) => this._internalPresence.WithTyping(this.FixedChatId, action),
+      WithRecording: <T>(action: () => Promise<T>) => this._internalPresence.WithRecording(this.FixedChatId, action),
+    };
+  }
+
   /**
    * Creates a new chat session bound to a specific chat and initial message.
    *
@@ -124,6 +140,7 @@ export class ChatContext implements IChatContext {
    * @param senderDependency - Internal sender utility for dispatching messages.
    * @param receiverDependency - Internal receiver utility for subscribing to events.
    * @param groupDependency - Internal group utility for scoped group operations.
+   * @param presenceDependency - Internal presence utility for scoped presence operations.
    * @param config - Context configuration controlling runtime behavior.
    *
    * @remarks
@@ -139,6 +156,7 @@ export class ChatContext implements IChatContext {
     senderDependency: IWhatsSocket_Submodule_SugarSender,
     receiverDependency: IWhatsSocket_Submodule_Receiver,
     groupDependency: IWhatsSocket_Submodule_Group | null,
+    presenceDependency: IWhatsSocket_Submodule_Presence,
     config: IChatContextConfig
   ) {
     this.Config = config;
@@ -147,6 +165,7 @@ export class ChatContext implements IChatContext {
     this._internalSend = senderDependency;
     this._internalReceive = receiverDependency;
     this._internalGroup = groupDependency;
+    this._internalPresence = presenceDependency;
     this.FixedChatId = fixedChatId;
     this.InitialMsg = initialMsg;
     this.FixedSenderType = config.explicitSenderType ?? (this.InitialMsg !== null ? MsgHelper_FullMsg_GetSenderType(this.InitialMsg) : SenderType.Individual);
@@ -164,6 +183,7 @@ export class ChatContext implements IChatContext {
       this._internalSend,
       this._internalReceive,
       this._internalGroup,
+      this._internalPresence,
       this.Config
     );
   }
@@ -201,6 +221,7 @@ export class ChatContext implements IChatContext {
         this._internalSend,
         this._internalReceive,
         this._internalGroup,
+        this._internalPresence,
         params?.newConfig ?? this.Config
       );
   }
@@ -221,6 +242,7 @@ export class ChatContext implements IChatContext {
           this._internalSend,
           this._internalReceive,
           this._internalGroup,
+          this._internalPresence,
           {...configCopy, ...params.newConfig}
         );
   }
@@ -240,6 +262,7 @@ export class ChatContext implements IChatContext {
           this._internalSend,
           this._internalReceive,
           this._internalGroup,
+          this._internalPresence,
           {...configCopy, ...params.newConfig}
         );
   }

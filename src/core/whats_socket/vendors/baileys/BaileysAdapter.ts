@@ -5,6 +5,7 @@ import {
   type MiscMessageGenerationOptions,
   type WAMessage,
   type WAMessageUpdate,
+  type WAPresence,
   DisconnectReason,
   downloadMediaMessage,
   fetchLatestBaileysVersion,
@@ -28,6 +29,8 @@ import type {
   WhatsSocketConnectionUpdate,
   WhatsSocketLoggerMode,
   WhatsSocketVendorEventMap,
+  WhatsappPresenceState,
+  WhatsappChatActivity,
 } from "../../types.js";
 
 export type BaileysWASocket = ReturnType<typeof makeWASocket>;
@@ -173,6 +176,45 @@ export class BaileysWhatsSocketVendorClient implements IWhatsappSocketAdapterCli
 
   public async shutdown(): Promise<void> {
     await this._socket.ws.close();
+  }
+
+  public async setPresenceState(state: WhatsappPresenceState): Promise<boolean> {
+    try {
+      const presence = this._mapPresenceState(state);
+      await this._socket.sendPresenceUpdate(presence);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public async setChatActivity(chatId_JID: string, activity: WhatsappChatActivity): Promise<boolean> {
+    try {
+      const presence = this._mapChatActivity(activity);
+      await this._socket.sendPresenceUpdate(presence, chatId_JID);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private _mapPresenceState(state: WhatsappPresenceState): WAPresence {
+    const states: Record<WhatsappPresenceState, WAPresence> = {
+      online: "available",
+      offline: "unavailable",
+    };
+
+    return states[state];
+  }
+
+  private _mapChatActivity(activity: WhatsappChatActivity): WAPresence {
+    const activities: Record<WhatsappChatActivity, WAPresence> = {
+      typing: "composing",
+      recording: "recording",
+      idle: "paused",
+    };
+
+    return activities[activity];
   }
 
   private _mapConnectionUpdate(update: { connection?: string; lastDisconnect?: { error?: Error }; qr?: string }): WhatsSocketConnectionUpdate {

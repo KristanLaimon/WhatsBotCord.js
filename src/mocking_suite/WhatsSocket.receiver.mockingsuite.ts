@@ -37,8 +37,6 @@ export default class WhatsSocket_Submodule_Receiver_MockingSuite implements IWha
   public Waited: WhatsSocketReceiverMsgWaited[] = [];
   //===========================================================================================================================
 
-  public constructor() {}
-
   public AddWaitMsg(toAdd: WhatsSocketReceiverWaitObject) {
     this._queueWait.push(toAdd);
   }

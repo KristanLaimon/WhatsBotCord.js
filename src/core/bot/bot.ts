@@ -719,6 +719,7 @@ export default class Bot implements BotMinimalInfo {
           this.InternalSocket.Send,
           this.InternalSocket.Receive,
           this.InternalSocket.group,
+          this.InternalSocket.Presence,
           {
             cancelKeywords: this.Settings.cancelKeywords!,
             timeoutSeconds: this.Settings.timeoutSeconds!,
@@ -733,7 +734,7 @@ export default class Bot implements BotMinimalInfo {
       // 4. Can't be found after all that? its not a valid command
       if (!commandFound) {
         await this.Events.onCommandNotFound.CallAllAsync(
-          new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, this.InternalSocket.group, {
+          new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, this.InternalSocket.group, this.InternalSocket.Presence, {
             cancelKeywords: this.Settings.cancelKeywords!,
             timeoutSeconds: this.Settings.timeoutSeconds!,
             ignoreSelfMessages: this.Settings.ignoreSelfMessage!,
@@ -746,7 +747,7 @@ export default class Bot implements BotMinimalInfo {
       } else {
         if (this.Events.onCommandFound.Length > 0) {
           await this.Events.onCommandFound.CallAllAsync(
-            new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, this.InternalSocket.group, {
+            new ChatContext(senderId_LID, senderId_PN, chatId, rawMsg, this.InternalSocket.Send, this.InternalSocket.Receive, this.InternalSocket.group, this.InternalSocket.Presence, {
               cancelKeywords: this.Settings.cancelKeywords!,
               timeoutSeconds: this.Settings.timeoutSeconds!,
               ignoreSelfMessages: this.Settings.ignoreSelfMessage!,

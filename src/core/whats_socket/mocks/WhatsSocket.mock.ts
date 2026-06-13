@@ -6,10 +6,13 @@ import type { MsgType, SenderType } from "../../../Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Group } from "../internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
-import type { IWhatsSocket_Submodule_SugarSender } from "../internals/IWhatsSocket.sugarsender.js";
+import type { IWhatsSocket_Submodule_Presence } from "../internals/IWhatsSocket.presence.js";
 import type { GroupMetadataInfo } from "../internals/WhatsSocket.receiver.js";
+import { WhatsSocket_Submodule_Presence } from "../internals/WhatsSocket.presence.js";
 import { WhatsSocket_Submodule_Receiver } from "../internals/WhatsSocket.receiver.js";
+import { GenericSocketVendorClient_Mock } from "../WhatsSocket.generic.mock.js";
 import { WhatsSocket_Submodule_SugarSender } from "../internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket_Submodule_SugarSender } from "../internals/IWhatsSocket.sugarsender.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
 import type {
   WhatsappGroupMetadata,
@@ -19,15 +22,17 @@ import type {
   WhatsappMessageOptions,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
+  IWhatsappSocketAdapterClient,
 } from "../types.js";
 import type { WhatsSocketMockMsgSent } from "./types.js";
 
 export type WhatsSocketMockOptions = {
   maxQueueLimit?: number;
-  minimumMilisecondsDelayBetweenMsgs?: number;
   customReceiver?: IWhatsSocket_Submodule_Receiver;
   customSugarSender?: IWhatsSocket_Submodule_SugarSender;
   customGroup?: IWhatsSocket_Submodule_Group;
+  customPresence?: IWhatsSocket_Submodule_Presence;
+  minimumMilisecondsDelayBetweenMsgs?: number;
 };
 
 export type WhatsSocketMockSendingMsgOptions = {
@@ -59,20 +64,28 @@ export default class WhatsSocketMock implements IWhatsSocket {
   onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void> = new Delegate();
   onStartupAllGroupsIn: Delegate<(allGroupsIn: WhatsappGroupMetadata[]) => void> = new Delegate();
   ownJID: string = "ownIDMock" + WhatsappPhoneNumberIdentifier;
-
   Send: IWhatsSocket_Submodule_SugarSender;
   Receive: IWhatsSocket_Submodule_Receiver;
   group: IWhatsSocket_Submodule_Group;
+  Presence: IWhatsSocket_Submodule_Presence;
   Socket: any;
 
   // private _senderQueue: WhatsSocketSenderQueue_SubModule;
 
-  constructor(options?: WhatsSocketMockOptions) {
-    // this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, options?.maxQueueLimit ?? 10, options?.minimumMilisecondsDelayBetweenMsgs ?? 500);
+  constructor(customVendorClient: IWhatsappSocketAdapterClient, options?: WhatsSocketMockOptions);
+  constructor(options?: WhatsSocketMockOptions);
+  constructor(arg1?: IWhatsappSocketAdapterClient | WhatsSocketMockOptions, arg2?: WhatsSocketMockOptions) {
+    let options: WhatsSocketMockOptions | undefined;
+    let customVendorClient: IWhatsappSocketAdapterClient | undefined;
 
-    this.Send = options?.customSugarSender ?? new WhatsSocket_Submodule_SugarSender(this);
-    this.Receive = options?.customReceiver ?? new WhatsSocket_Submodule_Receiver(this);
-    this.group = options?.customGroup ?? new WhatsSocketMock_Group(this);
+    if (arg1) {
+      if ("normalizeJid" in arg1 || "setPresenceState" in arg1 || "sendMessage" in arg1) {
+        customVendorClient = arg1 as IWhatsappSocketAdapterClient;
+        options = arg2;
+      } else {
+        options = arg1 as WhatsSocketMockOptions;
+      }
+    }
 
     //Thanks js, this is never needed on another languages... ☠️
     this._SendRaw = this._SendRaw.bind(this);
@@ -81,22 +94,17 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.Shutdown = this.Shutdown.bind(this);
     this.GetRawGroupMetadata = this.GetRawGroupMetadata.bind(this);
     this.ClearMock = this.ClearMock.bind(this);
-    this._NormalizeJid = this._NormalizeJid.bind(this);
-    this._GetBotJid = this._GetBotJid.bind(this);
-    this._FetchAllGroups = this._FetchAllGroups.bind(this);
-    this._UpdateGroupParticipants = this._UpdateGroupParticipants.bind(this);
 
-    this.Socket = {
-      normalizeJid: this._NormalizeJid,
-      getBotJid: this._GetBotJid,
-      fetchAllGroups: this._FetchAllGroups,
-      updateGroupParticipants: this._UpdateGroupParticipants,
-    };
+    this.Socket = customVendorClient ?? new GenericSocketVendorClient_Mock();
+
+    this.Send = options?.customSugarSender ?? new WhatsSocket_Submodule_SugarSender(this);
+    this.Receive = options?.customReceiver ?? new WhatsSocket_Submodule_Receiver(this);
+    this.group = options?.customGroup ?? new WhatsSocketMock_Group(this);
+    this.Presence = options?.customPresence ?? new WhatsSocket_Submodule_Presence(this);
   }
 
   public SentMessagesThroughQueue: WhatsSocketMockMsgSent[] = [];
   public SentMessagesThroughRaw: WhatsSocketMockMsgSent[] = [];
-
   public GroupsIDTriedToFetch: string[] = [];
 
   public IsOn: boolean = false;
@@ -166,38 +174,6 @@ export default class WhatsSocketMock implements IWhatsSocket {
   public async GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
     this.GroupsIDTriedToFetch.push(chatId);
     return await this.group.GetMetadata(chatId);
-  }
-
-  public _NormalizeJid(jid: string): string {
-    return jid.trim();
-  }
-
-  public _GetBotJid(): string {
-    return this._NormalizeJid(this.ownJID);
-  }
-
-  public async _FetchAllGroups(): Promise<WhatsappGroupMetadata[]> {
-    return [await this.GetRawGroupMetadata("mock-group" + WhatsappGroupIdentifier)];
-  }
-
-  public async _UpdateGroupParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
-    if (this.group instanceof WhatsSocketMock_Group) {
-      this.group.UpdatedParticipants.push({ groupId, participants: participants.map(p => this._NormalizeJid(p)), action });
-    }
-
-    return true;
-  }
-
-  public async _LeaveGroup(groupId: string): Promise<void> {
-    if (this.group instanceof WhatsSocketMock_Group) {
-      await this.group.Leave(groupId);
-    }
-  }
-
-  public async _DeleteChatLocally(chatId: string): Promise<void> {
-    if (this.group instanceof WhatsSocketMock_Group) {
-      await this.group.DeleteChat(chatId);
-    }
   }
 
   public ClearMock(): void {

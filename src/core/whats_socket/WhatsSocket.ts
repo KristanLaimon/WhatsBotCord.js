@@ -9,6 +9,7 @@ import { WhatsSocket_Submodule_Group } from "./internals/WhatsSocket.groups.js";
 import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
+import { WhatsSocket_Submodule_Presence } from "./internals/WhatsSocket.presence.js";
 import type { IWhatsSocket } from "./IWhatsSocket.js";
 import type {
   IWhatsappAdapter,
@@ -158,6 +159,11 @@ export default class WhatsSocket implements IWhatsSocket {
    */
   public group!: WhatsSocket_Submodule_Group;
 
+  /**
+   * Presence submodule for managing WhatsApp presence states and chat activity.
+   */
+  public Presence!: WhatsSocket_Submodule_Presence;
+
   // === Normal Public Properties ===
   public ActualReconnectionRetries: number = 0;
 
@@ -231,6 +237,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this.Send = new WhatsSocket_Submodule_SugarSender(this);
     this.Receive = new WhatsSocket_Submodule_Receiver(this);
     this.group = new WhatsSocket_Submodule_Group(this);
+    this.Presence = new WhatsSocket_Submodule_Presence(this);
   }
 
   public async Shutdown() {

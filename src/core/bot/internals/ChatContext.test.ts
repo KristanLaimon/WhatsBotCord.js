@@ -17,6 +17,7 @@ import {
   WhatsSocketReceiverMsgError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/WhatsSocket.sugarsenders.js";
+import { WhatsSocket_Submodule_Presence } from "../../whats_socket/internals/WhatsSocket.presence.js";
 import WhatsSocketMock from "../../whats_socket/mocks/WhatsSocket.mock.js";
 import type { WhatsappMessage } from "../../whats_socket/types.js";
 import { type IChatContextConfig, ChatContext } from "./ChatContext.js";
@@ -51,6 +52,7 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
   const groupDependency = new WhatsSocket_Submodule_Group(mockSocket); // Así es como debe de instanciarse
+  const presenceDependency = new WhatsSocket_Submodule_Presence(mockSocket);
   const chatSession = new ChatContext(
     GroupTxtMsg.key.participant ?? null,
     GroupTxtMsg.key.participantAlt ?? null,
@@ -59,6 +61,7 @@ function GenerateLocalToolKit_ChatSession_FromGroup() {
     senderDependency,
     receiverDependency,
     groupDependency,
+    presenceDependency,
     {
       cancelKeywords: ["cancel", "cancelar"],
       ignoreSelfMessages: true,
@@ -80,7 +83,8 @@ function GenerateLocalToolKit_ChatSession_FromIndividual() {
   const senderDependency = new WhatsSocket_Submodule_SugarSender(mockSocket);
   const receiverDependency = new WhatsSocket_Submodule_Receiver(mockSocket);
   const groupDependency = new WhatsSocket_Submodule_Group(mockSocket);
-  const chatSession = new ChatContext(null, null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, groupDependency, {
+  const presenceDependency = new WhatsSocket_Submodule_Presence(mockSocket);
+  const chatSession = new ChatContext(null, null, IndividualTxtMsg.key.remoteJid!, IndividualTxtMsg, senderDependency, receiverDependency, groupDependency, presenceDependency, {
     cancelKeywords: ["cancel", "cancelar"],
     ignoreSelfMessages: true,
     timeoutSeconds: 5,

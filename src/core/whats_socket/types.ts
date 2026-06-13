@@ -287,6 +287,9 @@ export type WhatsappGroupMetadata = {
  */
 export type WhatsappGroupParticipantAction = "add" | "remove" | "promote" | "demote";
 
+export type WhatsappPresenceState = "online" | "offline";
+export type WhatsappChatActivity = "typing" | "recording" | "idle";
+
 export type WhatsappMessageUpdate = WhatsappMessage;
 
 export type WhatsappPollUpdateMessage = {
@@ -359,6 +362,10 @@ export interface IWhatsappSocketAdapterClient {
   downloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer>;
 
   getPollVotes(pollRawMsg: WhatsappMessage, pollUpdates: WhatsappPollUpdateMessage[]): Promise<WhatsappPollVote[]>;
+
+  setPresenceState(state: WhatsappPresenceState): Promise<boolean>;
+
+  setChatActivity(chatId_JID: string, activity: WhatsappChatActivity): Promise<boolean>;
 
   shutdown(): Promise<void>;
 }
