@@ -8,7 +8,7 @@ import type { WhatsappPresenceState } from "../core/whats_socket/types.js";
  */
 export default class WhatsSocket_Submodule_Presence_MockingSuite implements IWhatsSocket_Submodule_Presence {
   //=================================================== Spy External Methods ==================================================
-  public Actions: Array<{
+  public HistoryActions: Array<{
     actionName: keyof IWhatsSocket_Submodule_Presence;
     chatId?: string;
     additionalArguments?: any;
@@ -16,11 +16,11 @@ export default class WhatsSocket_Submodule_Presence_MockingSuite implements IWha
   //===========================================================================================================================
 
   public ClearMocks(): void {
-    this.Actions = [];
+    this.HistoryActions = [];
   }
 
   public async SetGlobalPresenceState(state: WhatsappPresenceState): Promise<boolean> {
-    this.Actions.push({
+    this.HistoryActions.push({
       actionName: "SetGlobalPresenceState",
       additionalArguments: { state },
     });
@@ -28,7 +28,7 @@ export default class WhatsSocket_Submodule_Presence_MockingSuite implements IWha
   }
 
   public async StartTyping(chatId: string): Promise<boolean> {
-    this.Actions.push({
+    this.HistoryActions.push({
       actionName: "StartTyping",
       chatId,
     });
@@ -36,7 +36,7 @@ export default class WhatsSocket_Submodule_Presence_MockingSuite implements IWha
   }
 
   public async StopTyping(chatId: string): Promise<boolean> {
-    this.Actions.push({
+    this.HistoryActions.push({
       actionName: "StopTyping",
       chatId,
     });
@@ -44,7 +44,7 @@ export default class WhatsSocket_Submodule_Presence_MockingSuite implements IWha
   }
 
   public async StartRecording(chatId: string): Promise<boolean> {
-    this.Actions.push({
+    this.HistoryActions.push({
       actionName: "StartRecording",
       chatId,
     });
@@ -52,7 +52,7 @@ export default class WhatsSocket_Submodule_Presence_MockingSuite implements IWha
   }
 
   public async StopRecording(chatId: string): Promise<boolean> {
-    this.Actions.push({
+    this.HistoryActions.push({
       actionName: "StopRecording",
       chatId,
     });

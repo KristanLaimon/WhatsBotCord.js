@@ -23,11 +23,11 @@ import {
   MsgFactory_Text,
   MsgFactory_Video,
 } from "./MsgsMockFactory.js";
+import WhatsSocket_Submodule_Groups_MockingSuite from "./WhatsSocket.groups.mockingsuite.js";
+import WhatsSocket_Submodule_Presence_MockingSuite from "./WhatsSocket.presence.mockingsuite.js";
 import type { WhatsSocketReceiverMsgWaited } from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./WhatsSocket.receiver.mockingsuite.js";
 import WhatsSocket_Submodule_SugarSender_MockingSuite from "./WhatsSocket.sugarsender.mockingsuite.js";
-import WhatsSocket_Submodule_Presence_MockingSuite from "./WhatsSocket.presence.mockingsuite.js";
-import WhatsSocket_Submodule_Groups_MockingSuite from "./WhatsSocket.groups.mockingsuite.js";
 
 /**
  * Extends {@link WhatsBotOptions} with additional settings specific to the mocking suite.
@@ -178,11 +178,11 @@ export default class ChatMock {
    * All actions executed through the group API.
    */
   public get GroupActionsFromCommand() {
-    return this._groupMock.Actions;
+    return this._groupMock.HistoryActions;
   }
 
   public get PresenceActionsFromCommand() {
-    return this._presenceMock.Actions;
+    return this._presenceMock.HistoryActions;
   }
 
   /**

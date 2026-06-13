@@ -20,7 +20,7 @@ export default class WhatsSocket_Submodule_Groups_MockingSuite implements IWhats
   }
 
   //=================================================== Spy External Methods ==================================================
-  public Actions: Array<{
+  public HistoryActions: Array<{
     actionName: keyof IWhatsSocket_Submodule_Group;
     groupId: string;
     additionalArguments?: any;
@@ -40,7 +40,7 @@ export default class WhatsSocket_Submodule_Groups_MockingSuite implements IWhats
   }
 
   public ClearMocks() {
-    this.Actions = [];
+    this.HistoryActions = [];
     this._groupMetadataToSendMock = GenerateDefaultGroupMetadata();
   }
 
@@ -53,7 +53,7 @@ export default class WhatsSocket_Submodule_Groups_MockingSuite implements IWhats
   }
 
   public async GetMetadata(groupId: string): Promise<WhatsappGroupMetadata> {
-    this.Actions.push({ actionName: "GetMetadata", groupId });
+    this.HistoryActions.push({ actionName: "GetMetadata", groupId });
     return {
       id: groupId,
       subject: this._groupMetadataToSendMock.groupName,
@@ -77,59 +77,59 @@ export default class WhatsSocket_Submodule_Groups_MockingSuite implements IWhats
   }
 
   public async GetAll(): Promise<WhatsappGroupMetadata[]> {
-    this.Actions.push({ actionName: "GetAll", groupId: "" });
+    this.HistoryActions.push({ actionName: "GetAll", groupId: "" });
     return [];
   }
 
   public async FindByName(name: string): Promise<WhatsappGroupMetadata | null> {
-    this.Actions.push({ actionName: "FindByName", groupId: "", additionalArguments: name });
+    this.HistoryActions.push({ actionName: "FindByName", groupId: "", additionalArguments: name });
     return null;
   }
 
   public async IsBotAdmin(groupId: string): Promise<boolean> {
-    this.Actions.push({ actionName: "IsBotAdmin", groupId });
+    this.HistoryActions.push({ actionName: "IsBotAdmin", groupId });
     return true;
   }
 
   public async UpdateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
-    this.Actions.push({ actionName: "UpdateParticipants", groupId, additionalArguments: { participants, action } });
+    this.HistoryActions.push({ actionName: "UpdateParticipants", groupId, additionalArguments: { participants, action } });
     return true;
   }
 
   public async AddParticipants(groupId: string, participants: string[]): Promise<boolean> {
-    this.Actions.push({ actionName: "AddParticipants", groupId, additionalArguments: participants });
+    this.HistoryActions.push({ actionName: "AddParticipants", groupId, additionalArguments: participants });
     return true;
   }
 
   public async RemoveParticipants(groupId: string, participants: string[]): Promise<boolean> {
-    this.Actions.push({ actionName: "RemoveParticipants", groupId, additionalArguments: participants });
+    this.HistoryActions.push({ actionName: "RemoveParticipants", groupId, additionalArguments: participants });
     return true;
   }
 
   public async PromoteParticipants(groupId: string, participants: string[]): Promise<boolean> {
-    this.Actions.push({ actionName: "PromoteParticipants", groupId, additionalArguments: participants });
+    this.HistoryActions.push({ actionName: "PromoteParticipants", groupId, additionalArguments: participants });
     return true;
   }
 
   public async DemoteParticipants(groupId: string, participants: string[]): Promise<boolean> {
-    this.Actions.push({ actionName: "DemoteParticipants", groupId, additionalArguments: participants });
+    this.HistoryActions.push({ actionName: "DemoteParticipants", groupId, additionalArguments: participants });
     return true;
   }
 
   public async RemoveAllParticipants(groupId: string): Promise<void> {
-    this.Actions.push({ actionName: "RemoveAllParticipants", groupId });
+    this.HistoryActions.push({ actionName: "RemoveAllParticipants", groupId });
   }
 
   public async Leave(groupId: string): Promise<void> {
-    this.Actions.push({ actionName: "Leave", groupId });
+    this.HistoryActions.push({ actionName: "Leave", groupId });
   }
 
   public async DeleteChat(groupId: string): Promise<void> {
-    this.Actions.push({ actionName: "DeleteChat", groupId });
+    this.HistoryActions.push({ actionName: "DeleteChat", groupId });
   }
 
   public async Cleanup(groupId: string): Promise<void> {
-    this.Actions.push({ actionName: "Cleanup", groupId });
+    this.HistoryActions.push({ actionName: "Cleanup", groupId });
   }
 }
 
