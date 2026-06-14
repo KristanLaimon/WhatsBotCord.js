@@ -23,7 +23,6 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   platform: "node",
-  splitting: false,
   name: "Whatsbotcord",
   format: {
     esm: {

@@ -1,0 +1,513 @@
+import { MimeTypeHelper_GetMimeTypeOf, MimeTypeHelper_IsAudio, MimeTypeHelper_IsImage, MimeTypeHelper_IsVideo } from "../../helpers/Mimetypes.helper.js";
+import { Str_NormalizeLiteralString } from "../../helpers/Strings.helper.js";
+import type { IWhatsSocket } from "../IWhatsSocket.js";
+import type { WhatsappMessage, WhatsappMessageOptions } from "../types.js";
+import type {
+  IWhatsSocket_Submodule_SugarSender,
+  WhatsMsgAudioOptions,
+  WhatsMsgDocumentOptions,
+  WhatsMsgMediaOptions,
+  WhatsMsgPollOptions,
+  WhatsMsgSenderSendingOptions,
+  WhatsMsgSenderSendingOptionsMINIMUM,
+  WhatsMsgUbicationOptions,
+} from "./IWhatsSocket.sugarsender.js";
+
+const emojiRegex = /[\p{Extended_Pictographic}]/gu;
+const emojiSplitter = { countGraphemes: (s: string) => [...s].length };
+
+/**
+ * # Sugar Sender Submodule
+ *
+ * A utility class for sending various types of WhatsApp messages with simplified APIs.
+ * This class acts as a wrapper around the core WhatsApp socket functionality,
+ * providing methods to send text, images, videos, audio, stickers, documents,
+ * polls, locations, and contacts with proper validation and formatting.
+ *
+ * @remarks
+ * - All methods support optional sending configurations, such as bypassing the
+ *   safe queue system or mentioning users.
+ * - Media-related methods validate file existence and MIME types before sending.
+ * - The class accepts vendor-neutral message options for additional
+ *   message customization.
+ *
+ * @example
+ * ```typescript
+ * const sender = new WhatsSocket_Submodule_SugarSender(socket);
+ * await sender.Text("123@s.whatsapp.net", "Hello World!");
+ * ```
+ */
+export class WhatsSocket_Submodule_SugarSender implements IWhatsSocket_Submodule_SugarSender {
+  /** Strong dependency, needs to be inejcted from constructor */
+  private socket: IWhatsSocket;
+
+  /**
+   * Initializes the SugarSender with a WhatsApp socket instance.
+   *
+   * @param socket - The WhatsApp socket instance used for sending messages.
+   */
+  constructor(socket: IWhatsSocket) {
+    this.socket = socket;
+  }
+
+  public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions) {
+    if (typeof text !== "string" || text.trim() === "") {
+      throw new Error(
+        "SugarSender.Text() received a non string text or an empty string to send, check that. Received instead: " + JSON.stringify(text, null, 2)
+      );
+    }
+    text = (options?.normalizeMessageText ?? true) ? Str_NormalizeLiteralString(text) : text;
+    //_getSendingMethod() returns a functions, it seems cursed I know, get used to it
+    return await this._getSendingMethod(options)(chatId, { text, mentions: options?.mentionsIds }, options as WhatsappMessageOptions);
+  }
+
+  public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    let imgBuffer: Uint8Array;
+    let mimeType: string;
+    let isGif: boolean = false;
+    //1. First overload: {sourcePath: string, caption?:string}
+    if (typeof imageOptions.source === "string") {
+      //1.1 Check if its a valid img type at least
+      if (!MimeTypeHelper_IsImage(imageOptions.source)) {
+        throw new Error("WhatsSocketSugarSender.Image() can't send a non IMAGE FILE!. What you were trying to send: " + imageOptions.source);
+      }
+
+      //1.2 If using custom formatExtension, check if its a valid custom img valid format
+      if ("formatExtension" in imageOptions) {
+        if (!MimeTypeHelper_IsImage(imageOptions.formatExtension)) {
+          throw new Error(
+            `WhatsSockerSugarSender.Image(), you are sending a valid file, but you are trying to send it with custom extension which is not a file type => '${imageOptions.formatExtension}'`
+          );
+        }
+      }
+
+      //1.3 Proceed checking if img file to send exists
+      if (!imageOptions.source || imageOptions.source.trim() === "") {
+        throw new Error(
+          "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" + " ImgPath: " + imageOptions.source
+        );
+      }
+
+      //Let's continue
+      imgBuffer = { url: imageOptions.source } as any;
+
+      //@ts-expect-error Can be usable with formatExtension as well
+      mimeType = imageOptions.formatExtension
+        ? //@ts-expect-error Can be usable with formatExtension as well
+          MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.formatExtension })
+        : MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source });
+      isGif = mimeType === "image/gif";
+    }
+    //2. Second overload: {sourcePath: Uint8Array, caption?:string, formatExtension: string}
+    else if ("formatExtension" in imageOptions) {
+      imgBuffer = imageOptions.source;
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: imageOptions.source, extensionType: imageOptions.formatExtension });
+      isGif = mimeType === "image/gif";
+    } else {
+      throw new Error(
+        "SugarSender.Img() bad args!, expected source in Uint8Array or string with formatExtension prop if Uint8Array... got instead: " +
+          JSON.stringify(imageOptions, null, 2)
+      );
+    }
+    //Common overload logic
+    let captionToSend: string | undefined = imageOptions.caption;
+    if (captionToSend) {
+      if (options?.normalizeMessageText) {
+        captionToSend = Str_NormalizeLiteralString(captionToSend);
+      }
+    }
+    // WhatsApp requires GIFs to be sent as videos with gifPlayback enabled
+    if (isGif) {
+      return await this._getSendingMethod(options)(
+        chatId,
+        {
+          image: imgBuffer,
+          caption: captionToSend,
+          gifPlayback: true,
+          mentions: options?.mentionsIds,
+          // mimetype: mimeType | For some reason it breaks if it includes a mimeType along with it (why? 🤓?)
+        },
+        options as WhatsappMessageOptions
+      );
+    }
+
+    //Ends
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        image: imgBuffer,
+        caption: captionToSend,
+        mentions: options?.mentionsIds,
+        mimetype: mimeType,
+      },
+      options as WhatsappMessageOptions
+    );
+  }
+
+  public async ReactEmojiToMsg(
+    chatId: string,
+    rawMsgToReactTo: WhatsappMessage,
+    emojiStr: string,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    if (typeof emojiStr !== "string") {
+      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received an non string emoji");
+    }
+    const emojisCount: number = emojiSplitter.countGraphemes(emojiStr);
+    if (emojisCount !== 1) {
+      throw new Error(
+        "WhatsSocketSugarSender.ReactEmojiToMsg() received (less than 1 or greater than 2) chars as emoji to send.... It must be a simple emoji string of 1-2 emoji char length. Received instead: " +
+          emojiStr
+      );
+    }
+
+    if (!emojiStr.match(emojiRegex)) {
+      throw new Error("WhatsSocketSugarSender.ReactEmojiToMsg() received a non emoji reaction. Received instead: " + emojiStr);
+    }
+
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        react: {
+          text: emojiStr,
+          key: rawMsgToReactTo.key,
+        },
+        mentions: options?.mentionsIds,
+      },
+      options as WhatsappMessageOptions
+    );
+  }
+
+  public async Sticker(chatId: string, stickerUrlSource: string | Uint8Array, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    if (typeof stickerUrlSource === "string") {
+      if (!stickerUrlSource.endsWith(".webp")) {
+        throw new Error("WhatsSocketSugarSender.Sticker() received a non .webp sticker to send. Must be in .webp format first!");
+      }
+      if (!stickerUrlSource) {
+        throw new Error("WhatsSocketSugarSender.Sticker() coudn't find stickerUrlSource or it's invalid..." + "Url: " + stickerUrlSource);
+      }
+    }
+
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        sticker: stickerUrlSource instanceof Uint8Array
+          ? stickerUrlSource
+          : {
+              url: stickerUrlSource,
+            },
+        mentions: options?.mentionsIds,
+      },
+      options as WhatsappMessageOptions
+    );
+  }
+
+  public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    let Uint8Array: Uint8Array;
+    let mimeType: string;
+    //1. First overload: {source: string, caption?:string}
+    if (typeof audioParams.source === "string") {
+      if (!MimeTypeHelper_IsAudio(audioParams.source)) {
+        throw new Error(
+          "Bad arguments: WhatsSocketSugarSender.Audio() received a non audio file to send (checked from extension format). Expected .mp3, .wav, and others but gotten instead: " +
+            audioParams.source
+        );
+      }
+
+      if ("formatExtension" in audioParams) {
+        if (!MimeTypeHelper_IsAudio(audioParams.formatExtension)) {
+          throw new Error("Bad arguments: WhatsSocketSugarSender.Audio() received a non audio custom extension. Received: " + audioParams.formatExtension);
+        }
+      }
+
+      if (!audioParams.source) {
+        throw new Error(
+          "Bad arguments: WhatsSocketSugarSender tried to send an img with incorrect path!, check again your img path" +
+            " AudioSourcePath: " +
+            audioParams.source
+        );
+      }
+      Uint8Array = { url: audioParams.source } as any;
+      //@ts-expect-error Can be usable with format extension as well
+      mimeType = audioParams.formatExtension
+        ? //@ts-expect-error Can be usable with format extension as well
+          MimeTypeHelper_GetMimeTypeOf({ source: audioParams.formatExtension })
+        : MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source });
+    } else if ("formatExtension" in audioParams) {
+      if (!MimeTypeHelper_IsAudio(audioParams.formatExtension)) {
+        throw new Error(
+          "Bad args => SugarSender.Audio() received Uint8Array and a non-video custom extension type. Extension type received: " + audioParams.formatExtension
+        );
+      }
+
+      Uint8Array = audioParams.source;
+
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: audioParams.source, extensionType: audioParams.formatExtension as string });
+    } else {
+      throw new Error("SugarSender.Audio bad args, expected audio source in Uint8Array or stringpath format. Got Instead: " + JSON.stringify(audioParams, null, 2));
+    }
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        audio: Uint8Array,
+        mimetype: mimeType,
+        mentions: options?.mentionsIds,
+      },
+      options as WhatsappMessageOptions
+    );
+  }
+
+  public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    let Uint8Array: Uint8Array;
+    let mimeType: string;
+
+    //1. First overload: {source:string, caption?:string}
+    if (typeof videoParams.source === "string") {
+      if (!MimeTypeHelper_IsVideo(videoParams.source)) {
+        throw new Error("Bad args: WhatsSugarSender.Video() received a non video file to send (checked from extension). Gotten instead: " + videoParams.source);
+      }
+
+      if ("formatExtension" in videoParams) {
+        if (!MimeTypeHelper_IsVideo(videoParams.formatExtension as string)) {
+          throw new Error(
+            "Bad args: WhatsSugarSender.Video() received a NON custom video file format .extension. Given instead: " + videoParams.formatExtension
+          );
+        }
+      }
+
+      if (!videoParams.source) {
+        throw new Error("SugarSender.Video expected a valid video path!, doesn't exist...  Got instead: " + videoParams.source);
+      }
+
+      Uint8Array = { url: videoParams.source } as any;
+      //@ts-expect-error Can be usable with format extension as well
+      mimeType = videoParams.formatExtension
+        ? //@ts-expect-error Can be usable with format extension as well
+          MimeTypeHelper_GetMimeTypeOf({ source: videoParams.formatExtension })
+        : MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source });
+      //2. Second overload: {source:Uint8Array, caption?: string, formatExtension: string}
+    } else if ("formatExtension" in videoParams) {
+      if (!MimeTypeHelper_IsVideo(videoParams.formatExtension)) {
+        throw new Error(
+          "Bad args => SugarSender.Video() received a Uint8Array with a NON image formatExtension (for mimetypes). FormatExtension provided: " +
+            videoParams.formatExtension
+        );
+      }
+      Uint8Array = videoParams.source;
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: videoParams.source, extensionType: videoParams.formatExtension });
+    } else {
+      throw new Error("SugarSender.Video bad args, expected video source in Uint8Array or stringpath format. Got Instead: " + JSON.stringify(videoParams, null, 2));
+    }
+
+    //Common overload logic code
+    let caption: string | undefined = videoParams.caption;
+    if (caption) {
+      if (options?.normalizeMessageText) {
+        caption = Str_NormalizeLiteralString(caption);
+      }
+    }
+    //Default
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        video: Uint8Array,
+        caption: caption ?? "",
+        mimetype: mimeType,
+        mentions: options?.mentionsIds,
+      },
+      options
+    );
+  }
+
+  public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    let Uint8Array: Uint8Array;
+    let mimeType: string;
+    let fileNameToDisplay: string;
+
+    //1. First overload {source:string, caption?:string}
+    if (typeof docParams.source === "string") {
+      if (!docParams.source) {
+        throw new Error(`SugarSender.Document(), received path document '${docParams.source}' doesn't exist!. Check again...`);
+      }
+      Uint8Array = { url: docParams.source } as any;
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: docParams.source });
+      if ("fileNameToDisplay" in docParams) {
+        // fileNameToDisplay = docParams.fileNameToDisplay ?? ((p) => { const parts = p.split(/[/\\]/); return parts[parts.length - 1]; })(docParams.source) ?? ""; //Gets file name WITH extension
+        fileNameToDisplay =
+          !docParams.fileNameToDisplay || docParams.fileNameToDisplay.trim() === "" ? ((p) => { const parts = p.split(/[/\\]/); return parts[parts.length - 1]; })(docParams.source) ?? "" : docParams.fileNameToDisplay;
+      } else {
+        fileNameToDisplay = ((p) => { const parts = p.split(/[/\\]/); return parts[parts.length - 1]; })(docParams.source) ?? ""; //Gets file name WITH extension
+      }
+      //2. Second overload {source:Uint8Array, caption?: string, formatExtension:string}
+    } else if ("formatExtension" in docParams) {
+      Uint8Array = docParams.source;
+      mimeType = MimeTypeHelper_GetMimeTypeOf({ source: docParams.source, extensionType: docParams.formatExtension });
+      fileNameToDisplay = docParams.fileNameWithoutExtension + "." + docParams.formatExtension.toLowerCase().replace(".", "");
+    } else {
+      throw new Error(
+        "SugarSender.Document bad args, expected document source in Uint8Array or stringpath format. Got Instead: " + JSON.stringify(docParams, null, 2)
+      );
+    }
+
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        document: Uint8Array,
+        mimetype: mimeType,
+        fileName: fileNameToDisplay,
+        mentions: options?.mentionsIds,
+      },
+      options
+    );
+  }
+
+  public async Poll(
+    chatId: string,
+    pollTitle: string,
+    selections: string[],
+    pollParams: WhatsMsgPollOptions,
+    moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    let title: string = pollTitle;
+    let selects: string[] = selections;
+
+    if (!(selections.length >= 1 && selections.length <= 12)) {
+      throw new Error(
+        "WhatsSocketSugarSender.Poll() received less than 1 options or greather than 12, must be in range 1-12. Received: " + selections.length + " options..."
+      );
+    }
+
+    if (pollParams.normalizeTitleText) {
+      title = Str_NormalizeLiteralString(title);
+    }
+
+    if (pollParams.normalizeOptionsText) {
+      selects = selections.map((opt) => Str_NormalizeLiteralString(opt));
+    }
+
+    for (let i = 0; i < selects.length; i++) {
+      const selectionTxt = selects[i]!;
+      if (selectionTxt.trim() === "") {
+        throw new Error(`Bad Args: SugarSender.Poll(): Option ${i + 1} is empty string!, you can't send non-text options...`);
+      }
+    }
+
+    return await this._getSendingMethod(moreOptions)(
+      chatId,
+      {
+        poll: {
+          name: title,
+          values: selects,
+          //Whats API receives 0 as multiple answers and 1 for exclusive 1 answer to polls (Thats how it works ¯\_(ツ)_/¯)
+          // selectableCount: pollParams.withMultiSelect ? 0 : 1
+          selectableCount: selections.length,
+        },
+        mentions: moreOptions?.mentionsIds,
+      },
+      moreOptions as WhatsappMessageOptions
+    );
+
+    //INFO: Uncomment this section until discover a way to fetch votes data from polls, only sending porpuses so far.
+    //Baileys library doesn't have any documentation at all to achieve this, so ill wait. - 20/august/2025
+
+    // if (msgSent) {
+    //   const sugarPollObjToReturn = new WhatsPoll(this.socket, {
+    //     pollOptions: selects,
+    //     pollRawMsg: msgSent,
+    //     titleHeader: title,
+    //     withMultiSelect: pollParams.withMultiSelect
+    //   });
+
+    //   return sugarPollObjToReturn;
+    // } else {
+    //   return null;
+    // }
+  }
+
+  public async Location(
+    chatId: string,
+    ubicationParams: WhatsMsgUbicationOptions,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    if (!areValidCoordinates(ubicationParams.degreesLatitude, ubicationParams.degreesLongitude)) {
+      throw new Error(
+        `WhatsSocketSugarSender.Ubication() => Invalid coordinates: (${ubicationParams.degreesLatitude}, ${ubicationParams.degreesLongitude}).Latitude must be between -90 and 90, longitude between -180 and 180.`
+      );
+    }
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        location: {
+          degreesLatitude: ubicationParams.degreesLatitude,
+          degreesLongitude: ubicationParams.degreesLongitude,
+          name: ubicationParams.name,
+          address: ubicationParams.addressText,
+        },
+        mentions: options?.mentionsIds,
+      },
+      options as WhatsappMessageOptions
+    );
+  }
+
+  public async Contact(
+    chatId: string,
+    contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    const arr = Array.isArray(contacts) ? contacts : [contacts];
+
+    const vCards = arr.map((c) => {
+      if (!c.name || !c.phone) {
+        throw new Error("Invalid contact: name and phone are required");
+      }
+      return `BEGIN:VCARD
+VERSION:3.0
+FN:${c.name}
+TEL;type=CELL;type=VOICE;waid=${c.phone}:${c.phone}
+END:VCARD`;
+    });
+
+    return await this._getSendingMethod(options)(
+      chatId,
+      {
+        contacts: {
+          displayName: arr.length === 1 ? arr[0]!.name : `${arr.length} contacts`,
+          contacts: vCards.map((vc) => ({ vcard: vc })),
+        },
+        mentions: options?.mentionsIds,
+      },
+      options as WhatsappMessageOptions
+    );
+  }
+
+  /**
+   * Selects the sending method based on the options provided.
+   *
+   * If `options` is not provided or `sendRawWithoutEnqueue` is false,
+   * the safe queue system will be used to send the message.
+   *
+   * If `options.sendRawWithoutEnqueue` is true, the message will be
+   * sent immediately without using the safe queue system.
+   *
+   * @param options - The sending options, or undefined to use the default behavior.
+   * @returns The method to call to send the message.
+   */
+  private _getSendingMethod(options?: WhatsMsgSenderSendingOptionsMINIMUM) {
+    if (!options) return this.socket._SendSafe;
+    else if (options.sendRawWithoutEnqueue) {
+      return this.socket._SendRaw;
+    } else {
+      return this.socket._SendSafe;
+    }
+  }
+}
+
+function areValidCoordinates(lat: number, lon: number): boolean {
+  return typeof lat === "number" && typeof lon === "number" && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+}
+
+//Uint8Array is only used to differentiate type params, still needed for intelissense!
+
+
+
+

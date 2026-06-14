@@ -1,20 +1,23 @@
-import { type Mock, mock as fn } from "bun:test";
+export type Mock<T extends (...args: any[]) => any> = T & { mock: any };
+export function fn<T extends (...args: any[]) => any>(impl: T): Mock<T> {
+  return impl as unknown as Mock<T>;
+}
 import type {
   IWhatsappAdapter,
   IWhatsappSocketAdapterClient,
+  WhatsappChatActivity,
   WhatsappGroupMetadata,
+  WhatsappGroupParticipantAction,
   WhatsappMessage,
   WhatsappMessageContent,
   WhatsappMessageOptions,
-  WhatsappGroupParticipantAction,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
-  WhatsSocketVendorEventMap,
   WhatsappPresenceState,
-  WhatsappChatActivity,
+  WhatsSocketVendorEventMap,
 } from "./types.js";
 
-export function CreateWhatsSocketVendorFactoryMock(mockSocket: GenericSocketVendorClient_Mock): IWhatsappAdapter {
+export function CreateMockAdapterFactory(mockSocket: MockAdapter): IWhatsappAdapter {
   return {
     Create: async () => mockSocket,
   };
@@ -24,7 +27,7 @@ export function CreateWhatsSocketVendorFactoryMock(mockSocket: GenericSocketVend
  * A mock implementation of the internal vendor client.
  * The name is kept for compatibility with existing tests.
  */
-export class GenericSocketVendorClient_Mock implements IWhatsappSocketAdapterClient {
+export class MockAdapter implements IWhatsappSocketAdapterClient {
   public readonly ownJID = "mock-jid";
   public user = { id: this.ownJID };
 
@@ -68,7 +71,7 @@ export class GenericSocketVendorClient_Mock implements IWhatsappSocketAdapterCli
     await this.deleteChatLocally(chatId);
   });
 
-  public downloadMediaMessage: Mock<(rawMsg: WhatsappMessage) => Promise<Buffer>> = fn(async (_rawMsg: WhatsappMessage) => Buffer.from([]));
+  public downloadMediaMessage: Mock<(rawMsg: WhatsappMessage) => Promise<Uint8Array>> = fn(async (_rawMsg: WhatsappMessage) => Uint8Array.from([]));
 
   public getPollVotes: Mock<(pollRawMsg: WhatsappMessage, pollUpdates: WhatsappPollUpdateMessage[]) => Promise<WhatsappPollVote[]>> = fn(
     async (_pollRawMsg: WhatsappMessage, _pollUpdates: WhatsappPollUpdateMessage[]) => []

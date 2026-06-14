@@ -1,0 +1,424 @@
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../helpers/Msg.helper.js";
+import Delegate from "../libs/Delegate.js";
+import type { MsgType } from "../types/Msg.types.js";
+import { SenderType } from "../types/Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
+import { WhatsSocket_Submodule_Group } from "./internals/WhatsSocket.groups.js";
+import { WhatsSocket_Submodule_Presence } from "./internals/WhatsSocket.presence.js";
+import { WhatsSocket_Submodule_Receiver } from "./internals/WhatsSocket.receiver.js";
+import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
+import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
+import type { IWhatsSocket } from "./IWhatsSocket.js";
+import type {
+  IWhatsappAdapter,
+  IWhatsappSocketAdapterClient,
+  WhatsappGroupMetadata,
+  WhatsappMessage,
+  WhatsappMessageContent,
+  WhatsappMessageOptions,
+  WhatsappMessageUpdate,
+  WhatsappPollUpdateMessage,
+  WhatsappPollVote,
+  WhatsSocketLoggerMode,
+} from "./types.js";
+
+/**
+ * # WhatsApp Socket Options
+ *
+ * Configuration options for the WhatsApp Socket behavior.
+ *
+ * @example
+ * ```typescript
+ * const options: WhatsSocketOptions = { loggerMode: "silent", maxReconnectionRetries: 3, ownWhatsSocketVendorFactory_Internal: vendorFactory };
+ * ```
+ */
+export type WhatsSocketOptions = {
+  /**
+   * Determines the logging level of the WhatsSocket instance.
+   * - "debug": full details for troubleshooting.
+   * - "silent": minimal output (no logs).
+   *
+   * @default "debug"
+   */
+  loggerMode?: WhatsSocketLoggerMode;
+
+  /**
+   * Path to the folder where authentication credentials are stored.
+   * Can be relative to the project root or the current working directory.
+   *
+   * @default "./auth"
+   */
+  credentialsFolder?: string;
+
+  /**
+   * Maximum number of reconnection attempts if the socket encounters errors.
+   *
+   * @default 5
+   */
+  maxReconnectionRetries?: number;
+
+  /**
+   * If true, the socket ignores messages sent by itself, so they won't trigger
+   * the 'onIncomingMessage' event.
+   *
+   * @default true
+   */
+  ignoreSelfMessage?: boolean;
+
+  /**
+   * Maximum number of messages that can be queued for sending globally.
+   * Useful for buffering pending messages if the bot receives many messages
+   * in a short time.
+   *
+   * @default 20
+   */
+  senderQueueMaxLimit?: number;
+
+  /**
+   * Delay (in milliseconds) between sending queued messages.
+   * Helps prevent spamming or flooding when sending many messages rapidly.
+   *
+   * @default 100
+   */
+  delayMilisecondsBetweenMsgs?: number;
+
+  /**
+   * Vendor factory used to create the internal WhatsApp socket client.
+   * `WhatsSocket` does not create a default vendor by itself; callers must provide one.
+   */
+  ownWhatsSocketVendorFactory_Internal: IWhatsappAdapter;
+};
+
+/**
+ * # WhatsApp Socket Core
+ *
+ * Class used to interact with the configured WhatsApp vendor client.
+ * Will start the socket and keep it connected until you call the Shutdown method.
+ * Provides some events you can subscribe to, to get notified when different things happen.
+ *
+ * @example
+ * ```typescript
+ * const socket = new WhatsSocket({
+ *    credentialsFolder: "./auth",
+ *    loggerMode: "silent",
+ *    maxReconnectionRetries: 5,
+ *    ignoreSelfMessage: true,
+ *    ownWhatsSocketVendorFactory_Internal: vendorFactory
+ * });
+ *
+ * socket.onIncomingMsg.Subscribe((senderId, chatId, rawMsg, msgType, senderType) => {
+ *    console.log(`Msg: ${msgType} | SenderId: ${senderId}`);
+ * });
+ *
+ * socket.Start().then(() => {
+ *    console.log("WhatsSocket initialized successfully!");
+ * }).catch((error) => {
+ *    console.error("Error initializing WhatsSocket:", error);
+ * });
+ * ```
+ */
+export default class WhatsSocket implements IWhatsSocket {
+  //All documentation comes from "IWhatsSocket" interface, check it to see docs about this events
+  public onIncomingMsg: Delegate<
+    (senderId_LID: string | null, sender_PN: string | null, chatId: string, rawMsg: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void
+  > = new Delegate();
+
+  public onUpdateMsg: Delegate<
+    (senderId_LID: string | null, senderId_PN: string | null, chatId: string, rawMsgUpdate: WhatsappMessage, msgType: MsgType, senderType: SenderType) => void
+  > = new Delegate();
+
+  public onSentMessage: Delegate<(chatId: string, rawContentMsg: WhatsappMessageContent, optionalMisc?: WhatsappMessageOptions) => void> = new Delegate();
+  public onRestart: Delegate<() => Promise<void>> = new Delegate();
+  public onGroupEnter: Delegate<(groupInfo: WhatsappGroupMetadata) => void> = new Delegate();
+  public onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void> = new Delegate();
+  public onStartupAllGroupsIn: Delegate<(allGroupsIn: WhatsappGroupMetadata[]) => void> = new Delegate();
+
+  public get ownJID(): string {
+    return this.Socket.ownJID;
+  }
+
+  //=== Subcomponents ===
+  //They're initialized/instantiated in "Start()"
+  public Socket!: IWhatsappSocketAdapterClient;
+  private _senderQueue!: WhatsSocketSenderQueue_SubModule;
+  /**
+   * Sender module and sugar layer for sending all kinds of msgs.
+   * Text, Images, Videos, Polls, etc...
+   */
+  public Send!: WhatsSocket_Submodule_SugarSender;
+
+  /**
+   * Receive internal module. To wait for someone msg's.
+   */
+  public Receive!: WhatsSocket_Submodule_Receiver;
+
+  /**
+   * Group utility module for metadata, participant updates, and cleanup actions.
+   */
+  public group!: WhatsSocket_Submodule_Group;
+
+  /**
+   * Presence submodule for managing WhatsApp presence states and chat activity.
+   */
+  public Presence!: WhatsSocket_Submodule_Presence;
+
+  // === Normal Public Properties ===
+  public ActualReconnectionRetries: number = 0;
+
+  // === Configuration Properties ===
+  private _loggerMode: WhatsSocketLoggerMode;
+  private _ignoreSelfMessages: boolean;
+  private _maxReconnectionRetries: number;
+  private _senderQueueMaxLimit: number;
+  private _milisecondsDelayBetweenSentMsgs: number;
+  private _socketVendorFactory: IWhatsappAdapter;
+
+  constructor(options: WhatsSocketOptions) {
+    this._loggerMode = options.loggerMode ?? "silent";
+    this._ignoreSelfMessages = options.ignoreSelfMessage ?? true;
+    this._senderQueueMaxLimit = options.senderQueueMaxLimit ?? 20;
+    this._milisecondsDelayBetweenSentMsgs = options.delayMilisecondsBetweenMsgs ?? 100;
+    this._socketVendorFactory = options.ownWhatsSocketVendorFactory_Internal;
+    this._maxReconnectionRetries = options.maxReconnectionRetries ?? 5;
+  }
+  private _isRestarting: boolean = false;
+
+  /**
+   * Initializes the WhatsSocket instance and start connecting to Whatsapp.
+   * After this method is called, the socket will be listening for incoming messages and events all the time.
+   * Can be canceled and shutdown by calling the `Shutdown` method.
+   * @returns A promise that will be running in the background all the time until the socket is closed.
+   */
+  public async Start(): Promise<void> {
+    this.ActualReconnectionRetries = 0;
+    await this._initializeSelf();
+  }
+
+  /**
+   * Restarts the socket by shutting down current one and then starting a new instance, effectively "restarting" the socket.
+   * @returns A promise that will be running in the background all the time until the socket is closed.
+   */
+  public async Restart(): Promise<void> {
+    this._isRestarting = true;
+    await this.Shutdown();
+    await this._initializeSelf();
+    this._isRestarting = false;
+  }
+
+  private async _initializeSelf(): Promise<void> {
+    await this.InitializeInternalSocket();
+    this.ConfigureReconnection();
+    this.ConfigureMessageIncoming();
+    this.ConfigureMessagesUpdates();
+    this.ConfigureGroupsEnter();
+    this.ConfigureGroupsUpdates();
+
+    //Thanks JavaScript ☠️
+    this._SendSafe = this._SendSafe.bind(this);
+    this._SendRaw = this._SendRaw.bind(this);
+    this.GetRawGroupMetadata = this.GetRawGroupMetadata.bind(this);
+    this.InitializeInternalSocket = this.InitializeInternalSocket.bind(this);
+    this.Start = this.Start.bind(this);
+    this.Shutdown = this.Shutdown.bind(this);
+    this._initializeSelf = this._initializeSelf.bind(this);
+    this.ConfigureReconnection = this.ConfigureReconnection.bind(this);
+    this.ConfigureMessageIncoming = this.ConfigureMessageIncoming.bind(this);
+    this.ConfigureGroupsEnter = this.ConfigureGroupsEnter.bind(this);
+    this.ConfigureGroupsUpdates = this.ConfigureGroupsUpdates.bind(this);
+  }
+
+  private async InitializeInternalSocket() {
+    this.Socket = await this._socketVendorFactory.Create();
+
+    //== Initializing internal sub-modules ==
+    this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
+    this.Send = new WhatsSocket_Submodule_SugarSender(this);
+    this.Receive = new WhatsSocket_Submodule_Receiver(this);
+    this.group = new WhatsSocket_Submodule_Group(this);
+    this.Presence = new WhatsSocket_Submodule_Presence(this);
+  }
+
+  public async Shutdown() {
+    await this.Socket.shutdown();
+  }
+
+  private ConfigureReconnection(): void {
+    this.Socket.on("ConnectionStateChanged", async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+
+      // Show QR code if needed
+      if (qr) {
+        console.log("[Whatsbotcord]: ⌛ Logging in. Scan this qr code to get started!");
+        console.log(qr);
+      }
+
+      // Successfully connected
+      if (connection === "open") {
+        this.ActualReconnectionRetries = 0; // reset retries
+        try {
+          if (this._loggerMode !== "silent") {
+            console.log("[Whatsbotcord]: ✅ Connected to whatsapp servers");
+          }
+          const groups = await this.group.GetAll();
+          this.onStartupAllGroupsIn.CallAll(groups);
+          if (this._loggerMode !== "silent") {
+            console.log("[Whatsbotcord]: 💬 All groups metadata fetched successfully");
+          }
+        } catch (err) {
+          if (this._loggerMode !== "silent") {
+            console.error("[Whatsbotcord]:  ❌ ERROR: Couldn't fetch groups", err);
+          }
+        }
+      }
+
+      // Connection closed
+      if (connection === "close") {
+        const statusCode = lastDisconnect?.statusCode;
+
+        // Only attempt to reconnect if not logged out
+        const shouldReconnect = lastDisconnect?.isLoggedOut !== true;
+        if (this._loggerMode !== "silent") {
+          console.warn("[Whatsbotcord]: ❌ Socket closed", statusCode ? `(code: ${statusCode})` : "");
+        }
+
+        if (!shouldReconnect) {
+          if (this._loggerMode !== "silent") {
+            console.error("[Whatsbotcord]: ❌ ERROR: Socket logged out. Not reconnecting.");
+          }
+          await this.Shutdown();
+          return;
+        }
+
+        // Increment retries immediately
+        this.ActualReconnectionRetries++;
+
+        // Check max retries
+        if (this.ActualReconnectionRetries > this._maxReconnectionRetries) {
+          if (this._loggerMode !== "silent") {
+            console.error(`[Whatsbotcord]: ❌ ERROR: Max reconnection attempts reached (${this._maxReconnectionRetries}). Giving up.`);
+          }
+          await this.Shutdown();
+          return;
+        }
+
+        // Prevent overlapping restarts
+        if (this._isRestarting) return;
+
+        this._isRestarting = true;
+        if (this._loggerMode !== "silent") {
+          console.log(`[Whatsbotcord]: ❌ INFO: Restarting socket (attempt ${this.ActualReconnectionRetries}/${this._maxReconnectionRetries})...`);
+        }
+
+        try {
+          await this.Restart();
+          this.onRestart.CallAll();
+          if (this._loggerMode !== "silent") {
+            console.log("[Whatsbotcord]: ❌ INFO: Socket restarted successfully!");
+          }
+        } catch (err) {
+          if (this._loggerMode !== "silent") {
+            console.error("[Whatsbotcord]: ❌ ERROR: Socket restart failed", err);
+          }
+        } finally {
+          this._isRestarting = false;
+        }
+      }
+    });
+  }
+
+  private ConfigureMessageIncoming(): void {
+    this.Socket.on("IncomingMessagesReceived", async (messageUpdate) => {
+      if (!messageUpdate.messages) return;
+      for (const msgAny of messageUpdate.messages) {
+        const msg = msgAny as WhatsappMessage;
+        if (this._ignoreSelfMessages) if (!msg.message || msg.key.fromMe) continue;
+        const chatId = msg.key.remoteJid!;
+        const senderId_LID: string | null = msg.key.participant ? (msg.key.participant.trim() !== "" ? msg.key.participant : null) : null;
+        const senderId_PN: string | null = msg.key.participantAlt ? (msg.key.participantAlt.trim() !== "" ? msg.key.participantAlt : null) : null;
+        let senderType: SenderType = SenderType.Unknown;
+        if (chatId && chatId.endsWith(WhatsappGroupIdentifier)) senderType = SenderType.Group;
+        if (chatId && chatId.endsWith(WhatsappPhoneNumberIdentifier)) senderType = SenderType.Individual;
+        this.onIncomingMsg.CallAll(senderId_LID, senderId_PN, chatId, msg, MsgHelper_FullMsg_GetMsgType(msg), senderType);
+      }
+    });
+  }
+
+  private ConfigureMessagesUpdates(): void {
+    this.Socket.on("MessagesUpdated", (msgsUpdates: WhatsappMessageUpdate[]) => {
+      if (!msgsUpdates || msgsUpdates.length === 0) return;
+      for (const msgUpdateRaw of msgsUpdates) {
+        const msgUpdate = msgUpdateRaw as WhatsappMessage;
+        if (this._ignoreSelfMessages) if (msgUpdate.key.fromMe) return;
+
+        const senderType: SenderType = MsgHelper_FullMsg_GetSenderType(msgUpdate);
+        const chatId: string = msgUpdate.key.remoteJid!;
+        const senderId_LID: string | null = msgUpdate.key.participant ? (msgUpdate.key.participant.trim() !== "" ? msgUpdate.key.participant : null) : null;
+        const senderId_PN: string | null = msgUpdate.key.participantAlt ? (msgUpdate.key.participantAlt !== "" ? msgUpdate.key.participantAlt : null) : null;
+        this.onUpdateMsg.CallAll(senderId_LID, senderId_PN, chatId, msgUpdate, MsgHelper_FullMsg_GetMsgType(msgUpdate), senderType);
+      }
+    });
+  }
+
+  /**
+   * Gets the metadata of a group chat by its chat ID. (e.g: "23423423123@g.us")
+   * @param chatId The chat ID of the group you want to get metadata from.
+   * @throws Will throw an error if the provided chatId is not a group chat ID
+   * @returns A promise that resolves to the group metadata.
+   */
+  public async GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
+    if (!chatId.endsWith(WhatsappGroupIdentifier))
+      throw new Error("Bad args => WhatsSocket.GetRawGroupMetadata() => Provided chatId is not a group chat ID. => " + chatId);
+    return await this.Socket.fetchGroupMetadata(chatId);
+  }
+
+  // Internal group methods removed
+
+  // Those group methods were removed here and are implemented in WhatsSocket_Submodule_Group now.
+
+  private ConfigureGroupsEnter(): void {
+    this.Socket.on("GroupsJoined", async (groupsUpserted: WhatsappGroupMetadata[]) => {
+      for (const group of groupsUpserted) {
+        this.onGroupEnter.CallAll(group);
+        if (this._loggerMode !== "silent") {
+          console.info(`INFO: Joined to a new group ${group.subject} at ${new Date().toLocaleString()}`);
+        }
+      }
+    });
+  }
+
+  private ConfigureGroupsUpdates(): void {
+    this.Socket.on("GroupsUpdated", (args) => {
+      if (args.length === 0) {
+        if (this._loggerMode !== "silent") {
+          console.log("INFO: No group updates received.");
+        }
+        return;
+      }
+      for (let i = 0; i < args.length; i++) {
+        const groupMetadata: Partial<WhatsappGroupMetadata> | undefined = args[i];
+        if (groupMetadata) {
+          this.onGroupUpdate.CallAll(groupMetadata);
+        }
+      }
+    });
+  }
+
+  public async _SendSafe(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
+    return this._senderQueue.Enqueue(chatId_JID, content, options);
+  }
+
+  public async _SendRaw(chatId_JID: string, content: WhatsappMessageContent, options?: WhatsappMessageOptions): Promise<WhatsappMessage | null> {
+    const toReturn = (await this.Socket.sendMessage(chatId_JID, content, options)) ?? null;
+    return toReturn;
+  }
+
+  public async DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Uint8Array> {
+    return await this.Socket.downloadMediaMessage(rawMsg);
+  }
+
+  public async GetPollVotes(pollRawMsg: WhatsappMessage, pollUpdates: WhatsappPollUpdateMessage[]): Promise<WhatsappPollVote[]> {
+    return await this.Socket.getPollVotes(pollRawMsg, pollUpdates);
+  }
+}
+
+

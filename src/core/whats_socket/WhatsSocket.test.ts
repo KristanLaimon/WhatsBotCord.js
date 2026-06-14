@@ -5,13 +5,13 @@ import { MsgType, SenderType } from "../../types/Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../types/Whatsapp.types.js";
 import WhatsSocketSenderQueue_SubModule from "./internals/WhatsSocket.senderqueue.js";
 import { WhatsSocket_Submodule_SugarSender } from "./internals/WhatsSocket.sugarsenders.js";
+import { CreateWhatsSocketVendorFactoryMock, MockAdapter } from "./MockAdapter.js";
 import type { WhatsappGroupMetadata, WhatsappMessage, WhatsappMessageUpdate } from "./types.js";
-import { CreateWhatsSocketVendorFactoryMock, GenericSocketVendorClient_Mock } from "./WhatsSocket.generic.mock.js";
 import WhatsSocket from "./WhatsSocket.js";
 
 describe("Initialization", () => {
   it("Instatiation_WhenProvidingMockSocket_ShouldUseMockInsteadOfRealOne", async () => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 1,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
@@ -21,7 +21,7 @@ describe("Initialization", () => {
   });
 
   it("Instatiation_WhenUsingStartMethod_ShouldSubscribeToConnectionStateChanged", async () => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
       delayMilisecondsBetweenMsgs: 1,
@@ -34,7 +34,7 @@ describe("Initialization", () => {
   });
 
   it("WhenInstatiating_ShouldCreateQueueSocketAndSocketSugarSender", async () => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
       delayMilisecondsBetweenMsgs: 1,
@@ -51,7 +51,7 @@ describe("Initialization", () => {
   });
 
   it("WhenInstatiatin_ShouldConfigure;ConfigureConnection();CorrectlyOnSocket", async () => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
       delayMilisecondsBetweenMsgs: 1,
@@ -75,7 +75,7 @@ describe("Initialization", () => {
 
 describe("Messages Sending", () => {
   it("WhenSendingMsgsThroughSendSafe_ShouldSendThemThroughSocket", async (): Promise<void> => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 1,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
@@ -87,7 +87,7 @@ describe("Messages Sending", () => {
   });
 
   it("WhenSendingMsgsThroughRaw_ShouldSendThemThroughSocket", async (): Promise<void> => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 1,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
@@ -123,7 +123,7 @@ describe("Messages Sending", () => {
  */
 describe("Events/Delegates", () => {
   it("onGroupEnter_Delegate_SendSendingMsg_ShouldInvokeWS", async () => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
@@ -141,7 +141,7 @@ describe("Events/Delegates", () => {
   });
 
   it("onSentMessage_Delegate_WhenSendingAMsg_ShouldInvokeWS", async () => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
@@ -158,7 +158,7 @@ describe("Events/Delegates", () => {
   it("onIncomingMsg_Delegate_WhenReceivingAMsg_ShouldInvokeWS", async () => {
     //========== Using onMessageUpsert ================
     // Arrange
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
@@ -204,7 +204,7 @@ describe("Events/Delegates", () => {
 
   it("onUpdateMsg_Delegate_WhenReceivingMsgUpdate_ShouldInvokeWS", async () => {
     // =================== Using onMessageUpdate =====================
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),
@@ -231,7 +231,7 @@ describe("Events/Delegates", () => {
   });
 
   it("onGroupUpdate_Delegate_WhenGettingGroupsUPdate_ShouldInvokeWS", async () => {
-    const mockSocket = new GenericSocketVendorClient_Mock();
+    const mockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(mockSocket),
       delayMilisecondsBetweenMsgs: 1,
@@ -262,7 +262,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
     "WhenStartingNormalWhatsSocket_ShouldBeAbleToStartOnly",
     async () => {
       //Should last at most, 1 second
-      const mockSocket = new GenericSocketVendorClient_Mock();
+      const mockSocket = new MockAdapter();
       const ws = new WhatsSocket({
         ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(mockSocket),
         delayMilisecondsBetweenMsgs: 1,
@@ -276,7 +276,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
     "WhenStartingNormalWhatsSocket_ShouldBeAbleToStartAndShutdownCompletely",
     async () => {
       //Should be fast, and avoid leaving any residual promises or unresolved code!.
-      const mockSocket = new GenericSocketVendorClient_Mock();
+      const mockSocket = new MockAdapter();
       const ws = new WhatsSocket({
         ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(mockSocket),
         delayMilisecondsBetweenMsgs: 1,
@@ -289,7 +289,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
   );
 
   it("WhenStartingNormalWhatsSocket_ShouldBeAbleToStartAndRestart", async () => {
-    const mockSocket = new GenericSocketVendorClient_Mock();
+    const mockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(mockSocket),
       delayMilisecondsBetweenMsgs: 1,
@@ -306,7 +306,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
   });
 
   it("WhenRestarting_ShouldNotReinstantiateDelegates", async () => {
-    const mockSocket = new GenericSocketVendorClient_Mock();
+    const mockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(mockSocket),
       delayMilisecondsBetweenMsgs: 1,
@@ -337,7 +337,7 @@ describe("Life Cycle: Start/Restart/Shutdown", () => {
 describe("Reconnecting", () => {
   it("WhenSuccessfullyConnected;Ideal;_ShouldFetchGroupMetadataOnce", async () => {
     // ====== Arrange
-    const mockSocket = new GenericSocketVendorClient_Mock();
+    const mockSocket = new MockAdapter();
     const fetchAllGroupsMock = mockSocket.fetchAllGroups as Mock<typeof mockSocket.fetchAllGroups>;
 
     const groupFetchMockData = {
@@ -373,7 +373,7 @@ describe("Reconnecting", () => {
   });
 
   it("WhenNotConnected_ShouldCloseItselfAndRestart", async () => {
-    const mockSocket = new GenericSocketVendorClient_Mock();
+    const mockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(mockSocket),
       delayMilisecondsBetweenMsgs: 1,
@@ -413,7 +413,7 @@ describe("Reconnecting", () => {
     async () => {
       const MAX_RECONNECTION_RETRIES = 2;
 
-      const mockSocket = new GenericSocketVendorClient_Mock();
+      const mockSocket = new MockAdapter();
       const ws = new WhatsSocket({
         ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(mockSocket),
         maxReconnectionRetries: MAX_RECONNECTION_RETRIES,
@@ -459,7 +459,7 @@ describe("Reconnecting", () => {
 
 describe("Info fetching", () => {
   it("WhenTryingToFetchGroupsData_ShouldFetchThemCorrectlyFromSocket", async () => {
-    const internalMockSocket = new GenericSocketVendorClient_Mock();
+    const internalMockSocket = new MockAdapter();
     const ws = new WhatsSocket({
       delayMilisecondsBetweenMsgs: 0,
       ownWhatsSocketVendorFactory_Internal: CreateWhatsSocketVendorFactoryMock(internalMockSocket),

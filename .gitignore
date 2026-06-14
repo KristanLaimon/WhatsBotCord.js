@@ -5,6 +5,7 @@ auth_canary/
 test/
 build/
 main.ts
+dist-frontend/
 
 # =============== DEFAULT GITIGNORE CONFIG NODE.JS ===================
 

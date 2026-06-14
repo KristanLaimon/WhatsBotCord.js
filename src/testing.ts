@@ -1,6 +1,6 @@
+import { CreateWhatsSocketVendorFactoryMock, MockAdapter } from "./core/whats_socket/MockAdapter.js";
 import WhatsSocketMock from "./core/whats_socket/mocks/WhatsSocket.mock.js";
 import type { IWhatsappAdapter } from "./core/whats_socket/types.js";
-import { CreateWhatsSocketVendorFactoryMock, GenericSocketVendorClient_Mock } from "./core/whats_socket/WhatsSocket.generic.mock.js";
 import ChatMock from "./mocking_suite/ChatMock.js";
 import WhatsSocket_Submodule_Presence_MockingSuite from "./mocking_suite/WhatsSocket.presence.mockingsuite.js";
 import WhatsSocket_Submodule_Receiver_MockingSuite from "./mocking_suite/WhatsSocket.receiver.mockingsuite.js";
@@ -19,10 +19,10 @@ import WhatsSocket_Submodule_Receiver_MockingSuite from "./mocking_suite/WhatsSo
  * ```
  */
 export class MockAdapter implements IWhatsappAdapter {
-  public mockClient: GenericSocketVendorClient_Mock;
+  public mockClient: MockAdapter;
 
   constructor() {
-    this.mockClient = new GenericSocketVendorClient_Mock();
+    this.mockClient = new MockAdapter();
   }
 
   public async Create() {
@@ -33,7 +33,7 @@ export class MockAdapter implements IWhatsappAdapter {
 export {
   ChatMock,
   CreateWhatsSocketVendorFactoryMock,
-  GenericSocketVendorClient_Mock,
+  MockAdapter as GenericSocketVendorClient_Mock,
   WhatsSocket_Submodule_Presence_MockingSuite,
   WhatsSocket_Submodule_Receiver_MockingSuite,
   WhatsSocketMock,

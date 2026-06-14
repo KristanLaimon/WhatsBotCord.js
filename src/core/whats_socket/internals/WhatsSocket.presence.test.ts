@@ -1,10 +1,10 @@
 import { describe, expect, it, spyOn } from "bun:test";
-import { WhatsSocket_Submodule_Presence } from "./WhatsSocket.presence.js";
-import { GenericSocketVendorClient_Mock } from "../WhatsSocket.generic.mock.js";
+import { MockAdapter } from "../MockAdapter.js";
 import WhatsSocketMock from "../mocks/WhatsSocket.mock.js";
+import { WhatsSocket_Submodule_Presence } from "./WhatsSocket.presence.js";
 
 function toolkit() {
-  const mockClient = new GenericSocketVendorClient_Mock();
+  const mockClient = new MockAdapter();
   const mockParent = new WhatsSocketMock(mockClient);
   const presence = new WhatsSocket_Submodule_Presence(mockParent);
   return { mockClient, presence };

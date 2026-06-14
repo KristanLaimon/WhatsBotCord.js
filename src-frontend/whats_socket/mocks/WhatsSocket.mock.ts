@@ -1,9 +1,9 @@
-import { autobind } from "../../../helpers/Decorators.helper.js";
-import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../../helpers/Msg.helper.js";
-import { WhatsappIdType } from "../../../helpers/Whatsapp.helper.js";
-import Delegate from "../../../libs/Delegate.js";
-import type { MsgType, SenderType } from "../../../types/Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
+import { autobind } from "../../helpers/Decorators.helper.js";
+import { MsgHelper_FullMsg_GetMsgType, MsgHelper_FullMsg_GetSenderType } from "../../helpers/Msg.helper.js";
+import { WhatsappIdType } from "../../helpers/Whatsapp.helper.js";
+import Delegate from "../../libs/Delegate.js";
+import type { MsgType, SenderType } from "../../types/Msg.types.js";
+import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../types/Whatsapp.types.js";
 import type { IWhatsSocket_Submodule_Group } from "../internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Presence } from "../internals/IWhatsSocket.presence.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../internals/IWhatsSocket.receiver.js";
@@ -194,8 +194,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
     }
   }
 
-  public async DownloadMediaMessage(_rawMsg: WhatsappMessage): Promise<Buffer> {
-    return Buffer.from([]);
+  public async DownloadMediaMessage(_rawMsg: WhatsappMessage): Promise<Uint8Array> {
+    return Uint8Array.from([]);
   }
 
   public async GetPollVotes(_pollRawMsg: WhatsappMessage, _pollUpdates: WhatsappPollUpdateMessage[]): Promise<WhatsappPollVote[]> {
@@ -407,3 +407,4 @@ export class WhatsSocketMock_Group implements IWhatsSocket_Submodule_Group {
     this.DeletedChats = [];
   }
 }
+
