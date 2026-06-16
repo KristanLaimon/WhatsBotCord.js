@@ -7,7 +7,7 @@ export default defineConfig([
   js.configs.recommended,
   // == Typescript Checking ==
   tseslint.configs.strict,
-  globalIgnores(["dist/", "build/", "node_modules/", "tsdown.config.ts", "tsup.config.ts", "dist-frontend/"]),
+  globalIgnores(["dist/", "build/", "node_modules/", "tsdown.config.ts", "tsup.config.ts", "dist-frontend/", "src-frontend"]),
   {
     files: ["**/*.ts"],
     languageOptions: {

@@ -1,0 +1,521 @@
+import type {
+  IWhatsSocket_Submodule_SugarSender,
+  WhatsMsgAudioOptions,
+  WhatsMsgDocumentOptions,
+  WhatsMsgMediaOptions,
+  WhatsMsgPollOptions,
+  WhatsMsgSenderSendingOptions,
+  WhatsMsgSenderSendingOptionsMINIMUM,
+  WhatsMsgUbicationOptions,
+} from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
+import type { WhatsappMessage } from "../whats_socket/types.js";
+import { autobind } from "../helpers/Decorators.helper.js";
+import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../types/Whatsapp.types.js";
+import { MimeTypeHelper_GetMimeTypeOf } from "../helpers/Mimetypes.helper.js";
+import {
+  MsgFactory_Audio,
+  MsgFactory_Contact,
+  MsgFactory_Document,
+  MsgFactory_Image,
+  MsgFactory_Location,
+  MsgFactory_Sticker,
+  MsgFactory_Text,
+  MsgFactory_Video,
+} from "./MsgsMockFactory.js";
+
+function getBasename(url: string): string {
+  const parts = url.split(/[\\/]/);
+  return parts[parts.length - 1];
+}
+
+/**
+ * A mocking implementation of `IWhatsSocket_Submodule_SugarSender` designed for unit testing.
+ * This class simulates the behavior of sending various WhatsApp message types without interacting
+ * with the actual WhatsApp socket. Instead, it stores sent message details in public arrays for
+ * verification in tests (e.g., using `expect` assertions).
+ *
+ * @remarks
+ * - All sending methods return a mock `WhatsappMessage` object simulating success.
+ * - Chat IDs are normalized to ensure proper group/individual format.
+ * - Use `ClearMocks()` to reset all stored message arrays between tests.
+ * - This is not intended for production use; it's solely for testing the sugar sender logic.
+ *
+ * @example
+ * ```ts
+ * const mockSender = new WhatsSocket_Submodule_SugarSender_MockingSuite();
+ * await mockSender.Text("1234567890", "Hello!");
+ * expect(mockSender.SentMessages_Texts).toHaveLength(1);
+ * expect(mockSender.SentMessages_Texts[0].text).toBe("Hello!");
+ * ```
+ */
+export default class WhatsSocket_Submodule_SugarSender_MockingSuite implements IWhatsSocket_Submodule_SugarSender {
+  private readonly PushNameUserMock = "ChatMock User";
+  //=================================================== Spy External Methods ==================================================
+  //                                                          Text
+  /**
+   * Array storing details of simulated text messages sent via `Text()`.
+   */
+  public SentMessages_Texts: Array<{
+    chatId: string;
+    text: string;
+    options?: WhatsMsgSenderSendingOptions;
+  }> = [];
+  /**
+   * Simulates sending a text message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param text - The message text to send.
+   * @param options - Optional sending options (e.g., mentions, normalization).
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Texts` for test verification.
+   * - Normalizes the chat ID using `NormalizeChatId`.
+   *
+   * @example
+   * ```ts
+   * await mockSender.Text("338839029383" + WhatsappGroupIdentifier, "Hello World!", { normalizeMessageText: true });
+   * expect(mockSender.SentMessages_Texts[0].text).toBe("Hello World!");
+   * expect(mockSender.SentMessages_Texts[0].options).toEqual({ normalizeMessageText: true });
+   * ```
+   */
+  @autobind
+  public async Text(chatId: string, text: string, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    const chatIdNormalized = NormalizeChatId(chatId);
+    this.SentMessages_Texts.push({ text: text, options: options, chatId: chatIdNormalized });
+    return MsgFactory_Text(chatIdNormalized, null, text, { pushName: this.PushNameUserMock });
+  }
+
+  //                                                          Img
+  /**
+   * Array storing details of simulated image messages sent via `Image()`.
+   */
+  public SentMessages_Imgs: Array<{
+    chatId: string;
+    imageOptions: WhatsMsgMediaOptions;
+    options?: WhatsMsgSenderSendingOptions;
+  }> = [];
+  /**
+   * Simulates sending an image message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param imageOptions - Options for the image (e.g., source path/buffer, caption, format).
+   * @param options - Optional sending options (e.g., mentions).
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Imgs` for test verification.
+   * - Does not perform actual file I/O; assumes valid image options.
+   *
+   * @example
+   * ```ts
+   * const imageOpts = { source: "./fake.png", caption: "Check this image!" };
+   * await mockSender.Image("1234567890", imageOpts);
+   * expect(mockSender.SentMessages_Imgs[0].imageOptions).toEqual(imageOpts);
+   * ```
+   */
+  @autobind
+  public async Image(chatId: string, imageOptions: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    const chatIdNormalized = NormalizeChatId(chatId);
+    this.SentMessages_Imgs.push({ chatId: chatIdNormalized, imageOptions, options });
+    return MsgFactory_Image(chatIdNormalized, null, imageOptions.source.toString(), {
+      caption: imageOptions.caption,
+      pushName: this.PushNameUserMock,
+    });
+  }
+
+  //              ===                                          ReactEmojiToMsg                                       ===
+  /**
+   * Array storing details of simulated emoji reactions sent via `ReactEmojiToMsg()`.
+   */
+  public SentMessages_ReactedEmojis: Array<{
+    chatId: string;
+    rawMsgReactedTo: WhatsappMessage;
+    emojiStr: string;
+    options?: WhatsMsgSenderSendingOptionsMINIMUM;
+  }> = [];
+  /**
+   * Simulates reacting to a message with an emoji.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param rawMsgToReactTo - The original message to react to.
+   * @param emojiStr - The emoji string (e.g., "👍").
+   * @param options - Optional sending options.
+   * @returns A mock `WhatsappMessage` simulating successful reaction.
+   *
+   * @remarks
+   * - Stores the reaction details in `SentMessages_ReactedEmojis` for test verification.
+   *
+   * @example
+   * ```ts
+   * const mockMsg = { key: { id: "msg123" } } as WhatsappMessage;
+   * await mockSender.ReactEmojiToMsg("1234567890", mockMsg, "❤️");
+   * expect(mockSender.SentMessages_ReactedEmojis[0].emojiStr).toBe("❤️");
+   * ```
+   */
+  @autobind
+  public async ReactEmojiToMsg(
+    chatId: string,
+    rawMsgToReactTo: WhatsappMessage,
+    emojiStr: string,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    const chatIdNormalized = NormalizeChatId(chatId);
+    this.SentMessages_ReactedEmojis.push({ chatId: chatIdNormalized, emojiStr, rawMsgReactedTo: rawMsgToReactTo, options });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+  }
+
+  //              ===                                          Stickers                                       ===
+  /**
+   * Array storing details of simulated sticker messages sent via `Sticker()`.
+   */
+  public SentMessages_Stickers: Array<{
+    chatId: string;
+    stickerUrlSource: string | Uint8Array;
+    options?: WhatsMsgSenderSendingOptionsMINIMUM;
+  }> = [];
+  /**
+   * Simulates sending a sticker message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param stickerUrlSource - Source of the sticker (URL string or Uint8Array).
+   * @param options - Optional sending options.
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Stickers` for test verification.
+   * - Does not process or validate the sticker source.
+   *
+   * @example
+   * ```ts
+   * const stickerBuffer = Uint8Array.from([1, 2, 3]);
+   * await mockSender.Sticker("1234567890", stickerBuffer);
+   * expect(mockSender.SentMessages_Stickers[0].stickerUrlSource).toBe(stickerBuffer);
+   * ```
+   */
+  @autobind
+  public async Sticker(chatId: string, stickerUrlSource: string | Uint8Array, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Stickers.push({ chatId: chatIdNormalized, stickerUrlSource, options });
+    return MsgFactory_Sticker(chatIdNormalized, null, stickerUrlSource.toString(), {
+      pushName: this.PushNameUserMock,
+    });
+  }
+
+  //              ===                                          Audio                                       ===
+  /**
+   * Array storing details of simulated audio messages sent via `Audio()`.
+   */
+  public SentMessages_Audios: Array<{
+    chatId: string;
+    audioParams: WhatsMsgAudioOptions;
+    options?: WhatsMsgSenderSendingOptionsMINIMUM;
+  }> = [];
+  /**
+   * Simulates sending an audio message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param audioParams - Options for the audio, including:
+   *   - `source`: The audio source, either a file path or a Uint8Array.
+   *   - `formatExtension`: The file extension of the audio (e.g., ".mp3", ".ogg").
+   * @param options - Optional sending options (e.g., quoting a message).
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Audios` for test verification.
+   * - Normalizes the chat ID using `NormalizeChatId`.
+   * - Does not validate the audio content or extension; this is purely for testing.
+   *
+   * @example
+   * ```ts
+   * const audioOpts = { source: "./voice.ogg", formatExtension: ".ogg" };
+   * await mockSender.Audio("1234567890", audioOpts);
+   * expect(mockSender.SentMessages_Audios[0]!.audioParams.formatExtension).toBe(".ogg");
+   * expect(mockSender.SentMessages_Audios[0]!.audioParams.source).toBe("./voice.ogg");
+   * ```
+   */
+  @autobind
+  public async Audio(chatId: string, audioParams: WhatsMsgAudioOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Audios.push({ audioParams, chatId: chatIdNormalized, options });
+    return MsgFactory_Audio(chatIdNormalized, null, audioParams.source.toString(), {
+      pushName: this.PushNameUserMock,
+    });
+  }
+
+  //              ===                                          Video                                       ===
+  /**
+   * Array storing details of simulated video messages sent via `Video()`.
+   */
+  public SentMessages_Videos: Array<{
+    chatId: string;
+    videoParams: WhatsMsgMediaOptions;
+    options?: WhatsMsgSenderSendingOptions;
+  }> = [];
+  /**
+   * Simulates sending a video message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param videoParams - Options for the video (e.g., source, caption, format).
+   * @param options - Optional sending options.
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Videos` for test verification.
+   *
+   * @example
+   * ```ts
+   * const videoOpts = { source: "./clip.mp4", caption: "Watch this!" };
+   * await mockSender.Video("1234567890", videoOpts);
+   * expect(mockSender.SentMessages_Videos[0].videoParams.caption).toBe("Watch this!");
+   * ```
+   */
+  @autobind
+  public async Video(chatId: string, videoParams: WhatsMsgMediaOptions, options?: WhatsMsgSenderSendingOptions): Promise<WhatsappMessage | null> {
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Videos.push({ chatId: chatIdNormalized, videoParams, options });
+    return MsgFactory_Video(chatIdNormalized, null, videoParams.source.toString(), {
+      caption: videoParams.caption,
+      pushName: this.PushNameUserMock,
+    });
+  }
+
+  /**
+   * Array storing details of simulated document messages sent via `Document()`.
+   */
+  public SentMessages_Documents: Array<{
+    chatId: string;
+    docParams: WhatsMsgDocumentOptions;
+    options?: WhatsMsgSenderSendingOptionsMINIMUM;
+  }> = [];
+  /**
+   *
+   * Simulates sending a document message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param docParams - Options for the document (e.g., source path/buffer, filename).
+   * @param options - Optional sending options.
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Documents` for test verification.
+   *
+   * @example
+   * ```ts
+   * const docOpts = { source: "./report.pdf", fileNameToDisplay: "Report 2025" };
+   * await mockSender.Document("1234567890", docOpts);
+   * expect(mockSender.SentMessages_Documents[0].docParams.fileNameToDisplay).toBe("Report 2025");
+   * ```
+   */
+  @autobind
+  public async Document(chatId: string, docParams: WhatsMsgDocumentOptions, options?: WhatsMsgSenderSendingOptionsMINIMUM): Promise<WhatsappMessage | null> {
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Documents.push({ chatId: chatIdNormalized, docParams, options });
+    if (typeof docParams.source === "string") {
+      return MsgFactory_Document(chatIdNormalized, null, docParams.source, {
+        fileName: getBasename(docParams.source),
+        mimetype: MimeTypeHelper_GetMimeTypeOf({ source: docParams.source }) ?? undefined,
+        pushName: this.PushNameUserMock,
+      });
+    } else {
+      return MsgFactory_Document(chatIdNormalized, null, "./file-buffer.mock", {
+        fileName: "file-buffer.mock",
+        mimetype: undefined,
+        pushName: this.PushNameUserMock,
+      });
+    }
+  }
+
+  /**
+   * Array storing details of simulated poll messages sent via `Poll()`.
+   */
+  public SentMessages_Polls: Array<{
+    chatId: string;
+    pollTitle: string;
+    selections: string[];
+    pollParams: WhatsMsgPollOptions;
+    moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM;
+  }> = [];
+
+  /**
+   * Simulates sending a poll message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param pollTitle - The poll question/title.
+   * @param selections - Array of poll options (1-12 items).
+   * @param pollParams - Poll-specific options (e.g., multi-select, normalization).
+   * @param moreOptions - Additional sending options.
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Polls` for test verification.
+   * - Does not validate selection count or normalization in this mock.
+   *
+   * @example
+   * ```ts
+   * await mockSender.Poll("1234567890", "Favorite color?", ["Red", "Blue"], { withMultiSelect: false });
+   * expect(mockSender.SentMessages_Polls[0].selections).toEqual(["Red", "Blue"]);
+   * ```
+   */
+  @autobind
+  public async Poll(
+    chatId: string,
+    pollTitle: string,
+    selections: string[],
+    pollParams: WhatsMsgPollOptions,
+    moreOptions?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Polls.push({ chatId: chatIdNormalized, moreOptions, pollParams, pollTitle, selections });
+    return CreateSuccessWhatsMsg(null, chatIdNormalized);
+  }
+
+  /**
+   * Array storing details of simulated location messages sent via `Location()`.
+   *
+   * @type {Array<{ chatId: string; ubicationParams: WhatsMsgUbicationOptions; options?: WhatsMsgSenderSendingOptionsMINIMUM }>}
+   */
+  public SentMessages_Locations: Array<{
+    chatId: string;
+    ubicationParams: WhatsMsgUbicationOptions;
+    options?: WhatsMsgSenderSendingOptionsMINIMUM;
+  }> = [];
+
+  /**
+   * Simulates sending a location message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param ubicationParams - Location parameters (e.g., latitude, longitude, name).
+   * @param options - Optional sending options.
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Locations` for test verification.
+   * - Does not validate coordinates in this mock.
+   *
+   * @example
+   * ```ts
+   * const locParams = { degreesLatitude: 40.7128, degreesLongitude: -74.0060, name: "NYC" };
+   * await mockSender.Location("1234567890", locParams);
+   * expect(mockSender.SentMessages_Locations[0].ubicationParams.degreesLatitude).toBe(40.7128);
+   * ```
+   */
+  @autobind
+  public async Location(
+    chatId: string,
+    ubicationParams: WhatsMsgUbicationOptions,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Locations.push({ chatId: chatIdNormalized, ubicationParams, options });
+    return MsgFactory_Location(chatIdNormalized, null, ubicationParams.degreesLatitude, ubicationParams.degreesLongitude, {
+      address: ubicationParams.addressText,
+      name: ubicationParams.name,
+      pushName: this.PushNameUserMock,
+    });
+  }
+
+  /**
+   * Array storing details of simulated contact messages sent via `Contact()`.
+   *
+   * @type {Array<{ chatId: string; contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>; options?: WhatsMsgSenderSendingOptionsMINIMUM }>}
+   */
+  public SentMessages_Contacts: Array<{
+    chatId: string;
+    contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>;
+    options?: WhatsMsgSenderSendingOptionsMINIMUM;
+  }> = [];
+  /**
+   * Simulates sending a contact (or contacts) message to a chat.
+   *
+   * @param chatId - The chat ID (individual or group).
+   * @param contacts - Single contact or array of contacts (name and phone required).
+   * @param options - Optional sending options.
+   * @returns A mock `WhatsappMessage` simulating successful sending.
+   *
+   * @remarks
+   * - Stores the sent details in `SentMessages_Contacts` for test verification.
+   * - Does not generate vCards or validate contacts in this mock.
+   *
+   * @example
+   * ```ts
+   * const contact = { name: "John Doe", phone: "1234567890" };
+   * await mockSender.Contact("1234567890", contact);
+   * expect(mockSender.SentMessages_Contacts[0].contacts).toEqual(contact);
+   * ```
+   */
+  @autobind
+  public async Contact(
+    chatId: string,
+    contacts: { name: string; phone: string } | Array<{ name: string; phone: string }>,
+    options?: WhatsMsgSenderSendingOptionsMINIMUM
+  ): Promise<WhatsappMessage | null> {
+    const chatIdNormalized: string = NormalizeChatId(chatId);
+    this.SentMessages_Contacts.push({ chatId: chatIdNormalized, contacts, options });
+    return MsgFactory_Contact(chatIdNormalized, null, contacts, {
+      pushName: this.PushNameUserMock,
+    });
+  }
+  //===========================================================================================================================
+  /**
+   * Clears all stored mock message arrays, resetting the mocking suite for new tests.
+   *
+   * @remarks
+   * - Call this in `afterEach` hooks to prevent test pollution.
+   *
+   * @example
+   * ```ts
+   * afterEach(() => {
+   *   mockSender.ClearMocks();
+   * });
+   * ```
+   */
+  public ClearMocks(): void {
+    this.SentMessages_Texts = [];
+    this.SentMessages_Imgs = [];
+    this.SentMessages_ReactedEmojis = [];
+    this.SentMessages_Stickers = [];
+    this.SentMessages_Audios = [];
+    this.SentMessages_Videos = [];
+    this.SentMessages_Documents = [];
+    this.SentMessages_Polls = [];
+    this.SentMessages_Locations = [];
+    this.SentMessages_Contacts = [];
+  }
+
+  // =============== to add =====================
+}
+
+/**
+ * Creates a mock `WhatsappMessage` simulating a successful message send.
+ *
+ * @param participantId - Optional participant ID for the message key.
+ * @param chatId - The chat ID for the remote JID.
+ * @returns A basic `WhatsappMessage` object with a mock key.
+ *
+ * @remarks
+ * - Used internally by all mocking methods to return consistent success responses.
+ * - TODO: Enhance to create type-specific mock messages.
+ *
+ * @internal
+ */
+function CreateSuccessWhatsMsg(participantId: string | null, chatId: string): WhatsappMessage {
+  const toReturn: WhatsappMessage = {
+    key: {
+      fromMe: false,
+      id: "success_id_message_id",
+      participant: participantId ?? undefined,
+      remoteJid: chatId,
+    },
+  };
+  return toReturn;
+}
+
+function NormalizeChatId(rawChatId: string): string {
+  if (rawChatId.endsWith(WhatsappPhoneNumberIdentifier)) return rawChatId;
+  if (rawChatId.endsWith(WhatsappGroupIdentifier)) {
+    return rawChatId;
+  } else {
+    return rawChatId + WhatsappGroupIdentifier;
+  }
+}

@@ -39,6 +39,14 @@ import type {
 } from "./whats_socket/types.js";
 import type { WhatsSocketOptions } from "./whats_socket/WhatsSocket.js";
 import type { WhatsappIDInfo } from "./helpers/Whatsapp.helper.js";
+import type {
+  MockEnqueueParamsDocument,
+  MockEnqueueParamsLocation,
+  MockEnqueueParamsMinimal,
+  MockEnqueueParamsMultimedia,
+  MockEnqueueParamsMultimediaMinimal,
+  MockingChatParams,
+} from "./mocking_suite/ChatMock.js";
 
 export type {
   AdditionalAPI,
@@ -58,6 +66,12 @@ export type {
   IWhatsappSocketAdapterClient as IWhatsSocketVendorClient,
   IWhatsappAdapter as IWhatsSocketVendorFactory,
   WhatsbotcordMiddlewareFunct_OnFoundCommand as MiddlewareFunct_OnFoundCommand,
+  MockEnqueueParamsDocument,
+  MockEnqueueParamsLocation,
+  MockEnqueueParamsMinimal,
+  MockEnqueueParamsMultimedia,
+  MockEnqueueParamsMultimediaMinimal,
+  MockingChatParams,
   WhatsappGroupMetadata,
   WhatsappIDInfo,
   WhatsappMessage,
@@ -77,11 +91,13 @@ import WhatsSocket from "./whats_socket/WhatsSocket.js";
 import CreateCommand from "./helpers/CommandForJs.helper.js";
 import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
 import Delegate from "./libs/Delegate.js";
+import ChatMock from "./mocking_suite/ChatMock.js";
 import { MsgType, SenderType } from "./types/Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./types/Whatsapp.types.js";
 
 export {
   ChatContext,
+  ChatMock,
   CommandType,
   CreateCommand,
   Delegate,
