@@ -16,7 +16,7 @@ import {
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverHelper_isReceiverError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
-import type { WhatsappMessage, WhatsappPresenceState, WhatsappGroupMetadata, WhatsappGroupParticipantAction } from "../../whats_socket/types.js";
+import type { WhatsappGroupMetadata, WhatsappGroupParticipantAction, WhatsappMessage, WhatsappPresenceState } from "../../whats_socket/types.js";
 import type {
   ChatContextContactRes,
   ChatContextUbication,
@@ -608,6 +608,9 @@ export class ChatContext implements IChatContext {
     return null;
   }
 
+  /**
+   * @deprecated Use ctx.Group.FetchGroupData instead.
+   */
   @autobind
   public async FetchGroupData(): Promise<GroupMetadataInfo | null> {
     if (this.FixedSenderType === SenderType.Individual) {

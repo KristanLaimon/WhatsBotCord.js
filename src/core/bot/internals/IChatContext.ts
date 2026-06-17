@@ -910,6 +910,7 @@ export interface IChatContext {
    * }
    * ```
    * @throws Error if there is a problem fetching group metadata.
+   * @deprecated Use {@link Group.FetchGroupData} instead.
    */
   FetchGroupData(): Promise<GroupMetadataInfo | null>;
 

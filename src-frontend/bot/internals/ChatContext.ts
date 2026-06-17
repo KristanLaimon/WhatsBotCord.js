@@ -608,6 +608,9 @@ export class ChatContext implements IChatContext {
     return null;
   }
 
+  /**
+   * @deprecated Use Group.FetchGroupData instead.
+   */
   @autobind
   public async FetchGroupData(): Promise<GroupMetadataInfo | null> {
     if (this.FixedSenderType === SenderType.Individual) {
