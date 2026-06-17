@@ -1,4 +1,3 @@
-import { type Mock, mock as fn } from "bun:test";
 import type {
   IWhatsappAdapter,
   IWhatsappSocketAdapterClient,
@@ -14,6 +13,117 @@ import type {
   WhatsSocketVendorEventMap,
 } from "./types.js";
 
+/**
+ * # Mock Function Interface
+ *
+ * Represents a mock function that holds call history and can be customized.
+ * Compatible with Jest, Vitest, and Bun test assertions.
+ */
+export interface Mock<T extends (...args: any[]) => any = (...args: any[]) => any> {
+  (...args: Parameters<T>): ReturnType<T>;
+  mock: {
+    calls: Array<Parameters<T>>;
+    results: Array<{ type: "return" | "throw"; value: any }>;
+    lastCall: Parameters<T> | undefined;
+  };
+  mockClear(): void;
+  mockReset(): void;
+  mockImplementation(fn: T): this;
+  mockImplementationOnce(fn: T): this;
+  mockReturnValue(val: ReturnType<T>): this;
+  mockReturnValueOnce(val: ReturnType<T>): this;
+  mockResolvedValue(val: Awaited<ReturnType<T>>): this;
+  mockResolvedValueOnce(val: Awaited<ReturnType<T>>): this;
+}
+
+/**
+ * # Create Mock Function
+ *
+ * Creates a mock function that tracks invocations, arguments, and returns.
+ *
+ * @param implementation - Optional initial implementation of the function.
+ * @returns A Mock function object.
+ *
+ * @example
+ * ```typescript
+ * const myMock = fn((x: number) => x * 2);
+ * myMock(3); // 6
+ * console.log(myMock.mock.calls); // [[3]]
+ * ```
+ */
+export function fn<T extends (...args: any[]) => any>(implementation?: T): Mock<T> {
+  const calls: Array<Parameters<T>> = [];
+  const results: Array<{ type: "return" | "throw"; value: any }> = [];
+  let currentImpl = implementation;
+  const onceQueue: T[] = [];
+
+  const mockFn = (...args: Parameters<T>): ReturnType<T> => {
+    calls.push(args);
+    const impl = onceQueue.shift() || currentImpl;
+    try {
+      const value = impl ? impl(...args) : undefined;
+      results.push({ type: "return", value });
+      return value as ReturnType<T>;
+    } catch (error) {
+      results.push({ type: "throw", value: error });
+      throw error;
+    }
+  };
+
+  const mockObj = {
+    mock: {
+      get calls() {
+        return calls;
+      },
+      get results() {
+        return results;
+      },
+      get lastCall() {
+        return calls[calls.length - 1];
+      },
+    },
+    mockClear() {
+      calls.length = 0;
+      results.length = 0;
+      onceQueue.length = 0;
+    },
+    mockReset() {
+      calls.length = 0;
+      results.length = 0;
+      onceQueue.length = 0;
+      currentImpl = implementation;
+    },
+    mockImplementation(newImpl: T) {
+      currentImpl = newImpl;
+      return mockFn as unknown as Mock<T>;
+    },
+    mockImplementationOnce(newImpl: T) {
+      onceQueue.push(newImpl);
+      return mockFn as unknown as Mock<T>;
+    },
+    mockReturnValue(val: ReturnType<T>) {
+      currentImpl = (() => val) as unknown as T;
+      return mockFn as unknown as Mock<T>;
+    },
+    mockReturnValueOnce(val: ReturnType<T>) {
+      onceQueue.push((() => val) as unknown as T);
+      return mockFn as unknown as Mock<T>;
+    },
+    mockResolvedValue(val: Awaited<ReturnType<T>>) {
+      currentImpl = (() => Promise.resolve(val)) as unknown as T;
+      return mockFn as unknown as Mock<T>;
+    },
+    mockResolvedValueOnce(val: Awaited<ReturnType<T>>) {
+      onceQueue.push((() => Promise.resolve(val)) as unknown as T);
+      return mockFn as unknown as Mock<T>;
+    },
+  };
+
+  Object.assign(mockFn, mockObj);
+
+  return mockFn as unknown as Mock<T>;
+}
+
 export function CreateWhatsSocketVendorFactoryMock(mockSocket: MockAdapter): IWhatsappAdapter {
   return {
     Create: async () => mockSocket,
@@ -21,6 +131,8 @@ export function CreateWhatsSocketVendorFactoryMock(mockSocket: MockAdapter): IWh
 }
 
 /**
+ * # Mock Adapter
+ *
  * A mock implementation of the internal vendor client.
  * The name is kept for compatibility with existing tests.
  */

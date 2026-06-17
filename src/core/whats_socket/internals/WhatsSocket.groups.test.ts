@@ -1,6 +1,6 @@
-import { describe, expect, mock as fn, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { WhatsappGroupIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
-import { CreateWhatsSocketVendorFactoryMock, MockAdapter } from "../MockAdapter.js";
+import { CreateWhatsSocketVendorFactoryMock, MockAdapter, fn } from "../MockAdapter.js";
 import type { WhatsappGroupMetadata } from "../types.js";
 import WhatsSocket from "../WhatsSocket.js";
 
@@ -29,7 +29,7 @@ describe("WhatsSocket Group Submodule", () => {
     const groups = await groupApi.GetAll();
 
     expect(groups).toEqual(expectedGroups);
-    expect(adapter.fetchAllGroups).toHaveBeenCalledTimes(1);
+    expect(adapter.fetchAllGroups.mock.calls.length).toBe(1);
     await socket.Shutdown();
   });
 
@@ -76,11 +76,11 @@ describe("WhatsSocket Group Submodule", () => {
 
     await groupApi.AddParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
 
-    expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
+    expect(adapter.updateGroupParticipants.mock.calls[0]).toEqual([
       "group" + WhatsappGroupIdentifier,
       ["normalized:123" + WhatsappPhoneNumberIdentifier],
-      "add"
-    );
+      "add",
+    ]);
     await socket.Shutdown();
   });
 
@@ -90,7 +90,7 @@ describe("WhatsSocket Group Submodule", () => {
     const result = await groupApi.RemoveParticipants("group" + WhatsappGroupIdentifier, []);
 
     expect(result).toEqual(false);
-    expect(adapter.updateGroupParticipants).toHaveBeenCalledTimes(0);
+    expect(adapter.updateGroupParticipants.mock.calls.length).toBe(0);
     await socket.Shutdown();
   });
 
@@ -100,11 +100,11 @@ describe("WhatsSocket Group Submodule", () => {
 
     await groupApi.PromoteParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
 
-    expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
+    expect(adapter.updateGroupParticipants.mock.calls[0]).toEqual([
       "group" + WhatsappGroupIdentifier,
       ["123" + WhatsappPhoneNumberIdentifier],
-      "promote"
-    );
+      "promote",
+    ]);
     await socket.Shutdown();
   });
 
@@ -114,11 +114,11 @@ describe("WhatsSocket Group Submodule", () => {
 
     await groupApi.DemoteParticipants("group" + WhatsappGroupIdentifier, ["123" + WhatsappPhoneNumberIdentifier]);
 
-    expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
+    expect(adapter.updateGroupParticipants.mock.calls[0]).toEqual([
       "group" + WhatsappGroupIdentifier,
       ["123" + WhatsappPhoneNumberIdentifier],
-      "demote"
-    );
+      "demote",
+    ]);
     await socket.Shutdown();
   });
 
@@ -138,11 +138,11 @@ describe("WhatsSocket Group Submodule", () => {
 
     await groupApi.RemoveAllParticipants("group" + WhatsappGroupIdentifier);
 
-    expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
+    expect(adapter.updateGroupParticipants.mock.calls[0]).toEqual([
       "group" + WhatsappGroupIdentifier,
       ["user1" + WhatsappPhoneNumberIdentifier, "user2" + WhatsappPhoneNumberIdentifier],
-      "remove"
-    );
+      "remove",
+    ]);
     await socket.Shutdown();
   });
 
@@ -151,7 +151,7 @@ describe("WhatsSocket Group Submodule", () => {
 
     await groupApi.Leave("group" + WhatsappGroupIdentifier);
 
-    expect(adapter.leaveGroup).toHaveBeenCalledWith("group" + WhatsappGroupIdentifier);
+    expect(adapter.leaveGroup.mock.calls[0]).toEqual(["group" + WhatsappGroupIdentifier]);
     await socket.Shutdown();
   });
 
@@ -160,7 +160,7 @@ describe("WhatsSocket Group Submodule", () => {
 
     await groupApi.DeleteChat("group" + WhatsappGroupIdentifier);
 
-    expect(adapter.deleteChatLocally).toHaveBeenCalledWith("group" + WhatsappGroupIdentifier);
+    expect(adapter.deleteChatLocally.mock.calls[0]).toEqual(["group" + WhatsappGroupIdentifier]);
     await socket.Shutdown();
   });
 
@@ -176,13 +176,13 @@ describe("WhatsSocket Group Submodule", () => {
 
     await groupApi.Cleanup("group" + WhatsappGroupIdentifier);
 
-    expect(adapter.updateGroupParticipants).toHaveBeenCalledWith(
+    expect(adapter.updateGroupParticipants.mock.calls[0]).toEqual([
       "group" + WhatsappGroupIdentifier,
       ["user" + WhatsappPhoneNumberIdentifier],
-      "remove"
-    );
-    expect(adapter.leaveGroup).toHaveBeenCalledWith("group" + WhatsappGroupIdentifier);
-    expect(adapter.deleteChatLocally).toHaveBeenCalledWith("group" + WhatsappGroupIdentifier);
+      "remove",
+    ]);
+    expect(adapter.leaveGroup.mock.calls[0]).toEqual(["group" + WhatsappGroupIdentifier]);
+    expect(adapter.deleteChatLocally.mock.calls[0]).toEqual(["group" + WhatsappGroupIdentifier]);
     await socket.Shutdown();
   });
 

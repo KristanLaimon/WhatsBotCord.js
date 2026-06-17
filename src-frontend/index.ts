@@ -20,6 +20,7 @@ import {
 // === Types deps exporting ===
 import type { WhatsbotcordMiddlewareFunct, WhatsbotcordMiddlewareFunct_OnFoundCommand, WhatsbotcordPlugin } from "./bot/bot.js";
 import type { IChatContextConfig } from "./bot/internals/ChatContext.js";
+import type { WorkflowNumericArgs } from "./utils/WorkflowNumeric.types.js";
 import type { CommandEntry } from "./bot/internals/CommandsSearcher.js";
 import type { CommandArgs } from "./bot/internals/CommandsSearcher.types.js";
 import type { IChatContext, IChatGroupAPI } from "./bot/internals/IChatContext.js";
@@ -80,6 +81,7 @@ export type {
   WhatsSocketLoggerMode,
   WhatsSocketOptions,
   WhatsSocketReceiverError,
+  WorkflowNumericArgs,
 };
 
 // == Runtime deps exporting ==
@@ -94,6 +96,8 @@ import Delegate from "./libs/Delegate.js";
 import ChatMock from "./mocking_suite/ChatMock.js";
 import { MsgType, SenderType } from "./types/Msg.types.js";
 import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./types/Whatsapp.types.js";
+import { WorkFlowNumericMany } from "./utils/WorkflowNumeric.many.js";
+import { WorkflowNumericSingle } from "./utils/WorkflowNumeric.single.js";
 
 export {
   ChatContext,
@@ -107,6 +111,8 @@ export {
   Bot as Whatsbotcord,
   WhatsSocket,
   WhatsSocketReceiverMsgError,
+  WorkFlowNumericMany,
+  WorkflowNumericSingle,
 };
 
 // === Helpers ===

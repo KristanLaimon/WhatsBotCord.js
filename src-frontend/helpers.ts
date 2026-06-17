@@ -19,3 +19,7 @@ export {
 } from "./helpers/Whatsapp.helper.js";
 
 export { default as CreateCommand } from "./helpers/CommandForJs.helper.js";
+
+export { WorkFlowNumericMany } from "./utils/WorkflowNumeric.many.js";
+export { WorkflowNumericSingle } from "./utils/WorkflowNumeric.single.js";
+export type { WorkflowNumericArgs } from "./utils/WorkflowNumeric.types.js";

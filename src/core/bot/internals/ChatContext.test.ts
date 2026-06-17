@@ -109,10 +109,63 @@ it("Group_WhenUsingGroupContext_ShouldDelegateToScopedGroupApi", async (): Promi
   const { chat, group } = GenerateLocalToolKit_ChatSession_FromGroup();
   const addParticipantsSpy: Mock<typeof group.AddParticipants> = spyOn(group, "AddParticipants");
 
-  await chat.Group.AddParticipants(chat.FixedChatId, ["123" + WhatsappPhoneNumberIdentifier]);
+  await chat.Group.AddParticipants(["123" + WhatsappPhoneNumberIdentifier]);
 
   expect(addParticipantsSpy).toHaveBeenCalledTimes(1);
   expect(addParticipantsSpy).toHaveBeenCalledWith(CHATID, ["123" + WhatsappPhoneNumberIdentifier]);
+});
+
+it("Group_WhenUsingSugarGroupMethods_ShouldForwardFixedChatId", async (): Promise<void> => {
+  const { chat, group } = GenerateLocalToolKit_ChatSession_FromGroup();
+
+  const getMetadataSpy = spyOn(group, "GetMetadata").mockResolvedValue({} as any);
+  const isBotAdminSpy = spyOn(group, "IsBotAdmin").mockResolvedValue(true);
+  const updateParticipantsSpy = spyOn(group, "UpdateParticipants").mockResolvedValue(true);
+  const addParticipantsSpy = spyOn(group, "AddParticipants").mockResolvedValue(true);
+  const removeParticipantsSpy = spyOn(group, "RemoveParticipants").mockResolvedValue(true);
+  const promoteParticipantsSpy = spyOn(group, "PromoteParticipants").mockResolvedValue(true);
+  const demoteParticipantsSpy = spyOn(group, "DemoteParticipants").mockResolvedValue(true);
+  const removeAllParticipantsSpy = spyOn(group, "RemoveAllParticipants").mockResolvedValue();
+  const leaveSpy = spyOn(group, "Leave").mockResolvedValue();
+  const deleteChatSpy = spyOn(group, "DeleteChat").mockResolvedValue();
+  const cleanupSpy = spyOn(group, "Cleanup").mockResolvedValue();
+  const fetchGroupDataSpy = spyOn(group, "FetchGroupData").mockResolvedValue({} as any);
+
+  await chat.Group.GetMetadata();
+  expect(getMetadataSpy).toHaveBeenCalledWith(chat.FixedChatId);
+
+  await chat.Group.IsBotAdmin();
+  expect(isBotAdminSpy).toHaveBeenCalledWith(chat.FixedChatId);
+
+  await chat.Group.UpdateParticipants(["usr"], "add");
+  expect(updateParticipantsSpy).toHaveBeenCalledWith(chat.FixedChatId, ["usr"], "add");
+
+  await chat.Group.AddParticipants(["usr"]);
+  expect(addParticipantsSpy).toHaveBeenCalledWith(chat.FixedChatId, ["usr"]);
+
+  await chat.Group.RemoveParticipants(["usr"]);
+  expect(removeParticipantsSpy).toHaveBeenCalledWith(chat.FixedChatId, ["usr"]);
+
+  await chat.Group.PromoteParticipants(["usr"]);
+  expect(promoteParticipantsSpy).toHaveBeenCalledWith(chat.FixedChatId, ["usr"]);
+
+  await chat.Group.DemoteParticipants(["usr"]);
+  expect(demoteParticipantsSpy).toHaveBeenCalledWith(chat.FixedChatId, ["usr"]);
+
+  await chat.Group.RemoveAllParticipants();
+  expect(removeAllParticipantsSpy).toHaveBeenCalledWith(chat.FixedChatId);
+
+  await chat.Group.Leave();
+  expect(leaveSpy).toHaveBeenCalledWith(chat.FixedChatId);
+
+  await chat.Group.DeleteChat();
+  expect(deleteChatSpy).toHaveBeenCalledWith(chat.FixedChatId);
+
+  await chat.Group.Cleanup();
+  expect(cleanupSpy).toHaveBeenCalledWith(chat.FixedChatId);
+
+  await chat.Group.FetchGroupData();
+  expect(fetchGroupDataSpy).toHaveBeenCalledWith(chat.FixedChatId);
 });
 
 it("Group_WhenUsingIndividualContext_ShouldThrowGroupOnlyError", async (): Promise<void> => {

@@ -6,11 +6,137 @@ import type {
 } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { GroupMetadataInfo } from "../../whats_socket/internals/WhatsSocket.receiver.js";
 
-import type { IWhatsSocket_Submodule_Group as IChatGroupAPI } from "../../whats_socket/internals/IWhatsSocket.groups.js";
-import type { WhatsappMessage, WhatsappPresenceState } from "../../whats_socket/types.js";
+import type { WhatsappMessage, WhatsappPresenceState, WhatsappGroupMetadata, WhatsappGroupParticipantAction } from "../../whats_socket/types.js";
 import type { IChatContextConfig } from "./ChatContext.js";
 
-export type { IChatGroupAPI };
+/**
+ * # Chat Context Group API
+ *
+ * Scoped Group API bound to the current ChatContext JID.
+ * Simplifies group operations by omitting the group/chat JID parameter.
+ */
+export interface IChatGroupAPI {
+  /**
+   * Normalizes any WhatsApp JID into the vendor canonical form.
+   *
+   * @param jid - WhatsApp JID to normalize.
+   * @returns The normalized WhatsApp JID.
+   */
+  NormalizeJid(jid: string): string;
+
+  /**
+   * Gets the connected bot account JID.
+   *
+   * @returns The normalized bot JID.
+   */
+  GetBotJid(): string;
+
+  /**
+   * Fetches raw metadata for this group chat.
+   *
+   * @returns Group metadata.
+   */
+  GetMetadata(): Promise<WhatsappGroupMetadata>;
+
+  /**
+   * Fetches every group the bot is participating in.
+   *
+   * @returns All participating group metadata.
+   */
+  GetAll(): Promise<WhatsappGroupMetadata[]>;
+
+  /**
+   * Finds a participating group by its exact subject.
+   *
+   * @param name - Group subject to search for.
+   * @returns Matching metadata or `null`.
+   */
+  FindByName(name: string): Promise<WhatsappGroupMetadata | null>;
+
+  /**
+   * Checks whether the bot is an admin in this group chat.
+   *
+   * @returns `true` when the bot is admin or superadmin.
+   */
+  IsBotAdmin(): Promise<boolean>;
+
+  /**
+   * Executes a participant action (add, remove, promote, demote) on this group chat.
+   *
+   * @param participants - Array of participant JIDs.
+   * @param action - Action to perform.
+   * @returns A boolean indicating if the action was executed successfully.
+   */
+  UpdateParticipants(participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean>;
+
+  /**
+   * Adds new participants to this group chat. The bot must be an admin.
+   *
+   * @param participants - Array of participant JIDs to add.
+   * @returns A boolean indicating if the additions were executed successfully.
+   */
+  AddParticipants(participants: string[]): Promise<boolean>;
+
+  /**
+   * Removes existing participants from this group chat. The bot must be an admin.
+   *
+   * @param participants - Array of participant JIDs to remove.
+   * @returns A boolean indicating if the removals were executed successfully.
+   */
+  RemoveParticipants(participants: string[]): Promise<boolean>;
+
+  /**
+   * Promotes regular participants to admins in this group chat. The bot must be an admin.
+   *
+   * @param participants - Array of participant JIDs to promote.
+   * @returns A boolean indicating if the promotions were executed successfully.
+   */
+  PromoteParticipants(participants: string[]): Promise<boolean>;
+
+  /**
+   * Demotes admins to regular participants in this group chat. The bot must be an admin.
+   *
+   * @param participants - Array of participant JIDs to demote.
+   * @returns A boolean indicating if the demotions were executed successfully.
+   */
+  DemoteParticipants(participants: string[]): Promise<boolean>;
+
+  /**
+   * Removes every non-admin participant from this group chat. The bot must be an admin.
+   *
+   * @returns Resolves when the operation is complete.
+   */
+  RemoveAllParticipants(): Promise<void>;
+
+  /**
+   * Instructs the bot to leave this group chat.
+   *
+   * @returns Resolves when the bot successfully leaves.
+   */
+  Leave(): Promise<void>;
+
+  /**
+   * Deletes this group chat from the bot's local chat history.
+   *
+   * @returns Resolves when the chat is deleted locally.
+   */
+  DeleteChat(): Promise<void>;
+
+  /**
+   * Removes all participants and then leaves and deletes this group chat.
+   *
+   * @returns Resolves when cleanup is entirely complete.
+   */
+  Cleanup(): Promise<void>;
+
+  /**
+   * Retrieves metadata about this group chat.
+   *
+   * @returns A promise resolving to `GroupMetadataInfo` containing the group metadata,
+   *          or `null` if the metadata could not be retrieved.
+   */
+  FetchGroupData(): Promise<GroupMetadataInfo | null>;
+}
 
 export interface IChatContext_PresenceAPI {
   SetGlobalPresenceState(state: WhatsappPresenceState): Promise<boolean>;

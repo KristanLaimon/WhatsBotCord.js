@@ -2,7 +2,7 @@ import { autobind } from "../../../helpers/Decorators.helper.js";
 import { MsgHelper_FullMsg_GetSenderType, MsgHelper_FullMsg_GetText } from "../../../helpers/Msg.helper.js";
 import { MsgType, SenderType } from "../../../types/Msg.types.js";
 import { WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "../../../types/Whatsapp.types.js";
-import type { IWhatsSocket_Submodule_Group as IChatGroupAPI, IWhatsSocket_Submodule_Group } from "../../whats_socket/internals/IWhatsSocket.groups.js";
+import type { IWhatsSocket_Submodule_Group } from "../../whats_socket/internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Presence } from "../../whats_socket/internals/IWhatsSocket.presence.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
 import type {
@@ -16,7 +16,7 @@ import {
   type WhatsSocketReceiverWaitOptions,
   WhatsSocketReceiverHelper_isReceiverError,
 } from "../../whats_socket/internals/WhatsSocket.receiver.js";
-import type { WhatsappMessage, WhatsappPresenceState } from "../../whats_socket/types.js";
+import type { WhatsappMessage, WhatsappPresenceState, WhatsappGroupMetadata, WhatsappGroupParticipantAction } from "../../whats_socket/types.js";
 import type {
   ChatContextContactRes,
   ChatContextUbication,
@@ -26,6 +26,7 @@ import type {
   IChatContext_CloneTargetedTo_FromWhatsmsg_Params,
   IChatContext_PresenceAPI,
   IChatContext_WaitYesOrNoAnswer_Params,
+  IChatGroupAPI,
 } from "./IChatContext.js";
 
 /**
@@ -110,11 +111,16 @@ export class ChatContext implements IChatContext {
 
   public Config: IChatContextConfig;
 
+  private _groupSugar: IChatGroupAPI | null = null;
+
   public get Group(): IChatGroupAPI {
     if (this.FixedSenderType !== SenderType.Group) {
       throw new Error("ChatContext.group can only be used from a group chat context");
     }
-    return this._GetGroupDependency();
+    if (!this._groupSugar) {
+      this._groupSugar = new ChatContextGroup(this.FixedChatId, this._GetGroupDependency());
+    }
+    return this._groupSugar;
   }
 
   public get Presence(): IChatContext_PresenceAPI {
@@ -611,6 +617,77 @@ export class ChatContext implements IChatContext {
   }
 }
 
+
+export class ChatContextGroup implements IChatGroupAPI {
+  constructor(
+    private readonly _chatId: string,
+    private readonly _groupDep: IWhatsSocket_Submodule_Group
+  ) {}
+
+  public NormalizeJid(jid: string): string {
+    return this._groupDep.NormalizeJid(jid);
+  }
+
+  public GetBotJid(): string {
+    return this._groupDep.GetBotJid();
+  }
+
+  public async GetMetadata(): Promise<WhatsappGroupMetadata> {
+    return await this._groupDep.GetMetadata(this._chatId);
+  }
+
+  public async GetAll(): Promise<WhatsappGroupMetadata[]> {
+    return await this._groupDep.GetAll();
+  }
+
+  public async FindByName(name: string): Promise<WhatsappGroupMetadata | null> {
+    return await this._groupDep.FindByName(name);
+  }
+
+  public async IsBotAdmin(): Promise<boolean> {
+    return await this._groupDep.IsBotAdmin(this._chatId);
+  }
+
+  public async UpdateParticipants(participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
+    return await this._groupDep.UpdateParticipants(this._chatId, participants, action);
+  }
+
+  public async AddParticipants(participants: string[]): Promise<boolean> {
+    return await this._groupDep.AddParticipants(this._chatId, participants);
+  }
+
+  public async RemoveParticipants(participants: string[]): Promise<boolean> {
+    return await this._groupDep.RemoveParticipants(this._chatId, participants);
+  }
+
+  public async PromoteParticipants(participants: string[]): Promise<boolean> {
+    return await this._groupDep.PromoteParticipants(this._chatId, participants);
+  }
+
+  public async DemoteParticipants(participants: string[]): Promise<boolean> {
+    return await this._groupDep.DemoteParticipants(this._chatId, participants);
+  }
+
+  public async RemoveAllParticipants(): Promise<void> {
+    await this._groupDep.RemoveAllParticipants(this._chatId);
+  }
+
+  public async Leave(): Promise<void> {
+    await this._groupDep.Leave(this._chatId);
+  }
+
+  public async DeleteChat(): Promise<void> {
+    await this._groupDep.DeleteChat(this._chatId);
+  }
+
+  public async Cleanup(): Promise<void> {
+    await this._groupDep.Cleanup(this._chatId);
+  }
+
+  public async FetchGroupData(): Promise<GroupMetadataInfo | null> {
+    return await this._groupDep.FetchGroupData(this._chatId);
+  }
+}
 
 function ThrowBadFirstMsgError(): Error {
   throw new Error(

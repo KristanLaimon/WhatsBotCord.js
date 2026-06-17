@@ -83,7 +83,7 @@ describe("Messages Sending", () => {
     await ws.Start();
     const result: WhatsappMessage | null = await ws._SendSafe("123" + WhatsappGroupIdentifier, { text: "Hello" });
     expect(result?.message).toMatchObject({ text: "Hello" });
-    expect(internalMockSocket.sendMessage as Mock<typeof internalMockSocket.sendMessage>).toHaveBeenCalledTimes(1);
+    expect(internalMockSocket.sendMessage.mock.calls.length).toBe(1);
   });
 
   it("WhenSendingMsgsThroughRaw_ShouldSendThemThroughSocket", async (): Promise<void> => {
@@ -96,7 +96,7 @@ describe("Messages Sending", () => {
     const result: WhatsappMessage | null = await ws._SendRaw("123@" + WhatsappGroupIdentifier, { text: "Raw text content" });
 
     expect(result!.message!).toMatchObject({ text: "Raw text content" });
-    expect(internalMockSocket.sendMessage as Mock<typeof internalMockSocket.sendMessage>).toHaveBeenCalledTimes(1);
+    expect(internalMockSocket.sendMessage.mock.calls.length).toBe(1);
   });
 });
 
@@ -338,7 +338,7 @@ describe("Reconnecting", () => {
   it("WhenSuccessfullyConnected;Ideal;_ShouldFetchGroupMetadataOnce", async () => {
     // ====== Arrange
     const mockSocket = new MockAdapter();
-    const fetchAllGroupsMock = mockSocket.fetchAllGroups as Mock<typeof mockSocket.fetchAllGroups>;
+    const fetchAllGroupsMock = mockSocket.fetchAllGroups;
 
     const groupFetchMockData = {
       id: "groupMock" + WhatsappGroupIdentifier,
@@ -366,7 +366,7 @@ describe("Reconnecting", () => {
     await waitForCall;
 
     // ========== Assert
-    expect(fetchAllGroupsMock).toHaveBeenCalledTimes(1);
+    expect(fetchAllGroupsMock.mock.calls.length).toBe(1);
     expect(spyFuncty).toHaveBeenCalledTimes(1);
 
     await ws.Shutdown();
@@ -468,7 +468,7 @@ describe("Info fetching", () => {
 
     const group = await ws.GetRawGroupMetadata("123@g.us");
     expect(group.subject).toBe("Mock Group");
-    expect(internalMockSocket.groupMetadata as Mock<typeof internalMockSocket.groupMetadata>).toHaveBeenCalledTimes(1);
+    expect(internalMockSocket.groupMetadata.mock.calls.length).toBe(1);
   });
 });
 
