@@ -59,13 +59,13 @@ export class WhatsSocket_Submodule_Group implements IWhatsSocket_Submodule_Group
 
     const botParticipant = metadata.participants.find((participant) => {
       //For some reason, baileys.js or providers don't document this... i found this "hack" by reverse engineering and debuggin' by myself.. Atte: ChrisLaimon
-      participant = participant as WhatsappGroupParticipant & { phoneNumber: string };
+      const p = participant as WhatsappGroupParticipant & { phoneNumber?: string };
 
-      if (participant.phoneNumber) {
-        if (participant.phoneNumber === botJid) {
+      if (p["phoneNumber"]) {
+        if (p["phoneNumber"] === botJid) {
           return true;
         }
-        if (this.NormalizeJid(participant.phoneNumber) === botJid) {
+        if (this.NormalizeJid(p["phoneNumber"]) === botJid) {
           return true;
         }
       }
@@ -89,7 +89,7 @@ export class WhatsSocket_Submodule_Group implements IWhatsSocket_Submodule_Group
       }
 
       return false;
-    };);
+    });
 
     if (!botParticipant) return false;
 

@@ -18,6 +18,7 @@ export type {
   WhatsappGroupMetadata,
   WhatsappIDInfo,
   WhatsappMessage,
+  WhatsappPresenceState,
   WhatsbotcordMiddlewareFunct,
   WhatsbotcordPlugin,
   WhatsSocketLoggerMode,
