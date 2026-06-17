@@ -18,7 +18,13 @@ import {
 } from "./helpers/Whatsapp.helper.js";
 
 // === Types deps exporting ===
-import type { WhatsbotcordMiddlewareFunct, WhatsbotcordMiddlewareFunct_OnFoundCommand, WhatsbotcordPlugin } from "./bot/bot.js";
+import type {
+  WhatsbotcordMiddlewareFunct,
+  WhatsbotcordMiddlewareFunct_OnFoundCommand,
+  WhatsbotcordPlugin,
+  WhatsBotGroup,
+  WhatsBotPresence,
+} from "./bot/bot.js";
 import type { IChatContextConfig } from "./bot/internals/ChatContext.js";
 import type { WorkflowNumericArgs } from "./utils/WorkflowNumeric.types.js";
 import type { CommandEntry } from "./bot/internals/CommandsSearcher.js";
@@ -80,6 +86,8 @@ export type {
   WhatsappPresenceState,
   WhatsbotcordMiddlewareFunct,
   WhatsbotcordPlugin,
+  WhatsBotGroup,
+  WhatsBotPresence,
   WhatsSocketLoggerMode,
   WhatsSocketOptions,
   WhatsSocketReceiverError,

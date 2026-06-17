@@ -12,7 +12,7 @@
 **🔥 Want to know what's new?** Check out the [**latest releases**](https://github.com/KristanLaimon/WhatsBotCord.js/releases) for documentation and usage examples.
 
 <div align="center">
-  <a href="https://whats-bot-cord-js-documentation.vercel.app/">🟢 Official Documentation Site</a>
+  <a href="https://whatsbotcord.sbs">🟢 Official Documentation Site</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://deepwiki.com/KristanLaimon/WhatsBotCord.js">📃 Documentation with AI (DeepWiki)</a>
 </div>
@@ -97,7 +97,7 @@ bot.Commands.Add(
 bot.Start();
 ```
 
-Want to know more?, check the [official documentation site (In progress)](https://whats-bot-cord-js-documentation.vercel.app/)
+Want to know more?, check the [official documentation site](https://whatsbotcord.sbs)
 
 # Acknowledgment
 

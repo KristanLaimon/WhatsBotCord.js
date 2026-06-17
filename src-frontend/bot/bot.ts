@@ -4,6 +4,7 @@ import Delegate from "../libs/Delegate.js";
 import { MiddlewareChain } from "../libs/MiddlewareChain.js";
 import { type SenderType, MsgType } from "../types/Msg.types.js";
 import type { IWhatsSocket_Submodule_Group } from "../whats_socket/internals/IWhatsSocket.groups.js";
+import type { IWhatsSocket_Submodule_Presence } from "../whats_socket/internals/IWhatsSocket.presence.js";
 import type { IWhatsSocket_Submodule_Receiver } from "../whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import { WhatsSocketReceiverHelper_isReceiverError } from "../whats_socket/internals/WhatsSocket.receiver.js";
@@ -218,6 +219,7 @@ export type WhatsBotEvents = IWhatsSocket_EventsOnly_Module & {
 export type WhatsBotSender = IWhatsSocket_Submodule_SugarSender;
 export type WhatsBotReceiver = IWhatsSocket_Submodule_Receiver;
 export type WhatsBotGroup = IWhatsSocket_Submodule_Group;
+export type WhatsBotPresence = IWhatsSocket_Submodule_Presence;
 export type WhatsBotCommands = CommandsSearcher;
 
 export type WhatsbotcordMiddlewareFunct = (
@@ -398,6 +400,18 @@ export default class Bot implements BotMinimalInfo {
    */
   public get Groups(): WhatsBotGroup {
     return this.InternalSocket.group;
+  }
+
+  /**
+   * Grouped API for WhatsApp presence/status indicators.
+   *
+   * @example
+   * ```typescript
+   * await bot.Presence.SetGlobalPresenceState("online");
+   * ```
+   */
+  public get Presence(): WhatsBotPresence {
+    return this.InternalSocket.Presence;
   }
 
   /** Exposes all bot-related events that consumers can subscribe to.
