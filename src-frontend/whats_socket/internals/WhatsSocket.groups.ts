@@ -1,7 +1,7 @@
 import { type WhatsappIDInfo, WhatsappHelper_ExtractFromWhatsappID, WhatsappIdType } from "../../helpers/Whatsapp.helper.js";
 import { WhatsappGroupIdentifier } from "../../types/Whatsapp.types.js";
 import type { IWhatsSocket } from "../IWhatsSocket.js";
-import type { WhatsappGroupMetadata, WhatsappGroupParticipantAction } from "../types.js";
+import type { WhatsappGroupMetadata, WhatsappGroupParticipant, WhatsappGroupParticipantAction } from "../types.js";
 import type { IWhatsSocket_Submodule_Group } from "./IWhatsSocket.groups.js";
 import type { GroupMetadataInfo, ParticipantInfo } from "./WhatsSocket.receiver.js";
 
@@ -58,15 +58,42 @@ export class WhatsSocket_Submodule_Group implements IWhatsSocket_Submodule_Group
     const botJid = this.GetBotJid();
 
     const botParticipant = metadata.participants.find((participant) => {
-      const participantJid = participant.id ?? participant.lid;
-      if (!participantJid) {
-        return false;
+      //For some reason, baileys.js or providers don't document this... i found this "hack" by reverse engineering and debuggin' by myself.. Atte: ChrisLaimon
+      participant = participant as WhatsappGroupParticipant & { phoneNumber: string };
+
+      if (participant.phoneNumber) {
+        if (participant.phoneNumber === botJid) {
+          return true;
+        }
+        if (this.NormalizeJid(participant.phoneNumber) === botJid) {
+          return true;
+        }
       }
 
-      return this.NormalizeJid(participantJid) === botJid;
-    });
+      if (participant.id) {
+        if (participant.id === botJid) {
+          return true;
+        }
+        if (this.NormalizeJid(participant.id) === botJid) {
+          return true;
+        }
+      }
 
-    return botParticipant?.admin === "admin" || botParticipant?.admin === "superadmin";
+      if (participant.lid) {
+        if (participant.lid === botJid) {
+          return true;
+        }
+        if (this.NormalizeJid(participant.lid) === botJid) {
+          return true;
+        }
+      }
+
+      return false;
+    };);
+
+    if (!botParticipant) return false;
+
+    return botParticipant.admin === "admin" || botParticipant.admin === "superadmin";
   }
 
   public async UpdateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
