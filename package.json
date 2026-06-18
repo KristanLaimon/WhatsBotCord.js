@@ -57,6 +57,7 @@
     "buildonly": "tsdown",
     "build_watch": "tsdown --watch",
     "build": "bun fullcheck && bun fulltest && bun run buildonly",
+    "build-frontend": "bunx tsup",
     "release": "bun run build && bumpp && npm publish",
     "try": "bun ./src/index.main.ts"
   },

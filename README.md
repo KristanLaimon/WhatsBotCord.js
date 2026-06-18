@@ -54,47 +54,49 @@ Import the library and you can use this minimal code to get started with your fi
 ### Javascript
 
 ```js
-import Whatsbotcord, { CommandType } from "whatsbotcord";
+import Whatsbotcord from "whatsbotcord";
+import { CreateCommand } from "whatsbotcord/helpers";
 
 const bot = new Whatsbotcord({
   commandPrefix: "!",
   tagPrefix: "@",
-  credentialsFolder: "./auth",
-  loggerMode: "recommended",
 });
-bot.Commands.Add(
-  {
-    name: "ping",
-    async run(chat, api, commandArgs) {
-      await chat.SendText("pong!");
-    },
-  },
-  CommandType.Normal
+
+const PingCommand = CreateCommand(
+  "ping",
+  async function (ctx, api, args) {
+    await ctx.SendText("pong!");
+  }, {
+    aliases: ["p"],
+  }
 );
+
+bot.Commands.Add(PingCommand);
+
 bot.Start();
 ```
 
 ### Typescript
 
 ```ts
-import Whatsbotcord, { type AdditionalAPI, type CommandArgs, type IChatContext, CommandType } from "whatsbotcord";
+import Whatsbotcord from "whatsbotcord";
+import { type AdditionalAPI, type CommandArgs, type IChatContext, type ICommand } from "whatsbotcord/types";
 
 const bot = new Whatsbotcord({
-  commandPrefix: "!",
-  tagPrefix: "@",
-  credentialsFolder: "./auth",
-  loggerMode: "recommended",
-});
-bot.Commands.Add(
-  {
-    name: "ping",
-    async run(chat: IChatContext, _api: AdditionalAPI, _commandArgs: CommandArgs): Promise<void> {
-      await chat.SendText("pong!");
-    },
-  },
-  CommandType.Normal
-);
-bot.Start();
+    commandPrefix: "!",
+    tagPrefix: "@",
+ });
+
+ class PingCommand implements ICommand {
+    name: string = "ping";
+    aliases?: string[] = ["p"];
+    public async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+      await ctx.SendText("pong! 🏓");
+    }
+ }
+
+ bot.Commands.Add(new PingCommand());
+ bot.Start();
 ```
 
 Want to know more?, check the [official documentation site](https://whatsbotcord.sbs)
