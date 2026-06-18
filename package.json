@@ -1,6 +1,6 @@
 {
   "name": "whatsbotcord",
-  "version": "2.0.0-RC.1.1",
+  "version": "2.0.0-RC.3",
   "author": "KristanLaimon",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@hapi/boom": "10.0.1",
-    "baileys": "7.0.0-rc13",
+    "baileys": "7.0.0-rc.9",
     "dotenv": "17.2.1",
     "emoji-regex": "10.4.0",
     "grapheme-splitter": "1.0.4",
