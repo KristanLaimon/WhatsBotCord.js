@@ -23,7 +23,6 @@ class EveryoneTag implements ICommand {
 const bot = new Bot({
   commandPrefix: ["$", "!", "/"],
   tagPrefix: ["@"],
-  credentialsFolder: "./auth",
   loggerMode: "recommended",
 });
 bot.Commands.Add(new EveryoneTag(), CommandType.Tag);

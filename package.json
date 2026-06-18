@@ -1,6 +1,6 @@
 {
   "name": "whatsbotcord",
-  "version": "2.0.0-RC.3",
+  "version": "2.0.0-RC.4",
   "author": "KristanLaimon",
   "type": "module",
   "main": "./dist/index.cjs",

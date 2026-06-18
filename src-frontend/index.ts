@@ -26,12 +26,21 @@ import type {
   WhatsBotPresence,
 } from "./bot/bot.js";
 import type { IChatContextConfig } from "./bot/internals/ChatContext.js";
-import type { WorkflowNumericArgs } from "./utils/WorkflowNumeric.types.js";
 import type { CommandEntry } from "./bot/internals/CommandsSearcher.js";
 import type { CommandArgs } from "./bot/internals/CommandsSearcher.types.js";
 import type { IChatContext, IChatGroupAPI } from "./bot/internals/IChatContext.js";
 import type { AdditionalAPI, ICommand } from "./bot/internals/ICommand.js";
+import type { WorkflowNumericArgs } from "./utils/WorkflowNumeric.types.js";
 
+import type { WhatsappIDInfo } from "./helpers/Whatsapp.helper.js";
+import type {
+  MockEnqueueParamsDocument,
+  MockEnqueueParamsLocation,
+  MockEnqueueParamsMinimal,
+  MockEnqueueParamsMultimedia,
+  MockEnqueueParamsMultimediaMinimal,
+  MockingChatParams,
+} from "./mocking_suite/ChatMock.js";
 import type { IWhatsSocket_Submodule_Group } from "./whats_socket/internals/IWhatsSocket.groups.js";
 import type { IWhatsSocket_Submodule_Receiver } from "./whats_socket/internals/IWhatsSocket.receiver.js";
 import type { IWhatsSocket_Submodule_SugarSender } from "./whats_socket/internals/IWhatsSocket.sugarsender.js";
@@ -46,15 +55,6 @@ import type {
   WhatsSocketLoggerMode,
 } from "./whats_socket/types.js";
 import type { WhatsSocketOptions } from "./whats_socket/WhatsSocket.js";
-import type { WhatsappIDInfo } from "./helpers/Whatsapp.helper.js";
-import type {
-  MockEnqueueParamsDocument,
-  MockEnqueueParamsLocation,
-  MockEnqueueParamsMinimal,
-  MockEnqueueParamsMultimedia,
-  MockEnqueueParamsMultimediaMinimal,
-  MockingChatParams,
-} from "./mocking_suite/ChatMock.js";
 
 export type {
   AdditionalAPI,
@@ -95,19 +95,19 @@ export type {
 };
 
 // == Runtime deps exporting ==
-import Bot from "./bot/bot.js";
-import { ChatContext } from "./bot/internals/ChatContext.js";
-import { CommandType } from "./bot/internals/CommandsSearcher.js";
-import { WhatsSocketReceiverHelper_isReceiverError, WhatsSocketReceiverMsgError } from "./whats_socket/internals/WhatsSocket.receiver.js";
-import WhatsSocket from "./whats_socket/WhatsSocket.js";
-import CreateCommand from "./helpers/CommandForJs.helper.js";
-import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
-import Delegate from "./libs/Delegate.js";
-import ChatMock from "./mocking_suite/ChatMock.js";
-import { MsgType, SenderType } from "./types/Msg.types.js";
-import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./types/Whatsapp.types.js";
-import { WorkFlowNumericMany } from "./utils/WorkflowNumeric.many.js";
-import { WorkflowNumericSingle } from "./utils/WorkflowNumeric.single.js";
+  import Bot from "./bot/bot.js";
+  import { ChatContext } from "./bot/internals/ChatContext.js";
+  import { CommandType } from "./bot/internals/CommandsSearcher.js";
+  import CreateCommand from "./helpers/CommandForJs.helper.js";
+  import { WhatsappIdType } from "./helpers/Whatsapp.helper.js";
+  import Delegate from "./libs/Delegate.js";
+  import ChatMock from "./mocking_suite/ChatMock.js";
+  import { MsgType, SenderType } from "./types/Msg.types.js";
+  import { WhatsappGroupIdentifier, WhatsappLIDIdentifier, WhatsappPhoneNumberIdentifier } from "./types/Whatsapp.types.js";
+  import { WorkFlowNumericMany } from "./utils/WorkflowNumeric.many.js";
+  import { WorkflowNumericSingle } from "./utils/WorkflowNumeric.single.js";
+  import { WhatsSocketReceiverHelper_isReceiverError, WhatsSocketReceiverMsgError } from "./whats_socket/internals/WhatsSocket.receiver.js";
+  import WhatsSocket from "./whats_socket/WhatsSocket.js";
 
 export {
   ChatContext,

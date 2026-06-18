@@ -25,7 +25,6 @@ const bot = new Whatsbotcord({
   //Can accept an array of prefixes or only one "!" prefix
   commandPrefix: ["$", "!", "/"],
   tagPrefix: ["@"],
-  credentialsFolder: "./auth",
   loggerMode: "recommended",
 });
 //1. You can add commands by just instatiating them or...

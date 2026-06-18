@@ -860,7 +860,6 @@ export default class Bot implements BotMinimalInfo {
 
 export function BotUtils_GenerateOptions(options?: Partial<WhatsBotOptions>): WhatsBotOptions {
   return {
-    credentialsFolder: options?.credentialsFolder ?? "./auth",
     delayMilisecondsBetweenMsgs: options?.delayMilisecondsBetweenMsgs ?? 100,
     ignoreSelfMessage: options?.ignoreSelfMessage ?? true,
     loggerMode: options?.loggerMode ?? "recommended",

@@ -19,23 +19,26 @@ import { GetPath } from "../../../../libs/BunPath.js";
 import type {
   IWhatsappAdapter,
   IWhatsappSocketAdapterClient,
+  WhatsappChatActivity,
   WhatsappGroupMetadata,
+  WhatsappGroupParticipantAction,
   WhatsappMessage,
   WhatsappMessageContent,
   WhatsappMessageOptions,
-  WhatsappGroupParticipantAction,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
+  WhatsappPresenceState,
   WhatsSocketConnectionUpdate,
   WhatsSocketLoggerMode,
   WhatsSocketVendorEventMap,
-  WhatsappPresenceState,
-  WhatsappChatActivity,
 } from "../../types.js";
 
 export type BaileysWASocket = ReturnType<typeof makeWASocket>;
 
 export type BaileysWhatsSocketVendorOptions = {
+  /**
+   * The log mode of all output exclusive to Baileys.js Adapter only. (Not related to the option 'loggerMode' of the Whatsbotcord/Bot default constructor)
+   */
   loggerMode: WhatsSocketLoggerMode;
   credentialsFolder: string;
   ownRawBaileysSocket?: BaileysWASocket;
@@ -44,8 +47,8 @@ export type BaileysWhatsSocketVendorOptions = {
 export class BaileysAdapter implements IWhatsappAdapter {
   private readonly _options: BaileysWhatsSocketVendorOptions;
 
-  constructor(options: BaileysWhatsSocketVendorOptions) {
-    this._options = options;
+  constructor(options: Omit<BaileysWhatsSocketVendorOptions, "ownRawBaileysSocket">) {
+    this._options = options as BaileysWhatsSocketVendorOptions;
   }
 
   public async Create(): Promise<IWhatsappSocketAdapterClient> {

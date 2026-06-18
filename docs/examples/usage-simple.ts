@@ -3,7 +3,6 @@ import Whatsbotcord, { type AdditionalAPI, type CommandArgs, type IChatContext, 
 const bot = new Whatsbotcord({
   commandPrefix: "!",
   tagPrefix: "@",
-  credentialsFolder: "./auth",
   loggerMode: "recommended",
 });
 bot.Commands.Add(

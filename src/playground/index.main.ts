@@ -3,13 +3,13 @@ import type { AdditionalAPI, IChatContext, ICommand } from "src/index.js";
 import {
   type ChatContext,
   type CommandArgs,
+  BaileysAdapter,
   CommandType,
   MsgType,
   OfficialPlugin_OneCommandPerUserAtATime,
   SenderType,
   default as WhatsbotCord,
 } from "src/index.js";
-import { isDev } from "../libs/Envs.js";
 
 /**
  * # Main Playground Entry
@@ -106,14 +106,19 @@ class WaitForMsgAndSendItBack implements ICommand {
 }
 
 // ========================== MAIN ==============================
-const bot = new WhatsbotCord({
-  commandPrefix: ["$", "!", "/", "."],
-  tagPrefix: ["@"],
-  credentialsFolder: isDev ? "auth_canary" : "./auth",
-  loggerMode: "recommended",
-  delayMilisecondsBetweenMsgs: 1,
-  cancelKeywords: ["cancelcustom"],
-});
+const bot = new WhatsbotCord(
+  {
+    commandPrefix: ["$", "!", "/", "."],
+    tagPrefix: ["@"],
+    loggerMode: "recommended",
+    delayMilisecondsBetweenMsgs: 1,
+    cancelKeywords: ["cancelcustom"],
+  },
+  new BaileysAdapter({
+    loggerMode: "recommended",
+    credentialsFolder: "./auth",
+  })
+);
 
 bot.Commands.Add(new PingCommand());
 bot.Commands.Add(new EveryoneId(), CommandType.Tag);
