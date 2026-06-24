@@ -1,3 +1,6 @@
+# Specifics
+1. All changes to do in /src, mirror them in /src-frontend (adapting to browser-friendly version)
+
 # Project Overview: WhatsBotCord.js
 
 ## Project Purpose
