@@ -11,7 +11,7 @@ async function toolkit() {
     delayMilisecondsBetweenMsgs: 0,
   });
   await socket.Start();
-  return { adapter, groupApi: socket.group, socket };
+  return { adapter, groupApi: socket.Group, socket };
 }
 
 describe("WhatsSocket Group Submodule", () => {
@@ -203,6 +203,23 @@ describe("WhatsSocket Group Submodule", () => {
     expect(data?.groupName).toBe("My Group");
     expect(data?.members.length).toBe(1);
     expect(data?.members[0]?.isAdmin).toBe(true);
+    await socket.Shutdown();
+  });
+
+  test("Groups_WhenCreatingGroup_ShouldSuccessfullyCallAdapterAndReturnMetadata", async () => {
+    const { adapter, groupApi, socket } = await toolkit();
+    const expectedMetadata = {
+      id: "new-group" + WhatsappGroupIdentifier,
+      subject: "Test Subject",
+      participants: [{ id: "123@s.whatsapp.net" }],
+    };
+    adapter.createGroup.mockResolvedValueOnce(expectedMetadata);
+
+    const result = await groupApi.CreateGroup("Test Subject", ["123@s.whatsapp.net"]);
+
+    expect(adapter.createGroup.mock.calls.length).toBe(1);
+    expect(adapter.createGroup.mock.calls[0]).toEqual(["Test Subject", ["123@s.whatsapp.net"]]);
+    expect(result).toEqual(expectedMetadata);
     await socket.Shutdown();
   });
 });

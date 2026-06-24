@@ -21,6 +21,7 @@ import {
   WhatsSocketReceiverMsgError,
 } from "../whats_socket/internals/WhatsSocket.receiver.js";
 import { WhatsSocket_Submodule_SugarSender } from "../whats_socket/internals/WhatsSocket.sugarsenders.js";
+import { WhatsSocket_Submodule_Presence } from "../whats_socket/internals/WhatsSocket.presence.js";
 import { MockAdapter } from "../whats_socket/MockAdapter.js";
 import WhatsSocketMock from "../whats_socket/mocks/WhatsSocket.mock.js";
 import type { IWhatsappAdapter } from "../whats_socket/types.js";
@@ -109,7 +110,7 @@ test("Creation_WhenProvidingVendorFactoryAsSecondParam_ShouldUseFactoryClient", 
 test("Creation_WhenInstantiatingWithSocket_ShouldExposeGroupedGroupApi", () => {
   const { bot, socket } = toolkit();
 
-  expect(bot.Groups).toBe(socket.group);
+  expect(bot.Groups).toBe(socket.Group);
 });
 
 // ========================== COMMANDS ============================
@@ -139,6 +140,11 @@ test("Running_WhenRunningSimple_NORMALCOMMAND_FROMGROUP_ShouldSuccessfully", asy
       expect(api).toBeDefined();
       expect(api.InternalSocket.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
       expect(api.InternalSocket.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
+      expect(api.Send).toBeInstanceOf(WhatsSocket_Submodule_SugarSender);
+      expect(api.Receive).toBeInstanceOf(WhatsSocket_Submodule_Receiver);
+      expect(api.Group).toBeDefined();
+      expect(api.Group.FetchGroupData).toBeInstanceOf(Function);
+      expect(api.Presence).toBeInstanceOf(WhatsSocket_Submodule_Presence);
 
       expect(args).toBeDefined();
       expect(args.args).toEqual(["arg1", "arg2", "arg3", "arg4", "..."]);

@@ -115,7 +115,7 @@ export class ChatContext implements IChatContext {
 
   public get Group(): IChatGroupAPI {
     if (this.FixedSenderType !== SenderType.Group) {
-      throw new Error("ChatContext.group can only be used from a group chat context");
+      throw new Error("ChatContext.Group can only be used from a group chat context");
     }
     if (!this._groupSugar) {
       this._groupSugar = new ChatContextGroup(this.FixedChatId, this._GetGroupDependency());
@@ -274,7 +274,7 @@ export class ChatContext implements IChatContext {
 
   private _GetGroupDependency(): IWhatsSocket_Submodule_Group {
     if (!this._internalGroup) {
-      throw new Error("ChatContext.group is not configured. Create this ChatContext from a Bot or pass a group dependency.");
+      throw new Error("ChatContext.Group is not configured. Create this ChatContext from a Bot or pass a group dependency.");
     }
 
     return this._internalGroup;

@@ -374,7 +374,7 @@ test("GroupChatMetadata_WhenComingFromGroupChat_ShouldFetchObjectGroupDataFromCo
       const groupInfo: GroupMetadataInfo | null = await _ctx.FetchGroupData();
       expect(groupInfo).not.toBeNull();
       //it really doesn't matter the chatId, it gets a default mock group metadata object
-      const groupInfoFromInternalReceiver: GroupMetadataInfo | null = await _rawMsgApi.InternalSocket.group.FetchGroupData(_args.chatId);
+      const groupInfoFromInternalReceiver: GroupMetadataInfo | null = await _rawMsgApi.Group.FetchGroupData(_args.chatId);
       expect(groupInfoFromInternalReceiver).not.toBeNull();
 
       if (!groupInfo || !groupInfoFromInternalReceiver)
@@ -407,7 +407,7 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupMetadata_chatcontext = await _ctx.FetchGroupData();
-      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.group.FetchGroupData(_args.chatId);
+      const groupMetadata_highLevelReceiver = await _rawMsgApi.Group.FetchGroupData(_args.chatId);
       const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
 
       expect(groupMetadata_chatcontext).not.toBeNull();
@@ -445,7 +445,7 @@ test("GroupChatMetadata_CHATCONTEXT_SOCKETRECEIVER_AND_RECEIVER_ShouldBeSynchron
     name: string = "mynamecommand";
     async run(_ctx: IChatContext, _rawMsgApi: AdditionalAPI, _args: CommandArgs): Promise<void> {
       const groupMetadata_chatcontext = await _ctx.FetchGroupData();
-      const groupMetadata_highLevelReceiver = await _rawMsgApi.InternalSocket.group.FetchGroupData(_args.chatId);
+      const groupMetadata_highLevelReceiver = await _rawMsgApi.Group.FetchGroupData(_args.chatId);
       const groupMetadata_lowLevelSocket = await _rawMsgApi.InternalSocket.GetRawGroupMetadata(_args.chatId);
 
       expect(groupMetadata_chatcontext).not.toBeNull();

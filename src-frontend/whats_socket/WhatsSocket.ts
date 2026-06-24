@@ -147,7 +147,7 @@ export default class WhatsSocket implements IWhatsSocket {
   /**
    * Group utility module for metadata, participant updates, and cleanup actions.
    */
-  public group!: WhatsSocket_Submodule_Group;
+  public Group!: WhatsSocket_Submodule_Group;
 
   /**
    * Presence submodule for managing WhatsApp presence states and chat activity.
@@ -226,7 +226,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this._senderQueue = new WhatsSocketSenderQueue_SubModule(this, this._senderQueueMaxLimit, this._milisecondsDelayBetweenSentMsgs);
     this.Send = new WhatsSocket_Submodule_SugarSender(this);
     this.Receive = new WhatsSocket_Submodule_Receiver(this);
-    this.group = new WhatsSocket_Submodule_Group(this);
+    this.Group = new WhatsSocket_Submodule_Group(this);
     this.Presence = new WhatsSocket_Submodule_Presence(this);
   }
 
@@ -251,7 +251,7 @@ export default class WhatsSocket implements IWhatsSocket {
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: ✅ Connected to whatsapp servers");
           }
-          const groups = await this.group.GetAll();
+          const groups = await this.Group.GetAll();
           this.onStartupAllGroupsIn.CallAll(groups);
           if (this._loggerMode !== "silent") {
             console.log("[Whatsbotcord]: 💬 All groups metadata fetched successfully");

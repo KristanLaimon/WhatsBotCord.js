@@ -144,6 +144,10 @@ export class BaileysWhatsSocketVendorClient implements IWhatsappSocketAdapterCli
     return Object.values(await this._socket.groupFetchAllParticipating()) as unknown as WhatsappGroupMetadata[];
   }
 
+  public async createGroup(subject: string, participants: string[]): Promise<WhatsappGroupMetadata> {
+    return (await this._socket.groupCreate(subject, participants)) as unknown as WhatsappGroupMetadata;
+  }
+
   public async updateGroupParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean> {
     const result = await this._socket.groupParticipantsUpdate(groupId, participants, action);
     return !!result;

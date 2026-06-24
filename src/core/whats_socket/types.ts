@@ -353,6 +353,8 @@ export interface IWhatsappSocketAdapterClient {
 
   fetchAllGroups(): Promise<WhatsappGroupMetadata[]>;
 
+  createGroup(subject: string, participants: string[]): Promise<WhatsappGroupMetadata>;
+
   updateGroupParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean>;
 
   leaveGroup(groupId: string): Promise<void>;

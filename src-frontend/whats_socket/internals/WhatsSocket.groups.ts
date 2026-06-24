@@ -209,24 +209,36 @@ export class WhatsSocket_Submodule_Group implements IWhatsSocket_Submodule_Group
     };
   }
 
+  public async CreateGroup(subject: string, participants: string[]): Promise<WhatsappGroupMetadata> {
+    this._assertNotEmpty(subject, "subject");
+    if (!Array.isArray(participants)) {
+      throw new Error("Bad args => WhatsSocket.Group.CreateGroup => 'participants' must be an array of strings.");
+    }
+    for (const p of participants) {
+      this._assertNotEmpty(p, "participant");
+    }
+
+    return await this.socket.Socket.createGroup(subject, participants);
+  }
+
   private _assertGroupId(groupId: string): void {
     this._assertNotEmpty(groupId, "groupId");
 
     if (!groupId.endsWith(WhatsappGroupIdentifier)) {
-      throw new Error("Bad args => WhatsSocket.group => Provided groupId is not a group chat ID. => " + groupId);
+      throw new Error("Bad args => WhatsSocket.Group => Provided groupId is not a group chat ID. => " + groupId);
     }
   }
 
   private _assertNotEmpty(value: string, paramName: string): void {
     if (typeof value !== "string" || value.trim().length === 0) {
-      throw new Error("Bad args => WhatsSocket.group => '" + paramName + "' must be a non-empty string.");
+      throw new Error("Bad args => WhatsSocket.Group => '" + paramName + "' must be a non-empty string.");
     }
   }
 
   private _assertValidAction(action: WhatsappGroupParticipantAction): void {
     const validActions: WhatsappGroupParticipantAction[] = ["add", "remove", "promote", "demote"];
     if (!validActions.includes(action)) {
-      throw new Error("Bad args => WhatsSocket.group => Invalid participant action: " + action);
+      throw new Error("Bad args => WhatsSocket.Group => Invalid participant action: " + action);
     }
   }
 }

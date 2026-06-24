@@ -252,11 +252,11 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    *
    * @example
    * ```typescript
-   * const groups = await socket.group.getAll();
-   * await socket.group.addParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * const groups = await socket.Group.GetAll();
+   * await socket.Group.AddParticipants("123@g.us", ["456@s.whatsapp.net"]);
    * ```
    */
-  group: IWhatsSocket_Submodule_Group;
+  Group: IWhatsSocket_Submodule_Group;
 
   /**
    * Submodule for managing WhatsApp presence states and chat activity.
@@ -288,7 +288,7 @@ export interface IWhatsSocket extends IWhatsSocket_SendingMsgsOnly_Module, IWhat
    * - Admin information
    * - Group settings
    *
-   * @deprecated Use `socket.group.getMetadata(chatId)` instead.
+   * @deprecated Use `socket.Group.GetMetadata(chatId)` instead.
    */
   GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata>;
 

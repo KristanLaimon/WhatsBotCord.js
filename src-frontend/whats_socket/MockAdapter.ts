@@ -52,6 +52,13 @@ export class MockAdapter implements IWhatsappSocketAdapterClient {
   }));
 
   public fetchAllGroups: Mock<() => Promise<WhatsappGroupMetadata[]>> = fn(async () => []);
+  public createGroup: Mock<(subject: string, participants: string[]) => Promise<WhatsappGroupMetadata>> = fn(
+    async (subject: string, participants: string[]) => ({
+      id: "mock-group-jid",
+      subject,
+      participants: participants.map((p) => ({ id: p })),
+    })
+  );
   public groupMetadata = this.fetchGroupMetadata;
   public groupFetchAllParticipating: Mock<() => Promise<Record<string, WhatsappGroupMetadata>>> = fn(async () => {
     const groups = await this.fetchAllGroups();

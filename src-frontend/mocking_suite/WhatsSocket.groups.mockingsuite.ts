@@ -131,6 +131,19 @@ export default class WhatsSocket_Submodule_Groups_MockingSuite implements IWhats
   public async Cleanup(groupId: string): Promise<void> {
     this.HistoryActions.push({ actionName: "Cleanup", groupId });
   }
+
+  public async CreateGroup(subject: string, participants: string[]): Promise<WhatsappGroupMetadata> {
+    this.HistoryActions.push({
+      actionName: "CreateGroup" as any,
+      groupId: "",
+      additionalArguments: { subject, participants },
+    });
+    return {
+      id: "mock-created-group-jid" + WhatsappGroupIdentifier,
+      subject,
+      participants: participants.map((p) => ({ id: p })),
+    };
+  }
 }
 
 /**

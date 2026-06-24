@@ -261,4 +261,21 @@ export interface IWhatsSocket_Submodule_Group {
    * ```
    */
   FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null>;
+
+  /**
+   * # Create Group
+   *
+   * Creates a new WhatsApp group with the specified subject and participants list.
+   *
+   * @param subject - The name or subject of the new group.
+   * @param participants - List of participant JIDs (must be in format: number@s.whatsapp.net).
+   * @returns A promise resolving to the metadata of the newly created group.
+   *
+   * @example
+   * ```typescript
+   * const groupMetadata = await socket.Group.CreateGroup("Mi Grupo", ["123@s.whatsapp.net"]);
+   * console.log("New Group JID:", groupMetadata.id);
+   * ```
+   */
+  CreateGroup(subject: string, participants: string[]): Promise<WhatsappGroupMetadata>;
 }

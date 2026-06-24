@@ -170,14 +170,14 @@ export class WhatsSocket_Submodule_Receiver implements IWhatsSocket_Submodule_Re
    *
    * **New Way:**
    * ```ts
-   * const groupData = await socket.group.FetchGroupData("123@g.us");
+   * const groupData = await socket.Group.FetchGroupData("123@g.us");
    * ```
    *
    * @param chatId - The WhatsApp ID of the group.
    * @returns A promise resolving to `GroupMetadataInfo` or `null`.
    */
   public async FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null> {
-    return await this._whatsSocket.group.FetchGroupData(chatId);
+    return await this._whatsSocket.Group.FetchGroupData(chatId);
   }
 
   /**

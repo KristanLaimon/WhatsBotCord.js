@@ -394,12 +394,12 @@ export default class Bot implements BotMinimalInfo {
    *
    * @example
    * ```typescript
-   * const groups = await bot.group.getAll();
-   * await bot.group.cleanup("123@g.us");
+   * const groups = await bot.Groups.GetAll();
+   * await bot.Groups.Cleanup("123@g.us");
    * ```
    */
   public get Groups(): WhatsBotGroup {
-    return this.InternalSocket.group;
+    return this.InternalSocket.Group;
   }
 
   /**
@@ -726,7 +726,7 @@ export default class Bot implements BotMinimalInfo {
           rawMsg,
           this.InternalSocket.Send,
           this.InternalSocket.Receive,
-          this.InternalSocket.group,
+          this.InternalSocket.Group,
           this.InternalSocket.Presence,
           {
             cancelKeywords: this.Settings.cancelKeywords!,
@@ -749,7 +749,7 @@ export default class Bot implements BotMinimalInfo {
             rawMsg,
             this.InternalSocket.Send,
             this.InternalSocket.Receive,
-            this.InternalSocket.group,
+            this.InternalSocket.Group,
             this.InternalSocket.Presence,
             {
               cancelKeywords: this.Settings.cancelKeywords!,
@@ -772,7 +772,7 @@ export default class Bot implements BotMinimalInfo {
               rawMsg,
               this.InternalSocket.Send,
               this.InternalSocket.Receive,
-              this.InternalSocket.group,
+              this.InternalSocket.Group,
               this.InternalSocket.Presence,
               {
                 cancelKeywords: this.Settings.cancelKeywords!,
@@ -800,14 +800,15 @@ export default class Bot implements BotMinimalInfo {
 
       //=========================================================
       const ARG2_AdditionalAPI: AdditionalAPI = {
-        // @deprecated ones: InternalSockets already have them inside!
-        // Receive: this._socket.Receive,
-        // Send: this._socket.Send,
         InternalSocket: this.InternalSocket,
         Myself: {
           Status: new Myself_Submodule_Status(this.InternalSocket),
           Bot: this,
         },
+        Send: this.InternalSocket.Send,
+        Receive: this.InternalSocket.Receive,
+        Group: this.InternalSocket.Group,
+        Presence: this.InternalSocket.Presence,
       };
       const ARG3_AdditionalArgs: CommandArgs = {
         args: commandArgs,

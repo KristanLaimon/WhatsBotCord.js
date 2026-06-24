@@ -1,3 +1,7 @@
+import type { IWhatsSocket_Submodule_Group } from "../../whats_socket/internals/IWhatsSocket.groups.js";
+import type { IWhatsSocket_Submodule_Presence } from "../../whats_socket/internals/IWhatsSocket.presence.js";
+import type { IWhatsSocket_Submodule_Receiver } from "../../whats_socket/internals/IWhatsSocket.receiver.js";
+import type { IWhatsSocket_Submodule_SugarSender } from "../../whats_socket/internals/IWhatsSocket.sugarsender.js";
 import type { IWhatsSocket } from "../../whats_socket/IWhatsSocket.js";
 import type { BotMinimalInfo } from "../bot.js";
 import type Myself_Submodule_Status from "./ChatContext.myself.status.js";
@@ -68,7 +72,7 @@ export interface ICommand {
  * @example
  * ```typescript
  * async function run(ctx: IChatContext, api: AdditionalAPI) {
- *    const metadata = await api.InternalSocket.GetRawGroupMetadata("123@g.us");
+ *    const metadata = await api.Group.GetMetadata("123@g.us");
  * }
  * ```
  */
@@ -82,10 +86,31 @@ export type AdditionalAPI = {
   };
 
   /**
-   * Direct access to the underlying WhatsApp socket implementation.
+   * Direct access to additional whatsapp apis, without the context of "ChatContext" (Cross-chats operations)
    *
-   * ⚠️ Use with caution: bypassing `ChatContext` means you are
-   * responsible for handling errors, message formatting, and safe sending.
+   * @deprecated Bypassing the submodules directly exposed on the `AdditionalAPI` object is deprecated.
+   * Please use the high-level submodules (`Send`, `Receive`, `Group`, `Presence`) directly on `AdditionalAPI` instead.
    */
   readonly InternalSocket: IWhatsSocket;
+
+  /**
+   * High-level "sugar" sender module for dispatching all types of messages.
+   * Prefer this module over raw sending methods since it handles formatting, throttling, and common WhatsApp-specific quirks.
+   */
+  readonly Send: IWhatsSocket_Submodule_SugarSender;
+
+  /**
+   * High-level receive module for handling incoming messages and events.
+   */
+  readonly Receive: IWhatsSocket_Submodule_Receiver;
+
+  /**
+   * Grouped API for WhatsApp group utilities.
+   */
+  readonly Group: IWhatsSocket_Submodule_Group;
+
+  /**
+   * Submodule for managing WhatsApp presence states and chat activity.
+   */
+  readonly Presence: IWhatsSocket_Submodule_Presence;
 };

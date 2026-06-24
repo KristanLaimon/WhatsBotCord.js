@@ -66,7 +66,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   ownJID: string = "ownIDMock" + WhatsappPhoneNumberIdentifier;
   Send: IWhatsSocket_Submodule_SugarSender;
   Receive: IWhatsSocket_Submodule_Receiver;
-  group: IWhatsSocket_Submodule_Group;
+  Group: IWhatsSocket_Submodule_Group;
   Presence: IWhatsSocket_Submodule_Presence;
   Socket: any;
 
@@ -99,7 +99,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
 
     this.Send = options?.customSugarSender ?? new WhatsSocket_Submodule_SugarSender(this);
     this.Receive = options?.customReceiver ?? new WhatsSocket_Submodule_Receiver(this);
-    this.group = options?.customGroup ?? new WhatsSocketMock_Group(this);
+    this.Group = options?.customGroup ?? new WhatsSocketMock_Group(this);
     this.Presence = options?.customPresence ?? new WhatsSocket_Submodule_Presence(this);
   }
 
@@ -173,7 +173,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   @autobind
   public async GetRawGroupMetadata(chatId: string): Promise<WhatsappGroupMetadata> {
     this.GroupsIDTriedToFetch.push(chatId);
-    return await this.group.GetMetadata(chatId);
+    return await this.Group.GetMetadata(chatId);
   }
 
   public ClearMock(): void {
@@ -189,8 +189,8 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.onUpdateMsg.Clear();
     this.SentMessagesThroughRaw = [];
     this.SentMessagesThroughQueue = [];
-    if (this.group instanceof WhatsSocketMock_Group) {
-      this.group.ClearMock();
+    if (this.Group instanceof WhatsSocketMock_Group) {
+      this.Group.ClearMock();
     }
   }
 
@@ -400,6 +400,13 @@ export class WhatsSocketMock_Group implements IWhatsSocket_Submodule_Group {
     await this.DeleteChat(groupId);
   }
 
+  public async CreateGroup(subject: string, participants: string[]): Promise<WhatsappGroupMetadata> {
+    return {
+      id: "mock-group-jid-" + Math.floor(Math.random() * 1000) + WhatsappGroupIdentifier,
+      subject,
+      participants: participants.map((p) => ({ id: p })),
+    };
+  }
 
   public ClearMock(): void {
     this.UpdatedParticipants = [];

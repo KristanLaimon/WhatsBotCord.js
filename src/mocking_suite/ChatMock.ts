@@ -510,6 +510,10 @@ export default class ChatMock {
               Settings: botSettings,
             },
           },
+          Send: this._socketMock.Send,
+          Receive: this._socketMock.Receive,
+          Group: this._socketMock.Group,
+          Presence: this._socketMock.Presence,
         },
         {
           args: this._constructorConfig?.args ?? [],

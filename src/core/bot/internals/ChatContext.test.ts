@@ -172,11 +172,11 @@ it("Group_WhenUsingIndividualContext_ShouldThrowGroupOnlyError", async (): Promi
   const { chat } = GenerateLocalToolKit_ChatSession_FromIndividual();
 
   // Because group now exposes the raw IWhatsSocket_Submodule_Group which expects a groupId,
-  // we actually need to test if `group` itself is accessible or if we throw.
-  // Wait, if we use chat.group.getMetadata, we must pass the group id. But actually, if senderType is individual,
-  // `chat.group` getter might throw "ChatContext.group can only be used from a group chat context"?
+  // we actually need to test if `Group` itself is accessible or if we throw.
+  // Wait, if we use chat.Group.getMetadata, we must pass the group id. But actually, if senderType is individual,
+  // `chat.Group` getter might throw "ChatContext.Group can only be used from a group chat context"?
   // Let's check how the getter is implemented.
-  expect(() => chat.Group).toThrow("ChatContext.group can only be used from a group chat context");
+  expect(() => chat.Group).toThrow("ChatContext.Group can only be used from a group chat context");
 });
 
 it("Text_WhenUsingSendText_ShouldUseCorrectlySugarSender", async () => {
