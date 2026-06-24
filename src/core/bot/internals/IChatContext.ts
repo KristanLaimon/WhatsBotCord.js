@@ -269,8 +269,8 @@ export interface IChatContext {
    *
    * @example
    * ```typescript
-   * if (await ctx.group.isBotAdmin()) {
-   *   await ctx.group.removeParticipants(["123@s.whatsapp.net"]);
+   * if (await ctx.Group.IsBotAdmin()) {
+   *   await ctx.Group.RemoveParticipants(["123@s.whatsapp.net"]);
    * }
    * ```
    */

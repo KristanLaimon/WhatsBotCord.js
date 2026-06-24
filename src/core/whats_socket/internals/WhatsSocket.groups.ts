@@ -12,8 +12,8 @@ import type { GroupMetadataInfo, ParticipantInfo } from "./WhatsSocket.receiver.
  *
  * @example
  * ```typescript
- * const groups = await socket.group.getAll();
- * const isAdmin = await socket.group.isBotAdmin("123@g.us");
+ * const groups = await socket.Group.GetAll();
+ * const isAdmin = await socket.Group.IsBotAdmin("123@g.us");
  * ```
  */
 export class WhatsSocket_Submodule_Group implements IWhatsSocket_Submodule_Group {

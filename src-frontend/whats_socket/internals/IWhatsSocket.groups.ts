@@ -8,8 +8,8 @@ import type { GroupMetadataInfo } from "./WhatsSocket.receiver.js";
  *
  * @example
  * ```typescript
- * const groups = await socket.group.getAll();
- * const isAdmin = await socket.group.isBotAdmin("123@g.us");
+ * const groups = await socket.Group.GetAll();
+ * const isAdmin = await socket.Group.IsBotAdmin("123@g.us");
  * ```
  */
 export interface IWhatsSocket_Submodule_Group {
@@ -21,7 +21,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const jid = socket.group.normalizeJid("123@s.whatsapp.net");
+   * const jid = socket.Group.NormalizeJid("123@s.whatsapp.net");
    * ```
    */
   NormalizeJid(jid: string): string;
@@ -33,7 +33,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const botJid = socket.group.getBotJid();
+   * const botJid = socket.Group.GetBotJid();
    * ```
    */
   GetBotJid(): string;
@@ -46,7 +46,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const metadata = await socket.group.getMetadata("123@g.us");
+   * const metadata = await socket.Group.GetMetadata("123@g.us");
    * ```
    */
   GetMetadata(groupId: string): Promise<WhatsappGroupMetadata>;
@@ -58,7 +58,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const groups = await socket.group.getAll();
+   * const groups = await socket.Group.GetAll();
    * ```
    */
   GetAll(): Promise<WhatsappGroupMetadata[]>;
@@ -71,7 +71,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const group = await socket.group.findByName("Team");
+   * const group = await socket.Group.FindByName("Team");
    * ```
    */
   FindByName(name: string): Promise<WhatsappGroupMetadata | null>;
@@ -84,8 +84,8 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * if (await socket.group.isBotAdmin("123@g.us")) {
-   *   await socket.group.addParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * if (await socket.Group.IsBotAdmin("123@g.us")) {
+   *   await socket.Group.AddParticipants("123@g.us", ["456@s.whatsapp.net"]);
    * }
    * ```
    */
@@ -104,7 +104,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const success = await socket.group.updateParticipants("123@g.us", ["456@s.whatsapp.net"], "add");
+   * const success = await socket.Group.UpdateParticipants("123@g.us", ["456@s.whatsapp.net"], "add");
    * ```
    */
   UpdateParticipants(groupId: string, participants: string[], action: WhatsappGroupParticipantAction): Promise<boolean>;
@@ -120,7 +120,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const success = await socket.group.addParticipants("123@g.us", ["456@s.whatsapp.net", "789@s.whatsapp.net"]);
+   * const success = await socket.Group.AddParticipants("123@g.us", ["456@s.whatsapp.net", "789@s.whatsapp.net"]);
    * ```
    */
   AddParticipants(groupId: string, participants: string[]): Promise<boolean>;
@@ -136,7 +136,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const success = await socket.group.removeParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * const success = await socket.Group.RemoveParticipants("123@g.us", ["456@s.whatsapp.net"]);
    * ```
    */
   RemoveParticipants(groupId: string, participants: string[]): Promise<boolean>;
@@ -152,7 +152,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const success = await socket.group.promoteParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * const success = await socket.Group.PromoteParticipants("123@g.us", ["456@s.whatsapp.net"]);
    * ```
    */
   PromoteParticipants(groupId: string, participants: string[]): Promise<boolean>;
@@ -168,7 +168,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * const success = await socket.group.demoteParticipants("123@g.us", ["456@s.whatsapp.net"]);
+   * const success = await socket.Group.DemoteParticipants("123@g.us", ["456@s.whatsapp.net"]);
    * ```
    */
   DemoteParticipants(groupId: string, participants: string[]): Promise<boolean>;
@@ -183,7 +183,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * await socket.group.removeAllParticipants("123@g.us");
+   * await socket.Group.RemoveAllParticipants("123@g.us");
    * ```
    */
   RemoveAllParticipants(groupId: string): Promise<void>;
@@ -198,7 +198,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * await socket.group.leave("123@g.us");
+   * await socket.Group.Leave("123@g.us");
    * ```
    */
   Leave(groupId: string): Promise<void>;
@@ -213,7 +213,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * await socket.group.deleteChat("123@g.us");
+   * await socket.Group.DeleteChat("123@g.us");
    * ```
    */
   DeleteChat(groupId: string): Promise<void>;
@@ -229,7 +229,7 @@ export interface IWhatsSocket_Submodule_Group {
    *
    * @example
    * ```typescript
-   * await socket.group.cleanup("123@g.us");
+   * await socket.Group.Cleanup("123@g.us");
    * ```
    */
   Cleanup(groupId: string): Promise<void>;
@@ -250,7 +250,7 @@ export interface IWhatsSocket_Submodule_Group {
    * @example
    * ```typescript
    * const groupId = "123456789-987654321@g.us";
-   * const groupData = await socket.group.FetchGroupData(groupId);
+   * const groupData = await socket.Group.FetchGroupData(groupId);
    * 
    * if (groupData) {
    *   console.log("Group Name:", groupData.groupName);

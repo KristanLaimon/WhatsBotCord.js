@@ -116,9 +116,9 @@ export interface IWhatsSocket_Submodule_Receiver {
   DownloadMediaMessage(rawMsg: WhatsappMessage): Promise<Buffer>;
 
   /**
-   * @deprecated ⚠️ **DEPRECATED**: This method has been moved to the `group` submodule for better architectural consistency.
+   * @deprecated ⚠️ **DEPRECATED**: This method has been moved to the `Group` submodule for better architectural consistency.
    *
-   * Please use the new `FetchGroupData` method from the `group` submodule instead.
+   * Please use the new `FetchGroupData` method from the `Group` submodule instead.
    *
    * @example
    * **Old Way (Deprecated):**
@@ -128,7 +128,7 @@ export interface IWhatsSocket_Submodule_Receiver {
    *
    * **New Way:**
    * ```ts
-   * const groupData = await socket.group.FetchGroupData("123@g.us");
+   * const groupData = await socket.Group.FetchGroupData("123@g.us");
    * ```
    *
    * @param chatId - The WhatsApp ID of the group.
