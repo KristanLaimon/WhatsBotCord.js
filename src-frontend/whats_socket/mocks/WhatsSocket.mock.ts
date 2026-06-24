@@ -284,6 +284,14 @@ export class WhatsSocketMock_Group implements IWhatsSocket_Submodule_Group {
     this._socket = socket;
   }
 
+  public async CreateGroup(subject: string, participants: string[]): Promise<WhatsappGroupMetadata> {
+    return {
+      id: "mock-group-jid-" + Math.floor(Math.random() * 1000) + WhatsappGroupIdentifier,
+      subject,
+      participants: participants.map((p) => ({ id: p })),
+    };
+  }
+
   public async FetchGroupData(chatId: string): Promise<GroupMetadataInfo | null> {
     const rawMeta = await this.GetMetadata(chatId);
     return {
@@ -399,7 +407,6 @@ export class WhatsSocketMock_Group implements IWhatsSocket_Submodule_Group {
     await this.Leave(groupId);
     await this.DeleteChat(groupId);
   }
-
 
   public ClearMock(): void {
     this.UpdatedParticipants = [];
