@@ -317,12 +317,19 @@ export type WhatsSocketIncomingMessagesUpdate = {
   [key: string]: any;
 };
 
+export type WhatsSocketGroupParticipantsUpdate = {
+  id: string;
+  participants: string[];
+  action: WhatsappGroupParticipantAction;
+};
+
 export type WhatsSocketVendorEventMap = {
   ConnectionStateChanged: (update: WhatsSocketConnectionUpdate) => void | Promise<void>;
   IncomingMessagesReceived: (messageUpdate: WhatsSocketIncomingMessagesUpdate) => void | Promise<void>;
   MessagesUpdated: (messagesUpdates: WhatsappMessageUpdate[]) => void | Promise<void>;
   GroupsJoined: (groups: WhatsappGroupMetadata[]) => void | Promise<void>;
   GroupsUpdated: (groups: Array<Partial<WhatsappGroupMetadata>>) => void | Promise<void>;
+  GroupParticipantsUpdated: (update: WhatsSocketGroupParticipantsUpdate) => void | Promise<void>;
 };
 
 /**

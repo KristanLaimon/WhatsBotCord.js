@@ -12,6 +12,7 @@ import type {
   WhatsappMessageOptions,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
+  WhatsSocketGroupParticipantsUpdate,
 } from "./types.js";
 
 /**
@@ -187,6 +188,19 @@ export interface IWhatsSocket_EventsOnly_Module {
    * ```
    */
   onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void>;
+
+  /**
+   * Triggered when participants/members are updated in a group
+   * (e.g., added, removed, promoted, demoted).
+   *
+   * Example:
+   * ```ts
+   * socket.onGroupParticipantsUpdate.Subscribe((update) => {
+   *   console.log("Group participants updated:", update);
+   * });
+   * ```
+   */
+  onGroupParticipantsUpdate: Delegate<(update: WhatsSocketGroupParticipantsUpdate) => void>;
 
   /**
    * Triggered once on startup with metadata for all groups

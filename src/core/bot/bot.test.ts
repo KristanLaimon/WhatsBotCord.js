@@ -1170,3 +1170,23 @@ describe("EDGE CASE: EVENT_onCommandFoundAfterItsExecution should be called alwa
     expect(subscriberOnFinishSpy).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("GroupParticipantsUpdate_Events", () => {
+  test("WhenTriggeredOnSocket_ShouldPropagateToBot", async () => {
+    const { bot, socket } = toolkit();
+    const spy = fn();
+    bot.Events.onGroupParticipantsUpdate.Subscribe(spy);
+    bot.Start();
+
+    const mockUpdate = {
+      id: "12345@g.us",
+      participants: ["user1@s.whatsapp.net"],
+      action: "add" as const,
+    };
+
+    socket.onGroupParticipantsUpdate.CallAll(mockUpdate);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(mockUpdate);
+  });
+});

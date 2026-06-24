@@ -438,6 +438,7 @@ export default class Bot implements BotMinimalInfo {
     return {
       onGroupEnter: this.InternalSocket.onGroupEnter,
       onGroupUpdate: this.InternalSocket.onGroupUpdate,
+      onGroupParticipantsUpdate: this.InternalSocket.onGroupParticipantsUpdate,
       onIncomingMsg: this.InternalSocket.onIncomingMsg,
       onRestart: this.InternalSocket.onRestart,
       onSentMessage: this.InternalSocket.onSentMessage,

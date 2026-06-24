@@ -19,6 +19,7 @@ import type {
   WhatsappMessageUpdate,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
+  WhatsSocketGroupParticipantsUpdate,
   WhatsSocketLoggerMode,
 } from "./types.js";
 
@@ -123,6 +124,7 @@ export default class WhatsSocket implements IWhatsSocket {
   public onRestart: Delegate<() => Promise<void>> = new Delegate();
   public onGroupEnter: Delegate<(groupInfo: WhatsappGroupMetadata) => void> = new Delegate();
   public onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void> = new Delegate();
+  public onGroupParticipantsUpdate: Delegate<(update: WhatsSocketGroupParticipantsUpdate) => void> = new Delegate();
   public onStartupAllGroupsIn: Delegate<(allGroupsIn: WhatsappGroupMetadata[]) => void> = new Delegate();
 
   public get ownJID(): string {
@@ -204,6 +206,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this.ConfigureMessagesUpdates();
     this.ConfigureGroupsEnter();
     this.ConfigureGroupsUpdates();
+    this.ConfigureGroupParticipantsUpdates();
 
     //Thanks JavaScript ☠️
     this._SendSafe = this._SendSafe.bind(this);
@@ -217,6 +220,7 @@ export default class WhatsSocket implements IWhatsSocket {
     this.ConfigureMessageIncoming = this.ConfigureMessageIncoming.bind(this);
     this.ConfigureGroupsEnter = this.ConfigureGroupsEnter.bind(this);
     this.ConfigureGroupsUpdates = this.ConfigureGroupsUpdates.bind(this);
+    this.ConfigureGroupParticipantsUpdates = this.ConfigureGroupParticipantsUpdates.bind(this);
   }
 
   private async InitializeInternalSocket() {
@@ -392,6 +396,12 @@ export default class WhatsSocket implements IWhatsSocket {
           this.onGroupUpdate.CallAll(groupMetadata);
         }
       }
+    });
+  }
+
+  private ConfigureGroupParticipantsUpdates(): void {
+    this.Socket.on("GroupParticipantsUpdated", (update) => {
+      this.onGroupParticipantsUpdate.CallAll(update);
     });
   }
 

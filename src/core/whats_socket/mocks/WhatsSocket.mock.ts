@@ -23,6 +23,7 @@ import type {
   WhatsappMessageOptions,
   WhatsappPollUpdateMessage,
   WhatsappPollVote,
+  WhatsSocketGroupParticipantsUpdate,
 } from "../types.js";
 import type { WhatsSocketMockMsgSent } from "./types.js";
 
@@ -62,6 +63,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
   > = new Delegate();
   onGroupEnter: Delegate<(groupInfo: WhatsappGroupMetadata) => void> = new Delegate();
   onGroupUpdate: Delegate<(groupInfo: Partial<WhatsappGroupMetadata>) => void> = new Delegate();
+  onGroupParticipantsUpdate: Delegate<(update: WhatsSocketGroupParticipantsUpdate) => void> = new Delegate();
   onStartupAllGroupsIn: Delegate<(allGroupsIn: WhatsappGroupMetadata[]) => void> = new Delegate();
   ownJID: string = "ownIDMock" + WhatsappPhoneNumberIdentifier;
   Send: IWhatsSocket_Submodule_SugarSender;
@@ -185,6 +187,7 @@ export default class WhatsSocketMock implements IWhatsSocket {
     this.onIncomingMsg.Clear();
     this.onGroupEnter.Clear();
     this.onGroupUpdate.Clear();
+    this.onGroupParticipantsUpdate.Clear();
     this.onStartupAllGroupsIn.Clear();
     this.onUpdateMsg.Clear();
     this.SentMessagesThroughRaw = [];

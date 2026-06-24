@@ -52,6 +52,7 @@ import type {
   WhatsappGroupMetadata,
   WhatsappMessage,
   WhatsappPresenceState,
+  WhatsSocketGroupParticipantsUpdate,
   WhatsSocketLoggerMode,
 } from "./whats_socket/types.js";
 import type { WhatsSocketOptions } from "./whats_socket/WhatsSocket.js";
@@ -88,6 +89,7 @@ export type {
   WhatsbotcordPlugin,
   WhatsBotGroup,
   WhatsBotPresence,
+  WhatsSocketGroupParticipantsUpdate,
   WhatsSocketLoggerMode,
   WhatsSocketOptions,
   WhatsSocketReceiverError,

@@ -29,6 +29,8 @@ import type {
   WhatsappPollVote,
   WhatsappPresenceState,
   WhatsSocketConnectionUpdate,
+  WhatsSocketGroupParticipantsUpdate,
+  WhatsSocketIncomingMessagesUpdate,
   WhatsSocketLoggerMode,
   WhatsSocketVendorEventMap,
 } from "../../types.js";
@@ -98,35 +100,105 @@ export class BaileysWhatsSocketVendorClient implements IWhatsappSocketAdapterCli
   public on<EventName extends keyof WhatsSocketVendorEventMap>(eventName: EventName, callback: WhatsSocketVendorEventMap[EventName]): void {
     if (eventName === "ConnectionStateChanged") {
       this._socket.ev.on("connection.update", (update) => {
-        callback(this._mapConnectionUpdate(update) as never);
+        const mappedUpdate = this._mapConnectionUpdate(update) satisfies WhatsSocketConnectionUpdate;
+        (callback as WhatsSocketVendorEventMap["ConnectionStateChanged"])(mappedUpdate);
       });
       return;
     }
 
     if (eventName === "IncomingMessagesReceived") {
       this._socket.ev.on("messages.upsert", (messageUpdate) => {
-        callback({ ...messageUpdate, messages: messageUpdate.messages as WhatsappMessage[] } as never);
+        const mapped = {
+          ...messageUpdate,
+          messages: messageUpdate.messages as WhatsappMessage[],
+        } satisfies WhatsSocketIncomingMessagesUpdate;
+        (callback as WhatsSocketVendorEventMap["IncomingMessagesReceived"])(mapped);
       });
       return;
     }
 
     if (eventName === "MessagesUpdated") {
       this._socket.ev.on("messages.update", (messagesUpdates: WAMessageUpdate[]) => {
-        callback(messagesUpdates as unknown as WhatsappMessage[] as never);
+        const mapped = messagesUpdates.map((update) => update as unknown as WhatsappMessage) satisfies WhatsappMessage[];
+        (callback as WhatsSocketVendorEventMap["MessagesUpdated"])(mapped);
       });
       return;
     }
 
     if (eventName === "GroupsJoined") {
       this._socket.ev.on("groups.upsert", (groups: GroupMetadata[]) => {
-        callback(groups as unknown as WhatsappGroupMetadata[] as never);
+        const mapped = groups.map((g) => {
+          return {
+            id: g.id,
+            subject: g.subject,
+            participants: g.participants.map((p) => ({
+              id: p.id,
+              lid: p.lid,
+              admin: p.admin,
+            })),
+            addressingMode: g.addressingMode,
+            subjectOwner: g.subjectOwner,
+            owner: g.owner,
+            desc: g.desc,
+            inviteCode: g.inviteCode,
+            isCommunity: g.isCommunity,
+            restrict: g.restrict,
+            announce: g.announce,
+            memberAddMode: g.memberAddMode,
+            joinApprovalMode: g.joinApprovalMode,
+            isCommunityAnnounce: g.isCommunityAnnounce,
+            ephemeralDuration: g.ephemeralDuration,
+            subjectTime: g.subjectTime,
+            creation: g.creation,
+          } satisfies WhatsappGroupMetadata;
+        });
+        (callback as WhatsSocketVendorEventMap["GroupsJoined"])(mapped);
       });
       return;
     }
 
     if (eventName === "GroupsUpdated") {
       this._socket.ev.on("groups.update", (groups) => {
-        callback(groups as unknown as Array<Partial<WhatsappGroupMetadata>> as never);
+        const mapped = groups.map((g) => {
+          const update: Partial<WhatsappGroupMetadata> = {};
+          if (typeof g.id !== "undefined") update.id = g.id;
+          if (typeof g.subject !== "undefined") update.subject = g.subject;
+          if (typeof g.participants !== "undefined") {
+            update.participants = g.participants.map((p) => ({
+              id: p.id,
+              lid: p.lid,
+              admin: p.admin,
+            }));
+          }
+          if (typeof g.addressingMode !== "undefined") update.addressingMode = g.addressingMode;
+          if (typeof g.subjectOwner !== "undefined") update.subjectOwner = g.subjectOwner;
+          if (typeof g.owner !== "undefined") update.owner = g.owner;
+          if (typeof g.desc !== "undefined") update.desc = g.desc;
+          if (typeof g.inviteCode !== "undefined") update.inviteCode = g.inviteCode;
+          if (typeof g.isCommunity !== "undefined") update.isCommunity = g.isCommunity;
+          if (typeof g.restrict !== "undefined") update.restrict = g.restrict;
+          if (typeof g.announce !== "undefined") update.announce = g.announce;
+          if (typeof g.memberAddMode !== "undefined") update.memberAddMode = g.memberAddMode;
+          if (typeof g.joinApprovalMode !== "undefined") update.joinApprovalMode = g.joinApprovalMode;
+          if (typeof g.isCommunityAnnounce !== "undefined") update.isCommunityAnnounce = g.isCommunityAnnounce;
+          if (typeof g.ephemeralDuration !== "undefined") update.ephemeralDuration = g.ephemeralDuration;
+          if (typeof g.subjectTime !== "undefined") update.subjectTime = g.subjectTime;
+          if (typeof g.creation !== "undefined") update.creation = g.creation;
+          return update;
+        }) satisfies Array<Partial<WhatsappGroupMetadata>>;
+        (callback as WhatsSocketVendorEventMap["GroupsUpdated"])(mapped);
+      });
+      return;
+    }
+
+    if (eventName === "GroupParticipantsUpdated") {
+      this._socket.ev.on("group-participants.update", (update) => {
+        const mapped = {
+          id: update.id,
+          participants: update.participants.map((p: any) => (typeof p === "string" ? p : p.id)),
+          action: update.action as WhatsappGroupParticipantAction,
+        } satisfies WhatsSocketGroupParticipantsUpdate;
+        (callback as WhatsSocketVendorEventMap["GroupParticipantsUpdated"])(mapped);
       });
     }
   }
