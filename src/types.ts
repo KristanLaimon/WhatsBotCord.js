@@ -23,6 +23,7 @@ export type {
   WhatsappPresenceState,
   WhatsbotcordMiddlewareFunct,
   WhatsbotcordPlugin,
+  WhatsSocketGroupParticipantsUpdate,
   WhatsSocketLoggerMode,
   WhatsSocketOptions,
   WhatsSocketReceiverError,
