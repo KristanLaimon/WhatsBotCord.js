@@ -1,45 +1,38 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/KristanLaimon/WhatsBotCord.js/refs/heads/main/.github/media/whatsbotcord_logo.png" width="30%"/>
+  <img src="https://raw.githubusercontent.com/KristanLaimon/WhatsBotCord.js/refs/heads/main/.github/media/whatsbotcord_logo.png" alt="WhatsBotCord Logo" width="30%"/>
 </div>
-<h1 align="center"> Whatsbotcord.js </h1>
+
+# Whatsbotcord.js
 
 ![NPM Version](https://img.shields.io/npm/v/whatsbotcord)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/KristanLaimon/WhatsBotCord.js)
 ![NPM Last Update](https://img.shields.io/npm/last-update/whatsbotcord)
 ![NPM License](https://img.shields.io/npm/l/whatsbotcord)
 
-**_WhatsBotCord_** is a lightweight, TypeScript-based mini-framework for building WhatsApp bots with a Discord-inspired command system (e.g., **!yourcommand**, **@everyone**, and _more_). Providing an intuitive, type-safe interface for managing WhatsApp groups and individual chats. Designed from developers to developers to create custom bots with ease.
-**🔥 Want to know what's new?** Check out the [**latest releases**](https://github.com/KristanLaimon/WhatsBotCord.js/releases) for documentation and usage examples.
+**_WhatsBotCord_** is a lightweight, TypeScript-based mini-framework for building WhatsApp bots with a Discord-inspired command system (e.g., `!yourcommand`, `@everyone`). It provides an intuitive, type-safe interface that abstracts the complexity of whatsapp, making it as easy as building a Discord.js bot. Designed by developers, for developers.
 
-<div align="center">
-  <a href="https://whatsbotcord.sbs">🟢 Official Documentation Site</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://deepwiki.com/KristanLaimon/WhatsBotCord.js">📃 Documentation with AI (DeepWiki)</a>
-</div>
+> **🔥 Want to know what's new?** Check out the [**latest releases**](https://github.com/KristanLaimon/WhatsBotCord.js/releases) for documentation and usage examples.
+
+🟢 [**Official Documentation Site**](https://whatsbotcord.sbs) | 📃 [**Documentation with AI (DeepWiki)**](https://deepwiki.com/KristanLaimon/WhatsBotCord.js)
+
+---
 
 ## Features
 
-- 🤖 **Discord-Inspired Command System**: Create commands (e.g., !hello) with a simple, familiar syntax inspired by Discord bots.
-- 🔵 **TypeScript Support**: Fully typed with TypeScript for robust development and autocompletion.
-- ✨ **Simplified Baileys Wrapper**: Abstracts complex Baileys internals, making it easy to manage groups, individual senders, and message handling.
-- 💬 **Group and Individual Messaging**: Seamlessly interact with WhatsApp groups and individual chats.
-- 🧩 **Extensible Architecture**: Modular design for adding custom commands and functionality.
-- 🚀 **Lightweight and Performant**: Optimized for speed and efficiency if using Bun.js (optional).
-
-## Importing support
-
-This library works with:
-
-- ESM Modules (import and export)
-- CJS CommonJs (const & require)
+- 🤖 **Discord-Inspired Syntax**: If you know how to make a Discord bot, you know how to use WhatsBotCord.
+- 🔵 **First-Class TypeScript**: Fully typed for robust development, strict type-checking, and excellent autocompletion.
+- 💬 **Context-Aware Messaging**: Easily reply to groups and individual chats using the injected `Context` object.
 
 ## Installation
 
-```shell
+> 📱 **Requirement:** You need an active WhatsApp account on a mobile device to scan the QR code for the Web Device Login (this uses the web protocol, not the official WhatsApp Business API).
+
+Using npm:
+```bash
 npm install whatsbotcord
 ```
 
-or
+Using bun:
 
 ```shell
 bun i whatsbotcord
@@ -47,56 +40,79 @@ bun i whatsbotcord
 
 - **_WhatsApp Account_**: You NEED an active WhatsApp account on a mobile device to scan a QR code for Web Device Login (not an official WhatsApp Business API).
 
+## Core Concepts & API
+
+To make creating commands as easy as possible, WhatsBotCord injects a Context (ctx), an API object (api), and the user arguments (args) into every command.
+
+- `ctx (IChatContext)`: Contains details about the current chat and helper methods (e.g., ctx.SendText()).
+- `args (CommandArgs)`: An array of strings containing the arguments passed after the command.
+- `api (AdditionalAPI)`: Access to lower-level functions if needed.
+
 ## Getting started
+Here is how you can set up a basic bot and register a command. This library supports both ESM (import) and CommonJS (require).
 
-Import the library and you can use this minimal code to get started with your first command:
-
-### Javascript
-
-```js
-import Whatsbotcord from "whatsbotcord";
-import { CreateCommand } from "whatsbotcord/helpers";
-
-const bot = new Whatsbotcord({
-  commandPrefix: "!",
-  tagPrefix: "@",
-});
-
-const PingCommand = CreateCommand(
-  "ping",
-  async function (ctx, api, args) {
-    await ctx.SendText("pong!");
-  }, {
-    aliases: ["p"],
-  }
-);
-
-bot.Commands.Add(PingCommand);
-
-bot.Start();
-```
-
-### Typescript
+### Typescript (Recommended)
 
 ```ts
-import Whatsbotcord from "whatsbotcord";
-import { type AdditionalAPI, type CommandArgs, type IChatContext, type ICommand } from "whatsbotcord/types";
+  import Whatsbotcord from "whatsbotcord";
+  import { type AdditionalAPI, type CommandArgs, type IChatContext, type ICommand } from "whatsbotcord/types";
+  
+  // 1. Initialize the bot with your preferred prefixes
+  const bot = new Whatsbotcord({
+      commandPrefix: "!",
+      tagPrefix: "@",
+  });
+  
+  // 2. Define a command using the ICommand interface
+  class PingCommand implements ICommand {
+      name: string = "ping";
+      aliases?: string[] = ["p"];
+      
+      public async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+        // ctx.SendText automatically replies to the chat where the command was triggered
+        await ctx.SendText("pong! 🏓");
+      }
+  }
+  
+  class GreetCommand implements ICommand {
+      name: string = "greet";
+      
+      public async run(ctx: IChatContext, api: AdditionalAPI, commandArgs: CommandArgs): Promise<void> {
+        const user = commandArgs.args[0] || "stranger";
+        await ctx.SendText(`Hello there, ${user}!`);
+      }
+  }
+  
+  // 3. Register commands and start the bot
+  bot.Commands.Add(new PingCommand());
+  bot.Commands.Add(new GreetCommand());
+  
+  bot.Start();
+```
 
-const bot = new Whatsbotcord({
+### JavaScript Example
+
+```js
+  import Whatsbotcord from "whatsbotcord";
+  import { CreateCommand } from "whatsbotcord/helpers";
+  
+  const bot = new Whatsbotcord({
     commandPrefix: "!",
     tagPrefix: "@",
- });
-
- class PingCommand implements ICommand {
-    name: string = "ping";
-    aliases?: string[] = ["p"];
-    public async run(ctx: IChatContext, api: AdditionalAPI, args: CommandArgs): Promise<void> {
+  });
+  
+  const PingCommand = CreateCommand(
+    "ping",
+    async function (ctx, api, args) {
       await ctx.SendText("pong! 🏓");
+    }, 
+    {
+      aliases: ["p"],
     }
- }
-
- bot.Commands.Add(new PingCommand());
- bot.Start();
+  );
+  
+  bot.Commands.Add(PingCommand);
+  bot.Start();
 ```
 
 Want to know more?, check the [official documentation site](https://whatsbotcord.sbs)
@@ -104,8 +120,7 @@ Want to know more?, check the [official documentation site](https://whatsbotcord
 # Acknowledgment
 
 Thanks to the awesome library [Baileys.js](https://github.com/WhiskeySockets/Baileys) to make
-possible to use whatsapp web for automation purposes. Huge congrats for them, without it, this proyect wouldn't even
-be possible.
+possible to use whatsapp web for automation purposes. Huge congrats for them, without it, this proyect wouldn't even be possible.
 
 # License
 
